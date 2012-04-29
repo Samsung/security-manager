@@ -1,0 +1,7 @@
+security-server (0.0.1-43) unstable; urgency=low
+
+  * Bug fixed: security_server_reset_pwd() fails when password sets for the first time.
+  * Git: pkgs/s/security-server
+  * Tag: security-server_0.0.1-43 
+
+ -- Bumjin <bj.im@samsung.com>  Wed, 18 Jan 2012 19:24:33 +0900

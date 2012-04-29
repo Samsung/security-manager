@@ -1,0 +1,31 @@
+Source: security-server
+Priority: extra
+Maintainer: Bumjin Im <bj.im@samsung.com>, Kidong Kim <kd0228.kim@samsung.com>
+Build-Depends: debhelper (>= 5), autotools-dev, dlog-dev, libssl-dev, libattr1-dev
+Standards-Version: 3.7.2
+Section: base
+Homepage: N/A
+
+Package: libsecurity-server-client-dev
+Section: libs
+Architecture: any
+Depends: ${misc:Depends}, libsecurity-server-client-0 (= ${Source-Version}), dlog-dev
+Description: security server client library develpoment package
+
+Package: libsecurity-server-client-0
+Section: libs
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: security server client library package
+
+Package: security-server
+Section: base
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, libsecurity-server-client-0 (= ${Source-Version}), openssl
+Description: security server
+
+Package: security-server-dbg
+Section: debug
+Architecture: any
+Depends: ${misc:Depends}, security-server (= ${Source-Version})
+Description: debug package of security server source package

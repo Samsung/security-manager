@@ -1,0 +1,4 @@
+#!/bin/sh
+
+# start secure-storage server
+/usr/bin/security-server &
