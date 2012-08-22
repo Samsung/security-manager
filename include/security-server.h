@@ -1,7 +1,7 @@
 /*
  *  security-server
  *
- *  Copyright (c) 2012 Samsung Electronics Co., Ltd All Rights Reserved
+ *  Copyright (c) 2000 - 2011 Samsung Electronics Co., Ltd All Rights Reserved
  *
  *  Contact: Bumjin Im <bj.im@samsung.com>
  *
@@ -50,8 +50,8 @@
  *
  * Revision History:
  *
- *  -- Company Name -- | Modification Date | Description of Changes 
- *  ----------------------------------------------------------------------- 
+ *  -- Company Name -- | Modification Date | Description of Changes
+ *  -----------------------------------------------------------------------
  *   --- Samsung ------ | --- 2010-07-25 -- | First created
  *
  *    </tt>
@@ -128,7 +128,6 @@
 #define SECURITY_SERVER_API_ERROR_UNKNOWN		-255
 /** @}*/
 
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -157,22 +156,22 @@ extern "C" {
  * \param[in] object Name of the object which is kwnown by the caller.
  *
  * \return matching gid (positive integer) on success, or negative error code on error.
- * 
+ *
  * \par Prospective clients:
  * Inhouse middleware
  *
  * \par Known issues/bugs:
  * None
- * 
+ *
  * \pre None
- * 
+ *
  * \post None
  *
  * \see /etc/group,
  * security_server_get_object_name(), security_server_check_privilege()
- * 
+ *
  * \remarks None
- * 
+ *
  * \par Sample code:
  * \code
  * #include <security-server.h>
@@ -217,29 +216,29 @@ int security_server_get_gid(const char *object);
  * \param[in] max_object_size Allocated byte size of parameter "object".
  *
  * \return 0 on success, or negative error code on error.
- * 
+ *
  * \par Prospective clients:
  * Inhouse middleware.
  *
  * \par Known issues/bugs:
  * None
- * 
+ *
  * \pre output parameter object must be malloced before calling this API not to make memory curruption
- * 
+ *
  * \post None
  *
  * \see /etc/group,
  * security_server_get_gid()
- * 
+ *
  * \remarks None
- * 
+ *
  * \par Sample code:
  * \code
  * #include <security-server.h>
  * ...
  * int retval;
  * char objectname[20];
- * 
+ *
  * // Call the API
  * retval = security_server_get_object_name(6005, objectname, sizeof(objectname));
  * if(retval < 0)
@@ -277,22 +276,22 @@ int security_server_get_object_name(gid_t gid, char *object, size_t max_object_s
  * \param[in] max_cookie Allocated byte size of parameter "cookie".
  *
  * \return 0 on success, or negative error code on error.
- * 
+ *
  * \par Prospective clients:
  * Any process
  *
  * \par Known issues/bugs:
  * None
- * 
+ *
  * \pre output parameter cookie must be malloced before calling this API not to make memory curruption
  * Size of the cookie can be retrieved by security_server_get_cookie_size() API.
- * 
+ *
  * \post None
  *
  * \see security_server_check_privilege(), security_server_get_cookie_size()
- * 
+ *
  * \remarks None
- * 
+ *
  * \par Sample code:
  * \code
  * #include <security-server.h>
@@ -335,22 +334,22 @@ int security_server_request_cookie(char *cookie, size_t max_cookie);
  * \par Important notes:
  * None
  *
- * \return Always returns byte size of the cookie. 
- * 
+ * \return Always returns byte size of the cookie.
+ *
  * \par Prospective clients:
  * Any process
  *
  * \par Known issues/bugs:
  * None
- * 
+ *
  * \pre None
- * 
+ *
  * \post None
  *
  * \see security_server_request_cookie()
 
  * \remarks None
- * 
+ *
  * \par Sample code:
  * \code
  * #include <security-server.h>
@@ -361,7 +360,7 @@ int security_server_request_cookie(char *cookie, size_t max_cookie);
  * // API calling
  * cookie_size = security_server_get_cookie_size();
  * unsigned char cookie[cookie_size];
- * 
+ *
  * char objectname[20];
  * retval = security_server_request_cookie(cookie, cookie_size);
  * if(retval < 0)
@@ -400,20 +399,20 @@ int security_server_get_cookie_size(void);
  * \param[in] privilege Object group ID which the client application wants to access
  *
  * \return 0 on success, or negative error code on error.
- * 
+ *
  * \par Prospective clients:
  * Only pre-defiend middleware daemons
  *
  * \par Known issues/bugs:
  * None
  * \pre None
- * 
+ *
  * \post None
  *
  * \see security_server_request_cookie(), security_server_get_gid(), security_server_get_cookie_size()
- *  
+ *
  * \remarks None
- *  
+ *
  * \par Sample code:
  * \code
  * #include <security-server.h>
@@ -423,7 +422,7 @@ int security_server_get_cookie_size(void);
  * int call_gid;
  * cookie_size = security_server_get_cookie_size();
  * unsigned char recved_cookie[cookie_size];
- * 
+ *
  * ... // Receiving request with cookie
  *
  * call_gid = security_server_get_gid("telephony_makecall");
@@ -443,7 +442,13 @@ int security_server_get_cookie_size(void);
 */
 int security_server_check_privilege(const char *cookie, gid_t privilege);
 
+int security_server_check_privilege_by_cookie(const char *cookie,
+                                              const char *object,
+                                              const char *access_rights);
 
+int security_server_check_privilege_by_sockfd(int sockfd,
+                                              const char *object,
+                                              const char *access_rights);
 
 /**
  * \par Description:
@@ -468,7 +473,7 @@ int security_server_check_privilege(const char *cookie, gid_t privilege);
  * \param[in] cookie Received cookie value from client application. Cookie is not a null terminated human readable string. Make sure you're code doesn't have any string related process on the cookie.
  *
  * \return positive integer on success meaning the PID, 0 means the cookie is for root process, negative integer error code on error.
- * 
+ *
  * \par Prospective clients:
  * Only pre-defiend middleware daemons
  *
@@ -476,15 +481,15 @@ int security_server_check_privilege(const char *cookie, gid_t privilege);
  * None
  *
  * \pre None
- * 
+ *
  * \post None
  *
  * \see security_server_request_cookie(), security_server_get_cookie_size()
- *  
+ *
  * \remarks the cookie is not a null terminated string. Cookie is a BINARY byte stream of such length which can be retrieved by security_server_get_cookie_size() API.
  * Therefore, please do not use strcpy() family to process cookie value. You MUST use memcpy() function to process cookie value.
  * You also have to know that the cookie value doesn't carry any null terminator. So you don't need to allocate 1 more byte of the cookie size.
- *  
+ *
  * \par Sample code:
  * \code
  * #include <security-server.h>
@@ -494,7 +499,7 @@ int security_server_check_privilege(const char *cookie, gid_t privilege);
  * gid_t call_gid;
  * cookie_size = security_server_get_cookie_size();
  * unsigned char recved_cookie[cookie_size];
- * 
+ *
  * ... // Receiving request with cookie
  *
  * peerpid = security_server_get_cookie_pid(recved_cookie);
@@ -529,12 +534,12 @@ int security_server_get_cookie_pid(const char *cookie);
  * \par Important notes:
  * Password file should be stored safely. The password file will be stored by security server and only allowed itself to read/write, and data is will be securely hashed\n
  *
- * \param[out] current_attempts Number of password check missed attempts. 
+ * \param[out] current_attempts Number of password check missed attempts.
  * \param[out] max_attempts Number of maximum attempts that the password locks. 0 means infinite
  * \param[out] valid_secs Remaining time in second which represents this password will be expired. 0xFFFFFFFF means infinite
  *
  * \return 0 if there is no password set, other negative integer error code on error.
- * 
+ *
  * \par Prospective clients:
  * Applications which can unlock UI
  *
@@ -542,13 +547,13 @@ int security_server_get_cookie_pid(const char *cookie);
  * None
  *
  * \pre None
- * 
+ *
  * \post None
  *
  * \see security_server_set_pwd(), security_server_chk_pwd()
- *  
+ *
  * \remarks If password file is currupted or accitentally deleted, this API may not synchronized with security-server, but security-server will check file status on next request.
- *  
+ *
  * \par Sample code:
  * \code
  * #include <security-server.h>
@@ -573,8 +578,8 @@ int security_server_get_cookie_pid(const char *cookie);
  *
  * \endcode
 */
-int security_server_is_pwd_valid(unsigned int *current_attempts, 
-			unsigned int *max_attempts, 
+int security_server_is_pwd_valid(unsigned int *current_attempts,
+			unsigned int *max_attempts,
 			unsigned int *valid_secs);
 
 
@@ -604,7 +609,7 @@ int security_server_is_pwd_valid(unsigned int *current_attempts,
  * \param[in] valid_period_in_days. Number of days that this password is valid. 0 means infinity
  *
  * \return 0 on seccuess, negative integer error code on error.
- * 
+ *
  * \par Prospective clients:
  * Platform's THE ONLY setting application and some dedicated privileged processes
  *
@@ -612,14 +617,14 @@ int security_server_is_pwd_valid(unsigned int *current_attempts,
  * None
  *
  * \pre None
- * 
+ *
  * \post None
  *
  * \see security_server_is_pwd_valid(), security_server_chk_pwd(), security_server_reset_pwd()
- *  
+ *
  * \remarks Only setting application can call this API. The password file will be acces controlled and securely hashed. Security-server will remain previous password file to recover unexpected password file curruption.
  * \remarks If current password exists and it's expired, or max attempts reached, you cannot call this API. You have to call security_server_reset_pwd() API.
- *  
+ *
  * \par Sample code:
  * \code
  * #include <security-server.h>
@@ -657,11 +662,71 @@ int security_server_is_pwd_valid(unsigned int *current_attempts,
  * \endcode
 */
 int security_server_set_pwd(const char *cur_pwd,
-			const char *new_pwd, 
-			const unsigned int max_challenge, 
+			const char *new_pwd,
+			const unsigned int max_challenge,
 			const unsigned int valid_period_in_days);
 
 
+/**
+ * \par Description:
+ * This API sets validity period for currently setup password.
+ *
+ * \par Purpose:
+ * This API should be used by Enterprise authorities to modify password policy. To be used only with valid password setup.
+ *
+ * \par Typical use case:
+ * Authorized application calls this API to change current passwords validity when password policy needs to be changed.
+ *
+ * \par Method of function operation:
+ * Function attempts to find currently set password and changes its current validity to passed number of days. Retry counter for the password is reset to zero.
+ * If there is no password set, function returns proper error code.
+ *
+ * \par Sync (or) Async:
+ * This is a Synchronous API.
+ * \param[in] valid_period_in_days. Number of days that this password is valid. 0 means infinity
+ *
+ * \return 0 on success, negative integer error code on error.
+ *
+ * \par Prospective clients:
+ * Platform's THE ONLY setting application and some dedicated privileged processes
+ *
+ * \par Known issues/bugs:
+ * Identifying calling peer is not ready yet, should be based on SMACK somehow.
+ *
+ * \see security_server_is_pwd_valid(), security_server_chk_pwd(), security_server_reset_pwd()
+ */
+int security_server_set_pwd_validity(const unsigned int valid_period_in_days);
+
+
+/**
+ * \par Description:
+ * This API sets maximum number of attempts for currently setup password.
+ *
+ * \par Purpose:
+ * This API should be used by Enterprise authorities to modify password policy. To be used only with valid password setup.
+ *
+ * \par Typical use case:
+ * Authorized application calls this API to change current passwords max attempt number when password policy needs to be changed.
+ *
+ * \par Method of function operation:
+ * Function attempts to find currently set password and changes its max attempt number to passed one. Retry counter for the password is reset to zero.
+ * If there is no password set, function returns proper error code.
+ *
+ * \par Sync (or) Async:
+ * This is a Synchronous API.
+ * \param[in] max_challenge Maximum number of attempts that user can try to check the password without success in serial. 0 means infinity.
+ *
+ * \return 0 on success, negative integer error code on error.
+ *
+ * \par Prospective clients:
+ * Platform's THE ONLY setting application and some dedicated privileged processes
+ *
+ * \par Known issues/bugs:
+ * Identifying calling peer is not ready yet, should be based on SMACK somehow.
+ *
+ * \see security_server_is_pwd_valid(), security_server_chk_pwd(), security_server_reset_pwd()
+ */
+int security_server_set_pwd_max_challenge(const unsigned int max_challenge);
 
 /**
  * \par Description:
@@ -687,7 +752,7 @@ int security_server_set_pwd(const char *cur_pwd,
  * \param[in] valid_period_in_days. Number of days that this password is valid. 0 means infinity
  *
  * \return 0 on seccuess, negative integer error code on error.
- * 
+ *
  * \par Prospective clients:
  * Platform's THE ONLY setting application and some dedicated privileged processes
  *
@@ -695,13 +760,13 @@ int security_server_set_pwd(const char *cur_pwd,
  * None
  *
  * \pre None
- * 
+ *
  * \post None
  *
  * \see security_server_is_pwd_valid(), security_server_chk_pwd(), security_server_set_pwd()
- *  
+ *
  * \remarks Only dedicated applications can call this API. The password file will be acces controlled and securely hashed. Security-server will remain previous password file to recover unexpected password file curruption.
- *  
+ *
  * \par Sample code:
  * \code
  * #include <security-server.h>
@@ -720,7 +785,7 @@ int security_server_set_pwd(const char *cur_pwd,
  * \endcode
 */
 int security_server_reset_pwd(const char *new_pwd,
-			const unsigned int max_challenge, 
+			const unsigned int max_challenge,
 			const unsigned int valid_period_in_days);
 
 /**
@@ -743,12 +808,12 @@ int security_server_reset_pwd(const char *new_pwd,
  * There is retry timer on this API to limit replay attack. You will get error if you called this API too often.\n
  *
  * \param[in] challenge Null terminated challenged password string. It must not a NULL pointer.
- * \param[out] current_attempts Number of password check missed attempts. 
+ * \param[out] current_attempts Number of password check missed attempts.
  * \param[out] max_attempts Number of maximum attempts that the password locks. 0 means infinite
  * \param[out] valid_secs Remaining time in second which represents this password will be expired. 0xFFFFFFFF means infinite
  *
  * \return 0 on seccuess, negative integer error code on error.
- * 
+ *
  * \par Prospective clients:
  * Applications which has phone UI lock feature.
  *
@@ -756,19 +821,19 @@ int security_server_reset_pwd(const char *new_pwd,
  * None
  *
  * \pre None
- * 
+ *
  * \post None
  *
  * \see security_server_is_pwd_valid(), security_server_set_pwd()
- *  
+ *
  * \remarks The password file will be acces controlled and securely hashed. Security-server will remain previous password file to recover unexpected password file curruption.
- *  
+ *
  * \par Sample code:
  * \code
  * #include <security-server.h>
  * ...
  * int retval;
- * unsigned int attempt, max_attempt, expire_sec; 
+ * unsigned int attempt, max_attempt, expire_sec;
  *
  * retval = security_server_chk_pwd("is_this_password", &attmpt, &max_attempt, &expire_sec);
  * if(retval == SECURITY_SERVER_API_ERROR_PASSWORD_MISMATCH)
@@ -785,9 +850,9 @@ int security_server_reset_pwd(const char *new_pwd,
  *
  * \endcode
 */
-int security_server_chk_pwd(const char *challenge, 
-			unsigned int *current_attempt, 
-			unsigned int *max_attempt, 
+int security_server_chk_pwd(const char *challenge,
+			unsigned int *current_attempt,
+			unsigned int *max_attempt,
 			unsigned int *valid_secs);
 
 
@@ -813,7 +878,7 @@ int security_server_chk_pwd(const char *challenge,
  * \param[in] number_of_history Number of history to be checked when user tries to change password. Maximum is currently 50
  *
  * \return 0 on seccuess, negative integer error code on error.
- * 
+ *
  * \par Prospective clients:
  * MDM client, Enterprise manager.
  *
@@ -821,13 +886,13 @@ int security_server_chk_pwd(const char *challenge,
  * None
  *
  * \pre None
- * 
+ *
  * \post None
  *
  * \see security_server_set_pwd()
- *  
+ *
  * \remarks The password file will be acces controlled and securely hashed. Security-server will remain previous password file to recover unexpected password file curruption.
- *  
+ *
  * \par Sample code:
  * \code
  * #include <security-server.h>
@@ -871,11 +936,11 @@ int security_server_set_pwd_history(int number_of_history);
  * /usr/bin/debug-util itself must be omitted in the argv. Security server will put this as first argv in the execution procedure
  *
  * \param[in] argc Number of arguements.
- * 
+ *
  * \param[in] argv Arguements
  *
  * \return 0 on success, negative integer error code on error.
- * 
+ *
  * \par Prospective clients:
  * Only pre-defiend debugging utility.
  *
@@ -883,13 +948,13 @@ int security_server_set_pwd_history(int number_of_history);
  * None
  *
  * \pre None
- * 
+ *
  * \post None
  *
  * \see None
- *  
+ *
  * \remarks Calling this API, you have to put argv[1] of the debug-util as argv[0] of this API. Security server will put argv[0] automatically
- *  
+ *
  * \par Sample code:
  * \code
  * #include <security-server.h>
@@ -930,4 +995,4 @@ int security_server_launch_debug_tool(int argc, const char **argv);
  * @}
 */
 
-#endif	
+#endif

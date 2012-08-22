@@ -1,7 +1,7 @@
 /*
  *  security-server
  *
- *  Copyright (c) 2012 Samsung Electronics Co., Ltd All Rights Reserved
+ *  Copyright (c) 2000 - 2012 Samsung Electronics Co., Ltd All Rights Reserved
  *
  *  Contact: Bumjin Im <bj.im@samsung.com>
  *
@@ -61,7 +61,7 @@ int validate_pwd_file(char *filename)
 
 int dir_filter(const struct dirent *entry)
 {
-	if ((strcmp(entry->d_name, ".") == 0) || 
+	if ((strcmp(entry->d_name, ".") == 0) ||
 		(strcmp(entry->d_name, "..") == 0) ||
 		(strcmp(entry->d_name, "attempts") ==0) ||
 		(strcmp(entry->d_name, "history") ==0) )
@@ -101,7 +101,7 @@ int get_pwd_path(char *path)
 	free(mydirent);
 	return SECURITY_SERVER_SUCCESS;
 }
-	
+
 int load_password(unsigned char *cur_pwd, unsigned int *max_attempt, unsigned int *expire_time)
 {
 	int retval, fd;
@@ -262,7 +262,7 @@ int get_current_attempt(int increase)
 			return SECURITY_SERVER_ERROR_FILE_OPERATION;
 		}
 	}
-	return attempt;		
+	return attempt;
 }
 
 int reset_attempt(void)
@@ -321,20 +321,21 @@ int check_password(const unsigned char *cur_pwd, const unsigned char *requested_
 		}
 	}
 
-	if(expire_time == 0)
+	/* Compare */
+	if(memcmp(cur_pwd, requested_pwd, SECURITY_SERVER_HASHED_PWD_LEN) != 0)
 	{
-		SEC_SVR_DBG("Server: Password has been expired: %d, %d", current_time, expire_time);
-		return SECURITY_SERVER_ERROR_PASSWORD_EXPIRED;
+	    SEC_SVR_DBG("%s", "Password mismatched");
+	    return SECURITY_SERVER_ERROR_PASSWORD_MISMATCH;
 	}
 
-	/* Compare */
-	if(memcmp(cur_pwd, requested_pwd, SECURITY_SERVER_HASHED_PWD_LEN) == 0)
-	{
-		SEC_SVR_DBG("%s", "Password matched");
-		return SECURITY_SERVER_SUCCESS;
-	}
-	SEC_SVR_DBG("%s", "Password mismatched");
-	return SECURITY_SERVER_ERROR_PASSWORD_MISMATCH;
+    if(expire_time == 0)
+    {
+        SEC_SVR_DBG("Server: Password has been expired: %d, %d", current_time, expire_time);
+        return SECURITY_SERVER_ERROR_PASSWORD_EXPIRED;
+    }
+
+    SEC_SVR_DBG("%s", "Password matched");
+    return SECURITY_SERVER_SUCCESS;
 }
 
 int set_history(int num)
@@ -381,7 +382,7 @@ int set_history(int num)
 	SEC_SVR_DBG("%s", "Server: history set finished");
 	return SECURITY_SERVER_SUCCESS;
 }
-		
+
 
 int get_history_num(void)
 {
@@ -483,7 +484,7 @@ int check_history(const unsigned char *requested_pwd)
 				retval2 =  SECURITY_SERVER_ERROR_PASSWORD_REUSED;
 			}
 			history_count--;
-			
+
 		}
 
 		/* Remove too old or invalid password history */
@@ -503,7 +504,7 @@ int check_history(const unsigned char *requested_pwd)
 }
 
 /* Password file format */
-/*  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 
+/*  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
  * |---------------------------------------------------------------|
  * |                                                               |
  * |                                                               |
@@ -515,7 +516,7 @@ int check_history(const unsigned char *requested_pwd)
  * |              Expiration time in seconds (4 bytes)             |
  * |---------------------------------------------------------------|
  */
-int set_password(const unsigned char *requested_new_pwd, const unsigned int attempts, 
+int set_password(const unsigned char *requested_new_pwd, const unsigned int attempts,
 			const unsigned int expire_time)
 {
 	int retval, fd;
@@ -563,7 +564,7 @@ int set_password(const unsigned char *requested_new_pwd, const unsigned int atte
 	fsync(fd);
 	close(fd);
 	SEC_SVR_DBG("%s", "Password file created");
-	return SECURITY_SERVER_SUCCESS;	
+	return SECURITY_SERVER_SUCCESS;
 }
 
 int check_retry(const struct timeval cur_try)
@@ -575,7 +576,7 @@ int check_retry(const struct timeval cur_try)
 	if(interval_sec > SECURITY_SERVER_PASSWORD_RETRY_TIMEOUT_SECOND)
 		return SECURITY_SERVER_SUCCESS;
 
-	if(interval_sec == SECURITY_SERVER_PASSWORD_RETRY_TIMEOUT_SECOND 
+	if(interval_sec == SECURITY_SERVER_PASSWORD_RETRY_TIMEOUT_SECOND
 			&& interval_usec >= 0)
 		return SECURITY_SERVER_SUCCESS;
 
@@ -589,12 +590,12 @@ int process_valid_pwd_request(int sockfd)
 	int retval, current_attempts, password_set;
 	unsigned char cur_pwd[SECURITY_SERVER_HASHED_PWD_LEN];
 	unsigned int max_attempt, expire_time;
-	
-/*	
+
+/*
 	if(retval != SECURITY_SERVER_SUCCESS)
 	{
 		SEC_SVR_DBG("%s", "Client Authentication Failed");
-		retval = send_generic_response(client_sockfd, 
+		retval = send_generic_response(client_sockfd,
 				SECURITY_SERVER_MSG_TYPE_TOOL_RESPONSE,
 				SECURITY_SERVER_RETURN_CODE_AUTHENTICATION_FAILED);
 		if(retval != SECURITY_SERVER_SUCCESS)
@@ -611,7 +612,7 @@ int process_valid_pwd_request(int sockfd)
 	if(retval != SECURITY_SERVER_SUCCESS)
 	{
 		SEC_SVR_DBG("%s", "Server: Retry timeout occurred");
-		retval = send_generic_response(sockfd, 
+		retval = send_generic_response(sockfd,
 				SECURITY_SERVER_MSG_TYPE_GENERIC_RESPONSE,
 				SECURITY_SERVER_RETURN_CODE_PASSWORD_RETRY_TIMER);
 		if(retval != SECURITY_SERVER_SUCCESS)
@@ -624,7 +625,7 @@ int process_valid_pwd_request(int sockfd)
 	if(password_set == SECURITY_SERVER_ERROR_SERVER_ERROR)
 	{
 		SEC_SVR_DBG("%s", "Server: Responding error because we cannot provide password service");
-		retval = send_generic_response(sockfd, 
+		retval = send_generic_response(sockfd,
 				SECURITY_SERVER_MSG_TYPE_GENERIC_RESPONSE,
 				SECURITY_SERVER_RETURN_CODE_SERVER_ERROR);
 		if(retval != SECURITY_SERVER_SUCCESS)
@@ -638,7 +639,7 @@ int process_valid_pwd_request(int sockfd)
 	if(current_attempts < 0)
 	{
 		SEC_SVR_DBG("Server ERROR: Cannot get attempts: %d", current_attempts);
-		retval = send_generic_response(sockfd, 
+		retval = send_generic_response(sockfd,
 				SECURITY_SERVER_MSG_TYPE_GENERIC_RESPONSE,
 				SECURITY_SERVER_RETURN_CODE_SERVER_ERROR);
 		if(retval != SECURITY_SERVER_SUCCESS)
@@ -650,9 +651,9 @@ int process_valid_pwd_request(int sockfd)
 	/* There is no password */
 	if(password_set == SECURITY_SERVER_ERROR_NO_PASSWORD)
 	{
-		retval = send_pwd_response(sockfd, 
+		retval = send_pwd_response(sockfd,
 				SECURITY_SERVER_MSG_TYPE_VALID_PWD_RESPONSE,
-				SECURITY_SERVER_RETURN_CODE_NO_PASSWORD, 
+				SECURITY_SERVER_RETURN_CODE_NO_PASSWORD,
 				0, 0, 0);
 		if(retval != SECURITY_SERVER_SUCCESS)
 		{
@@ -662,7 +663,7 @@ int process_valid_pwd_request(int sockfd)
 	}
 	if(password_set == SECURITY_SERVER_SUCCESS)
 	{
-		retval = send_pwd_response(sockfd, 
+		retval = send_pwd_response(sockfd,
 				SECURITY_SERVER_MSG_TYPE_VALID_PWD_RESPONSE,
 				SECURITY_SERVER_RETURN_CODE_PASSWORD_EXIST,
 				current_attempts, max_attempt, expire_time);
@@ -673,7 +674,7 @@ int process_valid_pwd_request(int sockfd)
 		goto error;
 	}
 	SEC_SVR_DBG("Server ERROR: Unknown error: %d", retval);
-	retval = send_generic_response(sockfd, 
+	retval = send_generic_response(sockfd,
 			SECURITY_SERVER_MSG_TYPE_GENERIC_RESPONSE,
 			SECURITY_SERVER_RETURN_CODE_SERVER_ERROR);
 	if(retval != SECURITY_SERVER_SUCCESS)
@@ -705,7 +706,7 @@ int process_set_pwd_request(int sockfd)
 	if(retval != SECURITY_SERVER_SUCCESS)
 	{
 		SEC_SVR_DBG("%s", "Client Authentication Failed");
-		retval = send_generic_response(client_sockfd, 
+		retval = send_generic_response(client_sockfd,
 				SECURITY_SERVER_MSG_TYPE_TOOL_RESPONSE,
 				SECURITY_SERVER_RETURN_CODE_AUTHENTICATION_FAILED);
 		if(retval != SECURITY_SERVER_SUCCESS)
@@ -722,7 +723,7 @@ int process_set_pwd_request(int sockfd)
 	if(retval != SECURITY_SERVER_SUCCESS)
 	{
 		SEC_SVR_DBG("%s", "Server: Retry timeout occurred");
-		retval = send_generic_response(sockfd, 
+		retval = send_generic_response(sockfd,
 				SECURITY_SERVER_MSG_TYPE_SET_PWD_RESPONSE,
 				SECURITY_SERVER_RETURN_CODE_PASSWORD_RETRY_TIMER);
 		if(retval != SECURITY_SERVER_SUCCESS)
@@ -736,7 +737,7 @@ int process_set_pwd_request(int sockfd)
 	if(password_set == SECURITY_SERVER_ERROR_SERVER_ERROR)
 	{
 		SEC_SVR_DBG("%s", "Server: Responding error because we cannot provide password service");
-		retval = send_generic_response(sockfd, 
+		retval = send_generic_response(sockfd,
 				SECURITY_SERVER_MSG_TYPE_SET_PWD_RESPONSE,
 				SECURITY_SERVER_RETURN_CODE_SERVER_ERROR);
 		if(retval != SECURITY_SERVER_SUCCESS)
@@ -751,7 +752,7 @@ int process_set_pwd_request(int sockfd)
 	if(retval < sizeof(char) || cur_pwd_len > SECURITY_SERVER_MAX_PASSWORD_LEN)
 	{
 		SEC_SVR_DBG("Server Error: current password length recieve failed: %d, %d", retval, cur_pwd_len);
-		retval = send_generic_response(sockfd, 
+		retval = send_generic_response(sockfd,
 				SECURITY_SERVER_MSG_TYPE_SET_PWD_RESPONSE,
 				SECURITY_SERVER_RETURN_CODE_BAD_REQUEST);
 		if(retval != SECURITY_SERVER_SUCCESS)
@@ -764,7 +765,7 @@ int process_set_pwd_request(int sockfd)
 	if(retval < sizeof(char)  || new_pwd_len > SECURITY_SERVER_MAX_PASSWORD_LEN)
 	{
 		SEC_SVR_DBG("Server Error: new password length recieve failed: %d, %d", retval, new_pwd_len);
-		retval = send_generic_response(sockfd, 
+		retval = send_generic_response(sockfd,
 				SECURITY_SERVER_MSG_TYPE_SET_PWD_RESPONSE,
 				SECURITY_SERVER_RETURN_CODE_BAD_REQUEST);
 		if(retval != SECURITY_SERVER_SUCCESS)
@@ -783,7 +784,7 @@ int process_set_pwd_request(int sockfd)
 		if(retval < cur_pwd_len)
 		{
 			SEC_SVR_DBG("Server Error: current password recieve failed: %d", retval);
-			retval = send_generic_response(sockfd, 
+			retval = send_generic_response(sockfd,
 					SECURITY_SERVER_MSG_TYPE_SET_PWD_RESPONSE,
 					SECURITY_SERVER_RETURN_CODE_BAD_REQUEST);
 			if(retval != SECURITY_SERVER_SUCCESS)
@@ -799,7 +800,7 @@ int process_set_pwd_request(int sockfd)
 		if(password_set == SECURITY_SERVER_SUCCESS)
 		{
 			SEC_SVR_DBG("Server Error: password is already set: %d", retval);
-			retval = send_generic_response(sockfd, 
+			retval = send_generic_response(sockfd,
 					SECURITY_SERVER_MSG_TYPE_SET_PWD_RESPONSE,
 					SECURITY_SERVER_RETURN_CODE_PASSWORD_EXIST);
 			if(retval != SECURITY_SERVER_SUCCESS)
@@ -815,7 +816,7 @@ int process_set_pwd_request(int sockfd)
 	if(retval < new_pwd_len)
 	{
 		SEC_SVR_DBG("Server Error:  new password recieve failed: %d", retval);
-		retval = send_generic_response(sockfd, 
+		retval = send_generic_response(sockfd,
 				SECURITY_SERVER_MSG_TYPE_SET_PWD_RESPONSE,
 				SECURITY_SERVER_RETURN_CODE_BAD_REQUEST);
 		if(retval != SECURITY_SERVER_SUCCESS)
@@ -831,7 +832,7 @@ int process_set_pwd_request(int sockfd)
 	if(retval < sizeof(unsigned int))
 	{
 		SEC_SVR_DBG("Sever Error:  Max attempt receive failed: %d", retval);
-		retval = send_generic_response(sockfd, 
+		retval = send_generic_response(sockfd,
 				SECURITY_SERVER_MSG_TYPE_SET_PWD_RESPONSE,
 				SECURITY_SERVER_RETURN_CODE_BAD_REQUEST);
 		if(retval != SECURITY_SERVER_SUCCESS)
@@ -846,7 +847,7 @@ int process_set_pwd_request(int sockfd)
 	if(retval < sizeof(unsigned int))
 	{
 		SEC_SVR_DBG("Sever Error:  Max attempt receive failed: %d", retval);
-		retval = send_generic_response(sockfd, 
+		retval = send_generic_response(sockfd,
 				SECURITY_SERVER_MSG_TYPE_SET_PWD_RESPONSE,
 				SECURITY_SERVER_RETURN_CODE_BAD_REQUEST);
 		if(retval != SECURITY_SERVER_SUCCESS)
@@ -864,7 +865,7 @@ int process_set_pwd_request(int sockfd)
 	SHA256_Init(&context);
 	SHA256_Update(&context, (unsigned char*)requested_new_pwd, strlen(requested_new_pwd));
 	SHA256_Final(hashed_new_pw, &context);
-	
+
 	/* check current password */
 	if(password_set  == SECURITY_SERVER_SUCCESS)
 	{
@@ -872,7 +873,7 @@ int process_set_pwd_request(int sockfd)
 		if(retval == SECURITY_SERVER_ERROR_PASSWORD_MISMATCH)
 		{
 			SEC_SVR_DBG("%s", "Server: Wrong password");
-			retval = send_generic_response(sockfd, 
+			retval = send_generic_response(sockfd,
 					SECURITY_SERVER_MSG_TYPE_SET_PWD_RESPONSE,
 					SECURITY_SERVER_RETURN_CODE_PASSWORD_MISMATCH);
 			if(retval != SECURITY_SERVER_SUCCESS)
@@ -884,7 +885,7 @@ int process_set_pwd_request(int sockfd)
 		if(retval == SECURITY_SERVER_ERROR_PASSWORD_MAX_ATTEMPTS_EXCEEDED)
 		{
 			SEC_SVR_DBG("%s", "Server: Too many challange");
-			retval = send_generic_response(sockfd, 
+			retval = send_generic_response(sockfd,
 					SECURITY_SERVER_MSG_TYPE_SET_PWD_RESPONSE,
 					SECURITY_SERVER_RETURN_CODE_PASSWORD_MAX_ATTEMPTS_EXCEEDED);
 			if(retval != SECURITY_SERVER_SUCCESS)
@@ -896,7 +897,7 @@ int process_set_pwd_request(int sockfd)
 		if(retval == SECURITY_SERVER_ERROR_PASSWORD_EXPIRED)
 		{
 			SEC_SVR_DBG("%s", "Server: Password expired");
-			retval = send_generic_response(sockfd, 
+			retval = send_generic_response(sockfd,
 					SECURITY_SERVER_MSG_TYPE_SET_PWD_RESPONSE,
 					SECURITY_SERVER_RETURN_CODE_PASSWORD_EXPIRED);
 			if(retval != SECURITY_SERVER_SUCCESS)
@@ -908,7 +909,7 @@ int process_set_pwd_request(int sockfd)
 		if(retval != SECURITY_SERVER_SUCCESS)
 		{
 			SEC_SVR_DBG("Error: Password check failed: %d", retval);
-			retval = send_generic_response(sockfd, 
+			retval = send_generic_response(sockfd,
 					SECURITY_SERVER_MSG_TYPE_SET_PWD_RESPONSE,
 					SECURITY_SERVER_RETURN_CODE_SERVER_ERROR);
 			if(retval != SECURITY_SERVER_SUCCESS)
@@ -920,7 +921,7 @@ int process_set_pwd_request(int sockfd)
 		retval = check_history(hashed_new_pw);
 		if(retval == SECURITY_SERVER_ERROR_PASSWORD_REUSED)
 		{
-			retval = send_generic_response(sockfd, 
+			retval = send_generic_response(sockfd,
 					SECURITY_SERVER_MSG_TYPE_SET_PWD_RESPONSE,
 					SECURITY_SERVER_RETURN_CODE_PASSWORD_REUSED);
 			if(retval != SECURITY_SERVER_SUCCESS)
@@ -934,7 +935,7 @@ int process_set_pwd_request(int sockfd)
 	{
 		/* Client ask to set with current password, but there is no password now */
 		SEC_SVR_DBG("%s", "Server: There is no current password. But try to set with current password");
-		retval = send_generic_response(sockfd, 
+		retval = send_generic_response(sockfd,
 				SECURITY_SERVER_MSG_TYPE_SET_PWD_RESPONSE,
 				SECURITY_SERVER_RETURN_CODE_PASSWORD_MISMATCH);
 		if(retval != SECURITY_SERVER_SUCCESS)
@@ -955,7 +956,7 @@ int process_set_pwd_request(int sockfd)
 	if(retval != SECURITY_SERVER_SUCCESS)
 	{
 		SEC_SVR_DBG("Server Error: Password set failed: %d", retval);
-		retval = send_generic_response(sockfd, 
+		retval = send_generic_response(sockfd,
 				SECURITY_SERVER_MSG_TYPE_SET_PWD_RESPONSE,
 				SECURITY_SERVER_RETURN_CODE_SERVER_ERROR);
 		if(retval != SECURITY_SERVER_SUCCESS)
@@ -970,7 +971,7 @@ int process_set_pwd_request(int sockfd)
 
 	/* All done. send response */
 	SEC_SVR_DBG("%s", "Server: Password has been successfully modified");
-	retval = send_generic_response(sockfd, 
+	retval = send_generic_response(sockfd,
 			SECURITY_SERVER_MSG_TYPE_SET_PWD_RESPONSE,
 			SECURITY_SERVER_RETURN_CODE_SUCCESS);
 	if(retval != SECURITY_SERVER_SUCCESS)
@@ -994,11 +995,11 @@ int process_reset_pwd_request(int sockfd)
 	SHA256_CTX context;
 
 	/* Authenticate client that peer is setting app goes here*/
-/*	
+/*
 	if(retval != SECURITY_SERVER_SUCCESS)
 	{
 		SEC_SVR_DBG("%s", "Client Authentication Failed");
-		retval = send_generic_response(client_sockfd, 
+		retval = send_generic_response(client_sockfd,
 				SECURITY_SERVER_MSG_TYPE_TOOL_RESPONSE,
 				SECURITY_SERVER_RETURN_CODE_AUTHENTICATION_FAILED);
 		if(retval != SECURITY_SERVER_SUCCESS)
@@ -1015,7 +1016,7 @@ int process_reset_pwd_request(int sockfd)
 	if(retval != SECURITY_SERVER_SUCCESS)
 	{
 		SEC_SVR_DBG("%s", "Server: Retry timeout occurred");
-		retval = send_generic_response(sockfd, 
+		retval = send_generic_response(sockfd,
 				SECURITY_SERVER_MSG_TYPE_RESET_PWD_RESPONSE,
 				SECURITY_SERVER_RETURN_CODE_PASSWORD_RETRY_TIMER);
 		if(retval != SECURITY_SERVER_SUCCESS)
@@ -1029,7 +1030,7 @@ int process_reset_pwd_request(int sockfd)
 	if(password_set == SECURITY_SERVER_ERROR_SERVER_ERROR)
 	{
 		SEC_SVR_DBG("%s", "Server: Responding error because we cannot provide password service");
-		retval = send_generic_response(sockfd, 
+		retval = send_generic_response(sockfd,
 				SECURITY_SERVER_MSG_TYPE_GENERIC_RESPONSE,
 				SECURITY_SERVER_RETURN_CODE_SERVER_ERROR);
 		if(retval != SECURITY_SERVER_SUCCESS)
@@ -1044,7 +1045,7 @@ int process_reset_pwd_request(int sockfd)
 	if(retval < sizeof(char)  || new_pwd_len > SECURITY_SERVER_MAX_PASSWORD_LEN)
 	{
 		SEC_SVR_DBG("Server Error: new password length recieve failed: %d, %d", retval, new_pwd_len);
-		retval = send_generic_response(sockfd, 
+		retval = send_generic_response(sockfd,
 				SECURITY_SERVER_MSG_TYPE_RESET_PWD_RESPONSE,
 				SECURITY_SERVER_RETURN_CODE_BAD_REQUEST);
 		if(retval != SECURITY_SERVER_SUCCESS)
@@ -1059,7 +1060,7 @@ int process_reset_pwd_request(int sockfd)
 	if(retval < new_pwd_len)
 	{
 		SEC_SVR_DBG("Server Error:  new password recieve failed: %d", retval);
-		retval = send_generic_response(sockfd, 
+		retval = send_generic_response(sockfd,
 				SECURITY_SERVER_MSG_TYPE_RESET_PWD_RESPONSE,
 				SECURITY_SERVER_RETURN_CODE_BAD_REQUEST);
 		if(retval != SECURITY_SERVER_SUCCESS)
@@ -1075,7 +1076,7 @@ int process_reset_pwd_request(int sockfd)
 	if(retval < sizeof(unsigned int))
 	{
 		SEC_SVR_DBG("Sever Error:  Max attempt receive failed: %d", retval);
-		retval = send_generic_response(sockfd, 
+		retval = send_generic_response(sockfd,
 				SECURITY_SERVER_MSG_TYPE_RESET_PWD_RESPONSE,
 				SECURITY_SERVER_RETURN_CODE_BAD_REQUEST);
 		if(retval != SECURITY_SERVER_SUCCESS)
@@ -1090,7 +1091,7 @@ int process_reset_pwd_request(int sockfd)
 	if(retval < sizeof(unsigned int))
 	{
 		SEC_SVR_DBG("Sever Error:  Max attempt receive failed: %d", retval);
-		retval = send_generic_response(sockfd, 
+		retval = send_generic_response(sockfd,
 				SECURITY_SERVER_MSG_TYPE_RESET_PWD_RESPONSE,
 				SECURITY_SERVER_RETURN_CODE_BAD_REQUEST);
 		if(retval != SECURITY_SERVER_SUCCESS)
@@ -1115,7 +1116,7 @@ int process_reset_pwd_request(int sockfd)
 	if(retval != SECURITY_SERVER_SUCCESS)
 	{
 		SEC_SVR_DBG("Server Error: Password set failed: %d", retval);
-		retval = send_generic_response(sockfd, 
+		retval = send_generic_response(sockfd,
 				SECURITY_SERVER_MSG_TYPE_RESET_PWD_RESPONSE,
 				SECURITY_SERVER_RETURN_CODE_SERVER_ERROR);
 		if(retval != SECURITY_SERVER_SUCCESS)
@@ -1128,7 +1129,7 @@ int process_reset_pwd_request(int sockfd)
 
 	/* All done. send response */
 	SEC_SVR_DBG("%s", "Server: Password has been successfully modified");
-	retval = send_generic_response(sockfd, 
+	retval = send_generic_response(sockfd,
 			SECURITY_SERVER_MSG_TYPE_RESET_PWD_RESPONSE,
 			SECURITY_SERVER_RETURN_CODE_SUCCESS);
 	if(retval != SECURITY_SERVER_SUCCESS)
@@ -1158,7 +1159,7 @@ int process_chk_pwd_request(int sockfd)
 	if(retval != SECURITY_SERVER_SUCCESS)
 	{
 		SEC_SVR_DBG("%s", "Client Authentication Failed");
-		retval = send_generic_response(sockfd, 
+		retval = send_generic_response(sockfd,
 				SECURITY_SERVER_MSG_TYPE_TOOL_RESPONSE,
 				SECURITY_SERVER_RETURN_CODE_AUTHENTICATION_FAILED);
 		if(retval != SECURITY_SERVER_SUCCESS)
@@ -1174,7 +1175,7 @@ int process_chk_pwd_request(int sockfd)
 	if(retval != SECURITY_SERVER_SUCCESS)
 	{
 		SEC_SVR_DBG("%s", "Server: Retry timeout occurred");
-		retval = send_generic_response(sockfd, 
+		retval = send_generic_response(sockfd,
 				SECURITY_SERVER_MSG_TYPE_CHK_PWD_RESPONSE,
 				SECURITY_SERVER_RETURN_CODE_PASSWORD_RETRY_TIMER);
 		if(retval != SECURITY_SERVER_SUCCESS)
@@ -1189,7 +1190,7 @@ int process_chk_pwd_request(int sockfd)
 	if(password_set == SECURITY_SERVER_ERROR_SERVER_ERROR)
 	{
 		SEC_SVR_DBG("%s", "ServerERROR: Responding error because we cannot provide password service");
-		retval = send_generic_response(sockfd, 
+		retval = send_generic_response(sockfd,
 				SECURITY_SERVER_MSG_TYPE_CHK_PWD_RESPONSE,
 				SECURITY_SERVER_RETURN_CODE_SERVER_ERROR);
 		if(retval != SECURITY_SERVER_SUCCESS)
@@ -1204,7 +1205,7 @@ int process_chk_pwd_request(int sockfd)
 	if(retval < sizeof(char) || challenge_len > SECURITY_SERVER_MAX_PASSWORD_LEN)
 	{
 		SEC_SVR_DBG("Server ERROR: challenge length recieve failed: %d", retval);
-		retval = send_generic_response(sockfd, 
+		retval = send_generic_response(sockfd,
 				SECURITY_SERVER_MSG_TYPE_CHK_PWD_RESPONSE,
 				SECURITY_SERVER_RETURN_CODE_BAD_REQUEST);
 		if(retval != SECURITY_SERVER_SUCCESS)
@@ -1220,7 +1221,7 @@ int process_chk_pwd_request(int sockfd)
 		if(retval < challenge_len)
 		{
 			SEC_SVR_DBG("Server ERROR: current password recieve failed: %d", retval);
-			retval = send_generic_response(sockfd, 
+			retval = send_generic_response(sockfd,
 					SECURITY_SERVER_MSG_TYPE_CHK_PWD_RESPONSE,
 					SECURITY_SERVER_RETURN_CODE_BAD_REQUEST);
 			if(retval != SECURITY_SERVER_SUCCESS)
@@ -1234,7 +1235,7 @@ int process_chk_pwd_request(int sockfd)
 	else
 	{
 		SEC_SVR_DBG("Error: Challenge length too short: %d", retval);
-		retval = send_generic_response(sockfd, 
+		retval = send_generic_response(sockfd,
 				SECURITY_SERVER_MSG_TYPE_CHK_PWD_RESPONSE,
 				SECURITY_SERVER_RETURN_CODE_BAD_REQUEST);
 		if(retval != SECURITY_SERVER_SUCCESS)
@@ -1256,9 +1257,9 @@ int process_chk_pwd_request(int sockfd)
 		if(retval == SECURITY_SERVER_ERROR_PASSWORD_MISMATCH)
 		{
 			SEC_SVR_DBG("%s", "Server: Wrong password");
-			retval = send_pwd_response(sockfd, 
+			retval = send_pwd_response(sockfd,
 					SECURITY_SERVER_MSG_TYPE_CHK_PWD_RESPONSE,
-					SECURITY_SERVER_RETURN_CODE_PASSWORD_MISMATCH, 
+					SECURITY_SERVER_RETURN_CODE_PASSWORD_MISMATCH,
 					current_attempt, max_attempt, expire_time);
 			if(retval != SECURITY_SERVER_SUCCESS)
 			{
@@ -1269,7 +1270,7 @@ int process_chk_pwd_request(int sockfd)
 		if(retval == SECURITY_SERVER_ERROR_PASSWORD_MAX_ATTEMPTS_EXCEEDED)
 		{
 			SEC_SVR_DBG("%s", "Server: Too many trial");
-			retval = send_pwd_response(sockfd, 
+			retval = send_pwd_response(sockfd,
 					SECURITY_SERVER_MSG_TYPE_CHK_PWD_RESPONSE,
 					SECURITY_SERVER_RETURN_CODE_PASSWORD_MAX_ATTEMPTS_EXCEEDED,
 					current_attempt, max_attempt, expire_time);
@@ -1282,7 +1283,7 @@ int process_chk_pwd_request(int sockfd)
 		if(retval == SECURITY_SERVER_ERROR_PASSWORD_EXPIRED)
 		{
 			SEC_SVR_DBG("%s", "Server: Password expired");
-			retval = send_pwd_response(sockfd, 
+			retval = send_pwd_response(sockfd,
 					SECURITY_SERVER_MSG_TYPE_CHK_PWD_RESPONSE,
 					SECURITY_SERVER_RETURN_CODE_PASSWORD_EXPIRED,
 					current_attempt, max_attempt, 0);
@@ -1295,7 +1296,7 @@ int process_chk_pwd_request(int sockfd)
 		if(retval != SECURITY_SERVER_SUCCESS)
 		{
 			SEC_SVR_DBG("Server ERROR: Password check failed: %d", retval);
-			retval = send_generic_response(sockfd, 
+			retval = send_generic_response(sockfd,
 					SECURITY_SERVER_MSG_TYPE_CHK_PWD_RESPONSE,
 					SECURITY_SERVER_RETURN_CODE_SERVER_ERROR);
 			if(retval != SECURITY_SERVER_SUCCESS)
@@ -1307,7 +1308,7 @@ int process_chk_pwd_request(int sockfd)
 
 		/* Password matched */
 		SEC_SVR_DBG("%s", "Server: Password matched");
-		retval = send_pwd_response(sockfd, 
+		retval = send_pwd_response(sockfd,
 				SECURITY_SERVER_MSG_TYPE_CHK_PWD_RESPONSE,
 				SECURITY_SERVER_RETURN_CODE_SUCCESS,
 				current_attempt, max_attempt, expire_time);
@@ -1320,9 +1321,9 @@ int process_chk_pwd_request(int sockfd)
 	}
 
 	/* There is no password */
-	
+
 	SEC_SVR_DBG("%s", "Server: There is no password to be checked");
-	retval = send_generic_response(sockfd, 
+	retval = send_generic_response(sockfd,
 			SECURITY_SERVER_MSG_TYPE_CHK_PWD_RESPONSE,
 			SECURITY_SERVER_RETURN_CODE_NO_PASSWORD);
 	if(retval != SECURITY_SERVER_SUCCESS)
@@ -1344,7 +1345,7 @@ int process_set_pwd_history_request(int sockfd)
 	f(retval != SECURITY_SERVER_SUCCESS)
 	{
 		SEC_SVR_DBG("%s", "Client Authentication Failed");
-		retval = send_generic_response(client_sockfd, 
+		retval = send_generic_response(client_sockfd,
 				SECURITY_SERVER_MSG_TYPE_TOOL_RESPONSE,
 				SECURITY_SERVER_RETURN_CODE_AUTHENTICATION_FAILED);
 		if(retval != SECURITY_SERVER_SUCCESS)
@@ -1361,7 +1362,7 @@ int process_set_pwd_history_request(int sockfd)
 	if(retval != SECURITY_SERVER_SUCCESS)
 	{
 		SEC_SVR_DBG("%s", "Server: Retry timeout occurred");
-		retval = send_generic_response(sockfd, 
+		retval = send_generic_response(sockfd,
 				SECURITY_SERVER_MSG_TYPE_SET_PWD_HISTORY_RESPONSE,
 				SECURITY_SERVER_RETURN_CODE_PASSWORD_RETRY_TIMER);
 		if(retval != SECURITY_SERVER_SUCCESS)
@@ -1376,7 +1377,7 @@ int process_set_pwd_history_request(int sockfd)
 	if(retval < sizeof(char) || history_num > SECURITY_SERVER_MAX_PASSWORD_HISTORY || history_num < 0 )
 	{
 		SEC_SVR_DBG("Server Error: History number recieve failed: %d, %d", retval, history_num);
-		retval = send_generic_response(sockfd, 
+		retval = send_generic_response(sockfd,
 				SECURITY_SERVER_MSG_TYPE_SET_PWD_HISTORY_RESPONSE,
 				SECURITY_SERVER_RETURN_CODE_BAD_REQUEST);
 		if(retval != SECURITY_SERVER_SUCCESS)
@@ -1390,7 +1391,7 @@ int process_set_pwd_history_request(int sockfd)
 	if(retval != SECURITY_SERVER_SUCCESS)
 	{
 		SEC_SVR_DBG("Server Error: History number set failed: %d", retval);
-		retval = send_generic_response(sockfd, 
+		retval = send_generic_response(sockfd,
 				SECURITY_SERVER_MSG_TYPE_SET_PWD_HISTORY_RESPONSE,
 				SECURITY_SERVER_RETURN_CODE_SERVER_ERROR);
 		if(retval != SECURITY_SERVER_SUCCESS)
@@ -1399,7 +1400,7 @@ int process_set_pwd_history_request(int sockfd)
 		}
 	}
 	SEC_SVR_DBG("Server History has been set to %d", history_num);
-	retval = send_generic_response(sockfd, 
+	retval = send_generic_response(sockfd,
 			SECURITY_SERVER_MSG_TYPE_SET_PWD_HISTORY_RESPONSE,
 			SECURITY_SERVER_RETURN_CODE_SUCCESS);
 	if(retval != SECURITY_SERVER_SUCCESS)
@@ -1408,4 +1409,171 @@ int process_set_pwd_history_request(int sockfd)
 	}
 error:
 	return retval;
+}
+
+
+int process_set_pwd_max_challenge_request(int sockfd)
+{
+    unsigned int max_challenge, current_challenge, current_validity;
+    unsigned char cur_pwd[SECURITY_SERVER_HASHED_PWD_LEN];
+    int retval;
+
+    // TODO here we should probably check if the peer has rights to change
+    // this value (max challenge) for current password
+
+    retval = read(sockfd, &max_challenge, sizeof(unsigned int));
+    if(retval < sizeof(unsigned int))
+    {
+        SEC_SVR_DBG("Server Error: recieve failed: %d", retval);
+        retval = send_generic_response(sockfd,
+                SECURITY_SERVER_MSG_TYPE_SET_PWD_MAX_CHALLENGE_RESPONSE,
+                SECURITY_SERVER_RETURN_CODE_BAD_REQUEST);
+        if(retval != SECURITY_SERVER_SUCCESS)
+        {
+            SEC_SVR_DBG("Server ERROR: Cannot send generic response: %d", retval);
+        }
+        goto error;
+    }
+
+    SEC_SVR_DBG("Server max challenge request: %d", max_challenge);
+
+    // Getting currently set password
+    retval = load_password(cur_pwd, &current_challenge, &current_validity);
+    /* If we cannot load password file */
+    if(retval == SECURITY_SERVER_ERROR_NO_PASSWORD)
+    {
+        SEC_SVR_DBG("%s", "Server: can't read current password");
+        retval = send_generic_response(sockfd,
+                SECURITY_SERVER_MSG_TYPE_SET_PWD_MAX_CHALLENGE_RESPONSE,
+                SECURITY_SERVER_RETURN_CODE_NO_PASSWORD);
+        if(retval != SECURITY_SERVER_SUCCESS)
+        {
+            SEC_SVR_DBG("Server ERROR: Cannot send generic response: %d", retval);
+        }
+        goto error;
+    }
+    else if(retval != SECURITY_SERVER_SUCCESS)
+    {
+        SEC_SVR_DBG("%s", "Server: can't read current password");
+        retval = send_generic_response(sockfd,
+                SECURITY_SERVER_MSG_TYPE_SET_PWD_MAX_CHALLENGE_RESPONSE,
+                SECURITY_SERVER_RETURN_CODE_SERVER_ERROR);
+        if(retval != SECURITY_SERVER_SUCCESS)
+        {
+            SEC_SVR_DBG("Server ERROR: Cannot send generic response: %d", retval);
+        }
+        goto error;
+    }
+
+    // Set 'new' password file with old password and new max challenge
+    retval = set_password(cur_pwd, max_challenge, time(NULL) + current_validity);
+    if(retval != SECURITY_SERVER_SUCCESS)
+    {
+        SEC_SVR_DBG("Server Error: Password set failed: %d", retval);
+        retval = send_generic_response(sockfd,
+                SECURITY_SERVER_MSG_TYPE_SET_PWD_MAX_CHALLENGE_RESPONSE,
+                SECURITY_SERVER_RETURN_CODE_SERVER_ERROR);
+        if(retval != SECURITY_SERVER_SUCCESS)
+        {
+            SEC_SVR_DBG("Server ERROR: Cannot send generic response: %d", retval);
+        }
+        goto error;
+    }
+
+    retval = send_generic_response(sockfd,
+            SECURITY_SERVER_MSG_TYPE_SET_PWD_MAX_CHALLENGE_RESPONSE,
+            SECURITY_SERVER_RETURN_CODE_SUCCESS);
+    if(retval != SECURITY_SERVER_SUCCESS)
+    {
+        SEC_SVR_DBG("Server ERROR: Cannot send generic response: %d", retval);
+    }
+    retval = reset_attempt();
+error:
+    return retval;
+}
+
+int process_set_pwd_validity_request(int sockfd)
+{
+    unsigned int current_challenge, current_validity, validity;
+    unsigned char cur_pwd[SECURITY_SERVER_HASHED_PWD_LEN];
+    int retval;
+
+    // TODO here we should probably check if the peer has rights to change
+    // this value (validity) for current password
+
+    retval = read(sockfd, &validity, sizeof(unsigned int));
+    if(retval < sizeof(unsigned int))
+    {
+        SEC_SVR_DBG("Server Error: recieve failed: %d", retval);
+        retval = send_generic_response(sockfd,
+                SECURITY_SERVER_MSG_TYPE_SET_PWD_VALIDITY_RESPONSE,
+                SECURITY_SERVER_RETURN_CODE_BAD_REQUEST);
+        if(retval != SECURITY_SERVER_SUCCESS)
+        {
+            SEC_SVR_DBG("Server ERROR: Cannot send generic response: %d", retval);
+        }
+        goto error;
+    }
+
+    SEC_SVR_DBG("Server validity request: %d", validity);
+
+    // Calculating validity in seconds
+    if(validity == 0)
+        validity = 0;
+    else
+        validity = time(NULL) + (validity * 86400);
+
+    // Getting currently set password
+    retval = load_password(cur_pwd, &current_challenge, &current_validity);
+    /* If we cannot load password file */
+    if(retval == SECURITY_SERVER_ERROR_NO_PASSWORD)
+    {
+        SEC_SVR_DBG("%s", "Server: can't read current password");
+        retval = send_generic_response(sockfd,
+                SECURITY_SERVER_MSG_TYPE_SET_PWD_VALIDITY_RESPONSE,
+                SECURITY_SERVER_RETURN_CODE_NO_PASSWORD);
+        if(retval != SECURITY_SERVER_SUCCESS)
+        {
+            SEC_SVR_DBG("Server ERROR: Cannot send generic response: %d", retval);
+        }
+        goto error;
+    }
+    else if(retval != SECURITY_SERVER_SUCCESS)
+    {
+        SEC_SVR_DBG("%s", "Server: can't read current password");
+        retval = send_generic_response(sockfd,
+                SECURITY_SERVER_MSG_TYPE_SET_PWD_VALIDITY_RESPONSE,
+                SECURITY_SERVER_RETURN_CODE_SERVER_ERROR);
+        if(retval != SECURITY_SERVER_SUCCESS)
+        {
+            SEC_SVR_DBG("Server ERROR: Cannot send generic response: %d", retval);
+        }
+        goto error;
+    }
+
+    // Set 'new' password file with old password and new validity
+    retval = set_password(cur_pwd, current_challenge, validity);
+    if(retval != SECURITY_SERVER_SUCCESS)
+    {
+        SEC_SVR_DBG("Server Error: Password set failed: %d", retval);
+        retval = send_generic_response(sockfd,
+                SECURITY_SERVER_MSG_TYPE_SET_PWD_VALIDITY_RESPONSE,
+                SECURITY_SERVER_RETURN_CODE_SERVER_ERROR);
+        if(retval != SECURITY_SERVER_SUCCESS)
+        {
+            SEC_SVR_DBG("Server ERROR: Cannot send generic response: %d", retval);
+        }
+        goto error;
+    }
+
+    retval = send_generic_response(sockfd,
+            SECURITY_SERVER_MSG_TYPE_SET_PWD_VALIDITY_RESPONSE,
+            SECURITY_SERVER_RETURN_CODE_SUCCESS);
+    if(retval != SECURITY_SERVER_SUCCESS)
+    {
+        SEC_SVR_DBG("Server ERROR: Cannot send generic response: %d", retval);
+    }
+    retval = reset_attempt();
+error:
+    return retval;
 }

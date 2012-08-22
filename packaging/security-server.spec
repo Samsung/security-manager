@@ -1,14 +1,16 @@
+#sbs-git:slp/pkgs/s/security-server security-server 0.0.1 41964751bdbad7b215eea8f7ca955aa365348e4a
 Name:       security-server
 Summary:    Security server
-Version: 0.0.1
-Release:    37
+Version:    0.0.36
+Release:    1
 Group:      TO_BE/FILLED_IN
-License:    Apache 2.0
+License:    Apache2.0
 Source0:    %{name}-%{version}.tar.gz
 BuildRequires:  cmake
 BuildRequires:  pkgconfig(dlog)
 BuildRequires:  pkgconfig(openssl)
 BuildRequires:  libattr-devel
+BuildRequires:  pkgconfig(libsmack)
 
 %description
 Security server package
@@ -49,12 +51,12 @@ rm -rf %{buildroot}
 %post
 mkdir -p /etc/rc.d/rc3.d
 mkdir -p /etc/rc.d/rc5.d
-ln -s /etc/rc.d/init.d/security-serverd /etc/rc.d/rc3.d/S25security-server
-ln -s /etc/rc.d/init.d/security-serverd /etc/rc.d/rc5.d/S25security-server
+ln -s /etc/rc.d/init.d/security-serverd /etc/rc.d/rc3.d/S10security-server
+ln -s /etc/rc.d/init.d/security-serverd /etc/rc.d/rc5.d/S10security-server
 
 %postun
-rm -f /etc/rc.d/rc3.d/S25security-server
-rm -f /etc/rc.d/rc5.d/S25security-server
+rm -f /etc/rc.d/rc3.d/S10security-server
+rm -f /etc/rc.d/rc5.d/S10security-server
 
 %post -n libsecurity-server-client -p /sbin/ldconfig
 

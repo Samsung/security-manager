@@ -1,7 +1,6 @@
 /*
  *  security-server
- *
- *  Copyright (c) 2012 Samsung Electronics Co., Ltd All Rights Reserved
+ *  Copyright (c) 2000 - 2011 Samsung Electronics Co., Ltd All Rights Reserved
  *
  *  Contact: Bumjin Im <bj.im@samsung.com>
  *
@@ -27,6 +26,7 @@
 #include <string.h>
 #include <sys/types.h>
 #include <fcntl.h>
+#include <sys/smack.h>
 
 #include "security-server-cookie.h"
 
@@ -38,6 +38,8 @@ int free_cookie_item(cookie_list *cookie)
 		free(cookie->path);
 	if(cookie->permissions != NULL)
 		free(cookie->permissions);
+        if(cookie->smack_label != NULL)
+                free(cookie->smack_label);
 	if(cookie->prev != NULL)
 		cookie->prev->next = cookie->next;
 	if(cookie->next != NULL)
@@ -261,6 +263,45 @@ finish:
 	return retval;
 }
 
+
+cookie_list *search_cookie_new(const cookie_list *c_list,
+                               const unsigned char *cookie,
+                               const char *object,
+                               const char *access_rights)
+{
+	cookie_list *current = (cookie_list *)c_list, *retval = NULL;
+        int ret;
+	int i;
+
+	/* Search from the list */
+	while(current != NULL)
+	{
+		/* print_cookie(current);*/
+		/* PID must be same */
+		current = garbage_collection(current);
+		if(current == NULL)
+			break;
+
+		if(memcmp(current->cookie, cookie, SECURITY_SERVER_COOKIE_LEN) == 0)
+		{
+			SEC_SVR_DBG("%s", "cookie has been found");
+
+                                ret = smack_have_access(current->smack_label, object, access_rights);
+          SEC_SVR_DBG("smack_have_access, subject >%s< object >%s< access >%s< ===> %d",
+                    current->smack_label, object, access_rights, ret);
+                                if (ret == 1)
+                                {
+                                        retval = current;
+                                        goto finish;
+                                }
+		}
+		current = current->next;
+	}
+finish:
+	return retval;
+}
+
+
 /* Generage a random stream value of size to cookie *
  * by reading /dev/uranddom file */
 int generate_random_cookie(unsigned char *cookie, int size)
@@ -289,7 +330,7 @@ error:
 }
 
 /* Create a cookie item from PID */
-cookie_list *create_cookie_item(int pid, cookie_list *c_list)
+cookie_list *create_cookie_item(int pid, int sockfd, cookie_list *c_list)
 {
 	int ret, tempint;
 	cookie_list *added = NULL, *current = NULL;
@@ -297,6 +338,7 @@ cookie_list *create_cookie_item(int pid, cookie_list *c_list)
 	char *buf = NULL, inputed, *tempptr = NULL;
 	char delim[] = ": ", *token = NULL;
 	int *permissions = NULL, perm_num = 1, cnt, i, *tempperm = NULL;
+        char *smack_label = NULL;
 	FILE *fp = NULL;
 
 	current = search_existing_cookie(pid, c_list);
@@ -442,6 +484,16 @@ out_of_while:
 		goto error;
 	}
 
+        /* Check SMACK label */
+        ret = smack_new_label_from_socket(sockfd, &smack_label);
+        if (ret != 0)
+	{
+		SEC_SVR_DBG("Error checking peer label: %d", ret);
+		free(added);
+		added = NULL;
+		goto error;
+	}
+
 	added->path_len = strlen(cmdline);
 	added->path = calloc(1, strlen(cmdline));
 	memcpy(added->path, cmdline, strlen(cmdline));
@@ -449,6 +501,7 @@ out_of_while:
 	added->permission_len = perm_num;
 	added->pid = pid;
 	added->permissions = permissions;
+	added->smack_label = smack_label;
 	added->prev = current;
 	current->next = added;
 	added->next = NULL;
@@ -551,6 +604,7 @@ cookie_list *create_default_cookie(void)
 	first->pid = 0;
 	first->path = NULL;
 	first->permissions = NULL;
+        first->smack_label = NULL;
 	first->prev = NULL;
 	first->next = NULL;
 	return first;

@@ -1,21 +1,8 @@
 /*
- *  security-server
+ * security server
  *
- *  Copyright (c) 2012 Samsung Electronics Co., Ltd All Rights Reserved
- *
- *  Contact: Bumjin Im <bj.im@samsung.com>
- *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License
+ * Copyright (c) 2000 - 2010 Samsung Electronics Co., Ltd.
+ * Contact: Bumjin Im <bj.im@samsung.com>
  *
  */
 
@@ -57,7 +44,7 @@ void printhex(unsigned char *data, int size)
 
 int dir_filter(const struct dirent *entry)
 {
-	if ((strcmp(entry->d_name, ".") == 0) || 
+	if ((strcmp(entry->d_name, ".") == 0) ||
 		(strcmp(entry->d_name, "..") == 0) ||
 		(strcmp(entry->d_name, "attempts") ==0) ||
 		(strcmp(entry->d_name, "history") ==0) )
@@ -102,6 +89,40 @@ int main(int argc, char *argv[])
 		printf("To run the TC as non root user, please remove password files (/opt/data/security-server/*) in root shell\n");
 		printf("If not, you will see some TC failures\n");
 	}
+
+	printf("TC P1.1: security_server_set_pwd_validity(): There is no password yet\n");
+	ret = security_server_set_pwd_validity(10);
+	if(ret != SECURITY_SERVER_API_ERROR_NO_PASSWORD)
+    {
+        printf("TC P1.1 failed. %d\n", ret);
+        exit(1);
+    }
+	ret = security_server_set_pwd_validity(11);
+    if(ret != SECURITY_SERVER_API_ERROR_NO_PASSWORD)
+    {
+        printf("TC P1.1 failed. %d\n", ret);
+        exit(1);
+    }
+
+    printf("TC P1.1: PASSED\n\n");
+    sleep(1);
+
+    printf("TC P1.2: security_server_set_pwd_max_challenge(): There is no password yet\n");
+	ret = security_server_set_pwd_max_challenge(5);
+    if(ret != SECURITY_SERVER_API_ERROR_NO_PASSWORD)
+    {
+        printf("TC P1.2 failed. %d\n", ret);
+        exit(1);
+    }
+	ret = security_server_set_pwd_max_challenge(6);
+    if(ret != SECURITY_SERVER_API_ERROR_NO_PASSWORD)
+    {
+        printf("TC P1.2 failed. %d\n", ret);
+        exit(1);
+    }
+
+    printf("TC P1.2: PASSED\n\n");
+    sleep(1);
 
 	printf("TC P2: security_server_chk_pwd(): Too long password case\n");
 	ret = security_server_chk_pwd("abcdefghijklmnopqrstuvwxyz0123456", &attempt, &max_attempt, &expire_sec); /* 33 chars */
@@ -181,6 +202,68 @@ int main(int argc, char *argv[])
 	printf("TC P7: PASSED\n\n");
 	sleep(1);
 
+
+	printf("TC P7.1: security_server_set_pwd_validity(): Normal case when there is a password\n");
+    ret = security_server_set_pwd_validity(1);
+    if(ret != SECURITY_SERVER_API_SUCCESS)
+    {
+        printf("TC P7.1 failed. %d\n", ret);
+        exit(1);
+    }
+
+    ret = security_server_set_pwd_validity(2);
+    if(ret != SECURITY_SERVER_API_SUCCESS)
+    {
+        printf("TC P7.1 failed. %d\n", ret);
+        exit(1);
+    }
+
+    ret = security_server_is_pwd_valid(&attempt, &max_attempt, &expire_sec);
+    if(ret != SECURITY_SERVER_API_ERROR_PASSWORD_EXIST)
+    {
+        printf("TC P7.1 failed. %d\n", ret);
+        exit(1);
+    }
+    if (expire_sec < 172798 || expire_sec > 172800) // About 2 days in seconds +-1 second
+    {
+        printf("TC P7.1 failed. Invalid expiration time in seconds: %d", expire_sec);
+        exit(1);
+    }
+
+    printf("TC P7.1: PASSED\n\n");
+    sleep(1);
+
+
+    printf("TC P7.2: security_server_set_pwd_max_challenge(): Normal case when there is a password\n");
+    ret = security_server_set_pwd_max_challenge(5);
+    if(ret != SECURITY_SERVER_API_SUCCESS)
+    {
+        printf("TC P7.2 failed. %d\n", ret);
+        exit(1);
+    }
+
+
+    ret = security_server_set_pwd_max_challenge(6);
+    if(ret != SECURITY_SERVER_API_SUCCESS)
+    {
+        printf("TC P7.2 failed. %d\n", ret);
+        exit(1);
+    }
+    ret = security_server_is_pwd_valid(&attempt, &max_attempt, &expire_sec);
+    if(ret != SECURITY_SERVER_API_ERROR_PASSWORD_EXIST)
+    {
+        printf("TC P7.1 failed. %d\n", ret);
+        exit(1);
+    }
+    if (6 != max_attempt)
+    {
+        printf("TC P7.2 failed. Invalid max_attempt: %d", max_attempt);
+        exit(1);
+    }
+
+    printf("TC P7.2: PASSED\n\n");
+    sleep(1);
+
 	printf("TC P8: security_server_chk_pwd(): normal(correct pwd) case\n");
 	ret = security_server_chk_pwd(argv[1], &attempt, &max_attempt, &expire_sec);
 	if(ret != SECURITY_SERVER_API_SUCCESS)
@@ -200,7 +283,7 @@ int main(int argc, char *argv[])
 	}
 	printf("TC P9: PASSED\n\n");
 	sleep(1);
-	
+
 	printf("TC P10: security_server_chk_pwd(): incorrect pwd case\n");
 	(argv[1])[0]++;
 	ret = security_server_chk_pwd(argv[1], &attempt, &max_attempt, &expire_sec);
@@ -278,7 +361,7 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 	printf("TC P13: PASSED\n\n");
-	sleep(1);	
+	sleep(1);
 
 	printf("TC P14: security_server_chk_pwd(): attempt exceeding case\n");
 	for(i=0;i<10;i++)
@@ -305,7 +388,7 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 	printf("TC P14: PASSED\n\n");
-	sleep(1);	
+	sleep(1);
 
 	printf("TC P15: security_server_reset_pwd(): Reset current password\n");
 	ret = security_server_reset_pwd(argv[1],0, 0);
@@ -315,7 +398,7 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 	printf("TC P15: PASSED\n\n");
-	sleep(1);	
+	sleep(1);
 
 	printf("TC P16: security_server_set_pwd(): Check expiration \n");
 	ret = security_server_set_pwd(argv[1], argv[2], 10, 1);
@@ -337,7 +420,7 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 	printf("TC P16: PASSED\n\n");
-	sleep(1);	
+	sleep(1);
 
 	printf("TC P17: security_server_chk_pwd(): Check expiration sec decreasing\n");
 	ret = security_server_is_pwd_valid(&attempt, &max_attempt, &expire_sec);
@@ -367,7 +450,7 @@ int main(int argc, char *argv[])
 		sleep(1);
 	}
 	printf("\nTC P17: PASSED\n\n");
-	
+
 	printf("TC P18: security_server_chk_pwd(): Check expiration with system time change\n");
 	ret = gettimeofday(&cur_time, NULL);
 	if(ret < 0)
@@ -518,7 +601,7 @@ int main(int argc, char *argv[])
 	}
 	printf("TC P23: security_server_chk_pwd(): incorrect with replay attack\n");
 	ret = security_server_chk_pwd("quickquickquick", &attempt, &max_attempt, &expire_sec);
-	do 
+	do
 	{
 		i =  i + 100000;
 		ret = security_server_chk_pwd("quickquickquick", &attempt, &max_attempt, &expire_sec);
@@ -535,6 +618,50 @@ int main(int argc, char *argv[])
 	printf("Last interval was %d.%06d sec.\n", (i /1000000), (i % 1000000) );
 	printf("TC P23: PASSED\n\n");
 
+	printf("TC P24: security_server_chk_pwd(): wrong challenge on expired password\n");
+	sleep(2);
+	ret = security_server_set_pwd("history60", "newpwd23", 4, 1);
+    if(ret != SECURITY_SERVER_API_SUCCESS)
+    {
+        printf("TC P24 failed[1]. %d\n", ret);
+        exit(1);
+    }
+    sleep(2);
+	ret = security_server_chk_pwd("newpwd23", &attempt, &max_attempt, &expire_sec);
+    if(ret != SECURITY_SERVER_API_SUCCESS)
+    {
+        printf("TC P24 failed[2]. %d\n", ret);
+        exit(1);
+    }
+
+	ret = gettimeofday(&cur_time, NULL);
+    if(ret < 0)
+    {
+        printf("TC P24 failed[3]. %d\n", ret);
+        exit(1);
+    }
+    cur_time.tv_sec += (expire_sec + 1);
+    ret = settimeofday(&cur_time, NULL);
+    if(ret < 0)
+    {
+        printf("TC P24 failed[4]. %d\n", ret);
+        exit(1);
+    }
+    sleep(2);
+    ret = security_server_chk_pwd("newpwd23", &attempt, &max_attempt, &expire_sec);
+    if(ret != SECURITY_SERVER_API_ERROR_PASSWORD_EXPIRED)
+    {
+        printf("TC P24 failed[5]. %d\n", ret);
+        exit(1);
+    }
+    sleep(2);
+    ret = security_server_chk_pwd("newpwd23_invalid", &attempt, &max_attempt, &expire_sec);
+    if(ret != SECURITY_SERVER_API_ERROR_PASSWORD_MISMATCH)
+    {
+        printf("TC P24 failed[6]. %d\n", ret);
+        exit(1);
+    }
+    printf("TC P24: PASSED\n\n");
 	return 0;
 }
 

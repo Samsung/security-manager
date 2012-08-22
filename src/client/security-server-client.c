@@ -1,7 +1,7 @@
 /*
- *  security-server
+ * security-server
  *
- *  Copyright (c) 2012 Samsung Electronics Co., Ltd All Rights Reserved
+ *  Copyright (c) 2000 - 2011 Samsung Electronics Co., Ltd All Rights Reserved
  *
  *  Contact: Bumjin Im <bj.im@samsung.com>
  *
@@ -26,6 +26,7 @@
 #include <errno.h>
 #include <unistd.h>
 #include <string.h>
+#include <sys/smack.h>
 
 #include "security-server.h"
 #include "security-server-common.h"
@@ -71,7 +72,7 @@ char *read_cmdline_from_proc(pid_t pid)
 		readlink(path, cmdline, memsize);	/* FlawFinder: ignore */
 SEC_SVR_DBG("pid: %d, cmdline: %s", pid, cmdline);
 
-		/* Check it's truncated */		
+		/* Check it's truncated */
 		if(cmdline[memsize -1] != 0)
 		{
 			cmdline = (char *)realloc(cmdline, sizeof(char) * (memsize + 32));
@@ -79,7 +80,7 @@ SEC_SVR_DBG("pid: %d, cmdline: %s", pid, cmdline);
 			if(cmdline == NULL)
 			{
 				SEC_SVR_DBG("%s", "Out of memory");
-				goto error;		
+				goto error;
 			}
 		}
 		else
@@ -376,7 +377,101 @@ error:
 }
 
 
+	SECURITY_SERVER_API
+int security_server_check_privilege_by_cookie(const char *cookie,
+                                              const char *object,
+                                              const char *access_rights)
+{
+	int sockfd = -1, retval;
+        int olen, alen;
+	response_header hdr;
 
+	if(cookie == NULL || object == NULL || access_rights == NULL)
+	{
+		retval = SECURITY_SERVER_ERROR_INPUT_PARAM;
+		goto error;
+	}
+
+        olen = strlen(object);
+        alen = strlen(access_rights);
+
+        if (olen > MAX_OBJECT_LABEL_LEN || alen > MAX_MODE_STR_LEN)
+	{
+		retval = SECURITY_SERVER_ERROR_INPUT_PARAM;
+		goto error;
+	}
+
+	retval = connect_to_server(&sockfd);
+	if(retval != SECURITY_SERVER_SUCCESS)
+	{
+		/* Error on socket */
+		goto error;
+	}
+
+	/* make request packet */
+        retval = send_privilege_check_new_request(
+                     sockfd, cookie, object, access_rights);
+	if(retval != SECURITY_SERVER_SUCCESS)
+	{
+		/* Error on socket */
+		SEC_SVR_DBG("Send failed: %d", retval);
+		goto error;
+	}
+
+	retval = recv_privilege_check_new_response(sockfd, &hdr);
+
+	retval = return_code_to_error_code(hdr.return_code);
+	if(hdr.basic_hdr.msg_id != SECURITY_SERVER_MSG_TYPE_CHECK_PRIVILEGE_NEW_RESPONSE)
+        /* Wrong response */
+	{
+		if(hdr.basic_hdr.msg_id == SECURITY_SERVER_MSG_TYPE_GENERIC_RESPONSE)
+		{
+			/* There must be some error */
+			SEC_SVR_DBG("Client: Error has been received. return code:%d",
+                                    hdr.return_code);
+		}
+		else
+		{
+			/* Something wrong with response */
+			SEC_SVR_DBG("Client ERROR: Unexpected error occurred:%d", retval);
+			retval = SECURITY_SERVER_ERROR_BAD_RESPONSE;
+		}
+		goto error;
+	}
+
+error:
+	if(sockfd >= 0)
+		close(sockfd);
+
+	retval = convert_to_public_error_code(retval);
+	return retval;
+}
+
+	SECURITY_SERVER_API
+int security_server_check_privilege_by_sockfd(int sockfd,
+                                              const char *object,
+                                              const char *access_rights)
+{
+    char *subject;
+    int ret;
+    ret = smack_new_label_from_socket(sockfd, &subject);
+    if (ret != 0)
+    {
+        return SECURITY_SERVER_API_ERROR_SERVER_ERROR;
+    }
+    ret = smack_have_access(subject, object, access_rights);
+    SEC_SVR_DBG("check by sockfd, subject >%s< object >%s< rights >%s< ====> %d",
+                subject, object, access_rights, ret);
+    free(subject);
+    if (ret == 1)
+    {
+        return SECURITY_SERVER_API_SUCCESS;
+    }
+    else
+    {
+        return SECURITY_SERVER_API_ERROR_ACCESS_DENIED;
+    }
+}
 
 
 	SECURITY_SERVER_API
@@ -527,8 +622,8 @@ error:
 
 
 	SECURITY_SERVER_API
-int security_server_is_pwd_valid(unsigned int *current_attempts, 
-	unsigned int *max_attempts, 
+int security_server_is_pwd_valid(unsigned int *current_attempts,
+	unsigned int *max_attempts,
 	unsigned int *valid_secs)
 {
 	int sockfd = -1, retval = SECURITY_SERVER_ERROR_UNKNOWN;
@@ -590,8 +685,8 @@ error:
 
 	SECURITY_SERVER_API
 int security_server_set_pwd(const char *cur_pwd,
-			const char *new_pwd, 
-			const unsigned int max_challenge, 
+			const char *new_pwd,
+			const unsigned int max_challenge,
 			const unsigned int valid_period_in_days)
 {
 	int sockfd = -1, retval;
@@ -650,10 +745,107 @@ error:
 }
 
 
+	SECURITY_SERVER_API
+int security_server_set_pwd_validity(const unsigned int valid_period_in_days)
+{
+    int sockfd = -1, retval;
+    response_header hdr;
+
+    retval = connect_to_server(&sockfd);
+    if(retval != SECURITY_SERVER_SUCCESS)
+    {
+        /* Error on socket */
+        goto error;
+    }
+
+    /* make request packet */
+    retval = send_set_pwd_validity_request(sockfd, valid_period_in_days);
+    if(retval != SECURITY_SERVER_SUCCESS)
+    {
+        /* Error on socket */
+        SEC_SVR_DBG("Client: Send failed: %d", retval);
+        goto error;
+    }
+
+    retval = recv_generic_response(sockfd, &hdr);
+
+    retval = return_code_to_error_code(hdr.return_code);
+    if(hdr.basic_hdr.msg_id != SECURITY_SERVER_MSG_TYPE_SET_PWD_VALIDITY_RESPONSE)   /* Wrong response */
+    {
+        if(hdr.basic_hdr.msg_id == SECURITY_SERVER_MSG_TYPE_GENERIC_RESPONSE)
+        {
+            /* There must be some error */
+            SEC_SVR_DBG("Client: Error has been received. return code:%d", hdr.return_code);
+        }
+        else
+        {
+            /* Something wrong with response */
+            SEC_SVR_DBG("Client ERROR: Unexpected error occurred:%d", retval);
+            retval = SECURITY_SERVER_ERROR_BAD_RESPONSE;
+        }
+        goto error;
+    }
+error:
+    if(sockfd > 0)
+        close(sockfd);
+
+    retval = convert_to_public_error_code(retval);
+    return retval;
+}
+
+	SECURITY_SERVER_API
+int security_server_set_pwd_max_challenge(const unsigned int max_challenge)
+{
+    int sockfd = -1, retval;
+    response_header hdr;
+
+    retval = connect_to_server(&sockfd);
+    if(retval != SECURITY_SERVER_SUCCESS)
+    {
+        /* Error on socket */
+        goto error;
+    }
+
+    /* make request packet */
+    retval = send_set_pwd_max_challenge_request(sockfd, max_challenge);
+    if(retval != SECURITY_SERVER_SUCCESS)
+    {
+        /* Error on socket */
+        SEC_SVR_DBG("Client: Send failed: %d", retval);
+        goto error;
+    }
+
+    retval = recv_generic_response(sockfd, &hdr);
+
+    retval = return_code_to_error_code(hdr.return_code);
+    if(hdr.basic_hdr.msg_id != SECURITY_SERVER_MSG_TYPE_SET_PWD_MAX_CHALLENGE_RESPONSE)   /* Wrong response */
+    {
+        if(hdr.basic_hdr.msg_id == SECURITY_SERVER_MSG_TYPE_GENERIC_RESPONSE)
+        {
+            /* There must be some error */
+            SEC_SVR_DBG("Client: Error has been received. return code:%d", hdr.return_code);
+        }
+        else
+        {
+            /* Something wrong with response */
+            SEC_SVR_DBG("Client ERROR: Unexpected error occurred:%d", retval);
+            retval = SECURITY_SERVER_ERROR_BAD_RESPONSE;
+        }
+        goto error;
+    }
+error:
+    if(sockfd > 0)
+        close(sockfd);
+
+    retval = convert_to_public_error_code(retval);
+    return retval;
+}
+
+
 
 	SECURITY_SERVER_API
 int security_server_reset_pwd(const char *new_pwd,
-			const unsigned int max_challenge, 
+			const unsigned int max_challenge,
 			const unsigned int valid_period_in_days)
 {
 	int sockfd = -1, retval;
@@ -714,7 +906,7 @@ error:
 
 
 	SECURITY_SERVER_API
-int security_server_chk_pwd(const char *challenge, 
+int security_server_chk_pwd(const char *challenge,
 	unsigned int *current_attempt,
 	unsigned int *max_attempts,
 	unsigned int *valid_secs)

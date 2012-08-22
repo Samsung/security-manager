@@ -1,7 +1,7 @@
 /*
  *  security-server
  *
- *  Copyright (c) 2012 Samsung Electronics Co., Ltd All Rights Reserved
+ *  Copyright (c) 2000 - 2011 Samsung Electronics Co., Ltd All Rights Reserved
  *
  *  Contact: Bumjin Im <bj.im@samsung.com>
  *
@@ -58,6 +58,8 @@
 #define SECURITY_SERVER_DEFAULT_COOKIE_PATH		"/tmp/.security_server.coo"
 #define SECURITY_SERVER_DAEMON_PATH			"/usr/bin/security-server"
 #define SECURITY_SERVER_COOKIE_LEN			20
+#define MAX_OBJECT_LABEL_LEN                            32
+#define MAX_MODE_STR_LEN                                16
 #define SECURITY_SERVER_MIDDLEWARE_LIST_PATH		"/usr/share/security-server/mw-list"
 #define SECURITY_SERVER_MAX_OBJ_NAME			30
 #define SECURITY_SERVER_MAX_PATH_LEN			50
@@ -93,6 +95,7 @@ typedef struct _cookie_list
 	pid_t		pid;					/* Client process's PID */
 	char		*path;					/* Client process's cmd line string */
 	int		*permissions;				/* Array of GID that the client process has */
+        char            *smack_label;                           /* SMACK label of the client process */
 	struct _cookie_list	*prev;				/* Next cookie list */
 	struct _cookie_list	*next;				/* Previous cookie list */
 } cookie_list;

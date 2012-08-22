@@ -1,7 +1,7 @@
 /*
  *  security-server
  *
- *  Copyright (c) 2012 Samsung Electronics Co., Ltd All Rights Reserved
+ *  Copyright (c) 2000 - 2012 Samsung Electronics Co., Ltd All Rights Reserved
  *
  *  Contact: Bumjin Im <bj.im@samsung.com>
  *
@@ -59,6 +59,12 @@ typedef struct
 #define SECURITY_SERVER_MSG_TYPE_CHK_PWD_RESPONSE	0x14
 #define SECURITY_SERVER_MSG_TYPE_SET_PWD_HISTORY_REQUEST	0x15
 #define SECURITY_SERVER_MSG_TYPE_SET_PWD_HISTORY_RESPONSE	0x16
+#define SECURITY_SERVER_MSG_TYPE_CHECK_PRIVILEGE_NEW_REQUEST	0x17
+#define SECURITY_SERVER_MSG_TYPE_CHECK_PRIVILEGE_NEW_RESPONSE	0x18
+#define SECURITY_SERVER_MSG_TYPE_SET_PWD_MAX_CHALLENGE_REQUEST   0x19
+#define SECURITY_SERVER_MSG_TYPE_SET_PWD_MAX_CHALLENGE_RESPONSE  0x1a
+#define SECURITY_SERVER_MSG_TYPE_SET_PWD_VALIDITY_REQUEST    0x1b
+#define SECURITY_SERVER_MSG_TYPE_SET_PWD_VALIDITY_RESPONSE   0x1c
 #define SECURITY_SERVER_MSG_TYPE_GENERIC_RESPONSE	0xff
 
 /* Return code */
@@ -95,12 +101,21 @@ int send_cookie_request(int sock_fd);
 int send_gid_request(int sock_fd, const char* object);
 int send_object_name_request(int sock_fd, int gid);
 int send_privilege_check_request(int sock_fd, const char*cookie, int gid);
+int send_privilege_check_new_request(int sock_fd,
+                                     const char *cookie,
+                                     const char *object,
+                                     const char *access_rights);
 int recv_get_gid_response(int sockfd, response_header *hdr, int *gid);
 int recv_get_object_name(int sockfd, response_header *hdr, char *object, int max_object_size);
 int recv_cookie(int sockfd, response_header *hdr, char *cookie);
 int recv_privilege_check_response(int sockfd, response_header *hdr);
+int recv_privilege_check_new_response(int sockfd, response_header *hdr);
 int recv_hdr(int client_sockfd, basic_header *basic_hdr);
 int recv_check_privilege_request(int sockfd, unsigned char *requested_cookie, int *requested_privilege);
+int recv_check_privilege_new_request(int sockfd,
+                                     unsigned char *requested_cookie,
+                                     char *object_label,
+                                     char *access_rights);
 int send_pid_request(int sock_fd, const char*cookie);
 int recv_pid_response(int sockfd, response_header *hdr, int *pid);
 int recv_pid_request(int sockfd, unsigned char *requested_cookie);
@@ -108,10 +123,12 @@ int send_pid(int sockfd, int pid);
 int send_launch_tool_request(int sock_fd, int argc, const char **argv);
 int recv_generic_response(int sockfd, response_header *hdr);
 int recv_launch_tool_request(int sockfd, int argc, char *argv[]);
-int recv_pwd_response(int sockfd, response_header *hdr, unsigned int *current_attempts, 
+int recv_pwd_response(int sockfd, response_header *hdr, unsigned int *current_attempts,
 	unsigned int *max_attempts, unsigned int *valid_days);
-int send_set_pwd_request(int sock_fd, const char*cur_pwd, const char*new_pwd, 
+int send_set_pwd_request(int sock_fd, const char*cur_pwd, const char*new_pwd,
 	const unsigned int max_challenge, const unsigned int valid_period_in_days);
+int send_set_pwd_validity_request(int sock_fd, const unsigned int valid_period_in_days);
+int send_set_pwd_max_challenge_request(int sock_fd, const unsigned int max_challenge);
 int send_chk_pwd_request(int sock_fd, const char*challenge);
 int check_socket_poll(int sockfd, int event, int timeout);
 int free_argv(char **argv, int argc);

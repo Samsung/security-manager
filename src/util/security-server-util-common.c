@@ -1,7 +1,7 @@
 /*
  *  security-server
  *
- *  Copyright (c) 2012 Samsung Electronics Co., Ltd All Rights Reserved
+ *  Copyright (c) 2000 - 2011 Samsung Electronics Co., Ltd All Rights Reserved
  *
  *  Contact: Bumjin Im <bj.im@samsung.com>
  *
@@ -18,6 +18,7 @@
  *  limitations under the License
  *
  */
+
 
 #include <poll.h>
 #include <stdio.h>

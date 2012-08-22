@@ -1,7 +1,7 @@
 /*
- *  security-server
+ * security-server
  *
- *  Copyright (c) 2012 Samsung Electronics Co., Ltd All Rights Reserved
+ *  Copyright (c) 2000 - 2011 Samsung Electronics Co., Ltd All Rights Reserved
  *
  *  Contact: Bumjin Im <bj.im@samsung.com>
  *
@@ -174,7 +174,7 @@ int check_socket_poll(int sockfd, int event, int timeout)
 			return SECURITY_SERVER_ERROR_POLL;
 		else
 		{
-			/* Chile process has been closed. Not poll() problem. Call it once again */ 
+			/* Chile process has been closed. Not poll() problem. Call it once again */
 			return check_socket_poll(sockfd, event, timeout);
 		}
 	}
@@ -246,7 +246,7 @@ int create_new_socket(int *sockfd)
 	}
 
 	/* Make socket as non blocking */
-	if((flags = fcntl(localsockfd, F_GETFL, 0)) < 0 || 
+	if((flags = fcntl(localsockfd, F_GETFL, 0)) < 0 ||
 			fcntl(localsockfd, F_SETFL, flags | O_NONBLOCK) < 0)
 	{
 		retval = SECURITY_SERVER_ERROR_SOCKET;
@@ -258,7 +258,7 @@ int create_new_socket(int *sockfd)
 
 	bzero (&serveraddr, sizeof(serveraddr));
 	serveraddr.sun_family = AF_UNIX;
-	strncpy(serveraddr.sun_path, SECURITY_SERVER_SOCK_PATH, 
+	strncpy(serveraddr.sun_path, SECURITY_SERVER_SOCK_PATH,
 			strlen(SECURITY_SERVER_SOCK_PATH));
 	serveraddr.sun_path[strlen(SECURITY_SERVER_SOCK_PATH)] = 0;
 
@@ -271,7 +271,7 @@ int create_new_socket(int *sockfd)
 		localsockfd = -1;
 		goto error;
 	}
-	
+
 
 	/* Change permission to accept all processes that has different uID/gID */
 	sock_mode = (S_IRWXU | S_IRWXG | S_IRWXO);
@@ -360,7 +360,7 @@ int connect_to_server(int *fd)
 	}
 
 	/* Make socket as non blocking */
-	if((flags = fcntl(localsockfd, F_GETFL, 0)) < 0 || 
+	if((flags = fcntl(localsockfd, F_GETFL, 0)) < 0 ||
 			fcntl(localsockfd, F_SETFL, flags | O_NONBLOCK) < 0)
 	{
 		close(localsockfd);
@@ -446,8 +446,8 @@ int accept_client(int server_sockfd)
 		return SECURITY_SERVER_ERROR_TIMEOUT;
 	}
 
-	localsockfd = accept(server_sockfd, 
-			(struct sockaddr *)&clientaddr, 
+	localsockfd = accept(server_sockfd,
+			(struct sockaddr *)&clientaddr,
 			&client_len);
 
 	if(localsockfd < 0)
@@ -468,10 +468,10 @@ int validate_header(basic_header hdr)
 }
 
 /* Send generic response packet to client
- * 
- * Generic Response Packet Format 
+ *
+ * Generic Response Packet Format
  0                   1                   2                   3
- 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
 |---------------------------------------------------------------|
 | version=0x01  |  Message ID   |Message Length (without header)|
 |---------------------------------------------------------------|
@@ -511,10 +511,10 @@ int send_generic_response (int sockfd, unsigned char msgid, unsigned char return
 }
 
 /* Send cookie response to client
- * 
+ *
  * Get Cookie response packet format
  *  0                   1                   2                   3
- *  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 
+ *  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
  *  |---------------------------------------------------------------|
  *  | version=0x01  |MessageID=0x02 |       Message Length =20      |
  *  |---------------------------------------------------------------|
@@ -565,7 +565,7 @@ int send_cookie(int sockfd, unsigned char *cookie)
 /* Send Object name response *
  * Get Object name response packet format
  *  0                   1                   2                   3
- *  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 
+ *  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
  * |---------------------------------------------------------------|
  * | version=0x01  |MessageID=0x06 |       Message Length          |
  * |---------------------------------------------------------------|
@@ -613,10 +613,10 @@ int send_object_name(int sockfd, char *obj)
 }
 
 /* Send GID response to client
- * 
+ *
  * Get GID response packet format
  *  0                   1                   2                   3
- *  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 
+ *  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
  * |---------------------------------------------------------------|
  * | version=0x01  |MessageID=0x08 |       Message Length = 4      |
  * |---------------------------------------------------------------|
@@ -667,10 +667,10 @@ int send_gid(int sockfd, int gid)
 }
 
 /* Send PID response to client
- * 
+ *
  * Get PID response packet format
  *  0                   1                   2                   3
- *  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 
+ *  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
  * |---------------------------------------------------------------|
  * | version=0x01  |MessageID=0x0a |       Message Length = 4      |
  * |---------------------------------------------------------------|
@@ -721,10 +721,10 @@ int send_pid(int sockfd, int pid)
 }
 
 /* Send Check password response to client
- * 
+ *
  * Check password response packet format
  *  0                   1                   2                   3
- *  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 
+ *  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
  * |---------------------------------------------------------------|
  * | version=0x01  |   MessageID   |       Message Length = 12     |
  * |---------------------------------------------------------------|
@@ -737,18 +737,18 @@ int send_pid(int sockfd, int pid)
  * |expire_in_days |
  * |----------------
  */
-int send_pwd_response(const int sockfd, 
+int send_pwd_response(const int sockfd,
 	const unsigned char msg_id,
-	const unsigned char return_code, 
-	const unsigned int current_attempts, 
-	const unsigned int max_attempts, 
+	const unsigned char return_code,
+	const unsigned int current_attempts,
+	const unsigned int max_attempts,
 	const unsigned int expire_time)
 {
 	response_header hdr;
 	unsigned int expire_secs;
 	unsigned char msg[sizeof(hdr) + sizeof(current_attempts) + sizeof(max_attempts) + sizeof(expire_secs)];
 	int ret, ptr = 0;
-	
+
 
 	/* Assemble header */
 	hdr.basic_hdr.version = SECURITY_SERVER_MSG_VERSION;
@@ -792,7 +792,7 @@ int send_pwd_response(const int sockfd,
 }
 
 /* Send cookie request packet to security server *
- * 
+ *
  * Message format
  *  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
  * |---------------------------------------------------------------|
@@ -830,13 +830,13 @@ int send_cookie_request(int sock_fd)
 		SEC_SVR_DBG("Error on write(): %d", retval);
 		return SECURITY_SERVER_ERROR_SEND_FAILED;
 	}
-	return SECURITY_SERVER_SUCCESS;	
+	return SECURITY_SERVER_SUCCESS;
 }
 
 /* Send GID request message to security server
  *
  * Message format
- *  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 
+ *  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
  * |---------------------------------------------------------------|
  * | version=0x01  |MessageID=0x07 |   Message Length = variable   |
  * |---------------------------------------------------------------|
@@ -903,13 +903,13 @@ error:
 	if(buf != NULL)
 		free(buf);
 
-	return retval;	
+	return retval;
 }
 
 /* Send object name request message to security server *
  *
  * Message format
- *  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 
+ *  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
  * |---------------------------------------------------------------|
  * | version=0x01  |MessageID=0x05 |       Message Length = 4      |
  * |---------------------------------------------------------------|
@@ -951,13 +951,13 @@ int send_object_name_request(int sock_fd, int gid)
 		SEC_SVR_DBG("Error on write(): %d", retval);
 		return SECURITY_SERVER_ERROR_SEND_FAILED;
 	}
-	return SECURITY_SERVER_SUCCESS;	
+	return SECURITY_SERVER_SUCCESS;
 }
 
 /* Send privilege check request message to security server *
  *
  * Message format
- *  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 
+ *  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
  * |---------------------------------------------------------------|
  * | version=0x01  |MessageID=0x03 |      Message Length = 24      |
  * |---------------------------------------------------------------|
@@ -1009,10 +1009,69 @@ int send_privilege_check_request(int sock_fd, const char*cookie, int gid)
 	return SECURITY_SERVER_SUCCESS;
 }
 
+int send_privilege_check_new_request(int sock_fd,
+                                     const char *cookie,
+                                     const char *object,
+                                     const char *access_rights)
+{
+	basic_header hdr;
+	int retval;
+        int olen, alen;
+        int size;
+
+        olen = strlen(object);
+        alen = strlen(access_rights);
+        if (olen > MAX_OBJECT_LABEL_LEN || alen > MAX_MODE_STR_LEN)
+        {
+                return SECURITY_SERVER_ERROR_INPUT_PARAM;
+        }
+
+	unsigned char buf[sizeof(hdr) + SECURITY_SERVER_COOKIE_LEN +
+                          2*sizeof(int) + MAX_OBJECT_LABEL_LEN + MAX_MODE_STR_LEN];
+
+	/* Assemble header */
+	hdr.version = SECURITY_SERVER_MSG_VERSION;
+	hdr.msg_id = SECURITY_SERVER_MSG_TYPE_CHECK_PRIVILEGE_NEW_REQUEST;
+	hdr.msg_len = SECURITY_SERVER_COOKIE_LEN + 2*sizeof(int) + olen + alen;
+
+	memcpy(buf, &hdr, sizeof(hdr));
+	memcpy(buf + sizeof(hdr), cookie, SECURITY_SERVER_COOKIE_LEN);
+        memcpy(buf + sizeof(hdr) + SECURITY_SERVER_COOKIE_LEN, &olen, sizeof(int));
+        memcpy(buf + sizeof(hdr) + SECURITY_SERVER_COOKIE_LEN + sizeof(int),
+               &alen, sizeof(int));
+	memcpy(buf + sizeof(hdr) + SECURITY_SERVER_COOKIE_LEN + 2*sizeof(int), object, olen);
+	memcpy(buf + sizeof(hdr) + SECURITY_SERVER_COOKIE_LEN + 2*sizeof(int) + olen,
+               access_rights, alen);
+
+	/* Check poll */
+	retval = check_socket_poll(sock_fd, POLLOUT, SECURITY_SERVER_SOCKET_TIMEOUT_MILISECOND);
+	if(retval == SECURITY_SERVER_ERROR_POLL)
+	{
+		SEC_SVR_DBG("%s", "poll() error");
+		return SECURITY_SERVER_ERROR_SEND_FAILED;
+	}
+	if(retval == SECURITY_SERVER_ERROR_TIMEOUT)
+	{
+		SEC_SVR_DBG("%s", "poll() timeout");
+		return SECURITY_SERVER_ERROR_SEND_FAILED;
+	}
+
+        size = sizeof(hdr) + SECURITY_SERVER_COOKIE_LEN + 2*sizeof(int) + olen + alen;
+	/* Send to server */
+	retval = write(sock_fd, buf, size);
+	if(retval < size)
+	{
+		/* Write error */
+		SEC_SVR_DBG("Error on write(): %d", retval);
+		return SECURITY_SERVER_ERROR_SEND_FAILED;
+	}
+	return SECURITY_SERVER_SUCCESS;
+}
+
 /* Send PID check request message to security server *
  *
  * Message format
- *  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 
+ *  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
  * |---------------------------------------------------------------|
  * | version=0x01  |MessageID=0x09 |      Message Length = 20      |
  * |---------------------------------------------------------------|
@@ -1065,7 +1124,7 @@ int send_pid_request(int sock_fd, const char*cookie)
 /* Send debug tool launch request message to security server *
  *
  * Message format
- *  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 
+ *  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
  * |---------------------------------------------------------------|
  * | version=0x01  |MessageID=0x0b |       Message Length          |
  * |---------------------------------------------------------------|
@@ -1154,7 +1213,7 @@ int send_launch_tool_request(int sock_fd, int argc, const char **argv)
 		SEC_SVR_DBG("%s", "poll() error");
 		retval =  SECURITY_SERVER_ERROR_SEND_FAILED;
 		goto error;
-		
+
 	}
 	if(retval == SECURITY_SERVER_ERROR_TIMEOUT)
 	{
@@ -1183,7 +1242,7 @@ error:
 /* Send validate password request message to security server *
  *
  * Message format
- *  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 
+ *  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
  * |---------------------------------------------------------------|
  * | version=0x01  |MessageID=0x0d |       Message Length          |
  * |---------------------------------------------------------------|
@@ -1204,7 +1263,7 @@ int send_valid_pwd_request(int sock_fd)
 		SEC_SVR_DBG("%s", "poll() error");
 		retval =  SECURITY_SERVER_ERROR_SEND_FAILED;
 		goto error;
-		
+
 	}
 	if(retval == SECURITY_SERVER_ERROR_TIMEOUT)
 	{
@@ -1231,7 +1290,7 @@ error:
 /* Send password set request message to security server *
  *
  * Message format
- *  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 
+ *  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
  * |---------------------------------------------------------------|
  * | version=0x01  |MessageID=0x0f |       Message Length          |
  * |---------------------------------------------------------------|
@@ -1248,8 +1307,8 @@ error:
  * |                         valid days                            |
  * |---------------------------------------------------------------|
  */
-int send_set_pwd_request(int sock_fd, 
-			const char*cur_pwd, 
+int send_set_pwd_request(int sock_fd,
+			const char*cur_pwd,
 			const char*new_pwd,
 			const unsigned int max_challenge,
 			const unsigned int valid_period_in_days)
@@ -1302,7 +1361,7 @@ int send_set_pwd_request(int sock_fd,
 		SEC_SVR_DBG("%s", "poll() error");
 		retval =  SECURITY_SERVER_ERROR_SEND_FAILED;
 		goto error;
-		
+
 	}
 	if(retval == SECURITY_SERVER_ERROR_TIMEOUT)
 	{
@@ -1328,10 +1387,142 @@ error:
 	return retval;
 }
 
+/* Send password validity change request message to security server *
+ *
+ * Message format
+ *  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+ * |---------------------------------------------------------------|
+ * | version=0x01  |MessageID=0x0f |       Message Length          |
+ * |---------------------------------------------------------------|
+ * |                         valid days                            |
+ * |---------------------------------------------------------------|
+ */
+int send_set_pwd_validity_request(int sock_fd, const unsigned int valid_period_in_days)
+{
+    basic_header hdr;
+    int retval, total_length = 0, ptr;
+    unsigned char *buf = NULL;
+
+    total_length = sizeof(hdr) + sizeof(unsigned int);
+
+    buf = malloc(total_length);
+    if(buf == NULL)
+    {
+        SEC_SVR_DBG("%s", "Error: failed to malloc()");
+        return SECURITY_SERVER_ERROR_OUT_OF_MEMORY;
+    }
+
+    /* Assemble header */
+    hdr.version = SECURITY_SERVER_MSG_VERSION;
+    hdr.msg_id = SECURITY_SERVER_MSG_TYPE_SET_PWD_VALIDITY_REQUEST;
+    hdr.msg_len = (unsigned short)total_length;
+    memcpy(buf, &hdr, sizeof(hdr));
+    ptr = sizeof(hdr);
+    memcpy(buf + ptr, &valid_period_in_days, sizeof(unsigned int));
+
+    /* Check poll */
+    retval = check_socket_poll(sock_fd, POLLOUT, SECURITY_SERVER_SOCKET_TIMEOUT_MILISECOND);
+    if(retval == SECURITY_SERVER_ERROR_POLL)
+    {
+        SEC_SVR_DBG("%s", "poll() error");
+        retval =  SECURITY_SERVER_ERROR_SEND_FAILED;
+        goto error;
+
+    }
+    if(retval == SECURITY_SERVER_ERROR_TIMEOUT)
+    {
+        SEC_SVR_DBG("%s", "poll() timeout");
+        retval =  SECURITY_SERVER_ERROR_SEND_FAILED;
+        goto error;
+    }
+
+    /* Send to server */
+    retval = write(sock_fd, buf, total_length);
+    if(retval < sizeof(buf))
+    {
+        /* Write error */
+        SEC_SVR_DBG("Error on write(): %d", retval);
+        retval =  SECURITY_SERVER_ERROR_SEND_FAILED;
+        goto error;
+    }
+    retval = SECURITY_SERVER_SUCCESS;
+
+error:
+    if(buf != NULL)
+        free(buf);
+    return retval;
+}
+
+/* Send password max challenge request message to security server *
+ *
+ * Message format
+ *  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+ * |---------------------------------------------------------------|
+ * | version=0x01  |MessageID=0x0f |       Message Length          |
+ * |---------------------------------------------------------------|
+ * |                         max challenge                         |
+ * |---------------------------------------------------------------|
+ */
+int send_set_pwd_max_challenge_request(int sock_fd, const unsigned int max_challenge)
+{
+    basic_header hdr;
+    int retval, total_length = 0, ptr;
+    unsigned char *buf = NULL;
+
+    total_length = sizeof(hdr) + sizeof(unsigned int);
+
+    buf = malloc(total_length);
+    if(buf == NULL)
+    {
+        SEC_SVR_DBG("%s", "Error: failed to malloc()");
+        return SECURITY_SERVER_ERROR_OUT_OF_MEMORY;
+    }
+
+    /* Assemble header */
+    hdr.version = SECURITY_SERVER_MSG_VERSION;
+    hdr.msg_id = SECURITY_SERVER_MSG_TYPE_SET_PWD_MAX_CHALLENGE_REQUEST;
+    hdr.msg_len = (unsigned short)total_length;
+    memcpy(buf, &hdr, sizeof(hdr));
+    ptr = sizeof(hdr);
+    memcpy(buf + ptr, &max_challenge, sizeof(unsigned int));
+
+    /* Check poll */
+    retval = check_socket_poll(sock_fd, POLLOUT, SECURITY_SERVER_SOCKET_TIMEOUT_MILISECOND);
+    if(retval == SECURITY_SERVER_ERROR_POLL)
+    {
+        SEC_SVR_DBG("%s", "poll() error");
+        retval =  SECURITY_SERVER_ERROR_SEND_FAILED;
+        goto error;
+
+    }
+    if(retval == SECURITY_SERVER_ERROR_TIMEOUT)
+    {
+        SEC_SVR_DBG("%s", "poll() timeout");
+        retval =  SECURITY_SERVER_ERROR_SEND_FAILED;
+        goto error;
+    }
+
+    /* Send to server */
+    retval = write(sock_fd, buf, total_length);
+    if(retval < sizeof(buf))
+    {
+        /* Write error */
+        SEC_SVR_DBG("Error on write(): %d", retval);
+        retval =  SECURITY_SERVER_ERROR_SEND_FAILED;
+        goto error;
+    }
+    retval = SECURITY_SERVER_SUCCESS;
+
+error:
+    if(buf != NULL)
+        free(buf);
+    return retval;
+}
+
 /* Send password reset request message to security server *
  *
  * Message format
- *  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 
+ *  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
  * |---------------------------------------------------------------|
  * | version=0x01  |MessageID=0x11 |       Message Length          |
  * |---------------------------------------------------------------|
@@ -1346,7 +1537,7 @@ error:
  * |                         valid days                            |
  * |---------------------------------------------------------------|
  */
-int send_reset_pwd_request(int sock_fd, 
+int send_reset_pwd_request(int sock_fd,
 			const char*new_pwd,
 			const unsigned int max_challenge,
 			const unsigned int valid_period_in_days)
@@ -1357,7 +1548,7 @@ int send_reset_pwd_request(int sock_fd,
 
 	new_pwd_len = strlen(new_pwd);
 
-	total_length += sizeof(hdr) + sizeof(char) + new_pwd_len + sizeof(unsigned int) + 
+	total_length += sizeof(hdr) + sizeof(char) + new_pwd_len + sizeof(unsigned int) +
 		sizeof(unsigned int);
 
 	buf = malloc(total_length);
@@ -1388,7 +1579,7 @@ int send_reset_pwd_request(int sock_fd,
 		SEC_SVR_DBG("%s", "poll() error");
 		retval =  SECURITY_SERVER_ERROR_SEND_FAILED;
 		goto error;
-		
+
 	}
 	if(retval == SECURITY_SERVER_ERROR_TIMEOUT)
 	{
@@ -1417,7 +1608,7 @@ error:
 /* Send password check request message to security server *
  *
  * Message format
- *  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 
+ *  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
  * |---------------------------------------------------------------|
  * | version=0x01  |MessageID=0x13 |       Message Length          |
  * |---------------------------------------------------------------|
@@ -1461,7 +1652,7 @@ int send_chk_pwd_request(int sock_fd, const char*challenge)
 		SEC_SVR_DBG("%s", "poll() error");
 		retval =  SECURITY_SERVER_ERROR_SEND_FAILED;
 		goto error;
-		
+
 	}
 	if(retval == SECURITY_SERVER_ERROR_TIMEOUT)
 	{
@@ -1490,7 +1681,7 @@ error:
 /* Send password history set request message to security server *
  *
  * Message format
- *  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 
+ *  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
  * |---------------------------------------------------------------|
  * | version=0x01  |MessageID=0x15 |       Message Length          |
  * |---------------------------------------------------------------|
@@ -1523,7 +1714,7 @@ int send_set_pwd_history_request(int sock_fd, int num)
 		SEC_SVR_DBG("%s", "poll() error");
 		retval =  SECURITY_SERVER_ERROR_SEND_FAILED;
 		goto error;
-		
+
 	}
 	if(retval == SECURITY_SERVER_ERROR_TIMEOUT)
 	{
@@ -1596,6 +1787,55 @@ int recv_check_privilege_request(int sockfd, unsigned char *requested_cookie, in
 		SEC_SVR_DBG("privilege size is too small: %d", retval);
 		return SECURITY_SERVER_ERROR_RECV_FAILED;
 	}
+	return SECURITY_SERVER_SUCCESS;
+}
+
+/* Receive check privilege request packet body (new mode)*/
+int recv_check_privilege_new_request(int sockfd,
+                                     unsigned char *requested_cookie,
+                                     char *object_label,
+                                     char *access_rights)
+{
+	int retval;
+        int olen, alen;
+
+	retval = read(sockfd, requested_cookie, SECURITY_SERVER_COOKIE_LEN);
+	if(retval < SECURITY_SERVER_COOKIE_LEN)
+	{
+		SEC_SVR_DBG("Received cookie size is too small: %d", retval);
+		return SECURITY_SERVER_ERROR_RECV_FAILED;
+	}
+
+	retval = read(sockfd, &olen, sizeof(int));
+	if(retval < sizeof(int) || olen < 0 || olen > MAX_OBJECT_LABEL_LEN)
+	{
+		SEC_SVR_DBG("error reading object_label len: %d", retval);
+		return SECURITY_SERVER_ERROR_RECV_FAILED;
+	}
+
+	retval = read(sockfd, &alen, sizeof(int));
+	if(retval < sizeof(int) || alen < 0 || olen > MAX_MODE_STR_LEN)
+	{
+		SEC_SVR_DBG("error reading access_rights len: %d", retval);
+		return SECURITY_SERVER_ERROR_RECV_FAILED;
+	}
+
+	retval = read(sockfd, object_label, olen);
+	if(retval < olen)
+	{
+		SEC_SVR_DBG("error reading object_label: %d", retval);
+		return SECURITY_SERVER_ERROR_RECV_FAILED;
+	}
+        object_label[olen] = '\0';
+
+	retval = read(sockfd, access_rights, olen);
+	if(retval < alen)
+	{
+		SEC_SVR_DBG("error reading access_rights: %d", retval);
+		return SECURITY_SERVER_ERROR_RECV_FAILED;
+	}
+        access_rights[alen] = '\0';
+
 	return SECURITY_SERVER_SUCCESS;
 }
 
@@ -1749,7 +1989,7 @@ int recv_get_object_name(int sockfd, response_header *hdr, char *object, int max
 			SEC_SVR_DBG("%s", "Out of memory error");
 			return SECURITY_SERVER_ERROR_OUT_OF_MEMORY;
 		}
-		
+
 		retval = read(sockfd, local_obj_name, hdr->basic_hdr.msg_len);
 		if(retval < (hdr->basic_hdr.msg_len))
 		{
@@ -1799,7 +2039,21 @@ int recv_privilege_check_response(int sockfd, response_header *hdr)
 
 	retval = recv_generic_response(sockfd, hdr);
 	if(hdr->return_code != SECURITY_SERVER_RETURN_CODE_ACCESS_GRANTED &&
-			hdr->return_code != SECURITY_SERVER_RETURN_CODE_ACCESS_DENIED) 
+			hdr->return_code != SECURITY_SERVER_RETURN_CODE_ACCESS_DENIED)
+	{
+		SEC_SVR_DBG("response error: %d", hdr->return_code);
+		return return_code_to_error_code(hdr->return_code);
+	}
+	return SECURITY_SERVER_SUCCESS;
+}
+
+int recv_privilege_check_new_response(int sockfd, response_header *hdr)
+{
+	int retval;
+
+	retval = recv_generic_response(sockfd, hdr);
+	if(hdr->return_code != SECURITY_SERVER_RETURN_CODE_ACCESS_GRANTED &&
+			hdr->return_code != SECURITY_SERVER_RETURN_CODE_ACCESS_DENIED)
 	{
 		SEC_SVR_DBG("response error: %d", hdr->return_code);
 		return return_code_to_error_code(hdr->return_code);
@@ -1825,9 +2079,9 @@ int recv_pid_response(int sockfd, response_header *hdr, int *pid)
 	return SECURITY_SERVER_SUCCESS;
 }
 
-int recv_pwd_response(int sockfd, response_header *hdr, 
-	unsigned int *current_attempts, 
-	unsigned int *max_attempts, 
+int recv_pwd_response(int sockfd, response_header *hdr,
+	unsigned int *current_attempts,
+	unsigned int *max_attempts,
 	unsigned int *valid_secs)
 {
 	int retval;
@@ -1897,7 +2151,7 @@ int authenticate_client_application(int sockfd, int *pid, int *uid)
 
 	/* Authenticate client that it's real client application */
 	/* TBA */
-	
+
 error:
 	return retval;
 }
@@ -1918,7 +2172,7 @@ int search_middleware_cmdline(char *cmdline)
 	{
 		/* error on file */
 		SEC_SVR_DBG("%s", "Error oening mw-list file");
-		return SECURITY_SERVER_ERROR_FILE_OPERATION; 
+		return SECURITY_SERVER_ERROR_FILE_OPERATION;
 	}
 
 	/* Search each line */
@@ -1957,7 +2211,7 @@ int authenticate_client_middleware(int sockfd, int *pid)
 		SEC_SVR_DBG("%s", "Error on getsockopt");
 		goto error;
 	}
-	
+
 	/* All middlewares will run as root */
 	if(cr.uid != 0)
 	{
@@ -2003,7 +2257,7 @@ int authenticate_developer_shell(int sockfd)
 		SEC_SVR_DBG("%s", "Error on getsockopt");
 		goto error;
 	}
-	
+
 	/* All middlewares will run as root */
 	if(cr.uid != SECURITY_SERVER_DEVELOPER_UID)
 	{

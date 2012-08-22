@@ -1,21 +1,8 @@
 /*
- *  security-server
+ * security server
  *
- *  Copyright (c) 2012 Samsung Electronics Co., Ltd All Rights Reserved
- *
- *  Contact: Bumjin Im <bj.im@samsung.com>
- *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License
+ * Copyright (c) 2000 - 2010 Samsung Electronics Co., Ltd.
+ * Contact: Bumjin Im <bj.im@samsung.com>
  *
  */
 
@@ -307,7 +294,9 @@ int main(int argc, char *argv[])
 	char obj_name[30];
 	struct pollfd accept_poll[1], client_poll[1];
 	struct sockaddr_un clientaddr;
-	
+        int olen, alen;
+        char olabel[1024];
+        char arights[32];
 
 	ret = getuid();
 	if(ret != 0)
@@ -574,9 +563,7 @@ int main(int argc, char *argv[])
 				}
 			}
 		}
-		else
-		{
-			if(recvbuf[0] == 255 && recvbuf[1] == 255 && recvbuf[2] == 255 && recvbuf[3] == 255)
+		else if(recvbuf[0] == 255 && recvbuf[1] == 255 && recvbuf[2] == 255 && recvbuf[3] == 255)
 			{
 				char *myargv[5] = {NULL};
 				int i, cnt;
@@ -625,12 +612,137 @@ int main(int argc, char *argv[])
 						free(myargv[3]);
 				}
 			}
-			else
+		else if(recvbuf[0] == 17 )
+                {
+                    if (recvbuf[3] == 0)
+                    {
+			ret = read(client_sockfd, recvbuf, 20);
+			if(ret < 20)
 			{
-				printf("malformed request. %d, %d, %d, %d\n", recvbuf[0], recvbuf[1], recvbuf[2], recvbuf[3]);
+				close(client_sockfd);
+				printf("cannot read request:%d\n", ret);
+				close(client_sockfd);
+				continue;
+			}
+			memcpy(recved_cookie, recvbuf, 20);
+                        ret = read(client_sockfd, &olen, 4);
+			if(ret < 4)
+			{
+				close(client_sockfd);
+				printf("cannot read request:%d\n", ret);
+				close(client_sockfd);
+				continue;
+			}
+                        ret = read(client_sockfd, &alen, 4);
+			if(ret < 4)
+			{
+				close(client_sockfd);
+				printf("cannot read request:%d\n", ret);
+				close(client_sockfd);
+				continue;
+			}
+                        ret = read(client_sockfd, olabel, olen);
+			if(ret < olen)
+			{
+				close(client_sockfd);
+				printf("cannot read request:%d\n", ret);
+				close(client_sockfd);
+				continue;
+			}
+                        olabel[olen] = '\0';
+                        ret = read(client_sockfd, arights, alen);
+			if(ret < alen)
+			{
+				close(client_sockfd);
+				printf("cannot read request:%d\n", ret);
+				close(client_sockfd);
+				continue;
+			}
+                        arights[alen] = '\0';
+			printf("Check by cookie requested.\n");
+			printf("requested cookie: \n");
+			printhex(recved_cookie, 20);
+                        printf("olen: %d\n", olen);
+                        printf("object label: >%s<\n", olabel);
+                        printf("alen: %d\n", alen);
+                        printf("access rights: >%s<\n", arights);
+
+                        ret = security_server_check_privilege_by_cookie(
+                                  recved_cookie, olabel, arights);
+
+                        printf("return: %d\n", ret);
+
+			ret = write(client_sockfd, &ret, sizeof(int));
+			if(ret < sizeof(int))
+			{
+				printf("Send error: %d\n", ret);
 				printf("Test failed: %d\n", ret);
 				goto error;
 			}
+                    }
+                    else if (recvbuf[3] == 1)
+                    {
+                        ret = read(client_sockfd, &olen, 4);
+			if(ret < 4)
+			{
+				close(client_sockfd);
+				printf("cannot read request:%d\n", ret);
+				close(client_sockfd);
+				continue;
+			}
+                        ret = read(client_sockfd, &alen, 4);
+			if(ret < 4)
+			{
+				close(client_sockfd);
+				printf("cannot read request:%d\n", ret);
+				close(client_sockfd);
+				continue;
+			}
+                        ret = read(client_sockfd, olabel, olen);
+			if(ret < olen)
+			{
+				close(client_sockfd);
+				printf("cannot read request:%d\n", ret);
+				close(client_sockfd);
+				continue;
+			}
+                        olabel[olen] = '\0';
+                        ret = read(client_sockfd, arights, alen);
+			if(ret < alen)
+			{
+				close(client_sockfd);
+				printf("cannot read request:%d\n", ret);
+				close(client_sockfd);
+				continue;
+			}
+                        arights[alen] = '\0';
+			printf("Check by sockfd requested.\n");
+                        printf("olen: %d\n", olen);
+                        printf("object label: >%s<\n", olabel);
+                        printf("alen: %d\n", alen);
+                        printf("access rights: >%s<\n", arights);
+
+                        ret = security_server_check_privilege_by_sockfd(
+                                  client_sockfd, olabel, arights);
+
+			ret = write(client_sockfd, &ret, sizeof(int));
+			if(ret < sizeof(int))
+			{
+				printf("Send error: %d\n", ret);
+				printf("Test failed: %d\n", ret);
+				goto error;
+			}
+                    } else {
+			printf("malformed request. %d, %d, %d, %d\n", recvbuf[0], recvbuf[1], recvbuf[2], recvbuf[3]);
+			printf("Test failed: %d\n", ret);
+			goto error;
+                    }
+                }
+		else
+		{
+			printf("malformed request. %d, %d, %d, %d\n", recvbuf[0], recvbuf[1], recvbuf[2], recvbuf[3]);
+			printf("Test failed: %d\n", ret);
+			goto error;
 		}
 		if(client_sockfd > 0)
 		{

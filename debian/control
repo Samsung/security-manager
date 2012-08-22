@@ -1,7 +1,7 @@
 Source: security-server
 Priority: extra
 Maintainer: Bumjin Im <bj.im@samsung.com>, Kidong Kim <kd0228.kim@samsung.com>
-Build-Depends: debhelper (>= 5), autotools-dev, dlog-dev, libssl-dev, libattr1-dev
+Build-Depends: debhelper (>= 5), autotools-dev, dlog-dev, libssl-dev, libattr1-dev, libsmack-dev
 Standards-Version: 3.7.2
 Section: base
 Homepage: N/A

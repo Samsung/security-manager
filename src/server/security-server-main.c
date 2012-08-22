@@ -1,7 +1,7 @@
 /*
- *  security-server
+ * security-server
  *
- *  Copyright (c) 2012 Samsung Electronics Co., Ltd All Rights Reserved
+ *  Copyright (c) 2000 - 2011 Samsung Electronics Co., Ltd All Rights Reserved
  *
  *  Contact: Bumjin Im <bj.im@samsung.com>
  *
@@ -109,7 +109,7 @@ int search_object_name(int gid, char *obj, int obj_size)
 		SEC_SVR_DBG("%s", "cannot malloc()");
 		goto error;
 	}
-		
+
 	bzero(linebuf, bufsize);
 	ret = SECURITY_SERVER_ERROR_NO_SUCH_OBJECT;
 	while(fgets(linebuf, bufsize, fp) != NULL)
@@ -176,7 +176,7 @@ int search_object_name(int gid, char *obj, int obj_size)
 		}
 		bzero(linebuf, bufsize);
 	}
-	
+
 error:
 	if(linebuf != NULL)
 		free(linebuf);
@@ -257,7 +257,7 @@ int search_gid(const char *obj)
 		}
 		bzero(linebuf, bufsize);
 	}
-	
+
 error:
 	if(linebuf != NULL)
 		free(linebuf);
@@ -272,7 +272,7 @@ static void security_server_sig_child(int signo, siginfo_t *info, void *data)
 	int status;
 	pid_t child_pid;
 	pid_t child_pgid;
-	
+
 	child_pgid = getpgid(info->si_pid);
 	SEC_SVR_DBG("Signal handler: dead_pid=%d, pgid=%d",info->si_pid,child_pgid);
 
@@ -325,7 +325,7 @@ int process_cookie_request(int sockfd)
 	if(retval != SECURITY_SERVER_SUCCESS)
 	{
 		SEC_SVR_DBG("%s", "Client Authentication Failed");
-		retval = send_generic_response(sockfd, 
+		retval = send_generic_response(sockfd,
 				SECURITY_SERVER_MSG_TYPE_GENERIC_RESPONSE,
 				SECURITY_SERVER_RETURN_CODE_AUTHENTICATION_FAILED);
 		if(retval != SECURITY_SERVER_SUCCESS)
@@ -349,7 +349,7 @@ int process_cookie_request(int sockfd)
 	{
 		/* Create a new cookie. or find existing one */
 		pthread_mutex_lock(&cookie_mutex);
-		created_cookie = create_cookie_item(client_pid, c_list);
+		created_cookie = create_cookie_item(client_pid, sockfd, c_list);
 		pthread_mutex_unlock(&cookie_mutex);
 		if(created_cookie == NULL)
 		{
@@ -363,6 +363,10 @@ int process_cookie_request(int sockfd)
 	{
 		SEC_SVR_DBG("ERROR: Cannot send generic response: %d", retval);
 	}
+        SEC_SVR_DBG("Server: Cookie created for client PID %d LABEL >%s<",
+                    created_cookie->pid,
+                    (created_cookie->smack_label)?(created_cookie->smack_label):"NULL");
+
 	SEC_SVR_DBG("%s", "Server: Cookie has been sent to client");
 
 error:
@@ -380,7 +384,7 @@ int process_check_privilege_request(int sockfd)
 	if(retval != SECURITY_SERVER_SUCCESS)
 	{
 		SEC_SVR_DBG("%s", "Client Authentication Failed");
-		retval = send_generic_response(sockfd, 
+		retval = send_generic_response(sockfd,
 				SECURITY_SERVER_MSG_TYPE_CHECK_PRIVILEGE_RESPONSE,
 				SECURITY_SERVER_RETURN_CODE_AUTHENTICATION_FAILED);
 		if(retval != SECURITY_SERVER_SUCCESS)
@@ -390,12 +394,12 @@ int process_check_privilege_request(int sockfd)
 		goto error;;
 	}
 
-	retval = recv_check_privilege_request(sockfd, 
+	retval = recv_check_privilege_request(sockfd,
 				requested_cookie, &requested_privilege);
 	if(retval == SECURITY_SERVER_ERROR_RECV_FAILED)
 	{
 		SEC_SVR_DBG("%s", "Receiving request failed");
-		retval = send_generic_response(sockfd, 
+		retval = send_generic_response(sockfd,
 				SECURITY_SERVER_MSG_TYPE_CHECK_PRIVILEGE_RESPONSE,
 				SECURITY_SERVER_RETURN_CODE_BAD_REQUEST);
 		if(retval != SECURITY_SERVER_SUCCESS)
@@ -408,7 +412,7 @@ int process_check_privilege_request(int sockfd)
 	if(requested_privilege < 1)
 	{
 		SEC_SVR_DBG("Requiring bad privilege [%d]", requested_privilege);
-		retval = send_generic_response(sockfd, 
+		retval = send_generic_response(sockfd,
 				SECURITY_SERVER_MSG_TYPE_CHECK_PRIVILEGE_RESPONSE,
 				SECURITY_SERVER_RETURN_CODE_BAD_REQUEST);
 		if(retval != SECURITY_SERVER_SUCCESS)
@@ -427,8 +431,8 @@ int process_check_privilege_request(int sockfd)
 		/* We found */
 		SEC_SVR_DBG("We found the cookie with %d privilege and pid:%d", requested_privilege, client_pid);
 		SEC_SVR_DBG("%s", "Cookie comparison succeeded. Access granted.");
-		retval = send_generic_response(sockfd, 
-				SECURITY_SERVER_MSG_TYPE_CHECK_PRIVILEGE_RESPONSE, 
+		retval = send_generic_response(sockfd,
+				SECURITY_SERVER_MSG_TYPE_CHECK_PRIVILEGE_RESPONSE,
 				SECURITY_SERVER_RETURN_CODE_ACCESS_GRANTED);
 		if(retval != SECURITY_SERVER_SUCCESS)
 		{
@@ -439,8 +443,8 @@ int process_check_privilege_request(int sockfd)
 	{
 		/* It's not exist */
 		SEC_SVR_DBG("Could not find the cookie with %d privilege", requested_privilege);
-		retval = send_generic_response(sockfd, 
-				SECURITY_SERVER_MSG_TYPE_CHECK_PRIVILEGE_RESPONSE, 
+		retval = send_generic_response(sockfd,
+				SECURITY_SERVER_MSG_TYPE_CHECK_PRIVILEGE_RESPONSE,
 				SECURITY_SERVER_RETURN_CODE_ACCESS_DENIED);
 		if(retval != SECURITY_SERVER_SUCCESS)
 		{
@@ -449,6 +453,80 @@ int process_check_privilege_request(int sockfd)
 	}
 error:
 	return retval;
+}
+
+int process_check_privilege_new_request(int sockfd)
+{
+	/* Authenticate client */
+	int retval, client_pid, requested_privilege;
+	unsigned char requested_cookie[SECURITY_SERVER_COOKIE_LEN];
+	cookie_list *search_result = NULL;
+        char object_label[MAX_OBJECT_LABEL_LEN+1];
+        char access_rights[MAX_MODE_STR_LEN+1];
+
+	retval = authenticate_client_middleware(sockfd, &client_pid);
+	if(retval != SECURITY_SERVER_SUCCESS)
+	{
+		SEC_SVR_DBG("%s", "Client Authentication Failed");
+		retval = send_generic_response(sockfd, 
+				SECURITY_SERVER_MSG_TYPE_CHECK_PRIVILEGE_NEW_RESPONSE,
+				SECURITY_SERVER_RETURN_CODE_AUTHENTICATION_FAILED);
+		if(retval != SECURITY_SERVER_SUCCESS)
+		{
+			SEC_SVR_DBG("ERROR: Cannot send generic response: %d", retval);
+		}
+		goto error;;
+	}
+
+        retval = recv_check_privilege_new_request(
+                     sockfd, requested_cookie, object_label, access_rights);
+	if(retval == SECURITY_SERVER_ERROR_RECV_FAILED)
+	{
+		SEC_SVR_DBG("%s", "Receiving request failed");
+		retval = send_generic_response(sockfd, 
+				SECURITY_SERVER_MSG_TYPE_CHECK_PRIVILEGE_NEW_RESPONSE,
+				SECURITY_SERVER_RETURN_CODE_BAD_REQUEST);
+		if(retval != SECURITY_SERVER_SUCCESS)
+		{
+			SEC_SVR_DBG("ERROR: Cannot send generic response: %d", retval);
+		}
+		goto error;;
+	}
+
+	/* Search cookie list */
+	pthread_mutex_lock(&cookie_mutex);
+	search_result = search_cookie_new(c_list, requested_cookie, object_label, access_rights);
+	pthread_mutex_unlock(&cookie_mutex);
+
+	if(search_result != NULL)
+    {
+		/* We found */
+		SEC_SVR_DBG("We found the cookie with %s rights and pid:%d", access_rights, client_pid);
+		SEC_SVR_DBG("%s", "Cookie comparison succeeded. Access granted.");
+		retval = send_generic_response(sockfd, 
+				SECURITY_SERVER_MSG_TYPE_CHECK_PRIVILEGE_NEW_RESPONSE, 
+				SECURITY_SERVER_RETURN_CODE_ACCESS_GRANTED);
+		if(retval != SECURITY_SERVER_SUCCESS)
+		{
+			SEC_SVR_DBG("ERROR: Cannot send generic response: %d", retval);
+		}
+	}
+	else
+	{
+		/* It's not exist */
+		SEC_SVR_DBG("Could not find the cookie with %s rights", access_rights);
+		retval = send_generic_response(sockfd, 
+				SECURITY_SERVER_MSG_TYPE_CHECK_PRIVILEGE_NEW_RESPONSE, 
+				SECURITY_SERVER_RETURN_CODE_ACCESS_DENIED);
+		if(retval != SECURITY_SERVER_SUCCESS)
+		{
+			SEC_SVR_DBG("ERROR: Cannot send generic response: %d", retval);
+		}
+	}
+error:
+	return retval;
+
+
 }
 
 int process_object_name_request(int sockfd)
@@ -461,7 +539,7 @@ int process_object_name_request(int sockfd)
 	if(retval != SECURITY_SERVER_SUCCESS)
 	{
 		SEC_SVR_DBG("%s", "Client Authentication Failed");
-		retval = send_generic_response(sockfd, 
+		retval = send_generic_response(sockfd,
 				SECURITY_SERVER_MSG_TYPE_OBJECT_NAME_RESPONSE,
 				SECURITY_SERVER_RETURN_CODE_AUTHENTICATION_FAILED);
 		if(retval != SECURITY_SERVER_SUCCESS)
@@ -476,7 +554,7 @@ int process_object_name_request(int sockfd)
 	if (retval < sizeof(requested_privilege))
 	{
 		SEC_SVR_DBG("%s", "Receiving request failed");
-		retval = send_generic_response(sockfd, 
+		retval = send_generic_response(sockfd,
 				SECURITY_SERVER_MSG_TYPE_OBJECT_NAME_RESPONSE,
 				SECURITY_SERVER_RETURN_CODE_BAD_REQUEST);
 		if(retval != SECURITY_SERVER_SUCCESS)
@@ -487,14 +565,14 @@ int process_object_name_request(int sockfd)
 	}
 
 	/* Search from /etc/group */
-	retval = search_object_name(requested_privilege, 
-			object_name, 
+	retval = search_object_name(requested_privilege,
+			object_name,
 			SECURITY_SERVER_MAX_OBJ_NAME);
 	if (retval == SECURITY_SERVER_ERROR_NO_SUCH_OBJECT)
 	{
 		/* It's not exist */
 		SEC_SVR_DBG("There is no such object for gid [%d]", requested_privilege);
-		retval = send_generic_response(sockfd, 
+		retval = send_generic_response(sockfd,
 				SECURITY_SERVER_MSG_TYPE_OBJECT_NAME_RESPONSE,
 				SECURITY_SERVER_RETURN_CODE_NO_SUCH_OBJECT);
 		if(retval != SECURITY_SERVER_SUCCESS)
@@ -507,7 +585,7 @@ int process_object_name_request(int sockfd)
 	{
 		/* Error occurred */
 		SEC_SVR_DBG("Error on searching object name [%d]", retval);
-		retval = send_generic_response(sockfd, 
+		retval = send_generic_response(sockfd,
 				SECURITY_SERVER_MSG_TYPE_OBJECT_NAME_RESPONSE,
 				SECURITY_SERVER_RETURN_CODE_SERVER_ERROR);
 		if(retval != SECURITY_SERVER_SUCCESS)
@@ -538,7 +616,7 @@ int process_gid_request(int sockfd, int msg_len)
 	if(retval != SECURITY_SERVER_SUCCESS)
 	{
 		SEC_SVR_DBG("%s", "Client authentication failed");
-		retval = send_generic_response(sockfd, 
+		retval = send_generic_response(sockfd,
 				SECURITY_SERVER_MSG_TYPE_GID_RESPONSE,
 				SECURITY_SERVER_RETURN_CODE_AUTHENTICATION_FAILED);
 		if(retval != SECURITY_SERVER_SUCCESS)
@@ -552,7 +630,7 @@ int process_gid_request(int sockfd, int msg_len)
 	{
 		/* Too big ojbect name */
 		SEC_SVR_DBG("%s", "Object name is too big");
-		retval = send_generic_response(sockfd, 
+		retval = send_generic_response(sockfd,
 				SECURITY_SERVER_MSG_TYPE_GID_RESPONSE,
 				SECURITY_SERVER_RETURN_CODE_BAD_REQUEST);
 		if(retval != SECURITY_SERVER_SUCCESS)
@@ -567,7 +645,7 @@ int process_gid_request(int sockfd, int msg_len)
 	if (retval < msg_len )
 	{
 		SEC_SVR_DBG("%s", "Failed to read object name");
-		retval = send_generic_response(sockfd, 
+		retval = send_generic_response(sockfd,
 				SECURITY_SERVER_MSG_TYPE_GID_RESPONSE,
 				SECURITY_SERVER_RETURN_CODE_BAD_REQUEST);
 		if(retval != SECURITY_SERVER_SUCCESS)
@@ -584,7 +662,7 @@ int process_gid_request(int sockfd, int msg_len)
 	{
 		/* Not exist */
 		SEC_SVR_DBG("The object [%s] is not exist", object_name);
-		retval = send_generic_response(sockfd, 
+		retval = send_generic_response(sockfd,
 				SECURITY_SERVER_MSG_TYPE_GID_RESPONSE,
 				SECURITY_SERVER_RETURN_CODE_NO_SUCH_OBJECT);
 		if(retval != SECURITY_SERVER_SUCCESS)
@@ -593,12 +671,12 @@ int process_gid_request(int sockfd, int msg_len)
 		}
 		goto error;
 	}
-	
+
 	if(retval < 0)
 	{
 		/* Error occurred */
 		SEC_SVR_DBG("Cannot send the response. %d", retval);
-		retval = send_generic_response(sockfd, 
+		retval = send_generic_response(sockfd,
 				SECURITY_SERVER_MSG_TYPE_GID_RESPONSE,
 				SECURITY_SERVER_RETURN_CODE_SERVER_ERROR);
 		if(retval != SECURITY_SERVER_SUCCESS)
@@ -629,7 +707,7 @@ int process_pid_request(int sockfd)
 	if(retval != SECURITY_SERVER_SUCCESS)
 	{
 		SEC_SVR_DBG("%s", "Client Authentication Failed");
-		retval = send_generic_response(sockfd, 
+		retval = send_generic_response(sockfd,
 				SECURITY_SERVER_MSG_TYPE_PID_RESPONSE,
 				SECURITY_SERVER_RETURN_CODE_AUTHENTICATION_FAILED);
 		if(retval != SECURITY_SERVER_SUCCESS)
@@ -643,7 +721,7 @@ int process_pid_request(int sockfd)
 	if(retval == SECURITY_SERVER_ERROR_RECV_FAILED)
 	{
 		SEC_SVR_DBG("%s", "Receiving request failed");
-		retval = send_generic_response(sockfd, 
+		retval = send_generic_response(sockfd,
 				SECURITY_SERVER_MSG_TYPE_PID_RESPONSE,
 				SECURITY_SERVER_RETURN_CODE_BAD_REQUEST);
 		if(retval != SECURITY_SERVER_SUCCESS)
@@ -663,7 +741,7 @@ int process_pid_request(int sockfd)
 		SEC_SVR_DBG("We found the cookie and pid:%d", search_result->pid);
 		SEC_SVR_DBG("%s", "Cookie comparison succeeded. Access granted.");
 		retval = send_pid(sockfd, search_result->pid);
-		
+
 		if(retval != SECURITY_SERVER_SUCCESS)
 		{
 			SEC_SVR_DBG("ERROR: Cannot send generic response: %d", retval);
@@ -673,8 +751,8 @@ int process_pid_request(int sockfd)
 	{
 		/* It's not exist */
 		SEC_SVR_DBG("%s", "Could not find the cookie");
-		retval = send_generic_response(sockfd, 
-				SECURITY_SERVER_MSG_TYPE_PID_RESPONSE, 
+		retval = send_generic_response(sockfd,
+				SECURITY_SERVER_MSG_TYPE_PID_RESPONSE,
 				SECURITY_SERVER_RETURN_CODE_NO_SUCH_COOKIE);
 		if(retval != SECURITY_SERVER_SUCCESS)
 		{
@@ -695,7 +773,7 @@ int process_tool_request(int client_sockfd, int server_sockfd)
 	if(retval != SECURITY_SERVER_SUCCESS)
 	{
 		SEC_SVR_DBG("%s", "Client Authentication Failed");
-		retval = send_generic_response(client_sockfd, 
+		retval = send_generic_response(client_sockfd,
 				SECURITY_SERVER_MSG_TYPE_TOOL_RESPONSE,
 				SECURITY_SERVER_RETURN_CODE_AUTHENTICATION_FAILED);
 		if(retval != SECURITY_SERVER_SUCCESS)
@@ -711,7 +789,7 @@ int process_tool_request(int client_sockfd, int server_sockfd)
 	if(retval < sizeof(int))
 	{
 		SEC_SVR_DBG("Error: argc recieve failed: %d", retval);
-		retval = send_generic_response(client_sockfd, 
+		retval = send_generic_response(client_sockfd,
 				SECURITY_SERVER_MSG_TYPE_TOOL_RESPONSE,
 				SECURITY_SERVER_RETURN_CODE_BAD_REQUEST);
 		if(retval != SECURITY_SERVER_SUCCESS)
@@ -725,7 +803,7 @@ int process_tool_request(int client_sockfd, int server_sockfd)
 	if(recved_argv == NULL)
 	{
 		SEC_SVR_DBG("Error: malloc() failed: %d", retval);
-		retval = send_generic_response(client_sockfd, 
+		retval = send_generic_response(client_sockfd,
 				SECURITY_SERVER_MSG_TYPE_TOOL_RESPONSE,
 				SECURITY_SERVER_RETURN_CODE_SERVER_ERROR);
 		if(retval != SECURITY_SERVER_SUCCESS)
@@ -735,13 +813,13 @@ int process_tool_request(int client_sockfd, int server_sockfd)
 		goto error;
 	}
 	memset(recved_argv, 0, sizeof(char *) * argcnum);
-	
+
 	retval = recv_launch_tool_request(client_sockfd, argcnum -1, recved_argv);
 	if(retval == SECURITY_SERVER_ERROR_RECV_FAILED)
 	{
 		SEC_SVR_DBG("%s", "Receiving request failed");
 		recved_argv = NULL;
-		retval = send_generic_response(client_sockfd, 
+		retval = send_generic_response(client_sockfd,
 				SECURITY_SERVER_MSG_TYPE_TOOL_RESPONSE,
 				SECURITY_SERVER_RETURN_CODE_BAD_REQUEST);
 		if(retval != SECURITY_SERVER_SUCCESS)
@@ -753,7 +831,7 @@ int process_tool_request(int client_sockfd, int server_sockfd)
 	if(argcnum < 2)
 	{
 		SEC_SVR_DBG("Error: Too small number of argv [%d]", argcnum);
-		retval = send_generic_response(client_sockfd, 
+		retval = send_generic_response(client_sockfd,
 				SECURITY_SERVER_MSG_TYPE_TOOL_RESPONSE,
 				SECURITY_SERVER_RETURN_CODE_BAD_REQUEST);
 		if(retval != SECURITY_SERVER_SUCCESS)
@@ -767,7 +845,7 @@ int process_tool_request(int client_sockfd, int server_sockfd)
 	if(retval != SECURITY_SERVER_SUCCESS)
 	{
 		SEC_SVR_DBG("Error: Cannot execute debug tool [%d]", retval);
-		retval = send_generic_response(client_sockfd, 
+		retval = send_generic_response(client_sockfd,
 				SECURITY_SERVER_MSG_TYPE_TOOL_RESPONSE,
 				SECURITY_SERVER_RETURN_CODE_SERVER_ERROR);
 		if(retval != SECURITY_SERVER_SUCCESS)
@@ -778,7 +856,7 @@ int process_tool_request(int client_sockfd, int server_sockfd)
 	else
 	{
 		SEC_SVR_DBG("%s", "Tool has been executed");
-		retval = send_generic_response(client_sockfd, 
+		retval = send_generic_response(client_sockfd,
 				SECURITY_SERVER_MSG_TYPE_TOOL_RESPONSE,
 				SECURITY_SERVER_RETURN_CODE_SUCCESS);
 		if(retval != SECURITY_SERVER_SUCCESS)
@@ -823,7 +901,7 @@ void *security_server_thread(void *param)
 	{
 		/* Response */
 		SEC_SVR_DBG("Receiving header error [%d]",retval);
-		retval = send_generic_response(client_sockfd, 
+		retval = send_generic_response(client_sockfd,
 				SECURITY_SERVER_MSG_TYPE_GENERIC_RESPONSE,
 				SECURITY_SERVER_RETURN_CODE_BAD_REQUEST);
 		if(retval != SECURITY_SERVER_SUCCESS)
@@ -847,6 +925,11 @@ void *security_server_thread(void *param)
 		case SECURITY_SERVER_MSG_TYPE_CHECK_PRIVILEGE_REQUEST:
 			SEC_SVR_DBG("%s", "Privilege check received");
 			process_check_privilege_request(client_sockfd);
+			break;
+
+		case SECURITY_SERVER_MSG_TYPE_CHECK_PRIVILEGE_NEW_REQUEST:
+			SEC_SVR_DBG("%s", "Privilege check (new mode) received");
+			process_check_privilege_new_request(client_sockfd);
 			break;
 
 		case SECURITY_SERVER_MSG_TYPE_OBJECT_NAME_REQUEST:
@@ -873,7 +956,7 @@ void *security_server_thread(void *param)
 			SEC_SVR_DBG("%s", "Server: validate password request received");
 			process_valid_pwd_request(client_sockfd);
 			break;
-			
+
 		case SECURITY_SERVER_MSG_TYPE_SET_PWD_REQUEST:
 			SEC_SVR_DBG("%s", "Server: set password request received");
 			process_set_pwd_request(client_sockfd);
@@ -893,6 +976,17 @@ void *security_server_thread(void *param)
 			SEC_SVR_DBG("%s", "Server: set password histroy request received");
 			process_set_pwd_history_request(client_sockfd);
 			break;
+
+		case SECURITY_SERVER_MSG_TYPE_SET_PWD_MAX_CHALLENGE_REQUEST:
+		    SEC_SVR_DBG("%s", "Server: set password max challenge request received");
+		    process_set_pwd_max_challenge_request(client_sockfd);
+		    break;
+
+        case SECURITY_SERVER_MSG_TYPE_SET_PWD_VALIDITY_REQUEST:
+            SEC_SVR_DBG("%s", "Server: set password validity request received");
+            process_set_pwd_validity_request(client_sockfd);
+            break;
+
 /************************************************************************************************/
 /* Just for test. This code must be removed on release */
 		case SECURITY_SERVER_MSG_TYPE_GET_ALL_COOKIES_REQUEST:
@@ -901,7 +995,7 @@ void *security_server_thread(void *param)
 			if(retval != SECURITY_SERVER_SUCCESS)
 			{
 				SEC_SVR_DBG("%s", "Client Authentication Failed");
-				retval = send_generic_response(client_sockfd, 
+				retval = send_generic_response(client_sockfd,
 						SECURITY_SERVER_MSG_TYPE_GENERIC_RESPONSE,
 						SECURITY_SERVER_RETURN_CODE_AUTHENTICATION_FAILED);
 				if(retval != SECURITY_SERVER_SUCCESS)
@@ -922,7 +1016,7 @@ void *security_server_thread(void *param)
 			if(retval != SECURITY_SERVER_SUCCESS)
 			{
 				SEC_SVR_DBG("%s", "Client Authentication Failed");
-				retval = send_generic_response(client_sockfd, 
+				retval = send_generic_response(client_sockfd,
 						SECURITY_SERVER_MSG_TYPE_GENERIC_RESPONSE,
 						SECURITY_SERVER_RETURN_CODE_AUTHENTICATION_FAILED);
 				if(retval != SECURITY_SERVER_SUCCESS)
@@ -939,7 +1033,7 @@ void *security_server_thread(void *param)
 			if(retval != SECURITY_SERVER_SUCCESS)
 			{
 				SEC_SVR_DBG("%s", "Client Authentication Failed");
-				retval = send_generic_response(client_sockfd, 
+				retval = send_generic_response(client_sockfd,
 						SECURITY_SERVER_MSG_TYPE_GENERIC_RESPONSE,
 						SECURITY_SERVER_RETURN_CODE_AUTHENTICATION_FAILED);
 				if(retval != SECURITY_SERVER_SUCCESS)
@@ -956,7 +1050,7 @@ void *security_server_thread(void *param)
 		default:
 			SEC_SVR_DBG("Unknown msg ID :%d", basic_hdr.msg_id);
 			/* Unknown message ID */
-			retval = send_generic_response(client_sockfd, 
+			retval = send_generic_response(client_sockfd,
 			SECURITY_SERVER_MSG_TYPE_GENERIC_RESPONSE,
 			SECURITY_SERVER_RETURN_CODE_BAD_REQUEST);
 			if(retval != SECURITY_SERVER_SUCCESS)
@@ -982,7 +1076,7 @@ error:
 
 
 
-int main(int argc, char* argv[])	
+int main(int argc, char* argv[])
 {
 	int server_sockfd = 0, retval, client_sockfd = -1, args[2], rc;
 	struct sigaction act, dummy;
@@ -1034,7 +1128,7 @@ int main(int argc, char* argv[])
 	{
 		SEC_SVR_DBG("%s", "cannot change session");
 	}
-	
+
 	pthread_mutex_init(&cookie_mutex, NULL);
 
 	while(1)
@@ -1042,7 +1136,7 @@ int main(int argc, char* argv[])
 		/* Accept a new client */
 		if(client_sockfd < 0)
 			client_sockfd = accept_client(server_sockfd);
-		
+
 		if(client_sockfd == SECURITY_SERVER_ERROR_TIMEOUT)
 			continue;
 		if(client_sockfd < 0)

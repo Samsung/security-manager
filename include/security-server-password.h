@@ -1,7 +1,7 @@
 /*
  *  security-server
  *
- *  Copyright (c) 2012 Samsung Electronics Co., Ltd All Rights Reserved
+ *  Copyright (c) 2000 - 2012 Samsung Electronics Co., Ltd All Rights Reserved
  *
  *  Contact: Bumjin Im <bj.im@samsung.com>
  *
@@ -30,6 +30,8 @@ int process_set_pwd_request(int sockfd);
 int process_reset_pwd_request(int sockfd);
 int process_reset_pwd_request(int sockfd);
 int process_chk_pwd_request(int sockfd);
+int process_set_pwd_max_challenge_request(int sockfd);
+int process_set_pwd_validity_request(int sockfd);
 int init_try(void);
 
 #endif
