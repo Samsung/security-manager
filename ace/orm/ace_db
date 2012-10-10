@@ -70,6 +70,29 @@ CREATE_TABLE(AceSubjectType)
     TABLE_CONSTRAINTS(unique(app_id))
 CREATE_TABLE_END()
 
+CREATE_TABLE(WidgetInfo)
+    COLUMN_NOT_NULL(app_id,         INTEGER,      PRIMARY KEY)
+    COLUMN(widget_type,             INT,          DEFAULT 1)
+    COLUMN(widget_id,               VARCHAR(256), DEFAULT '')
+    COLUMN(widget_version,          VARCHAR(256), DEFAULT '')
+    COLUMN(author_name,             VARCHAR(256), DEFAULT '')
+    COLUMN(share_href,              VARCHAR(256), DEFAULT '')
+CREATE_TABLE_END()
+
+CREATE_TABLE(WidgetCertificateFingerprint)
+    COLUMN_NOT_NULL(app_id,     INT,)
+    COLUMN_NOT_NULL(owner,      INT,)
+    COLUMN_NOT_NULL(chainid,    INT,)
+    COLUMN_NOT_NULL(type,       INT,)
+    COLUMN(md5_fingerprint,     VARCHAR(64),)
+    COLUMN(sha1_fingerprint,    VARCHAR(64),)
+    COLUMN(common_name,         VARCHAR(64),)
+    TABLE_CONSTRAINTS(
+        PRIMARY KEY (app_id, chainid, owner, type)
+        FOREIGN KEY (app_id) REFERENCES WidgetInfo (app_id) ON DELETE CASCADE
+    )
+CREATE_TABLE_END()
+
 SQL(
     COMMIT;
 )

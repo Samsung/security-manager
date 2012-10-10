@@ -349,24 +349,6 @@ void AceDAO::addAttributes(const BaseAttributeSet &attributes)
     }
 }
 
-void AceDAO::setWidgetType(WidgetHandle handle, AppTypes widgetType)
-{
-    Try {
-        ScopedTransaction transaction(&AceDaoUtilities::m_databaseInterface);
-
-        ACE_DB_INSERT(insert, AceSubjectType, &AceDaoUtilities::m_databaseInterface);
-        AceSubjectType::Row row;
-        row.Set_app_id(handle);
-        row.Set_app_type(appTypeToInt(widgetType));
-        insert->Values(row);
-        insert->Execute();
-        transaction.Commit();
-    }
-    Catch(DPL::DB::SqlConnection::Exception::Base) {
-        ReThrowMsg(Exception::DatabaseError, "Failed in setWidgetType");
-    }
-}
-
 void AceDAO::setRequestedDevCaps(
     WidgetHandle widgetHandle,
     const RequestedDevCapsMap &permissions)
@@ -411,13 +393,94 @@ void AceDAO::setAcceptedFeature(
 void AceDAO::removeAcceptedFeature(
     WidgetHandle widgetHandle)
 {
-    Try {
-            ACE_DB_DELETE(del, AceAcceptedFeature,
-                          &AceDaoUtilities::m_databaseInterface);
-            del->Where(Equals<AceAcceptedFeature::app_id>(widgetHandle));
-            del->Execute();
+    Try
+    {
+        ACE_DB_DELETE(del, AceAcceptedFeature,
+                      &AceDaoUtilities::m_databaseInterface);
+        del->Where(Equals<AceAcceptedFeature::app_id>(widgetHandle));
+        del->Execute();
     } Catch(DPL::DB::SqlConnection::Exception::Base) {
         ReThrowMsg(Exception::DatabaseError, "Failed in removeAcceptedFeature");
+    }
+}
+
+void AceDAO::setWidgetType(WidgetHandle handle, AppTypes widgetType)
+{
+    Try {
+        ScopedTransaction transaction(&AceDaoUtilities::m_databaseInterface);
+        ACE_DB_INSERT(insert, AceSubjectType, &AceDaoUtilities::m_databaseInterface);
+        AceSubjectType::Row row;
+        row.Set_app_id(handle);
+        row.Set_app_type(appTypeToInt(widgetType));
+        insert->Values(row);
+        insert->Execute();
+        transaction.Commit();
+    }
+    Catch(DPL::DB::SqlConnection::Exception::Base) {
+        ReThrowMsg(Exception::DatabaseError, "Failed in setWidgetType");
+    }
+}
+
+void AceDAO::registerWidgetInfo(WidgetHandle handle,
+                                const WidgetRegisterInfo& info,
+                                const WidgetCertificateDataList& dataList)
+{
+    Try
+    {
+        ACE_DB_INSERT(insert, WidgetInfo, &AceDaoUtilities::m_databaseInterface);
+        WidgetInfo::Row wi;
+        wi.Set_app_id(handle);
+        wi.Set_widget_type(static_cast<int>(info.type));
+        wi.Set_widget_id(info.widget_id);
+        wi.Set_widget_version(info.version);
+        wi.Set_author_name(info.authorName);
+        wi.Set_share_href(info.shareHref);
+        insert->Values(wi);
+        insert->Execute();
+
+        WidgetCertificateDataList::const_iterator it;
+        for (it = dataList.begin(); it != dataList.end(); ++it)
+        {
+            WidgetCertificateFingerprint::Row wcf;
+            wcf.Set_app_id(handle);
+            wcf.Set_owner(it->owner);
+            wcf.Set_chainid(it->chainId);
+            wcf.Set_type(it->type);
+            wcf.Set_md5_fingerprint(DPL::FromUTF8String(it->strMD5Fingerprint));
+            wcf.Set_sha1_fingerprint(DPL::FromUTF8String(it->strSHA1Fingerprint));
+            wcf.Set_common_name(it->strCommonName);
+            ACE_DB_INSERT(insert, WidgetCertificateFingerprint, &AceDaoUtilities::m_databaseInterface);
+            insert->Values(wcf);
+            insert->Execute();
+        }
+    } Catch(DPL::DB::SqlConnection::Exception::Base) {
+        ReThrowMsg(Exception::DatabaseError, "Failed in registerWidgetInfo");
+    }
+}
+
+void AceDAO::unregisterWidgetInfo(WidgetHandle handle)
+{
+    if(AceDAO::isWidgetInstalled(handle)) {
+        Try
+        {
+            ACE_DB_DELETE(del, WidgetInfo, &AceDaoUtilities::m_databaseInterface);
+            del->Where(Equals<WidgetInfo::app_id>(handle));
+            del->Execute();
+        } Catch(DPL::DB::SqlConnection::Exception::Base) {
+            ReThrowMsg(Exception::DatabaseError, "Failed in unregisterWidgetInfo");
+        }
+    }
+}
+
+bool AceDAO::isWidgetInstalled(WidgetHandle handle)
+{
+    Try {
+        ACE_DB_SELECT(select, WidgetInfo, &AceDaoUtilities::m_databaseInterface);
+        select->Where(Equals<WidgetInfo::app_id>(handle));
+        WidgetInfo::Select::RowList rows = select->GetRowList();
+        return !rows.empty() ? true : false;
+    } Catch(DPL::DB::SqlConnection::Exception::Base) {
+        ReThrowMsg(Exception::DatabaseError, "Failed in isWidgetInstalled");
     }
 }
 

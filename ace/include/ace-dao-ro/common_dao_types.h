@@ -17,15 +17,72 @@
  *
  * @file    common_dao_types.h
  * @author  Bartlomiej Grzelewski (b.grzelewski@samsung.com)
- * @version 1.0
+ * @version 1.1
  * @brief   This file contains the declaration of common data types for ace database.
  */
 #ifndef ACE_SRC_CONFIGURATION_COMMON_DAO_TYPES_H_
 #define ACE_SRC_CONFIGURATION_COMMON_DAO_TYPES_H_
 
 #include <list>
+#include <dpl/optional_typedefs.h>
+#include <dpl/string.h>
+#include "AppTypes.h"
 
 typedef int WidgetHandle;
 typedef std::list<WidgetHandle> WidgetHandleList;
+
+namespace AceDB {
+
+enum {
+    INVALID_PLUGIN_HANDLE = -1
+};
+typedef int DbPluginHandle;
+
+struct WidgetRegisterInfo {
+    AppTypes type;
+    DPL::OptionalString widget_id;
+    DPL::OptionalString authorName;
+    DPL::OptionalString version;
+    DPL::OptionalString shareHref;
+};
+
+typedef std::list <std::string> WidgetCertificateCNList;
+
+struct WidgetCertificateData {
+    enum Owner { AUTHOR, DISTRIBUTOR, UNKNOWN };
+    enum Type { ROOT, ENDENTITY };
+
+    Owner owner;
+    Type type;
+
+    int chainId;
+    std::string strMD5Fingerprint;
+    std::string strSHA1Fingerprint;
+    DPL::String strCommonName;
+
+    bool operator== (const WidgetCertificateData& certData) const {
+        return certData.chainId == chainId &&
+           certData.owner == owner &&
+           certData.strCommonName == strCommonName &&
+           certData.strMD5Fingerprint == strMD5Fingerprint &&
+           certData.strSHA1Fingerprint == strSHA1Fingerprint;
+    }
+};
+typedef std::list<WidgetCertificateData> WidgetCertificateDataList;
+
+typedef std::list<std::string> FingerPrintList;
+
+typedef std::list<std::string> CertificateChainList;
+class IWacSecurity {
+  public:
+    virtual ~IWacSecurity();
+    virtual const WidgetCertificateDataList& getCertificateList() const = 0;
+    virtual bool isRecognized() const = 0;
+    virtual bool isDistributorSigned() const = 0;
+    virtual bool isWacSigned() const = 0;
+    virtual void getCertificateChainList(CertificateChainList& list) const = 0;
+};
+
+} //namespace AceDB
 
 #endif /* ACE_SRC_CONFIGURATION_COMMON_DAO_TYPES_H_ */

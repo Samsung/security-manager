@@ -107,6 +107,49 @@ typedef enum
     Tizen
 } ace_widget_type_t;
 
+struct widget_info {
+    ace_widget_type_t type;
+    ace_string_t id;
+    ace_string_t version;
+    ace_string_t author;
+    ace_string_t shareHerf;
+};
+
+typedef enum
+{
+    AUTHOR,
+    DISTRIBUTOR,
+    UNKNOWN
+} ace_cert_owner_t;
+
+typedef enum
+{
+    ROOT,
+    ENDENTITY
+} ace_cert_type_t;
+
+typedef struct certificate_data {
+    ace_cert_owner_t owner;
+    ace_cert_type_t type;
+    int chain_id;
+    ace_string_t md5_fp;
+    ace_string_t sha1_fp;
+    ace_string_t common_name;
+} ace_certificate_data;
+
+/*
+ * Register widget info into database.
+ * @param cert_data NULL terminated list of widget certificates
+ */
+
+ace_return_t ace_register_widget(ace_widget_handle_t handle,
+                                 struct widget_info* info,
+                                 ace_certificate_data* cert_data[]);
+
+ace_return_t ace_unregister_widget(ace_widget_handle_t handle);
+
+ace_return_t ace_is_widget_installed(ace_widget_handle_t handle, bool *installed);
+
 /*
  * Sets widget type. Use in installer to determine which policy will be used
  * by ACE for this widget.

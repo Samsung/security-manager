@@ -30,7 +30,6 @@
 #include <ace-dao-ro/AceDAOUtilities.h>
 #include <ace-dao-ro/AceDAOConversions.h>
 #include <ace-dao-ro/AceDatabase.h>
-#include <dpl/assert.h>
 #include <dpl/foreach.h>
 
 using namespace DPL::DB::ORM;
@@ -190,23 +189,6 @@ void AceDAOReadOnly::getAttributes(BaseAttributeSet *attributes)
     }
 }
 
-AppTypes AceDAOReadOnly::getWidgetType(WidgetHandle handle)
-{
-    Try {
-        ACE_DB_SELECT(select, AceSubjectType, &AceDaoUtilities::m_databaseInterface);
-        select->Where(Equals<AceSubjectType::app_id>(handle));
-        std::list<AceSubjectType::Row> rows = select->GetRowList();
-        if (rows.empty()) {
-            return AppTypes::Unknown;
-        }
-        AceSubjectType::Row row = rows.front();
-        return intToAppType(row.Get_app_type());
-    }
-    Catch(DPL::DB::SqlConnection::Exception::Base) {
-        ReThrowMsg(Exception::DatabaseError, "Failed to getWidgetType");
-    }
-}
-
 OptionalExtendedPolicyResult AceDAOReadOnly::getPolicyResult(
         const BaseAttributeSet &attributes)
 {
@@ -277,8 +259,6 @@ void AceDAOReadOnly::getDevCapSettings(PreferenceTypesMap *globalSettingsMap)
         ReThrowMsg(Exception::DatabaseError, "Failed to getResourceSettings");
     }
 }
-
-
 
 void AceDAOReadOnly::getWidgetDevCapSettings(BasePermissionList *outputList)
 {
@@ -399,6 +379,162 @@ void AceDAOReadOnly::getAcceptedFeature(
         }
     } Catch(DPL::DB::SqlConnection::Exception::Base) {
         ReThrowMsg(Exception::DatabaseError, "Failed to getRequestedDevCaps");
+    }
+}
+
+AppTypes AceDAOReadOnly::getWidgetType(WidgetHandle handle)
+{
+    Try {
+        ACE_DB_SELECT(select, AceSubjectType, &AceDaoUtilities::m_databaseInterface);
+        select->Where(Equals<AceSubjectType::app_id>(handle));
+        std::list<AceSubjectType::Row> rows = select->GetRowList();
+        if (rows.empty()) {
+            return AppTypes::Unknown;
+        }
+        AceSubjectType::Row row = rows.front();
+        return (static_cast<AppTypes>(row.Get_app_type()));
+    }
+    Catch(DPL::DB::SqlConnection::Exception::Base) {
+        ReThrowMsg(Exception::DatabaseError, "Failed to getWidgetType");
+    }
+}
+
+std::string AceDAOReadOnly::getVersion(WidgetHandle widgetHandle)
+{
+    Try
+    {
+        ACE_DB_SELECT(select, WidgetInfo, &AceDaoUtilities::m_databaseInterface);
+        select->Where(Equals<WidgetInfo::app_id>(widgetHandle));
+        WidgetInfo::Select::RowList rows = select->GetRowList();
+        DPL::OptionalString res;
+        if(!rows.empty()) {
+            res = rows.front().Get_widget_version();
+            return (res.IsNull() ? "" : DPL::ToUTF8String(*res));
+        } else {
+            LogDebug("Widget not installed");
+            return "";
+        }
+    } Catch(DPL::DB::SqlConnection::Exception::Base) {
+        ReThrowMsg(Exception::DatabaseError, "Failed to getVersion");
+    }
+}
+
+std::string AceDAOReadOnly::getAuthorName(WidgetHandle widgetHandle)
+{
+    Try
+    {
+        ACE_DB_SELECT(select, WidgetInfo, &AceDaoUtilities::m_databaseInterface);
+        select->Where(Equals<WidgetInfo::app_id>(widgetHandle));
+        WidgetInfo::Select::RowList rows = select->GetRowList();
+        DPL::OptionalString res;
+        if(!rows.empty()) {
+            res = rows.front().Get_author_name();
+            return (res.IsNull() ? "" : DPL::ToUTF8String(*res));
+        } else {
+            LogDebug("Widget not installed");
+            return "";
+        }
+    } Catch(DPL::DB::SqlConnection::Exception::Base) {
+        ReThrowMsg(Exception::DatabaseError, "Failed to getAuthorName");
+    }
+}
+
+std::string AceDAOReadOnly::getGUID(WidgetHandle widgetHandle)
+{
+    Try
+    {
+        ACE_DB_SELECT(select, WidgetInfo, &AceDaoUtilities::m_databaseInterface);
+        select->Where(Equals<WidgetInfo::app_id>(widgetHandle));
+        WidgetInfo::Select::RowList rows = select->GetRowList();
+        DPL::OptionalString res;
+        if(!rows.empty()) {
+            res = rows.front().Get_widget_id();
+            return (res.IsNull() ? "" : DPL::ToUTF8String(*res));
+        } else {
+            LogDebug("Widget not installed");
+            return "";
+        }
+    } Catch(DPL::DB::SqlConnection::Exception::Base) {
+        ReThrowMsg(Exception::DatabaseError, "Failed to getGUID");
+    }
+}
+
+WidgetCertificateCNList AceDAOReadOnly::getKeyCommonNameList(
+        WidgetHandle widgetHandle,
+        WidgetCertificateData::Owner owner,
+        WidgetCertificateData::Type type)
+{
+    Try {
+        ACE_DB_SELECT(select, WidgetCertificateFingerprint, &AceDaoUtilities::m_databaseInterface);
+        select->Where(And(And(
+            Equals<WidgetCertificateFingerprint::app_id>(widgetHandle),
+            Equals<WidgetCertificateFingerprint::owner>(owner)),
+            Equals<WidgetCertificateFingerprint::type>(type)));
+        WidgetCertificateFingerprint::Select::RowList rows = select->GetRowList();
+
+        WidgetCertificateCNList out;
+        FOREACH(it, rows)
+        {
+            DPL::Optional<DPL::String> cn = it->Get_common_name();
+            out.push_back(cn.IsNull() ? "" : DPL::ToUTF8String(*cn));
+        }
+        return out;
+    }
+    Catch(DPL::DB::SqlConnection::Exception::Base) {
+        ReThrowMsg(Exception::DatabaseError, "Failed to getKeyCommonNameList");
+    }
+}
+
+FingerPrintList AceDAOReadOnly::getKeyFingerprints(
+        WidgetHandle widgetHandle,
+        WidgetCertificateData::Owner owner,
+        WidgetCertificateData::Type type)
+{
+    Try
+    {
+        ACE_DB_SELECT(select, WidgetCertificateFingerprint, &AceDaoUtilities::m_databaseInterface);
+        select->Where(And(And(
+            Equals<WidgetCertificateFingerprint::app_id>(widgetHandle),
+            Equals<WidgetCertificateFingerprint::owner>(owner)),
+            Equals<WidgetCertificateFingerprint::type>(type)));
+        WidgetCertificateFingerprint::Select::RowList rows = select->GetRowList();
+
+        FingerPrintList keys;
+        FOREACH(it, rows)
+        {
+            DPL::Optional<DPL::String> sha1 = it->Get_sha1_fingerprint();
+            if (!sha1.IsNull())
+                keys.push_back(DPL::ToUTF8String(*sha1));
+            DPL::Optional<DPL::String> md5 = it->Get_md5_fingerprint();
+            if (!md5.IsNull())
+                keys.push_back(DPL::ToUTF8String(*md5));
+        }
+        return keys;
+    }
+    Catch(DPL::DB::SqlConnection::Exception::Base) {
+        ReThrowMsg(Exception::DatabaseError, "Failed to getKeyFingerprints");
+    }
+}
+
+std::string AceDAOReadOnly::getShareHref(WidgetHandle widgetHandle)
+{
+    Try
+    {
+        ACE_DB_SELECT(select, WidgetInfo, &AceDaoUtilities::m_databaseInterface);
+        select->Where(Equals<WidgetInfo::app_id>(widgetHandle));
+        WidgetInfo::Select::RowList rows = select->GetRowList();
+
+        if(rows.empty())
+            ThrowMsg(Exception::DatabaseError, "Cannot find widget. Handle: " << widgetHandle);
+
+        DPL::Optional<DPL::String> value = rows.front().Get_share_href();
+        std::string ret = "";
+        if(!value.IsNull())
+            ret = DPL::ToUTF8String(*value);
+        return ret;
+    }
+    Catch(DPL::DB::SqlConnection::Exception::Base) {
+        ReThrowMsg(Exception::DatabaseError, "Failed to getShareHref");
     }
 }
 

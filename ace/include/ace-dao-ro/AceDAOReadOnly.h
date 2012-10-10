@@ -86,9 +86,6 @@ class AceDAOReadOnly
 
     static void getAttributes(BaseAttributeSet *attributes);
 
-    // widget type
-    static AppTypes getWidgetType(WidgetHandle handle);
-
     // Getter for device capabilities that are requested in widgets config.
     //
     // Additional boolean flag means whether widget will always get
@@ -103,6 +100,22 @@ class AceDAOReadOnly
     static void getAcceptedFeature(
         WidgetHandle widgetHandle,
         FeatureNameVector *featureVector);
+
+    static AppTypes getWidgetType(WidgetHandle handle);
+    static std::string getVersion(WidgetHandle widgetHandle);
+    static std::string getAuthorName(WidgetHandle widgetHandle);
+    static std::string getGUID(WidgetHandle widgetHandle);
+
+    static WidgetCertificateCNList getKeyCommonNameList(
+            WidgetHandle widgetHandle,
+            WidgetCertificateData::Owner owner,
+            WidgetCertificateData::Type type);
+    static FingerPrintList getKeyFingerprints(
+            WidgetHandle widgetHandle,
+            WidgetCertificateData::Owner owner,
+            WidgetCertificateData::Type type);
+
+    static std::string getShareHref(WidgetHandle widgetHandle);
 
   protected:
     static int promptDecisionToInt(PromptDecision decision);

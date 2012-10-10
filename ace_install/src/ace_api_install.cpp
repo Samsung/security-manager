@@ -209,6 +209,92 @@ ace_return_t ace_rem_accepted_feature(
     return ACE_OK;
 }
 
+ace_return_t ace_register_widget(ace_widget_handle_t handle,
+                                 struct widget_info *info,
+                                 ace_certificate_data* cert_data[])
+{
+    LogDebug("enter");
+    AceDB::WidgetRegisterInfo wri;
+    wri.type = to_db_app_type(info->type);
+
+    //TODO: type should be only in WidgetInfo database table
+    ace_set_widget_type(handle, info->type);
+
+    if (info->id)
+        wri.widget_id = DPL::FromUTF8String(info->id);
+    if (info->version)
+        wri.version = DPL::FromUTF8String(info->version);
+    if (info->author)
+        wri.authorName = DPL::FromUTF8String(info->author);
+    if (info->shareHerf)
+        wri.shareHref = DPL::FromUTF8String(info->shareHerf);
+
+    AceDB::WidgetCertificateDataList dataList;
+    AceDB::WidgetCertificateData wcd;
+    ace_certificate_data* cd;
+    int i = 0;
+    while (cert_data[i] != NULL)
+    {
+        cd = cert_data[i++]; //increment
+        switch(cd->type) {
+        case ROOT:
+            wcd.type = AceDB::WidgetCertificateData::Type::ROOT;
+            break;
+        case ENDENTITY:
+            wcd.type = AceDB::WidgetCertificateData::Type::ENDENTITY;
+            break;
+        }
+        switch(cd->owner) {
+        case AUTHOR:
+            wcd.owner = AceDB::WidgetCertificateData::Owner::AUTHOR;
+            break;
+        case DISTRIBUTOR:
+            wcd.owner = AceDB::WidgetCertificateData::Owner::DISTRIBUTOR;
+            break;
+        case UNKNOWN: default:
+            wcd.owner = AceDB::WidgetCertificateData::Owner::UNKNOWN;
+            break;
+        }
+        wcd.chainId = cd->chain_id;
+        if (cd->md5_fp)
+            wcd.strMD5Fingerprint = cd->md5_fp;
+        if (cd->sha1_fp)
+            wcd.strSHA1Fingerprint = cd->sha1_fp;
+        if (cd->common_name)
+            wcd.strCommonName = DPL::FromUTF8String(cd->common_name);
+        dataList.push_back(wcd);
+    }
+    LogDebug("All data set. Inserting into database.");
+
+    Try {
+        AceDB::AceDAO::registerWidgetInfo((WidgetHandle)(handle), wri, dataList);
+        LogDebug("AceDB entry done");
+    } Catch(AceDB::AceDAOReadOnly::Exception::DatabaseError) {
+        return ACE_INTERNAL_ERROR;
+    }
+    return ACE_OK;
+}
+
+ace_return_t ace_unregister_widget(ace_widget_handle_t handle)
+{
+    Try {
+        AceDB::AceDAO::unregisterWidgetInfo((WidgetHandle)(handle));
+    } Catch(AceDB::AceDAOReadOnly::Exception::DatabaseError) {
+        return ACE_INTERNAL_ERROR;
+    }
+    return ACE_OK;
+}
+
+ace_return_t ace_is_widget_installed(ace_widget_handle_t handle, bool *installed)
+{
+    Try {
+        *installed = AceDB::AceDAO::isWidgetInstalled((WidgetHandle)(handle));
+    } Catch(AceDB::AceDAOReadOnly::Exception::DatabaseError) {
+        return ACE_INTERNAL_ERROR;
+    }
+    return ACE_OK;
+}
+
 ace_return_t ace_set_widget_type(ace_widget_handle_t handle,
                                  ace_widget_type_t type)
 {

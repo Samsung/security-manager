@@ -110,6 +110,12 @@ class AceDAO : public AceDAOReadOnly
 
     static void removeAcceptedFeature(WidgetHandle widgetHandle);
 
+    static void registerWidgetInfo(WidgetHandle handle,
+                                   const WidgetRegisterInfo& info,
+                                   const WidgetCertificateDataList& dataList);
+    static void unregisterWidgetInfo(WidgetHandle handle);
+    static bool isWidgetInstalled(WidgetHandle handle);
+
 } __attribute__ ((deprecated));
 }
 #endif /* ACEDAO_H_ */
