@@ -1,0 +1,25 @@
+<CertificateSet>
+    <CertificateDomain name="wacpublisher">                                                           <!-- this domain is used to verify author-signatures -->
+        <FingerprintSHA1>AF:90:29:D2:B2:E1:6F:D6:7E:7E:EC:8E:BE:74:FA:4C:00:9C:49:FE</FingerprintSHA1><!-- root.cert.pem w3c signature tests -->
+        <FingerprintSHA1>A6:00:BC:53:AC:37:5B:6A:03:C3:7A:8A:E0:1B:87:8B:82:94:9B:C2</FingerprintSHA1><!-- wac.publisher.pem -->
+        <FingerprintSHA1>C2:C4:B5:72:9A:CF:D9:72:C5:DE:C1:E1:30:FF:74:7F:7A:AF:27:12</FingerprintSHA1><!-- root_cacert.pem certificate for internal tests -->
+        <FingerprintSHA1>2B:A0:20:7D:40:90:1D:00:04:89:60:00:3B:DE:34:89:21:BE:D4:4F</FingerprintSHA1><!-- tizen-developer-root-ca.pem -->
+    </CertificateDomain>
+    <CertificateDomain name="wacroot">
+        <FingerprintSHA1>AF:90:29:D2:B2:E1:6F:D6:7E:7E:EC:8E:BE:74:FA:4C:00:9C:49:FE</FingerprintSHA1><!-- root.cert.pem w3c signature tests -->
+        <FingerprintSHA1>C2:C4:B5:72:9A:CF:D9:72:C5:DE:C1:E1:30:FF:74:7F:7A:AF:27:12</FingerprintSHA1><!-- root_cacert.pem certificate for internal tests -->
+        <FingerprintSHA1>A0:59:D3:37:E8:C8:2E:7F:38:84:7D:21:A9:9E:19:A9:8E:EC:EB:E1</FingerprintSHA1><!-- wac.root.production.pem -->
+        <FingerprintSHA1>8D:1F:CB:31:68:11:DA:22:59:26:58:13:6C:C6:72:C9:F0:DE:84:2A</FingerprintSHA1><!-- wac.root.preproduction.pem -->
+        <FingerprintSHA1>84:A8:85:67:1C:D9:A9:C9:8C:7C:C3:BC:7F:EB:A6:7D:44:94:D9:8F</FingerprintSHA1><!-- tizen-distributor-root-ca-public.pem -->
+    </CertificateDomain>
+    <CertificateDomain name="developer">
+        <FingerprintSHA1>4A:9D:7A:4B:3B:29:D4:69:0A:70:B3:80:EC:A9:44:6B:03:7C:9A:38</FingerprintSHA1><!-- operator.root.cert.pem internal tests-->
+    </CertificateDomain>
+    <CertificateDomain name="wacmember">
+    </CertificateDomain>
+    <CertificateDomain name="tizenmember">                                                            <!-- used to verify tizen widgets -->
+        <FingerprintSHA1>67:37:DE:B7:B9:9D:D2:DB:A5:2C:42:DE:CB:2F:2C:3E:33:97:E1:85</FingerprintSHA1><!-- tizen-distributor-root-ca-partner.pem -->
+        <FingerprintSHA1>04:C5:A6:1D:75:BB:F5:5C:0F:A2:66:F6:09:4D:9B:2B:5F:3B:44:AE</FingerprintSHA1><!-- tizen-distributor-root-ca-public.pem -->
+        <FingerprintSHA1>AD:A1:44:89:6A:35:6D:17:01:E9:6F:46:C6:00:7B:78:BE:2E:D9:4E</FingerprintSHA1><!-- tizen.root.preproduction.cert.pem for internal test of SDK -->
+    </CertificateDomain>
+</CertificateSet>

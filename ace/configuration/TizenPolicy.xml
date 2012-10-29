@@ -1,0 +1,429 @@
+<policy-set id="Tizen-Policy" combine="first-matching-target">
+   <policy id="Tizen-Policy-Trusted" description="Tizen's policy for trusted domain" combine="permit-overrides">
+        <!-- This is finger-print of certificate for TIZEN SDK (tizen.root.preproduction.cert.pem) --> 
+        <target>
+            <subject>
+                <subject-match attr="distributor-key-root-fingerprint" func="equal">
+                    sha-1 AD:A1:44:89:6A:35:6D:17:01:E9:6F:46:C6:00:7B:78:BE:2E:D9:4E
+                </subject-match>
+            </subject>
+        </target> 
+        <rule effect="permit">
+            <condition combine="or">
+                <resource-match attr="device-cap" func="equal" match="tizen" />
+            </condition>
+        </rule>
+
+        <!-- access to alarm -->
+        <rule effect="permit">
+            <condition combine="or">
+                <resource-match attr="device-cap" func="equal" match="alarm" />
+                <resource-match attr="device-cap" func="equal" match="alarm.read" />
+                <resource-match attr="device-cap" func="equal" match="alarm.write" />
+            </condition>
+        </rule>
+
+        <!-- access to application -->
+        <rule effect="permit">
+            <condition combine="or">
+                <resource-match attr="device-cap" func="equal" match="application" />
+                <resource-match attr="device-cap" func="equal" match="application.kill" />
+                <resource-match attr="device-cap" func="equal" match="application.launch" />
+                <resource-match attr="device-cap" func="equal" match="application.read" />
+                <resource-match attr="device-cap" func="equal" match="application.manager" />
+                <resource-match attr="device-cap" func="equal" match="application.service" />
+            </condition>
+        </rule>
+
+        <!-- access to bluetooth -->
+        <rule effect="permit">
+            <condition combine="or">
+                <resource-match attr="device-cap" func="equal" match="bluetooth" />
+                <resource-match attr="device-cap" func="equal" match="bluetooth.admin" />
+                <resource-match attr="device-cap" func="equal" match="bluetooth.gap" />
+                <resource-match attr="device-cap" func="equal" match="bluetooth.spp" />
+            </condition>
+        </rule>
+
+        <!-- access to calendar -->
+        <rule effect="permit">
+            <condition combine="or">
+                <resource-match attr="device-cap" func="equal" match="calendar" />
+                <resource-match attr="device-cap" func="equal" match="calendar.read" />
+                <resource-match attr="device-cap" func="equal" match="calendar.write" />
+            </condition>
+        </rule>
+
+        <!-- access to call history -->
+        <rule effect="permit">
+            <condition combine="or">
+                <resource-match attr="device-cap" func="equal" match="call" />
+                <resource-match attr="device-cap" func="equal" match="call.history" />
+                <resource-match attr="device-cap" func="equal" match="call.history.read" />
+                <resource-match attr="device-cap" func="equal" match="call.history.write" />
+                <resource-match attr="device-cap" func="equal" match="call.state" />
+            </condition>
+        </rule>
+
+        <!-- access to contact -->
+        <rule effect="permit">
+            <condition combine="or">
+                <resource-match attr="device-cap" func="equal" match="contact" />
+                <resource-match attr="device-cap" func="equal" match="contact.read" />
+                <resource-match attr="device-cap" func="equal" match="contact.write" />
+            </condition>
+        </rule>
+
+        <!-- access to filesystem -->
+        <rule effect="permit">
+            <condition combine="or">
+                <resource-match attr="device-cap" func="equal" match="filesystem" />
+                <resource-match attr="device-cap" func="equal" match="filesystem.read" />
+                <resource-match attr="device-cap" func="equal" match="filesystem.write" />
+            </condition>
+        </rule>
+
+        <!-- access to geo coder -->
+        <rule effect="permit">
+            <condition combine="or">
+                <resource-match attr="device-cap" func="equal" match="geocoder" />
+            </condition>
+        </rule>
+
+        <!-- access to mediacontent -->
+        <rule effect="permit">
+            <condition combine="or">
+                <resource-match attr="device-cap" func="equal" match="mediacontent" />
+                <resource-match attr="device-cap" func="equal" match="mediacontent.read" />
+				<resource-match attr="device-cap" func="equal" match="mediacontent.write" />
+            </condition>
+        </rule>
+
+        <!-- access to Messaging -->
+        <rule effect="permit">
+            <condition combine="or">
+                <resource-match attr="device-cap" func="equal" match="messaging" />
+                <resource-match attr="device-cap" func="equal" match="messaging.read" />
+                <resource-match attr="device-cap" func="equal" match="messaging.write" />
+                <resource-match attr="device-cap" func="equal" match="messaging.send" />
+            </condition>
+        </rule>
+
+        <!-- access to NFC -->
+        <rule effect="permit">
+            <condition combine="or">
+                <resource-match attr="device-cap" func="equal" match="nfc" />
+                <resource-match attr="device-cap" func="equal" match="nfc.tag" />
+                <resource-match attr="device-cap" func="equal" match="nfc.p2p" />
+                <resource-match attr="device-cap" func="equal" match="nfc.admin" />
+            </condition>
+        </rule>
+
+        <!-- access to Sensors -->
+        <rule effect="permit">
+            <condition combine="or">
+                <resource-match attr="device-cap" func="equal" match="sensors" />
+            </condition>
+        </rule>
+
+        <!-- access to systeminfo -->
+        <rule effect="permit">
+            <condition combine="or">
+                <resource-match attr="device-cap" func="equal" match="systeminfo" />
+            </condition>
+        </rule>
+
+        <!-- access to timeutil -->
+        <rule effect="permit">
+            <condition combine="or">
+                <resource-match attr="device-cap" func="equal" match="time" />
+                <resource-match attr="device-cap" func="equal" match="time.read" />
+                <resource-match attr="device-cap" func="equal" match="time.write" />
+            </condition>
+        </rule>
+
+        <!-- access to lbs -->
+        <rule effect="permit">
+            <condition combine="or">
+                <resource-match attr="device-cap" func="equal" match="lbs" />
+            </condition>
+        </rule>
+
+        <!-- access to map -->
+        <rule effect="permit">
+            <condition combine="or">
+                <resource-match attr="device-cap" func="equal" match="map" />
+            </condition>
+        </rule>
+
+        <!-- access to poi -->
+        <rule effect="permit">
+            <condition combine="or">
+                <resource-match attr="device-cap" func="equal" match="poi" />
+                <resource-match attr="device-cap" func="equal" match="poi.read" />
+                <resource-match attr="device-cap" func="equal" match="poi.write" />
+            </condition>
+        </rule>
+
+        <!-- access to route -->
+        <rule effect="permit">
+            <condition combine="or">
+                <resource-match attr="device-cap" func="equal" match="route" />
+            </condition>
+        </rule>
+
+        <!-- access to external network -->
+        <!-- XMLHttpRequestTizen and externalNetworkAccessTizen defined for Tizen Webapp -->
+        <!-- Function of two capabilities are same to XMLHttpRequest and externalNetworkAccess of WAC -->
+        <rule effect="permit">
+            <condition combine="or">
+                <resource-match attr="device-cap" func="equal" match="XMLHttpRequest" />
+                <resource-match attr="device-cap" func="equal" match="externalNetworkAccess" />
+            </condition>
+        </rule>
+
+        <!-- access to external network on roaming status -->
+        <rule effect="permit">
+            <condition combine="and">
+                <condition combine="or">
+                    <resource-match attr="device-cap" func="equal" match="XMLHttpRequest" />
+                    <resource-match attr="device-cap" func="equal" match="externalNetworkAccess" />
+                </condition>
+                <environment-match attr="roaming" match="true" />
+            </condition>
+        </rule>
+
+        <!-- access to power feature -->
+        <rule effect="permit">
+            <condition combine="or">
+                <resource-match attr="device-cap" func="equal" match="power" />
+            </condition>
+        </rule>
+
+        <!-- access to download feature -->
+        <rule effect="permit">
+            <condition combine="or">
+                <resource-match attr="device-cap" func="equal" match="download" />
+            </condition>
+        </rule>
+
+        <!-- access to notification feature -->
+        <rule effect="permit">
+            <condition combine="or">
+                <resource-match attr="device-cap" func="equal" match="notification" />
+            </condition>
+        </rule>
+        <rule effect="permit" />
+    </policy>
+
+    <policy id="Tizen-Policy-Untrusted" description="Tizen's policy for untrusted domain" combine="deny-overrides">
+        <!-- Specific Untrusted Policy for Tizen -->
+
+        <rule effect="permit">
+            <condition combine="or">
+                <resource-match attr="device-cap" func="equal" match="tizen" />
+            </condition>
+        </rule>
+
+        <!-- access to alarm -->
+        <rule effect="permit">
+            <condition combine="or">
+                <resource-match attr="device-cap" func="equal" match="alarm" />
+                <resource-match attr="device-cap" func="equal" match="alarm.read" />
+                <resource-match attr="device-cap" func="equal" match="alarm.write" />
+            </condition>
+        </rule>
+
+        <!-- access to application -->
+        <rule effect="permit">
+            <condition combine="or">
+                <resource-match attr="device-cap" func="equal" match="application" />
+                <resource-match attr="device-cap" func="equal" match="application.kill" />
+                <resource-match attr="device-cap" func="equal" match="application.launch" />
+                <resource-match attr="device-cap" func="equal" match="application.read" />
+                <resource-match attr="device-cap" func="equal" match="application.manager" />
+                <resource-match attr="device-cap" func="equal" match="application.service" />
+            </condition>
+        </rule>
+
+        <!-- access to bluetooth -->
+        <rule effect="permit">
+            <condition combine="or">
+                <resource-match attr="device-cap" func="equal" match="bluetooth" />
+                <resource-match attr="device-cap" func="equal" match="bluetooth.admin" />
+                <resource-match attr="device-cap" func="equal" match="bluetooth.gap" />
+                <resource-match attr="device-cap" func="equal" match="bluetooth.spp" />
+            </condition>
+        </rule>
+
+        <!-- access to calendar -->
+        <rule effect="permit">
+            <condition combine="or">
+                <resource-match attr="device-cap" func="equal" match="calendar" />
+                <resource-match attr="device-cap" func="equal" match="calendar.read" />
+                <resource-match attr="device-cap" func="equal" match="calendar.write" />
+            </condition>
+        </rule>
+
+        <!-- access to call history -->
+        <rule effect="permit">
+            <condition combine="or">
+                <resource-match attr="device-cap" func="equal" match="call" />
+                <resource-match attr="device-cap" func="equal" match="call.history" />
+                <resource-match attr="device-cap" func="equal" match="call.history.read" />
+                <resource-match attr="device-cap" func="equal" match="call.history.write" />
+                <resource-match attr="device-cap" func="equal" match="call.state" />
+            </condition>
+        </rule>
+
+        <!-- access to contact -->
+        <rule effect="permit">
+            <condition combine="or">
+                <resource-match attr="device-cap" func="equal" match="contact" />
+                <resource-match attr="device-cap" func="equal" match="contact.read" />
+                <resource-match attr="device-cap" func="equal" match="contact.write" />
+            </condition>
+        </rule>
+
+        <!-- access to filesystem -->
+        <rule effect="permit">
+            <condition combine="or">
+                <resource-match attr="device-cap" func="equal" match="filesystem" />
+                <resource-match attr="device-cap" func="equal" match="filesystem.read" />
+                <resource-match attr="device-cap" func="equal" match="filesystem.write" />
+            </condition>
+        </rule>
+
+        <!-- access to geo coder -->
+        <rule effect="permit">
+            <condition combine="or">
+                <resource-match attr="device-cap" func="equal" match="geocoder" />
+            </condition>
+        </rule>
+
+        <!-- access to mediacontent -->
+        <rule effect="permit">
+            <condition combine="or">
+                <resource-match attr="device-cap" func="equal" match="mediacontent" />
+                <resource-match attr="device-cap" func="equal" match="mediacontent.read" />
+                <resource-match attr="device-cap" func="equal" match="mediacontent.write" />
+            </condition>
+        </rule>
+
+        <!-- access to Messaging -->
+        <rule effect="permit">
+            <condition combine="or">
+                <resource-match attr="device-cap" func="equal" match="messaging" />
+                <resource-match attr="device-cap" func="equal" match="messaging.read" />
+                <resource-match attr="device-cap" func="equal" match="messaging.write" />
+                <resource-match attr="device-cap" func="equal" match="messaging.send" />
+            </condition>
+        </rule>
+
+        <!-- access to NFC -->
+        <rule effect="permit">
+            <condition combine="or">
+                <resource-match attr="device-cap" func="equal" match="nfc" />
+                <resource-match attr="device-cap" func="equal" match="nfc.tag" />
+                <resource-match attr="device-cap" func="equal" match="nfc.p2p" />
+                <resource-match attr="device-cap" func="equal" match="nfc.admin" />
+            </condition>
+        </rule>
+
+        <!-- access to Sensors -->
+        <rule effect="permit">
+            <condition combine="or">
+                <resource-match attr="device-cap" func="equal" match="sensors" />
+            </condition>
+        </rule>
+
+        <!-- access to systeminfo -->
+        <rule effect="permit">
+            <condition combine="or">
+                <resource-match attr="device-cap" func="equal" match="systeminfo" />
+            </condition>
+        </rule>
+
+        <!-- access to timeutil -->
+        <rule effect="permit">
+            <condition combine="or">
+                <resource-match attr="device-cap" func="equal" match="time" />
+                <resource-match attr="device-cap" func="equal" match="time.read" />
+                <resource-match attr="device-cap" func="equal" match="time.write" />
+            </condition>
+        </rule>
+
+        <!-- access to lbs -->
+        <rule effect="permit">
+            <condition combine="or">
+                <resource-match attr="device-cap" func="equal" match="lbs" />
+            </condition>
+        </rule>
+
+        <!-- access to map -->
+        <rule effect="permit">
+            <condition combine="or">
+                <resource-match attr="device-cap" func="equal" match="map" />
+            </condition>
+        </rule>
+
+        <!-- access to poi -->
+        <rule effect="permit">
+            <condition combine="or">
+                <resource-match attr="device-cap" func="equal" match="poi" />
+                <resource-match attr="device-cap" func="equal" match="poi.read" />
+                <resource-match attr="device-cap" func="equal" match="poi.write" />
+            </condition>
+        </rule>
+
+        <!-- access to route -->
+        <rule effect="permit">
+            <condition combine="or">
+                <resource-match attr="device-cap" func="equal" match="route" />
+            </condition>
+        </rule>
+
+        <!-- access to external network -->
+        <!-- XMLHttpRequestTizen and externalNetworkAccessTizen defined for Tizen Webapp -->
+        <!-- Function of two capabilities are same to XMLHttpRequest and externalNetworkAccess of WAC -->
+        <rule effect="permit">
+            <condition combine="or">
+                <resource-match attr="device-cap" func="equal" match="XMLHttpRequest" />
+                <resource-match attr="device-cap" func="equal" match="externalNetworkAccess" />
+            </condition>
+        </rule>
+
+        <!-- access to external network on roaming status -->
+        <rule effect="permit">
+            <condition combine="and">
+                <condition combine="or">
+                    <resource-match attr="device-cap" func="equal" match="XMLHttpRequest" />
+                    <resource-match attr="device-cap" func="equal" match="externalNetworkAccess" />
+                </condition>
+                <environment-match attr="roaming" match="true" />
+            </condition>
+        </rule>
+
+        <!-- access to power feature -->
+        <rule effect="permit">
+            <condition combine="or">
+                <resource-match attr="device-cap" func="equal" match="power" />
+            </condition>
+        </rule>
+
+        <!-- access to download feature -->
+        <rule effect="permit">
+            <condition combine="or">
+                <resource-match attr="device-cap" func="equal" match="download" />
+            </condition>
+        </rule>
+
+        <!-- access to notification feature -->
+        <rule effect="permit">
+            <condition combine="or">
+                <resource-match attr="device-cap" func="equal" match="notification" />
+            </condition>
+        </rule>
+
+    </policy>
+</policy-set>

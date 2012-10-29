@@ -1,0 +1,11 @@
+prefix=@CMAKE_INSTALL_PREFIX@
+exec_prefix=${prefix}
+libdir=${prefix}/lib
+includedir=${prefix}/include
+
+Name: communication-client
+Description: Security communication client library
+Version: @VERSION@
+Requires: dpl-efl dpl-dbus-efl
+Libs: -lcommunication-client  -L${libdir}
+Cflags: -I${includedir}/communication-client

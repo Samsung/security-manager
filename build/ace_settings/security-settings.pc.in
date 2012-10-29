@@ -1,0 +1,11 @@
+prefix=@CMAKE_INSTALL_PREFIX@
+exec_prefix=${prefix}
+libdir=${prefix}/lib
+includedir=${prefix}/include
+
+Name: ace-settings
+Description: ACE settings library
+Version: @VERSION@
+Requires:
+Libs: -lace-settings -lace-dao-rw -L${libdir}
+Cflags: -I${includedir}/ace-settings -I${includedir}/ace-common

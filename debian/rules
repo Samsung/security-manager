@@ -9,11 +9,22 @@
 # Uncomment this to turn on verbose mode.
 #export DH_VERBOSE=1
 
-CFLAGS ?= -Wall -g
-CXXFLAGS ?=  -Wall -g
-LDFLAGS ?= 
+PACKAGE_VERSION ?= $(shell dpkg-parsechangelog | sed -n 's/^Version: // p')
+
 PREFIX ?= /usr
 DATADIR ?= /opt
+
+CFLAGS ?= -Wall -g
+CXXFLAGS ?=  -Wall -g
+LDFLAGS += -Wl,--rpath=$(PREFIX)/lib -Wl,--as-needed
+
+CMAKE_BUILD_DIR ?= $(CURDIR)/cmake_build_tmp
+
+ifeq (,$(findstring no,$(DPL_LOGS)))
+	DPL_LOGS_STATUS = "ON"
+else
+	DPL_LOGS_STATUS = "OFF"
+endif
 
 ifneq (,$(findstring noopt,$(DEB_BUILD_OPTIONS)))
 	CFLAGS += -O0
@@ -23,53 +34,69 @@ else
 	CXXFLAGS += -O2
 endif
 
-LDFLAGS += -Wl,--rpath=$(PREFIX)/lib -Wl,--as-needed
 
-configure: configure-stamp
-configure-stamp:
+config.status:
 	dh_testdir
 	# Add here commands to configure the package.
-	CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" LDFLAGS="$(LDFLAGS)" cmake . -DCMAKE_INSTALL_PREFIX=$(PREFIX)
-
-	touch configure-stamp
+	mkdir -p $(CMAKE_BUILD_DIR) && cd $(CMAKE_BUILD_DIR) && \
+	cmake ${SRCDIR} \
+		-DCMAKE_INSTALL_PREFIX="${PREFIX}"      \
+		-DDPL_LOG=$(DPL_LOGS_STATUS)            \
+		-DVERSION=${PACKAGE_VERSION} ..
 
 build: build-stamp
 
-build-stamp: configure-stamp 
+build-stamp:  config.status
 	dh_testdir
-
 	# Add here commands to compile the package.
-	$(MAKE)
-	#docbook-to-man debian/wavplayer.sgml > wavplayer.1
-
-	for f in `find $(CURDIR)/debian/ -name "*.in"`; do \
+	cd $(CMAKE_BUILD_DIR) && $(MAKE)
+#### -j 4
+	#docbook-to-man debian/ncurses.sgml > ncurses.1
+	for f in `find $(CURDIR)/ -name "*.in"`; do \
 		cat $$f > $${f%.in}; \
 		sed -i -e "s#@PREFIX@#$(PREFIX)#g" $${f%.in}; \
 		sed -i -e "s#@DATADIR@#$(DATADIR)#g" $${f%.in}; \
 	done
-
-
 	touch $@
+
 
 clean:
 	dh_testdir
 	dh_testroot
-	rm -f build-stamp configure-stamp
+	rm -f build-stamp
 
 	# Add here commands to clean up after the build process.
-	-$(MAKE) clean
-	rm -rf CMakeCache.txt
-	rm -rf CMakeFiles
-	rm -rf cmake_install.cmake
+	-find . -name CMakeFiles -exec rm -rf {} \;
+	-find . -name cmake_install.cmake -exec rm {} \;
+	#-find . -name Makefile -exec rm {} \;
+	rm CMakeCache.txt -rf
+	#-$(MAKE) distclean
+	rm -rf $(CMAKE_BUILD_DIR)
+	rm -rf autotools
+	rm -rf aclocal.m4
+	rm -rf configure
 	rm -rf Makefile
+	rm -rf Makefile.in
+	rm -rf m4
+	rm -rf libtool
+	rm -rf build/config.*
+	rm -rf build/depcomp
+	rm -rf build/install-sh
+	rm -rf build/ltmain.sh
+	rm -rf build/missing
 	rm -rf install_manifest.txt
 	rm -rf *.so
 	rm -rf *.pc
-
+ifneq "$(wildcard /usr/share/misc/config.sub)" ""
+	cp -f /usr/share/misc/config.sub config.sub
+endif
+ifneq "$(wildcard /usr/share/misc/config.guess)" ""
+	cp -f /usr/share/misc/config.guess config.guess
+endif
 	for f in `find $(CURDIR)/debian/ -name "*.in"`; do \
 		rm -f $${f%.in}; \
 	done
-
+	rm -rf config.*
 	dh_clean
 
 install: build
@@ -78,8 +105,8 @@ install: build
 	dh_clean -k 
 	dh_installdirs
 
-	# Add here commands to install the package into debian/wavplayer.
-	$(MAKE) DESTDIR=$(CURDIR)/debian/tmp install
+	cd $(CMAKE_BUILD_DIR) && $(MAKE) DESTDIR=$(CURDIR)/debian/tmp install
+
 	mkdir -p $(CURDIR)/debian/tmp/etc/rc.d/rc3.d/
 	mkdir -p $(CURDIR)/debian/tmp/etc/rc.d/rc5.d/
 	ln -s ../init.d/security-serverd $(CURDIR)/debian/tmp/etc/rc.d/rc3.d/S10security-server
@@ -123,4 +150,4 @@ binary-arch: build install
 	dh_builddeb
 
 binary: binary-indep binary-arch
-.PHONY: build clean binary-indep binary-arch binary install configure
+.PHONY: build clean binary-indep binary-arch binary install
