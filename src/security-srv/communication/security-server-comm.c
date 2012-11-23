@@ -26,6 +26,7 @@
 #include <sys/types.h>
 #include <sys/smack.h>
 #include <fcntl.h>
+#include <pwd.h>
 #include <sys/un.h>
 #include <errno.h>
 #include <unistd.h>
@@ -2195,13 +2196,18 @@ int search_middleware_cmdline(char *cmdline)
 }
 
 /* Authenticate the application is middleware daemon
- * The middleware must run as root and the cmd line must be pre listed */
+ * The middleware must run as root (or middleware user) and the cmd line must be
+ * pre listed for authentication to succeed */
 int authenticate_client_middleware(int sockfd, int *pid)
 {
 	int retval = SECURITY_SERVER_ERROR_AUTHENTICATION_FAILED;
 	struct ucred cr;
 	unsigned int cl = sizeof(cr);
 	char *cmdline = NULL;
+	struct passwd pw, *ppw;
+	size_t buf_size;
+	char *buf;
+	static uid_t middleware_uid = 0;
 
 	*pid = 0;
 
@@ -2213,8 +2219,25 @@ int authenticate_client_middleware(int sockfd, int *pid)
 		goto error;
 	}
 
-	/* All middlewares will run as root */
-	if(cr.uid != 0)
+	if (!middleware_uid)
+	{
+		buf_size = sysconf(_SC_GETPW_R_SIZE_MAX);
+		if (buf_size == -1)
+			buf_size = 1024;
+
+		buf = malloc(buf_size);
+
+		/* This test isn't essential, skip it in case of error */
+		if (buf) {
+			if (getpwnam_r(SECURITY_SERVER_MIDDLEWARE_USER, &pw, buf, buf_size, &ppw) == 0 && ppw)
+				middleware_uid = pw.pw_uid;
+
+			free(buf);
+		}
+	}
+
+	/* Middleware services need to run as root or middleware/app user */
+	if(cr.uid != 0 && cr.uid != middleware_uid)
 	{
 		retval = SECURITY_SERVER_ERROR_AUTHENTICATION_FAILED;
 		SEC_SVR_DBG("Non root process has called API: %d", cr.uid);
