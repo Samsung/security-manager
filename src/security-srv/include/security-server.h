@@ -22,6 +22,7 @@
 #ifndef SECURITY_SERVER_H
 #define SECURITY_SERVER_H
 
+#include <sys/types.h>
 
 /**
  * @file    security-server.h
