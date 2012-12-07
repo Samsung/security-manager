@@ -67,7 +67,7 @@ class PolicyEvaluator : DPL::Noncopyable
         POLICY_FILE_ERROR = 1,
         PARSER_CREATION_ERROR,
         POLICY_PARSING_ERROR
-    } __attribute__ ((deprecated));
+    };
   private:
     AttributeSet m_attributeSet;
 
@@ -143,13 +143,11 @@ class PolicyEvaluator : DPL::Noncopyable
                                                      bool fromCacheOnly);
     bool fillAttributeWithPolicy();
 
-    // !! DEPRECATED !!
-    virtual int updatePolicy(const char *) __attribute__ ((deprecated));
+    virtual int updatePolicy(const char *);
     // This function updates policy from well known locations
     virtual void updatePolicy();
 
-    // !! DEPRECATED !!
-    std::string getCurrentPolicy() __attribute__ ((deprecated));
-} __attribute__ ((deprecated));
+    std::string getCurrentPolicy();
+};
 
 #endif  //_POLICYEVALUATOR_H

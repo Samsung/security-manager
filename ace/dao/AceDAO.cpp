@@ -404,29 +404,14 @@ void AceDAO::removeAcceptedFeature(
     }
 }
 
-void AceDAO::setWidgetType(WidgetHandle handle, AppTypes widgetType)
-{
-    Try {
-        ScopedTransaction transaction(&AceDaoUtilities::m_databaseInterface);
-        ACE_DB_INSERT(insert, AceSubjectType, &AceDaoUtilities::m_databaseInterface);
-        AceSubjectType::Row row;
-        row.Set_app_id(handle);
-        row.Set_app_type(appTypeToInt(widgetType));
-        insert->Values(row);
-        insert->Execute();
-        transaction.Commit();
-    }
-    Catch(DPL::DB::SqlConnection::Exception::Base) {
-        ReThrowMsg(Exception::DatabaseError, "Failed in setWidgetType");
-    }
-}
-
 void AceDAO::registerWidgetInfo(WidgetHandle handle,
                                 const WidgetRegisterInfo& info,
                                 const WidgetCertificateDataList& dataList)
 {
     Try
     {
+        ScopedTransaction transaction(&AceDaoUtilities::m_databaseInterface);
+
         ACE_DB_INSERT(insert, WidgetInfo, &AceDaoUtilities::m_databaseInterface);
         WidgetInfo::Row wi;
         wi.Set_app_id(handle);
@@ -453,6 +438,7 @@ void AceDAO::registerWidgetInfo(WidgetHandle handle,
             insert->Values(wcf);
             insert->Execute();
         }
+        transaction.Commit();
     } Catch(DPL::DB::SqlConnection::Exception::Base) {
         ReThrowMsg(Exception::DatabaseError, "Failed in registerWidgetInfo");
     }
@@ -469,18 +455,6 @@ void AceDAO::unregisterWidgetInfo(WidgetHandle handle)
         } Catch(DPL::DB::SqlConnection::Exception::Base) {
             ReThrowMsg(Exception::DatabaseError, "Failed in unregisterWidgetInfo");
         }
-    }
-}
-
-bool AceDAO::isWidgetInstalled(WidgetHandle handle)
-{
-    Try {
-        ACE_DB_SELECT(select, WidgetInfo, &AceDaoUtilities::m_databaseInterface);
-        select->Where(Equals<WidgetInfo::app_id>(handle));
-        WidgetInfo::Select::RowList rows = select->GetRowList();
-        return !rows.empty() ? true : false;
-    } Catch(DPL::DB::SqlConnection::Exception::Base) {
-        ReThrowMsg(Exception::DatabaseError, "Failed in isWidgetInstalled");
     }
 }
 

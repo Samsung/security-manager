@@ -101,6 +101,8 @@ class AceDAOReadOnly
         WidgetHandle widgetHandle,
         FeatureNameVector *featureVector);
 
+    static WidgetHandleList getHandleList();
+
     static AppTypes getWidgetType(WidgetHandle handle);
     static std::string getVersion(WidgetHandle widgetHandle);
     static std::string getAuthorName(WidgetHandle widgetHandle);
@@ -116,13 +118,14 @@ class AceDAOReadOnly
             WidgetCertificateData::Type type);
 
     static std::string getShareHref(WidgetHandle widgetHandle);
+    static bool isWidgetInstalled(WidgetHandle handle);
 
   protected:
     static int promptDecisionToInt(PromptDecision decision);
     static PromptDecision intToPromptDecision(int decision);
     static int appTypeToInt(AppTypes app_type);
     static AppTypes intToAppType(int app_type);
-} __attribute__ ((deprecated));
+};
 
 }
 

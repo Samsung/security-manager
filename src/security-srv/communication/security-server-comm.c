@@ -216,7 +216,14 @@ int create_new_socket(int *sockfd)
 	mode_t sock_mode;
 
 	/* Deleted garbage Unix domain socket file */
-	remove(SECURITY_SERVER_SOCK_PATH);
+	retval = remove(SECURITY_SERVER_SOCK_PATH);
+
+    if (retval == -1 && errno != ENOENT) {
+        retval = SECURITY_SERVER_ERROR_UNKNOWN;
+        localsockfd = -1;
+        SEC_SVR_DBG("%s", "Unable to remove /tmp/.security_server.sock");
+        goto error;
+    }
 
 	/* Create Unix domain socket */
 	if((localsockfd = socket(AF_UNIX, SOCK_STREAM, 0)) < 0 )
@@ -233,6 +240,7 @@ int create_new_socket(int *sockfd)
 		if(errno != EOPNOTSUPP)
 		{
 			retval = SECURITY_SERVER_ERROR_SOCKET;
+            close(localsockfd);
 			localsockfd = -1;
 			goto error;
 		}
@@ -242,6 +250,7 @@ int create_new_socket(int *sockfd)
 		if(errno != EOPNOTSUPP)
 		{
 			retval = SECURITY_SERVER_ERROR_SOCKET;
+            close(localsockfd);
 			localsockfd = -1;
 			goto error;
 		}
@@ -1912,7 +1921,7 @@ int recv_generic_response(int sockfd, response_header *hdr)
 
 	/* Receive response */
 	retval = read(sockfd, hdr, sizeof(response_header));
-	if(retval < sizeof(hdr) )
+	if(retval < sizeof(response_header) )
 	{
 		/* Error on socket */
 		SEC_SVR_DBG("Client: Receive failed %d", retval);
@@ -2129,6 +2138,9 @@ int recv_pwd_response(int sockfd, response_header *hdr,
 		SEC_SVR_DBG("Client: Receive failed %d", retval);
 		return  SECURITY_SERVER_ERROR_RECV_FAILED;
 	}
+
+    //if come here there were no errors
+    return SECURITY_SERVER_SUCCESS;
 }
 
 /* Authenticate client application *

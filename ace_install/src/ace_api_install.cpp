@@ -28,7 +28,7 @@
 #include <dpl/string.h>
 #include <dpl/dbus/dbus_client.h>
 #include <ace-dao-rw/AceDAO.h>
-#include "ace_server_api.h"
+#include "ace_server_dbus_api.h"
 #include "security_daemon_dbus_config.h"
 
 #include "ace_api_install.h"
@@ -214,11 +214,12 @@ ace_return_t ace_register_widget(ace_widget_handle_t handle,
                                  ace_certificate_data* cert_data[])
 {
     LogDebug("enter");
+
+    if (NULL == info || AceDB::AceDAOReadOnly::isWidgetInstalled(handle))
+        return ACE_INVALID_ARGUMENTS;
+
     AceDB::WidgetRegisterInfo wri;
     wri.type = to_db_app_type(info->type);
-
-    //TODO: type should be only in WidgetInfo database table
-    ace_set_widget_type(handle, info->type);
 
     if (info->id)
         wri.widget_id = DPL::FromUTF8String(info->id);
@@ -230,41 +231,43 @@ ace_return_t ace_register_widget(ace_widget_handle_t handle,
         wri.shareHref = DPL::FromUTF8String(info->shareHerf);
 
     AceDB::WidgetCertificateDataList dataList;
-    AceDB::WidgetCertificateData wcd;
-    ace_certificate_data* cd;
-    int i = 0;
-    while (cert_data[i] != NULL)
-    {
-        cd = cert_data[i++]; //increment
-        switch(cd->type) {
-        case ROOT:
-            wcd.type = AceDB::WidgetCertificateData::Type::ROOT;
-            break;
-        case ENDENTITY:
-            wcd.type = AceDB::WidgetCertificateData::Type::ENDENTITY;
-            break;
+    if (NULL != cert_data) {
+        AceDB::WidgetCertificateData wcd;
+        ace_certificate_data* cd;
+        int i = 0;
+        while (cert_data[i] != NULL)
+        {
+            cd = cert_data[i++]; //increment
+            switch(cd->type) {
+            case ROOT:
+                wcd.type = AceDB::WidgetCertificateData::Type::ROOT;
+                break;
+            case ENDENTITY:
+                wcd.type = AceDB::WidgetCertificateData::Type::ENDENTITY;
+                break;
+            }
+            switch(cd->owner) {
+            case AUTHOR:
+                wcd.owner = AceDB::WidgetCertificateData::Owner::AUTHOR;
+                break;
+            case DISTRIBUTOR:
+                wcd.owner = AceDB::WidgetCertificateData::Owner::DISTRIBUTOR;
+                break;
+            case UNKNOWN: default:
+                wcd.owner = AceDB::WidgetCertificateData::Owner::UNKNOWN;
+                break;
+            }
+            wcd.chainId = cd->chain_id;
+            if (cd->md5_fp)
+                wcd.strMD5Fingerprint = cd->md5_fp;
+            if (cd->sha1_fp)
+                wcd.strSHA1Fingerprint = cd->sha1_fp;
+            if (cd->common_name)
+                wcd.strCommonName = DPL::FromUTF8String(cd->common_name);
+            dataList.push_back(wcd);
         }
-        switch(cd->owner) {
-        case AUTHOR:
-            wcd.owner = AceDB::WidgetCertificateData::Owner::AUTHOR;
-            break;
-        case DISTRIBUTOR:
-            wcd.owner = AceDB::WidgetCertificateData::Owner::DISTRIBUTOR;
-            break;
-        case UNKNOWN: default:
-            wcd.owner = AceDB::WidgetCertificateData::Owner::UNKNOWN;
-            break;
-        }
-        wcd.chainId = cd->chain_id;
-        if (cd->md5_fp)
-            wcd.strMD5Fingerprint = cd->md5_fp;
-        if (cd->sha1_fp)
-            wcd.strSHA1Fingerprint = cd->sha1_fp;
-        if (cd->common_name)
-            wcd.strCommonName = DPL::FromUTF8String(cd->common_name);
-        dataList.push_back(wcd);
+        LogDebug("All data set. Inserting into database.");
     }
-    LogDebug("All data set. Inserting into database.");
 
     Try {
         AceDB::AceDAO::registerWidgetInfo((WidgetHandle)(handle), wri, dataList);
@@ -289,18 +292,6 @@ ace_return_t ace_is_widget_installed(ace_widget_handle_t handle, bool *installed
 {
     Try {
         *installed = AceDB::AceDAO::isWidgetInstalled((WidgetHandle)(handle));
-    } Catch(AceDB::AceDAOReadOnly::Exception::DatabaseError) {
-        return ACE_INTERNAL_ERROR;
-    }
-    return ACE_OK;
-}
-
-ace_return_t ace_set_widget_type(ace_widget_handle_t handle,
-                                 ace_widget_type_t type)
-{
-    Try {
-        AceDB::AceDAO::setWidgetType(
-                handle, to_db_app_type(type));
     } Catch(AceDB::AceDAOReadOnly::Exception::DatabaseError) {
         return ACE_INTERNAL_ERROR;
     }

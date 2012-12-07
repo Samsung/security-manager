@@ -255,19 +255,21 @@ int send_one_cookie_info(const cookie_list *list, int sockfd)
 	if(ret == SECURITY_SERVER_ERROR_POLL)
 	{
 		SEC_SVR_DBG("%s", "poll() error");
+		free(buf);
 		return SECURITY_SERVER_ERROR_SEND_FAILED;
 	}
 	if(ret == SECURITY_SERVER_ERROR_TIMEOUT)
 	{
 		SEC_SVR_DBG("%s", "poll() timeout");
+		free(buf);
 		return SECURITY_SERVER_ERROR_SEND_FAILED;
 	}
 
 	/* Send to client */
 	ret = write(sockfd, buf, total_size);
-
+	free(buf);
 	if(ret < total_size)
-		return SECURITY_SERVER_ERROR_SEND_FAILED;
+	    return SECURITY_SERVER_ERROR_SEND_FAILED;
 	return SECURITY_SERVER_SUCCESS;
 }
 

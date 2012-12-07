@@ -23,12 +23,11 @@
 #include "popup_response_dbus_interface.h"
 #include <vector>
 #include <string>
-#include <api/popup_response_server_api.h>
 #include <dpl/dbus/dbus_server_deserialization.h>
 #include <dpl/dbus/dbus_server_serialization.h>
 #include <ace/Request.h>
 #include <ace-dao-ro/PromptModel.h>
-#include "api/popup_ace_data_types.h"
+#include "popup_ace_data_types.h"
 //#include "access-control/engine/PromptModel.h"
 #include "attribute_facade.h"
 //#include "Request.h"

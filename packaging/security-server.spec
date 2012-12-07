@@ -1,7 +1,7 @@
 #sbs-git:slp/pkgs/s/security-server security-server 0.0.37
 Name:       security-server
 Summary:    Security server and utilities
-Version:    0.0.48
+Version:    0.0.54
 Release:    1
 Group:      TO_BE/FILLED_IN
 License:    Apache License, Version 2.0
@@ -19,7 +19,6 @@ BuildRequires: pkgconfig(libsmack)
 BuildRequires: pkgconfig(dbus-1)
 BuildRequires: pkgconfig(dpl-efl)
 BuildRequires: pkgconfig(dpl-utils-efl)
-BuildRequires: pkgconfig(dpl-wrt-dao-rw)
 BuildRequires: pkgconfig(dpl-dbus-efl)
 BuildRequires: pkgconfig(libpcrecpp)
 BuildRequires: pkgconfig(icu-i18n)
@@ -75,7 +74,8 @@ export LDFLAGS+="-Wl,--rpath=%{_prefix}/lib"
 
 cmake . -DCMAKE_INSTALL_PREFIX=%{_prefix} \
         -DDPL_LOG="ON"                    \
-        -DVERSION=%{version}
+        -DVERSION=%{version}              \
+        -DCMAKE_BUILD_TYPE=%{?build_type:%build_type}
 make %{?jobs:-j%jobs}
 
 
@@ -107,8 +107,6 @@ mkdir -p /etc/rc.d/rc3.d
 mkdir -p /etc/rc.d/rc5.d
 ln -s /etc/rc.d/init.d/security-serverd /etc/rc.d/rc3.d/S10security-server
 ln -s /etc/rc.d/init.d/security-serverd /etc/rc.d/rc5.d/S10security-server
-ln -s -f /opt/dbspace/.cert_svc_vcore.db-journal /opt/dbspace/.vcore.db-journal
-ln -s -f /opt/dbspace/.cert_svc_vcore.db /opt/dbspace/.vcore.db
 
 if [ -z ${2} ]; then
     echo "This is new install of wrt-security"
@@ -195,8 +193,6 @@ systemctl daemon-reload
 /usr/lib/pkgconfig/security-server.pc
 %{_includedir}/wrt-security/*
 %{_includedir}/ace/*
-%{_includedir}/ace-dao-ro/*
-%{_includedir}/ace-dao-rw/*
 %{_includedir}/ace-client/*
 %{_includedir}/ace-settings/*
 %{_includedir}/ace-install/*
@@ -204,4 +200,3 @@ systemctl daemon-reload
 %{_includedir}/ace-popup-validation/*
 %{_includedir}/wrt-ocsp/*
 %{_libdir}/pkgconfig/*.pc
-

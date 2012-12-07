@@ -33,7 +33,7 @@
 
 #include <ace_popup_handler.h>
 
-#include "ace_server_api.h"
+#include "ace_server_dbus_api.h"
 #include "popup_response_server_api.h"
 #include "security_daemon_dbus_config.h"
 
@@ -41,9 +41,6 @@
 #include "ace-client/ace_client_helper.h"
 #include <attribute_facade.h>
 #include <ace/Request.h>
-#include <dpl/wrt-dao-ro/wrt_db_types.h>
-#include <dpl/wrt-dao-ro/widget_dao_read_only.h>
-#include <dpl/wrt-dao-ro/WrtDatabase.h>
 
 // ACE tests need to use mock implementations
 #ifdef ACE_CLIENT_TESTS
@@ -103,6 +100,9 @@ class AceThinClientImpl {
     bool containsNetworkDevCap(const AceRequest &ace_request);
     bool checkFeatureList(const AceRequest& ace_request);
   private:
+    WebRuntimeImpl* m_wrt;
+    ResourceInformationImpl* m_res;
+    OperationSystemImpl* m_sys;
     DPL::DBus::Client *m_dbusClient, *m_dbusPopupValidationClient;
 
     AceSubject getSubjectForHandle(AceWidgetHandle handle) const;
@@ -127,12 +127,12 @@ class AceThinClientImpl {
 AceThinClientImpl::AceThinClientImpl()
   : m_dbusClient(NULL),
     m_dbusPopupValidationClient(NULL),
-    m_pip(new WebRuntimeImpl(),
-          new ResourceInformationImpl(),
-          new OperationSystemImpl())
+    m_wrt(new WebRuntimeImpl()),
+    m_res(new ResourceInformationImpl()),
+    m_sys(new OperationSystemImpl()),
+    m_pip(m_wrt, m_res, m_sys)
 {
     AceDB::AceDAOReadOnly::attachToThreadRO();
-    WrtDB::WrtDatabase::attachToThreadRO();
     Try {
         m_dbusClient = new DPL::DBus::Client(
                WrtSecurity::SecurityDaemonConfig::OBJECT_PATH(),
@@ -149,6 +149,11 @@ AceThinClientImpl::AceThinClientImpl()
                           &response);
         LogInfo("Security daemon response from echo: " << response);
     } Catch (DPL::DBus::Client::Exception::DBusClientException) {
+        if(m_dbusClient) delete m_dbusClient;
+        if(m_dbusPopupValidationClient) delete m_dbusPopupValidationClient;
+        delete m_wrt;
+        delete m_res;
+        delete m_sys;
         ReThrowMsg(AceThinClient::Exception::AceThinClientException,
                 "Failed to call security daemon");
     }
@@ -160,10 +165,13 @@ AceThinClientImpl::~AceThinClientImpl()
     Assert(NULL != m_dbusPopupValidationClient);
     delete m_dbusClient;
     delete m_dbusPopupValidationClient;
+    delete m_wrt;
+    delete m_res;
+    delete m_sys;
     m_dbusClient = NULL;
     m_dbusPopupValidationClient = NULL;
-    WrtDB::WrtDatabase::detachFromThread();
     AceDB::AceDAOReadOnly::detachFromThread();
+
 }
 
 bool AceThinClientImpl::isInitialized() const
@@ -598,14 +606,11 @@ const
 
 AceSubject AceThinClientImpl::getSubjectForHandle(AceWidgetHandle handle) const
 {
-    // TODO remove subject use in AceRequest
-    //      remove dependency AceThinClient and WrtDaoRo from CMakeLists.txt
-    WrtDB::WidgetDAOReadOnly w_dao(handle);
-    try {
-        DPL::OptionalString widgetGUID = w_dao.getGUID();
-        return !widgetGUID ? "" : DPL::ToUTF8String(*widgetGUID);
+    try
+    {
+        return AceDB::AceDAOReadOnly::getGUID(handle);
     }
-    catch (WrtDB::WidgetDAOReadOnly::Exception::WidgetNotExist& /*ex*/)
+    catch (AceDB::AceDAOReadOnly::Exception::DatabaseError& /*ex*/)
     {
         LogError("Couldn't find GIUD for handle " << handle);
         return "";

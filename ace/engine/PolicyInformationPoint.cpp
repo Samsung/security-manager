@@ -31,13 +31,12 @@
 #include <ace/ConfigurationManager.h>
 
 #include <dpl/log/log.h>
-#include <dpl/wrt-dao-ro/widget_dao_read_only.h>
-#include <dpl/wrt-dao-ro/WrtDatabase.h>
 #include <dpl/assert.h>
 #include <dpl/foreach.h>
 
 #include <ace/Attribute.h>
 #include <ace-dao-ro/BaseAttribute.h>
+#include <ace-dao-ro/AceDAOReadOnly.h>
 
 using namespace AceDB;
 
@@ -47,12 +46,12 @@ PolicyInformationPoint::PolicyInformationPoint(IWebRuntime *wrt,
     resourceInformation(resource),
     operationSystem(system)
 {
-    WrtDB::WrtDatabase::attachToThreadRO();
+    AceDB::AceDAOReadOnly::attachToThreadRO();
 }
 
 PolicyInformationPoint::~PolicyInformationPoint()
 {
-    WrtDB::WrtDatabase::detachFromThread();
+    AceDB::AceDAOReadOnly::detachFromThread();
 }
 
 /* gather attributes values from adequate interfaces */
@@ -187,16 +186,17 @@ PipResponse PolicyInformationPoint::getAttributesValues(const Request* request,
                 LogDebug("Widget type attribute found");
 
                 // Extracting widget type
-                WrtDB::WidgetDAOReadOnly widgetDao(request->getWidgetHandle());
                 std::list<std::string> attrValue;
                 Try {
-                    WrtDB::AppType appType = widgetDao.getWidgetType().appType;
+                    AceDB::AppTypes appType =
+                        AceDB::AceDAOReadOnly::getWidgetType(
+                            request->getWidgetHandle());
                     switch (appType) {
-                    case WrtDB::AppType::APP_TYPE_TIZENWEBAPP : {
+                    case AceDB::AppTypes::Tizen : {
                         attrValue.push_back(POLICY_NAME_TIZEN);
                         LogDebug("==== Using Tizen policy in PIP ====");
                         break;}
-                    case WrtDB::AppType::APP_TYPE_WAC20 : {
+                    case AceDB::AppTypes::WAC20 : {
                         attrValue.push_back(POLICY_NAME_WAC2_0);
                         LogDebug("==== Using WAC policy in PIP ====");
                         break;}
@@ -204,7 +204,7 @@ PipResponse PolicyInformationPoint::getAttributesValues(const Request* request,
                         LogError("Invalid widget type");
                         }
                     }
-                } Catch (WrtDB::WidgetDAOReadOnly::Exception::WidgetNotExist)
+                } Catch (AceDB::AceDAOReadOnly::Exception::DatabaseError)
                 {
                     LogError("Couldn't find widget for handle "
                              << request->getWidgetHandle());

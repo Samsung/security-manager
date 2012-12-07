@@ -20,20 +20,7 @@
  * @brief       This is implementation file of Ocsp service
  */
 
-
-#include <string>
-#include <list>
-#include <memory>
-
-#include <dpl/log/log.h>
-#include <dpl/single_instance.h>
-#include <dpl/event/controller.h>
-#include <dpl/thread.h>
-#include <dpl/wrt-dao-ro/WrtDatabase.h>
-#include <dpl/wrt-dao-ro/global_config.h>
 #include "security_daemon.h"
-#include "security_dbus_service.h"
-#include "ocsp_server_dbus_interface.h"
 
 namespace OcspService {
 

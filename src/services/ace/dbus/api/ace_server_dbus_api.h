@@ -17,22 +17,17 @@
  * @file        ace_server_api.h
  * @author      Tomasz Swierczek (t.swierczek@samsung.com)
  * @version     1.0
- * @brief       This file contains definitions ACE server interface & methods.
+ * @brief       This file contains definitions ACE server interface & methods specifically needed by DBUS.
  */
-#ifndef WRT_SRC_RPC_SECURITY_DAEMON_ACE_SERVER_API_H_
-#define WRT_SRC_RPC_SECURITY_DAEMON_ACE_SERVER_API_H_
+#ifndef WRT_SRC_RPC_SECURITY_DAEMON_ACE_SERVER_DBUS_API_H_
+#define WRT_SRC_RPC_SECURITY_DAEMON_ACE_SERVER_DBUS_API_H_
 
+#include "ace_server_api.h"
 #include<string>
-
 
 namespace WrtSecurity{
 namespace AceServerApi{
 
-    // DBus interface names
-    inline const std::string INTERFACE_NAME()
-    {
-        return "org.tizen.AceCheckAccessInterface";
-    }
 
     // RPC test function
     // IN std::string
@@ -41,32 +36,8 @@ namespace AceServerApi{
     {
         return "echo";
     }
-
-    // IN string subject
-    // IN string resource
-    // IN vector<string> function param names
-    // IN vector<string> function param values
-    // OUT int allow, deny, popup type
-    inline const std::string CHECK_ACCESS_METHOD()
-    {
-        return "check_access";
-    }
-
-    // IN string subject
-    // IN string resource
-    // OUT int allow, deny, popup type
-    inline const std::string CHECK_ACCESS_INSTALL_METHOD()
-    {
-        return "check_access_install";
-    }
-
-    // Policy update trigger
-    inline const std::string UPDATE_POLICY_METHOD()
-    {
-        return "update_policy";
-    }
 };
 };
 
 
-#endif // WRT_SRC_RPC_SECURITY_DAEMON_ACE_SERVER_API_H_
+#endif // WRT_SRC_RPC_SECURITY_DAEMON_ACE_SERVER_DBUS_API_H_

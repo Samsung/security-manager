@@ -1,3 +1,12 @@
+security-server (0.0.47) unstable; urgency=low
+
+  * separation of ACE and WRT DB phase 1 - added new ACE DB entries and API to setup these data
+
+  * Git: framework/security/security-server
+  * Tag: security-server_0.0.47
+
+ -- Tomasz Swierczek <t.swierczek@samsung.com>  Tue, 30 Oct 2012 14:20:00 +0100
+
 security-server (0.0.45) unstable; urgency=low
 
   * added orange certificates

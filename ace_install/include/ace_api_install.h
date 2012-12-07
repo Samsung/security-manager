@@ -151,14 +151,6 @@ ace_return_t ace_unregister_widget(ace_widget_handle_t handle);
 ace_return_t ace_is_widget_installed(ace_widget_handle_t handle, bool *installed);
 
 /*
- * Sets widget type. Use in installer to determine which policy will be used
- * by ACE for this widget.
- * Returns error or ACE_OK
- */
-ace_return_t ace_set_widget_type(ace_widget_handle_t handle,
-                                 ace_widget_type_t type);
-
-/*
  * Gets widget type in 'type'. Use in installer to determine which policy will be used
  * by ACE for this widget.
  * Returns error or ACE_OK

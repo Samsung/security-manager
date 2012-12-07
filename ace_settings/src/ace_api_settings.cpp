@@ -171,3 +171,33 @@ ace_return_t ace_reset_global_resource_settings(void)
     }
     return ACE_OK;
 }
+
+ace_return_t ace_is_private_api(const ace_resource_t resource_name, ace_bool_t* is_private_api)
+{
+    static const char * const private_api[] = {
+        "bluetooth.admin",
+        "bluetooth.gap",
+        "bluetooth.spp",
+        "calendar.read",
+        "calendar.write",
+        "callhistory.read",
+        "callhistory.write",
+        "contact.read",
+        "contact.write",
+        "nfc.admin",
+        "nfc.common",
+        "nfc.cardemulation",
+        "nfc.p2p",
+        "nfc.tag",
+        NULL
+    };
+
+    *is_private_api = ACE_TRUE;
+    for (int i=0; private_api[i]; ++i)
+        if (!strcmp(resource_name, private_api[i]))
+            return ACE_OK;
+
+    *is_private_api = ACE_FALSE;
+    return ACE_OK;
+}
+

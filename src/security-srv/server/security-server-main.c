@@ -626,7 +626,7 @@ int process_gid_request(int sockfd, int msg_len)
 		goto error;
 	}
 
-	if(msg_len > SECURITY_SERVER_MAX_OBJ_NAME)
+	if(msg_len >= SECURITY_SERVER_MAX_OBJ_NAME)
 	{
 		/* Too big ojbect name */
 		SEC_SVR_DBG("%s", "Object name is too big");

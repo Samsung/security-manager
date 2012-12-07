@@ -50,6 +50,8 @@ ace_return_t ace_popup_validation_initialize(void)
         LogError("Can't connect to daemon");
         return ACE_INTERNAL_ERROR;
     }
+
+    return ACE_OK; 
 }
 
 ace_return_t ace_popup_validation_shutdown(void)
@@ -60,6 +62,8 @@ ace_return_t ace_popup_validation_shutdown(void)
     }
     delete dbusClient;
     dbusClient = NULL;
+
+    return ACE_OK;
 }
 
 ace_return_t ace_validate_answer(ace_bool_t answer,

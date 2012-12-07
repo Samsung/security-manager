@@ -20,7 +20,7 @@
 #include <map>
 #include <string>
 
-#include <ace-dao-ro/common_dao_types.h>
+typedef int WidgetHandle;
 
 class Request;
 

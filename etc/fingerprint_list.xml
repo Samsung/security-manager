@@ -21,5 +21,9 @@
         <FingerprintSHA1>67:37:DE:B7:B9:9D:D2:DB:A5:2C:42:DE:CB:2F:2C:3E:33:97:E1:85</FingerprintSHA1><!-- tizen-distributor-root-ca-partner.pem -->
         <FingerprintSHA1>04:C5:A6:1D:75:BB:F5:5C:0F:A2:66:F6:09:4D:9B:2B:5F:3B:44:AE</FingerprintSHA1><!-- tizen-distributor-root-ca-public.pem -->
         <FingerprintSHA1>AD:A1:44:89:6A:35:6D:17:01:E9:6F:46:C6:00:7B:78:BE:2E:D9:4E</FingerprintSHA1><!-- tizen.root.preproduction.cert.pem for internal test of SDK -->
+        <FingerprintSHA1>FE:11:C7:FB:38:2E:90:3A:F4:41:80:EE:28:40:61:C2:56:7D:0B:BD</FingerprintSHA1><!-- orange.production.pem - hash from it is encoded on sim cards -->
+    </CertificateDomain>
+    <CertificateDomain name="orangelegacy">
+        <FingerprintSHA1>FE:11:C7:FB:38:2E:90:3A:F4:41:80:EE:28:40:61:C2:56:7D:0B:BD</FingerprintSHA1><!-- orange.production.pem - This certificate requires special treatment during verification process -->
     </CertificateDomain>
 </CertificateSet>

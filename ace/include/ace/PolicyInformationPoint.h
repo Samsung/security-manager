@@ -95,6 +95,6 @@ class PolicyInformationPoint
     {
         return wrtInterface;
     }
-} __attribute__ ((deprecated));
+};
 
 #endif  //_POLICY_INFORMATION_POINT_H

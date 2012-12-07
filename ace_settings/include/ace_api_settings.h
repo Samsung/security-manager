@@ -107,6 +107,13 @@ ace_return_t ace_reset_widget_resource_settings(void);
  */
 ace_return_t ace_reset_global_resource_settings(void);
 
+/*
+ * After execution, is_privacy_api is ACE_TRUE if resource_name is the name
+ * of Privacy API
+ */
+ace_return_t ace_is_private_api(const ace_resource_t resource_name,
+                       ace_bool_t* is_private_api);
+
 #ifdef __cplusplus
 }
 #endif

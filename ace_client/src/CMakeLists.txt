@@ -1,7 +1,6 @@
 include(FindPkgConfig)
 
 PKG_CHECK_MODULES(ACE_CLIENT_DEPS
-    dpl-wrt-dao-ro
     dpl-efl
     dpl-event-efl
     dpl-dbus-efl
@@ -33,10 +32,11 @@ SET(ACE_CLIENT_INCLUDES
     ${ACE_CLIENT_DEPS_INCLUDE_DIRS}
     ${ACE_CLIENT_INCLUDE_DIR}
     ${PROJECT_SOURCE_DIR}/ace_common/include
-    ${PROJECT_SOURCE_DIR}/src/services/ace/dbus/api    
+    ${PROJECT_SOURCE_DIR}/src/services/ace
+    ${PROJECT_SOURCE_DIR}/src/services/ace/dbus/api
     ${PROJECT_SOURCE_DIR}/src/services/ace/logic
-    ${PROJECT_SOURCE_DIR}/src/services/popup/dbus/api
-    ${PROJECT_SOURCE_DIR}/src/daemon/dbus    
+    ${PROJECT_SOURCE_DIR}/src/services/popup
+    ${PROJECT_SOURCE_DIR}/src/daemon/dbus
     ${PROJECT_SOURCE_DIR}/popup_process
     ${PROJECT_SOURCE_DIR}/ace/include
     )
@@ -58,15 +58,15 @@ SET_TARGET_PROPERTIES(${TARGET_ACE_CLIENT_LIB} PROPERTIES
 TARGET_LINK_LIBRARIES(${TARGET_ACE_CLIENT_LIB}
     ${ACE_CLIENT_DEPS_LIBRARIES}
     ${TARGET_ACE_DAO_RO_LIB}
-    ${TARGET_ACE_LIB}    
+    ${TARGET_ACE_LIB}
     )
 
 INSTALL(TARGETS ${TARGET_ACE_CLIENT_LIB}
     DESTINATION lib)
 
 INSTALL(FILES
-    ${ACE_CLIENT_INCLUDE_DIR}/ace-client/ace_client.h
-    ${ACE_CLIENT_INCLUDE_DIR}/ace-client/ace_client_types.h
+#    ${ACE_CLIENT_INCLUDE_DIR}/ace-client/ace_client.h
+#    ${ACE_CLIENT_INCLUDE_DIR}/ace-client/ace_client_types.h
     ${ACE_CLIENT_INCLUDE_DIR}/ace_api_client.h
     DESTINATION include/ace-client
     )

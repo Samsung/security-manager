@@ -68,7 +68,6 @@ SET(ACE_LIB_DEPS_BASIC
     dpl-efl
     dpl-db-efl
     dpl-event-efl
-    dpl-wrt-dao-ro
     ecore
     appcore-efl
     openssl
@@ -133,32 +132,7 @@ INSTALL(TARGETS ${TARGET_ACE_LIB}
     DESTINATION lib)
 
 INSTALL(FILES
-    include/ace/AbstractPolicyEnforcementPoint.h
-    include/ace/AbstractTreeElement.h
-    include/ace/Attribute.h
-    include/ace/AsyncVerdictResultListener.h
-    include/ace/Combiner.h
-    include/ace/CombinerImpl.h
-    include/ace/ConfigurationManager.h
-    include/ace/Constants.h
-    include/ace/Effect.h
-    include/ace/PermissionTriple.h
-    include/ace/Policy.h
-    include/ace/PolicyEffect.h
-    include/ace/PolicyEnforcementPoint.h
-    include/ace/PolicyEvaluator.h
-    include/ace/PolicyEvaluatorFactory.h
-    include/ace/PolicyInformationPoint.h
-    include/ace/PolicyResult.h
-    include/ace/Preference.h
-    include/ace/PromptDecision.h
-    include/ace/Request.h
-    include/ace/SettingsLogic.h
-    include/ace/Subject.h
-    include/ace/TreeNode.h
-    include/ace/UserDecision.h
     include/ace/WRT_INTERFACE.h
-    include/ace/Verdict.h
     DESTINATION
     include/ace
     )

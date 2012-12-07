@@ -83,6 +83,6 @@ class SettingsLogic
     {
     }
 
-} __attribute__ ((deprecated));
+};
 
 #endif /* WRT_SRC_ACCESS_CONTROL_LOGIC_SETTINGS_LOGIC_H_ */

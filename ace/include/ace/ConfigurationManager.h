@@ -50,16 +50,16 @@ class ConfigurationManager
         CM_REMOVE_ERROR = -3,
         CM_REMOVE_CURRENT = -4,
         CM_REMOVE_NOT_EXISTING = -5
-    } __attribute__ ((deprecated));
+    };
 
     // !! DEPRECATED !!
-    std::string getCurrentPolicyFile(void) const __attribute__ ((deprecated));
-    std::string getFullPathToCurrentPolicyFile(void) const __attribute__ ((deprecated));
-    std::string getFullPathToCurrentPolicyXMLSchema(void) const __attribute__ ((deprecated));
-    int addPolicyFile(const std::string & filePath) __attribute__ ((deprecated));
-    int removePolicyFile(const std::string& fileName) __attribute__ ((deprecated));
-    int changeCurrentPolicyFile(const std::string& filePath) __attribute__ ((deprecated));
-    std::string extractFilename(const std::string& path) const __attribute__ ((deprecated));
+    std::string getCurrentPolicyFile(void) const;
+    std::string getFullPathToCurrentPolicyFile(void) const;
+    std::string getFullPathToCurrentPolicyXMLSchema(void) const;
+    int addPolicyFile(const std::string & filePath);
+    int removePolicyFile(const std::string& fileName);
+    int changeCurrentPolicyFile(const std::string& filePath);
+    std::string extractFilename(const std::string& path) const;
 
     /**
      * ACE policy file path getter
@@ -94,11 +94,11 @@ class ConfigurationManager
   protected:
 
     // !! DEPRECATED !!
-    int parse(const std::string&) __attribute__ ((deprecated));
-    bool copyFile(FILE*, FILE*, int lenght = 1024) const __attribute__ ((deprecated));
-    bool checkIfFileExistst(const std::string&) const __attribute__ ((deprecated));
-    const std::list<std::string> & getPolicyFiles() const __attribute__ ((deprecated));
-    const std::string & getConfigFile() const __attribute__ ((deprecated));
+    int parse(const std::string&);
+    bool copyFile(FILE*, FILE*, int lenght = 1024) const;
+    bool checkIfFileExistst(const std::string&) const;
+    const std::list<std::string> & getPolicyFiles() const;
+    const std::string & getConfigFile() const;
 
     ConfigurationManager()
     {
@@ -110,7 +110,7 @@ class ConfigurationManager
 private:
 
     static ConfigurationManager * instance;
-} __attribute__ ((deprecated));
+};
 
 #endif
 

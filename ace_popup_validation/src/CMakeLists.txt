@@ -28,7 +28,7 @@ SET(ACE_POPUP_VALIDATION_INCLUDES
     ${PROJECT_SOURCE_DIR}/ace_common/include
     ${PROJECT_SOURCE_DIR}/ace/include
     ${PROJECT_SOURCE_DIR}/src/services/ace/dbus/api        
-    ${PROJECT_SOURCE_DIR}/src/services/popup/dbus/api
+    ${PROJECT_SOURCE_DIR}/src/services/popup/
     ${PROJECT_SOURCE_DIR}/src/daemon/dbus    
     )
 

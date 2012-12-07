@@ -24,7 +24,7 @@
 
 #include <list>
 #include <dpl/dbus/dbus_interface_dispatcher.h>
-#include "api/ocsp_server_api.h"
+#include "api/ocsp_server_dbus_api.h"
 
 namespace RPC {
 

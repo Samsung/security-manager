@@ -385,14 +385,18 @@ void AceDAOReadOnly::getAcceptedFeature(
 AppTypes AceDAOReadOnly::getWidgetType(WidgetHandle handle)
 {
     Try {
-        ACE_DB_SELECT(select, AceSubjectType, &AceDaoUtilities::m_databaseInterface);
-        select->Where(Equals<AceSubjectType::app_id>(handle));
-        std::list<AceSubjectType::Row> rows = select->GetRowList();
-        if (rows.empty()) {
+        ACE_DB_SELECT(select, WidgetInfo, &AceDaoUtilities::m_databaseInterface);
+        select->Where(Equals<WidgetInfo::app_id>(handle));
+        WidgetInfo::Select::RowList rows = select->GetRowList();
+        DPL::OptionalInt res;
+        if (!rows.empty()) {
+            res = rows.front().Get_widget_type();
+            AppTypes retType = (res.IsNull() ? AppTypes::Unknown : static_cast<AppTypes>(*res));
+            return retType;
+        } else {
+            LogDebug("Can not find widget type");
             return AppTypes::Unknown;
         }
-        AceSubjectType::Row row = rows.front();
-        return (static_cast<AppTypes>(row.Get_app_type()));
     }
     Catch(DPL::DB::SqlConnection::Exception::Base) {
         ReThrowMsg(Exception::DatabaseError, "Failed to getWidgetType");
@@ -535,6 +539,31 @@ std::string AceDAOReadOnly::getShareHref(WidgetHandle widgetHandle)
     }
     Catch(DPL::DB::SqlConnection::Exception::Base) {
         ReThrowMsg(Exception::DatabaseError, "Failed to getShareHref");
+    }
+}
+
+WidgetHandleList AceDAOReadOnly::getHandleList()
+{
+    LogDebug("Getting DbWidgetHandle List");
+    Try
+    {
+        ACE_DB_SELECT(select, WidgetInfo, &AceDaoUtilities::m_databaseInterface);
+        return select->GetValueList<WidgetInfo::app_id>();
+    }
+    Catch(DPL::DB::SqlConnection::Exception::Base) {
+        ReThrowMsg(Exception::DatabaseError, "Failed to list of widget handles");
+    }
+}
+
+bool AceDAOReadOnly::isWidgetInstalled(WidgetHandle handle)
+{
+    Try {
+        ACE_DB_SELECT(select, WidgetInfo, &AceDaoUtilities::m_databaseInterface);
+        select->Where(Equals<WidgetInfo::app_id>(handle));
+        WidgetInfo::Select::RowList rows = select->GetRowList();
+        return !rows.empty() ? true : false;
+    } Catch(DPL::DB::SqlConnection::Exception::Base) {
+        ReThrowMsg(Exception::DatabaseError, "Failed in isWidgetInstalled");
     }
 }
 

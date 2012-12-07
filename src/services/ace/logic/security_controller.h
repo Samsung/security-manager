@@ -40,8 +40,6 @@
 #include <string>
 #include <dpl/event/inter_context_delegate.h>
 
-#include <dpl/wrt-dao-ro/wrt_db_types.h>
-
 namespace Jobs {
 class Job;
 }

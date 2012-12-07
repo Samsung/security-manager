@@ -64,12 +64,6 @@ CREATE_TABLE(AceAcceptedFeature)
     TABLE_CONSTRAINTS(unique(app_id,feature))
 CREATE_TABLE_END()
 
-CREATE_TABLE(AceSubjectType)
-    COLUMN_NOT_NULL(app_id,        INTEGER,  not null)
-    COLUMN_NOT_NULL(app_type,      INTEGER,  not null)
-    TABLE_CONSTRAINTS(unique(app_id))
-CREATE_TABLE_END()
-
 CREATE_TABLE(WidgetInfo)
     COLUMN_NOT_NULL(app_id,         INTEGER,      PRIMARY KEY)
     COLUMN(widget_type,             INT,          DEFAULT 1)

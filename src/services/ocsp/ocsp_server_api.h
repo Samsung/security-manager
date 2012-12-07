@@ -22,6 +22,7 @@
 #ifndef WRT_SRC_RPC_SECURITY_DAEMON_OCSP_SERVER_API_H_
 #define WRT_SRC_RPC_SECURITY_DAEMON_OCSP_SERVER_API_H_
 
+#include "ocsp_server_api.h"
 #include<string>
 
 namespace WrtSecurity{
@@ -31,14 +32,6 @@ namespace OcspServerApi{
 inline const std::string INTERFACE_NAME()
 {
     return "org.tizen.OcspCheck";
-}
-
-// RPC test function
-// IN std::string
-// OUT std::string
-inline const std::string ECHO_METHOD()
-{
-    return "echo";
 }
 
 // Function checks WidgetStatus for installed widget.

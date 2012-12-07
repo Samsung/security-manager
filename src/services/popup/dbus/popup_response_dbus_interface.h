@@ -25,7 +25,7 @@
 #define WRT_SRC_RPC_DAEMON_POPUP_RESPONSE_DBUS_INTERFACE_H
 
 #include <dpl/dbus/dbus_interface_dispatcher.h>
-#include "api/popup_response_server_api.h"
+#include "popup_response_server_api.h"
 
 namespace RPC {
 

@@ -31,7 +31,6 @@
 #include <dpl/singleton_impl.h>
 IMPLEMENT_SINGLETON(SecurityDaemon::SecurityDaemon)
 
-#include <dpl/wrt-dao-ro/WrtDatabase.h>
 #include <ace-dao-rw/AceDAO.h>
 
 namespace SecurityDaemon {
@@ -120,14 +119,12 @@ void initialize(void)
 {
     LogDebug("Ace/Wrt database services initializing...");
     AceDB::AceDAO::attachToThreadRW();
-    WrtDB::WrtDatabase::attachToThreadRW();
 }
 
 void deinitialize(void)
 {
     LogDebug("Ace/Wrt database services deinitializing...");
     AceDB::AceDAO::detachFromThread();
-    WrtDB::WrtDatabase::detachFromThread();
 }
 
 } //namespace DatabaseService

@@ -36,17 +36,14 @@
 #include <stdexcept>
 #include <map>
 #include <cstdlib>
-#include <dpl/wrt-dao-ro/wrt_db_types.h>
-#include <dpl/wrt-dao-rw/widget_dao.h>
-#include <dpl/wrt-dao-rw/feature_dao.h>
+#include <ace-dao-ro/AceDAOReadOnly.h>
 #include <ace/WRT_INTERFACE.h>
 #include <map>
 #include <dpl/log/log.h>
+#include <dpl/foreach.h>
 #include <attribute_facade.h>
 #include <ace/Request.h>
 #include <simple_roaming_agent.h>
-
-using namespace WrtDB;
 
 namespace // anonymous
 {
@@ -73,14 +70,9 @@ AttributeHandlerResponse AttributeInstallUriHandler(
         const WidgetHandle &widgetHandle)
 {
     AttributeHandlerResponse response;
-    WidgetDAOReadOnly dao(widgetHandle);
-
-    std::string value = dao.getShareHref();
-
-    if (!value.empty()) {
+    std::string value = AceDB::AceDAOReadOnly::getShareHref(widgetHandle);
+    if(!value.empty())
         response.push_back(value);
-    }
-
     return response;
 }
 
@@ -88,12 +80,11 @@ AttributeHandlerResponse AttributeVersionHandler(const WidgetExecutionPhase & /*
         const WidgetHandle &widgetHandle)
 {
     AttributeHandlerResponse response;
-    WidgetDAOReadOnly dao(widgetHandle);
 
-    DPL::Optional<DPL::String> value = dao.getVersion();
+    std::string value = AceDB::AceDAOReadOnly::getVersion(widgetHandle);
 
-    if (!!value) {
-        response.push_back(DPL::ToUTF8String(*value));
+    if (!value.empty()) {
+        response.push_back(value);
     }
 
     return response;
@@ -104,11 +95,8 @@ AttributeHandlerResponse AttributeDistributorKeyCnHandler(
         const WidgetHandle &widgetHandle)
 {
     AttributeHandlerResponse response;
-    WidgetDAOReadOnly dao(widgetHandle);
-
-    response = dao.getKeyCommonNameList(WidgetCertificateData::DISTRIBUTOR,
-                                        WidgetCertificateData::ENDENTITY);
-
+    response = AceDB::AceDAOReadOnly::getKeyCommonNameList(widgetHandle,
+        AceDB::WidgetCertificateData::DISTRIBUTOR, AceDB::WidgetCertificateData::ENDENTITY);
     return response;
 }
 
@@ -117,11 +105,8 @@ AttributeHandlerResponse AttributeDistributorKeyFingerprintHandler(
         const WidgetHandle &widgetHandle)
 {
     AttributeHandlerResponse response;
-    WidgetDAOReadOnly dao(widgetHandle);
-
-    response = dao.getKeyFingerprints(WidgetCertificateData::DISTRIBUTOR,
-                                      WidgetCertificateData::ENDENTITY);
-
+    response = AceDB::AceDAOReadOnly::getKeyFingerprints(widgetHandle,
+        AceDB::WidgetCertificateData::DISTRIBUTOR, AceDB::WidgetCertificateData::ENDENTITY);
     return response;
 }
 
@@ -130,11 +115,8 @@ AttributeHandlerResponse AttributeDistributorKeyRootCnHandler(
         const WidgetHandle &widgetHandle)
 {
     AttributeHandlerResponse response;
-    WidgetDAOReadOnly dao(widgetHandle);
-
-    response = dao.getKeyCommonNameList(WidgetCertificateData::DISTRIBUTOR,
-                                        WidgetCertificateData::ROOT);
-
+    response = AceDB::AceDAOReadOnly::getKeyCommonNameList(widgetHandle,
+        AceDB::WidgetCertificateData::DISTRIBUTOR, AceDB::WidgetCertificateData::ROOT);
     return response;
 }
 
@@ -143,11 +125,8 @@ AttributeHandlerResponse AttributeDistributorKeyRootFingerprintHandler(
         const WidgetHandle &widgetHandle)
 {
     AttributeHandlerResponse response;
-    WidgetDAOReadOnly dao(widgetHandle);
-
-    response = dao.getKeyFingerprints(WidgetCertificateData::DISTRIBUTOR,
-                                      WidgetCertificateData::ROOT);
-
+    response = AceDB::AceDAOReadOnly::getKeyFingerprints(widgetHandle,
+        AceDB::WidgetCertificateData::DISTRIBUTOR, AceDB::WidgetCertificateData::ROOT);
     return response;
 }
 
@@ -156,11 +135,8 @@ AttributeHandlerResponse AttributeAuthorKeyCnHandler(
         const WidgetHandle &widgetHandle)
 {
     AttributeHandlerResponse response;
-    WidgetDAOReadOnly dao(widgetHandle);
-
-    response = dao.getKeyCommonNameList(WidgetCertificateData::AUTHOR,
-                                        WidgetCertificateData::ENDENTITY);
-
+    response = AceDB::AceDAOReadOnly::getKeyCommonNameList(widgetHandle,
+        AceDB::WidgetCertificateData::AUTHOR, AceDB::WidgetCertificateData::ENDENTITY);
     return response;
 }
 
@@ -169,11 +145,8 @@ AttributeHandlerResponse AttributeAuthorKeyFingerprintHandler(
         const WidgetHandle &widgetHandle)
 {
     AttributeHandlerResponse response;
-    WidgetDAOReadOnly dao(widgetHandle);
-
-    response = dao.getKeyFingerprints(WidgetCertificateData::AUTHOR,
-                                      WidgetCertificateData::ENDENTITY);
-
+    response = AceDB::AceDAOReadOnly::getKeyFingerprints(widgetHandle,
+        AceDB::WidgetCertificateData::AUTHOR, AceDB::WidgetCertificateData::ENDENTITY);
     return response;
 }
 
@@ -182,11 +155,8 @@ AttributeHandlerResponse AttributeAuthorKeyRootCnHandler(
         const WidgetHandle &widgetHandle)
 {
     AttributeHandlerResponse response;
-    WidgetDAOReadOnly dao(widgetHandle);
-
-    response = dao.getKeyCommonNameList(WidgetCertificateData::AUTHOR,
-                                        WidgetCertificateData::ROOT);
-
+    response = AceDB::AceDAOReadOnly::getKeyCommonNameList(widgetHandle,
+        AceDB::WidgetCertificateData::AUTHOR, AceDB::WidgetCertificateData::ROOT);
     return response;
 }
 
@@ -195,11 +165,8 @@ AttributeHandlerResponse AttributeAuthorKeyRootFingerprintHandler(
         const WidgetHandle &widgetHandle)
 {
     AttributeHandlerResponse response;
-    WidgetDAOReadOnly dao(widgetHandle);
-
-    response = dao.getKeyFingerprints(WidgetCertificateData::AUTHOR,
-                                      WidgetCertificateData::ROOT);
-
+    response = AceDB::AceDAOReadOnly::getKeyFingerprints(widgetHandle,
+        AceDB::WidgetCertificateData::AUTHOR, AceDB::WidgetCertificateData::ROOT);
     return response;
 }
 
@@ -215,59 +182,25 @@ AttributeHandlerResponse AttributeIdHandler(const WidgetExecutionPhase & /*phase
         const WidgetHandle &widgetHandle)
 {
     AttributeHandlerResponse response;
-    WidgetDAOReadOnly dao(widgetHandle);
-    WidgetGUID wGUID = dao.getGUID();
 
-    if (!!wGUID) {
-        response.push_back(DPL::ToUTF8String(*wGUID));
+    std::string wGUID = AceDB::AceDAOReadOnly::getGUID(widgetHandle);
+
+    if (!wGUID.empty()) {
+        response.push_back(wGUID);
     }
     return response;
 }
-
-//AttributeHandlerResponse AttributeNameHandler(const WidgetExecutionPhase & /*phase*/,
-//        const WidgetHandle &widgetHandle)
-//{
-//    AttributeHandlerResponse response;
-//
-//    WidgetLocalizedInfo info =
-//        W3CFileLocalization::getLocalizedInfo(widgetHandle);
-//
-//    DPL::Optional<DPL::String> val = info.name;
-//    std::string value = !!val ? DPL::ToUTF8String(*val) : "";
-//
-//    response.push_back(value);
-//    return response;
-//}
-//
-//AttributeHandlerResponse AttributeWidgetAttrNameHandler(
-//        const WidgetExecutionPhase & /*phase*/,
-//        const WidgetHandle &widgetHandle)
-//{
-//    AttributeHandlerResponse response;
-//
-//    WidgetLocalizedInfo info =
-//        W3CFileLocalization::getLocalizedInfo(widgetHandle);
-//
-//    DPL::Optional<DPL::String> value = info.name;
-//
-//    if (!!value) {
-//        response.push_back(DPL::ToUTF8String(*value));
-//    }
-//
-//    return response;
-//}
 
 AttributeHandlerResponse AttributeAuthorNameHandler(
         const WidgetExecutionPhase & /*phase*/,
         const WidgetHandle &widgetHandle)
 {
     AttributeHandlerResponse response;
-    WidgetDAOReadOnly dao(widgetHandle);
 
-    DPL::Optional<DPL::String> value = dao.getAuthorName();
+    std::string value = AceDB::AceDAOReadOnly::getAuthorName(widgetHandle);
 
-    if (!!value) {
-        response.push_back(DPL::ToUTF8String(*value));
+    if (!value.empty()) {
+        response.push_back(value);
     }
 
     return response;
@@ -380,47 +313,6 @@ class lambdaCollectionPusher
     }
 };
 
-class lambdaWidgetPrefixEquality :
-    public std::binary_function<WidgetFeature, std::string, bool>
-{
-  public:
-    bool operator()(const WidgetFeature& wFeature,
-            const std::string& prefix) const
-    {
-        return wFeature.name.find(DPL::FromUTF8String(prefix)) !=
-               DPL::String::npos;
-    }
-};
-
-class lambdaWidgetNameEquality :
-    public std::binary_function<WidgetFeature, std::string, bool>
-{
-  public:
-    bool operator()(const WidgetFeature& wFeature,
-            const std::string& prefix) const
-    {
-        return wFeature.name == DPL::FromUTF8String(prefix);
-    }
-};
-
-FeatureHandleList getFeatureHandleList(const WidgetHandle& widgetHandle,
-        const std::string& resourceId)
-{
-    FeatureHandleList featureHandleList;
-    WidgetDAOReadOnly widgetDAO(widgetHandle);
-    WidgetFeatureSet wFeatureSet = widgetDAO.getFeaturesList();
-    WidgetFeatureSet::iterator foundFeatures =
-        std::find_if(wFeatureSet.begin(),
-                     wFeatureSet.end(),
-                     std::bind2nd(lambdaWidgetPrefixEquality(), resourceId));
-
-    if (foundFeatures != wFeatureSet.end()) {
-        FeatureDAOReadOnly featureDAO(resourceId);
-        featureHandleList.push_back(featureDAO.GetFeatureHandle());
-    }
-    return featureHandleList;
-}
-
 AttributeHandlerResponse AttributeDeviceCapHandler(const WidgetExecutionPhase & /*phase*/,
         const WidgetHandle & /*widgetHandle*/,
         const Request &request)
@@ -440,46 +332,28 @@ AttributeHandlerResponse AttributeDeviceCapHandler(const WidgetExecutionPhase & 
         lambdaCollectionPusher<std::string>(response));
 
     return response;
-
-    // We should return list of device-caps required by resourceId.
-    //    AttributeHandlerResponse response;
-    //
-    //    FeatureHandleList fHandleList =
-    //        getFeatureHandleList(widgetHandle, resourceId);
-    //    if( !fHandleList.empty() )
-    //    {
-    //        FeatureDAO feature( resourceId );
-    //        std::set<std::string> deviceCapLast =
-    //                feature.GetDeviceCapabilities();
-    //        std::for_each(
-    //                deviceCapList.begin(),
-    //                deviceCapList.end(),
-    //                lambdaCollectionPusher<DeviceCapList::value_type>(
-    //                        response) );
-    //    }
-    //    return response;
 }
 
-class lambdaFeatureEquality :
-    public std::binary_function<FeatureHandle, int, bool>
-{
-  public:
-    bool operator()(const FeatureHandle& wFeature,
-            const int& resurceId) const
-    {
-        return wFeature == resurceId;
-    }
-};
-
-class lambdaPushFeatureName :
-    public std::binary_function<WidgetFeature, AttributeHandlerResponse, void>
-{
-    void operator()(const WidgetFeature& wFeature,
-            AttributeHandlerResponse& response) const
-    {
-        response.push_back(DPL::ToUTF8String(wFeature.name));
-    }
-};
+//class lambdaFeatureEquality :
+//    public std::binary_function<FeatureHandle, int, bool>
+//{
+//  public:
+//    bool operator()(const FeatureHandle& wFeature,
+//            const int& resurceId) const
+//    {
+//        return wFeature == resurceId;
+//    }
+//};
+//
+//class lambdaPushFeatureName :
+//    public std::binary_function<WidgetFeature, AttributeHandlerResponse, void>
+//{
+//    void operator()(const WidgetFeature& wFeature,
+//            AttributeHandlerResponse& response) const
+//    {
+//        response.push_back(DPL::ToUTF8String(wFeature.name));
+//    }
+//};
 
 AttributeHandlerResponse AttributeApiFeatureHandler(
         const WidgetExecutionPhase & /* phase */,
@@ -488,45 +362,6 @@ AttributeHandlerResponse AttributeApiFeatureHandler(
 {
     LogDebug("WAC 2.0 does not support api-feature and resource-id in policy.");
     AttributeHandlerResponse response;
-    return response;
-    // Wrt shouldn't ask about resource which is not listed in
-    // (widget) config.xml file
-    //
-    //    AttributeHandlerResponse response;
-    //    WidgetDAOReadOnly widgetDAO(widgetHandle);
-    //        WidgetFeatureSet wFeatureSet = widgetDAO.GetFeaturesList();
-    //       std::string featureName = resourceId;
-    //        WidgetFeatureSet::iterator foundFeatures =
-    //            std::find_if(wFeatureSet.begin(),
-    //                         wFeatureSet.end(),
-    //                         std::bind2nd(lambdaWidgetPrefixEquality(),
-    //                                      featureName));
-    //
-    //        while( foundFeatures != wFeatureSet.end() )
-    //        {
-    //            response.push_back( foundFeatures->name );
-    //            LogDebug("Found feature: " << foundFeatures->name );
-    //            foundFeatures++;
-    //        }
-    //
-    //        return response;
-}
-
-typedef std::string (FeatureDAOReadOnly::*FNMETHOD)() const;
-
-AttributeHandlerResponse GetFeatureAttributeGroup(const WidgetExecutionPhase & /*phase*/,
-        const WidgetHandle &widgetHandle,
-        const std::string& resourceId,
-        FNMETHOD function)
-{
-    AttributeHandlerResponse response;
-    FeatureHandleList fHandleList =
-        getFeatureHandleList(widgetHandle, resourceId);
-    if (!fHandleList.empty()) {
-        FeatureDAOReadOnly featureDAO(fHandleList.front());
-        std::string attribute = (featureDAO.*function)();
-        response.push_back(attribute);
-    }
     return response;
 }
 
@@ -879,4 +714,3 @@ int FunctionParamImpl::getAttributesValues(const Request & /*request*/,
     }
     return 0;
 }
-

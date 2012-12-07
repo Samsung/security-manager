@@ -25,7 +25,6 @@
 
 #include <vector>
 #include <string>
-#include <dpl/wrt-dao-ro/wrt_db_types.h>
 
 // additional data needed by PolicyEvaluaor to recognize Popup Response
 struct AceUserdata
@@ -34,7 +33,7 @@ struct AceUserdata
     // I do not want to include that file here...
     AceUserdata(): handle(-1) {}
 
-    WidgetHandle handle;
+    int handle;
     std::string subject;
     std::string resource;
     std::vector<std::string> paramKeys;

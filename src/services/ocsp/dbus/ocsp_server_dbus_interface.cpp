@@ -20,10 +20,6 @@
  * @brief       Implementation of OCSP server API.
  */
 #include "ocsp_server_dbus_interface.h"
-#include <dpl/foreach.h>
-#include <dpl/wrt-dao-ro/global_config.h>
-#include <dpl/wrt-dao-ro/widget_dao_read_only.h>
-#include <ace-dao-ro/common_dao_types.h>
 
 namespace RPC {
 
@@ -66,8 +62,6 @@ void OcspServerDBusInterface::onMethodCall(
     } else if (OcspServerApi::CHECK_ACCESS_METHOD() == argMethodName) {
         gint32 value;
         g_variant_get(argParameters, "(i)", &value);
-        WrtDB::DbWidgetHandle handle = static_cast<WrtDB::DbWidgetHandle>(
-                value);
 
         // TODO: this is making OCSP service a stub! this HAS to be moved
         // with proper implementation to cert-svc daemon

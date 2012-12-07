@@ -23,7 +23,7 @@
 #define WRT_SRC_RPC_SECURITY_DAEMON_ACE_SERVER_DBUS_INTERFACE_H_
 
 #include <dpl/dbus/dbus_interface_dispatcher.h>
-#include "api/ace_server_api.h"
+#include "api/ace_server_dbus_api.h"
 
 namespace RPC {
 

@@ -38,19 +38,16 @@
 #include <ace/PromptDecision.h>
 #include <dpl/log/log.h>
 
-#include <dpl/wrt-dao-ro/widget_dao_read_only.h>
-#include <dpl/wrt-dao-ro/WrtDatabase.h>
-
 namespace {
 
 Request::ApplicationType getAppType(const Request *request) {
-    WrtDB::WidgetDAOReadOnly widgetDao(request->getWidgetHandle());
-    WrtDB::AppType appType = widgetDao.getWidgetType().appType;
+    AceDB::AppTypes appType =
+        AceDB::AceDAOReadOnly::getWidgetType(request->getWidgetHandle());
     switch (appType) {
-    case WrtDB::AppType::APP_TYPE_TIZENWEBAPP:
+    case AceDB::AppTypes::Tizen:
         LogDebug("==== Found Tizen application. ====");
         return Request::APP_TYPE_TIZEN;
-    case WrtDB::AppType::APP_TYPE_WAC20:
+    case AceDB::AppTypes::WAC20:
         LogDebug("==== Found Wac20 application. ====");
         return Request::APP_TYPE_WAC20;
     default:
@@ -62,7 +59,7 @@ Request::ApplicationType getAppType(const Request *request) {
 } // anonymous namespace
 
 void SecurityLogic::initialize() {
-    WrtDB::WrtDatabase::attachToThreadRO();
+    AceDB::AceDAO::attachToThreadRW();
     m_policyEnforcementPoint.initialize(new WebRuntimeImpl(),
                                         new ResourceInformationImpl(),
                                         new OperationSystemImpl());
@@ -70,7 +67,7 @@ void SecurityLogic::initialize() {
 
 void SecurityLogic::terminate() {
     m_policyEnforcementPoint.terminate();
-    WrtDB::WrtDatabase::detachFromThread();
+    AceDB::AceDAO::detachFromThread();
 }
 
 
@@ -109,7 +106,7 @@ PolicyResult SecurityLogic::checkFunctionCall(Request* request)
     LogDebug("=== Check widget existance ===");
     Try {
         request->setAppType(getAppType(request));
-    } Catch (WrtDB::WidgetDAOReadOnly::Exception::WidgetNotExist) {
+    } Catch (AceDB::AceDAOReadOnly::Exception::DatabaseError) {
         LogError("==== Couldn't find widget for handle: " <<
             request->getWidgetHandle() << ". Access denied. ====");
         return PolicyEffect::DENY;
@@ -141,7 +138,7 @@ PolicyResult SecurityLogic::checkFunctionCall(Request* request, const std::strin
     LogDebug("=== Check existance of widget === ");
     Try {
         request->setAppType(getAppType(request));
-    } Catch (WrtDB::WidgetDAOReadOnly::Exception::WidgetNotExist) {
+    } Catch (AceDB::AceDAOReadOnly::Exception::DatabaseError) {
         LogError("==== Couldn't find widget for handle: " <<
             request->getWidgetHandle() << ". Access denied. ====");
         return PolicyEffect::DENY;
@@ -240,7 +237,7 @@ void SecurityLogic::validatePopupResponse(Request* request,
     LogDebug("Check widget existance");
     Try {
         request->setAppType(getAppType(request));
-    } Catch (WrtDB::WidgetDAOReadOnly::Exception::WidgetNotExist) {
+    } Catch (AceDB::AceDAOReadOnly::Exception::DatabaseError) {
         LogError("==== Couldn't find widget for handle: " <<
             request->getWidgetHandle() << ". Access denied. ====");
         retValue = false;
@@ -278,7 +275,7 @@ void SecurityLogic::validatePopupResponse(Request* request,
             LogDebug("Recheck: " << *it);
             // 1) check if per-widget settings permit
             AceDB::PreferenceTypes wgtPref =
-                AceDB::AceDAO::getWidgetDevCapSetting(
+                AceDB::AceDAOReadOnly::getWidgetDevCapSetting(
                     resourceId,
                     request->getWidgetHandle());
             if (AceDB::PreferenceTypes::PREFERENCE_DENY == wgtPref) {
@@ -287,7 +284,7 @@ void SecurityLogic::validatePopupResponse(Request* request,
             }
             // 2) check if per-dev-cap settings permit
             AceDB::PreferenceTypes resPerf =
-                AceDB::AceDAO::getDevCapSetting(resourceId);
+                AceDB::AceDAOReadOnly::getDevCapSetting(resourceId);
             if (AceDB::PreferenceTypes::PREFERENCE_DENY == resPerf) {
                 LogDebug("returning " << *retValue);
                 return;
@@ -296,7 +293,7 @@ void SecurityLogic::validatePopupResponse(Request* request,
             // 3) check for stored propmt answer - should not be there
             // TODO  - is this check necessary?
             AceDB::BaseAttributeSet attributes;
-            AceDB::AceDAO::getAttributes(&attributes);
+            AceDB::AceDAOReadOnly::getAttributes(&attributes);
             Request req(request->getWidgetHandle(),
                         request->getExecutionPhase());
             req.addDeviceCapability(resourceId);

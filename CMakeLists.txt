@@ -13,7 +13,7 @@
 #    limitations under the License.
 #
 # @file        CMakeLists.txt
-# @author      
+# @author
 # @brief
 #
 
@@ -38,6 +38,8 @@ SET(CMAKE_C_FLAGS_DEBUG        "-O0 -g")
 SET(CMAKE_CXX_FLAGS_DEBUG      "-O0 -std=c++0x -g")
 SET(CMAKE_C_FLAGS_RELEASE      "-O2 -g")
 SET(CMAKE_CXX_FLAGS_RELEASE    "-O2 -std=c++0x -g")
+SET(CMAKE_C_FLAGS_CCOV         "-O2 -g --coverage")
+SET(CMAKE_CXX_FLAGS_CCOV       "-O2 -std=c++0x -g --coverage")
 
 #SET(SMACK_ENABLE ON)
 
@@ -88,6 +90,38 @@ SET(TARGET_WRT_POPUP "wrt-popup")
 SET(TARGET_WRT_OCSP_LIB "wrt-ocsp")
 SET(TARGET_SEC_SRV_LIB "sec-srv")
 SET(security-server-client "security-server-client")
+
+############################# Communicatin Client #############################
+
+SET(COMMUNICATION_CLIENT_DIR
+    ${PROJECT_SOURCE_DIR}/communication_client
+    )
+
+SET(COMMUNICATION_CLIENT_SRC_DIR
+    ${COMMUNICATION_CLIENT_DIR}/src
+    )
+
+SET(COMMUNICATION_CLIENT_INCLUDE_DIR
+    ${COMMUNICATION_CLIENT_DIR}/include
+    )
+
+SET(COMMUNICATION_CLIENT_SOURCES
+    ${COMMUNICATION_CLIENT_SRC_DIR}/SecurityCommunicationClient.cpp
+    ${PROJECT_SOURCE_DIR}/socket_connection/client/SecuritySocketClient.cpp
+    ${PROJECT_SOURCE_DIR}/socket_connection/connection/SocketConnection.cpp
+    ${PROJECT_SOURCE_DIR}/socket_connection/connection/SocketStream.cpp
+    )
+
+SET(COMMUNICATION_CLIENT_INCLUDES
+    ${COMMUNICATION_CLIENT_DEPS_INCLUDE_DIRS}
+    ${COMMUNICATION_CLIENT_INCLUDE_DIR}
+    ${PROJECT_SOURCE_DIR}/src/daemon/sockets
+    ${PROJECT_SOURCE_DIR}/src/daemon/dbus
+    ${PROJECT_SOURCE_DIR}/src/daemon/socket
+    ${PROJECT_SOURCE_DIR}/src/daemon/socket/api
+    ${PROJECT_SOURCE_DIR}/socket_connection/client
+    ${PROJECT_SOURCE_DIR}/socket_connection/connection
+    )
 
 ############################# subdirectories ##################################
 

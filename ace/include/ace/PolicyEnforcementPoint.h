@@ -76,7 +76,7 @@ class PolicyEnforcementPoint : public AbstractPolicyEnforcementPoint
                     IOperationSystem *operation);
     void terminate();
 
-    void updatePolicy(const std::string &policy) __attribute__ ((deprecated));
+    void updatePolicy(const std::string &policy);
     void updatePolicy();
 
     PolicyEvaluator *getPdp() const { return this->m_pdp; }
@@ -91,6 +91,6 @@ class PolicyEnforcementPoint : public AbstractPolicyEnforcementPoint
     IOperationSystem                *m_sys;
     PolicyEvaluator                 *m_pdp;
     PolicyInformationPoint          *m_pip;
-} __attribute__ ((deprecated));
+};
 
 #endif // POLICY_ENFORCEMENT_POINT_H

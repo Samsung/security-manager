@@ -21,59 +21,88 @@
  *
  */
 
+/*
+ * This class hides implementation of specific communication types
+ * and enables switching between them by #defined macros.
+ *
+ * supported types : DBUS_CONNECTION
+ *
+ * IMPORTANT : Exactly ONE type MUST be defined.
+ *
+ */
+
 #ifndef SECURITYCOMMUNICATIONCLIENT_H_
 #define SECURITYCOMMUNICATIONCLIENT_H_
 
 #include <dpl/dbus/dbus_client.h>
 #include <dpl/log/log.h>
 #include <dpl/scoped_ptr.h>
+#include "SecuritySocketClient.h"
 #include <string>
 #include <memory>
+
+#define DBUS_CONNECTION
+
 
 namespace WrtSecurity {
 namespace Communication {
 class Client
 {
 public:
-  class Exception
-  {
-  public:
-    DECLARE_EXCEPTION_TYPE(DPL::Exception, Base)
-    DECLARE_EXCEPTION_TYPE(Base, SecurityCommunicationClientException)
-  };
+    class Exception
+    {
+    public:
+        DECLARE_EXCEPTION_TYPE(DPL::Exception, Base)
+        DECLARE_EXCEPTION_TYPE(Base, SecurityCommunicationClientException)
+    };
 
-  explicit Client(const std::string &intefaceName);
+    explicit Client(const std::string &intefaceName);
 
-  void connect();
 
-  template<typename ... Args>
-  void call(const char* methodName, const Args& ... args)
-  {
-    //#ifdef DBUS_CONNECTION
-    Try{
-      m_dbusClient->call(methodName, args...);
-    } Catch (DPL::DBus::Client::Exception::DBusClientException){
-      LogError("Error getting response");
-      ReThrowMsg(Exception::SecurityCommunicationClientException,
-               "Error getting response");
+
+    template<typename ... Args>
+    void call(const char* methodName, const Args& ... args)
+    {
+
+        connect();
+        Try{
+        #ifdef DBUS_CONNECTION
+            m_dbusClient->call(methodName, args...);
+        } Catch (DPL::DBus::Client::Exception::DBusClientException){
+        #endif
+        #ifdef SOCKET_CONNECTION
+            m_socketClient->call(methodName, args...);
+        } Catch (SecuritySocketClient::Exception::SecuritySocketClientException){
+        #endif
+            LogError("Error getting response");
+            disconnect();
+            ReThrowMsg(Exception::SecurityCommunicationClientException,
+                       "Error getting response");
+        }
+        LogInfo("Call served");
+        disconnect();
+  }
+
+    template<typename ...Args>
+    void call(std::string methodName, const Args&... args)
+    {
+        call(methodName.c_str(), args...);
     }
-    //#endif
-    LogInfo("Call served");
-  }
 
-  template<typename ...Args>
-  void call(std::string methodName, const Args&... args)
-  {
-      call(methodName.c_str(), args...);
-  }
 
-  void disconnect();
 private:
 
-  std::string m_interfaceName;
-  //#ifdef DBUS_CONNECTION
-  std::unique_ptr<DPL::DBus::Client> m_dbusClient;
-  //#endif
+    void connect();
+    void disconnect();
+
+    std::string m_interfaceName;
+    #ifdef DBUS_CONNECTION
+    std::unique_ptr<DPL::DBus::Client> m_dbusClient;
+    #endif
+
+    #ifdef SOCKET_CONNECTION
+    std::unique_ptr<SecuritySocketClient> m_socketClient;
+    #endif
 };
 } // namespace Communication
 } // namespace WrtSecurity

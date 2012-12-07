@@ -27,6 +27,10 @@
 #include <dpl/exception.h>
 #include <ace-client/ace_client_types.h>
 
+class WebRuntimeImpl;
+class ResourceInformationImpl;
+class OperationSystemImpl;
+
 namespace AceClient {
 
 class AceThinClientImpl;
@@ -53,12 +57,13 @@ class AceThinClient : private DPL::Noncopyable {
 
     AceThinClientImpl* m_impl;
     friend class DPL::Singleton<AceThinClient>;
-} __attribute__ ((deprecated));
+    WebRuntimeImpl* m_wrt;
+    ResourceInformationImpl* m_res;
+    OperationSystemImpl* m_sys;
+};
 
-typedef DPL::Singleton<AceThinClient> AceThinClientSingleton
-        __attribute__ ((deprecated));
+typedef DPL::Singleton<AceThinClient> AceThinClientSingleton;
 
 } // namespace AceClient
-
 
 #endif // WRT_ACE_CLIENT_H

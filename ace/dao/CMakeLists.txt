@@ -80,24 +80,3 @@ INSTALL(TARGETS ${TARGET_ACE_DAO_RO_LIB}
 INSTALL(TARGETS ${TARGET_ACE_DAO_RW_LIB}
     DESTINATION lib)
 
-INSTALL(FILES
-    ${PROJECT_SOURCE_DIR}/ace/include/ace-dao-ro/PromptModel.h
-    ${PROJECT_SOURCE_DIR}/ace/include/ace-dao-ro/PreferenceTypes.h
-    ${PROJECT_SOURCE_DIR}/ace/include/ace-dao-ro/BaseAttribute.h
-    ${PROJECT_SOURCE_DIR}/ace/include/ace-dao-ro/BasePermission.h
-    ${PROJECT_SOURCE_DIR}/ace/include/ace-dao-ro/VerdictTypes.h
-    ${PROJECT_SOURCE_DIR}/ace/include/ace-dao-ro/TimedVerdict.h
-    ${PROJECT_SOURCE_DIR}/ace/include/ace-dao-ro/IRequest.h
-    ${PROJECT_SOURCE_DIR}/ace/include/ace-dao-ro/ValidityTypes.h
-    ${PROJECT_SOURCE_DIR}/ace/include/ace-dao-ro/AceDAOReadOnly.h
-    ${PROJECT_SOURCE_DIR}/ace/include/ace-dao-ro/AceDatabase.h
-    ${PROJECT_SOURCE_DIR}/ace/include/ace-dao-ro/common_dao_types.h
-    ${PROJECT_SOURCE_DIR}/ace/include/ace-dao-ro/AceDAOConversions.h
-    ${PROJECT_SOURCE_DIR}/ace/include/ace-dao-ro/AppTypes.h
-    DESTINATION include/ace-dao-ro
-)
-
-INSTALL(FILES
-    ${PROJECT_SOURCE_DIR}/ace/include/ace-dao-rw/AceDAO.h
-    DESTINATION include/ace-dao-rw
-)

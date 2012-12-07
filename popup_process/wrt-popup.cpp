@@ -240,8 +240,7 @@ void WrtPopup::OnTerminate()
 
 WrtPopup::WrtPopup(int argc, char **argv) :
     Application(argc, argv, "wrt-popup", false),
-    m_pipesOpened(false),
-    m_popup(NULL)
+    m_pipesOpened(false)
 {
     Touch();
     DPL::Popup::PopupControllerSingleton::Instance().Touch();

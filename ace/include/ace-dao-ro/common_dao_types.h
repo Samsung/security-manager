@@ -38,6 +38,11 @@ enum {
 };
 typedef int DbPluginHandle;
 
+enum CertificateSource {
+    SIGNATURE_DISTRIBUTOR = 0,
+    SIGNATURE_AUTHOR = 1
+};
+
 struct WidgetRegisterInfo {
     AppTypes type;
     DPL::OptionalString widget_id;
@@ -75,7 +80,7 @@ typedef std::list<std::string> FingerPrintList;
 typedef std::list<std::string> CertificateChainList;
 class IWacSecurity {
   public:
-    virtual ~IWacSecurity();
+    virtual ~IWacSecurity() {}
     virtual const WidgetCertificateDataList& getCertificateList() const = 0;
     virtual bool isRecognized() const = 0;
     virtual bool isDistributorSigned() const = 0;

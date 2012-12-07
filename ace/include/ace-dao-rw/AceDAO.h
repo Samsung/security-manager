@@ -90,9 +90,6 @@ class AceDAO : public AceDAOReadOnly
     // utilities
     static void addAttributes(const BaseAttributeSet &attributes);
 
-    // setting widget type
-    static void setWidgetType(WidgetHandle handle, AppTypes widgetType);
-
     // Setter for device capabilities that are requested in widgets config.
     //
     // Additional boolean flag means whether widget will always get
@@ -114,8 +111,7 @@ class AceDAO : public AceDAOReadOnly
                                    const WidgetRegisterInfo& info,
                                    const WidgetCertificateDataList& dataList);
     static void unregisterWidgetInfo(WidgetHandle handle);
-    static bool isWidgetInstalled(WidgetHandle handle);
 
-} __attribute__ ((deprecated));
+};
 }
 #endif /* ACEDAO_H_ */

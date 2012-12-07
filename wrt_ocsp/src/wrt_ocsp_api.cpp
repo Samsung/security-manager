@@ -22,7 +22,7 @@
 
 #include <dpl/log/log.h>
 #include <dpl/dbus/dbus_client.h>
-#include "ocsp_server_api.h"
+#include "ocsp_server_dbus_api.h"
 #include "security_daemon_dbus_config.h"
 
 #include "wrt_ocsp_api.h"

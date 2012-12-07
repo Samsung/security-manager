@@ -25,6 +25,7 @@ SET(WRT_OCSP_SOURCES
 SET(WRT_OCSP_INCLUDES
     ${WRT_OCSP_DEPS_INCLUDE_DIRS}
     ${WRT_OCSP_INCLUDE_DIR}
+    ${PROJECT_SOURCE_DIR}/src/services/ocsp
     ${PROJECT_SOURCE_DIR}/src/services/ocsp/dbus/api
     ${PROJECT_SOURCE_DIR}/src/daemon/dbus
     )

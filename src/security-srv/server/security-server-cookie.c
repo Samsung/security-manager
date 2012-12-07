@@ -115,8 +115,6 @@ cookie_list * garbage_collection(cookie_list *cookie)
 			/* This is not a garbage. returning */
 			return cookie;
 		}
-
-		cookie = cookie->next;
 	}
 	return retval;
 }
@@ -155,6 +153,7 @@ cookie_list *search_existing_cookie(int pid, const cookie_list *c_list)
 				if(debug_cmdline == NULL)
 				{
 					SEC_SVR_DBG("%s", "out of memory error");
+					free(cmdline);
 					return NULL;
 				}
 				strncpy(debug_cmdline, current->path, current->path_len);
@@ -308,21 +307,25 @@ int generate_random_cookie(unsigned char *cookie, int size)
 {
 	int fd, ret;
 
-		fd = open("/dev/urandom", O_RDONLY);
-		if(fd < 0)
-		{
-			SEC_SVR_DBG("%s", "Cannot open /dev/urandom");
-			return SECURITY_SERVER_ERROR_FILE_OPERATION;
-		}
-		ret = read(fd, cookie, size);
-		if(ret < size)
-		{
-			SEC_SVR_DBG("Cannot read /dev/urandom: %d", ret);
-			ret = SECURITY_SERVER_ERROR_FILE_OPERATION;
-			goto error;
-		}
-		close(fd);
-		ret = SECURITY_SERVER_SUCCESS;
+    if (cookie == NULL) {
+        SEC_SVR_DBG("%s", "Null pointer passed to function");
+        return SECURITY_SERVER_ERROR_UNKNOWN;
+    }
+	fd = open("/dev/urandom", O_RDONLY);
+	if(fd < 0)
+	{
+		SEC_SVR_DBG("%s", "Cannot open /dev/urandom");
+		return SECURITY_SERVER_ERROR_FILE_OPERATION;
+	}
+	ret = read(fd, cookie, size);
+	if(ret < size)
+	{
+		SEC_SVR_DBG("Cannot read /dev/urandom: %d", ret);
+		ret = SECURITY_SERVER_ERROR_FILE_OPERATION;
+		goto error;
+	}
+	close(fd);
+	ret = SECURITY_SERVER_SUCCESS;
 error:
 	if(fd > 0)
 		close(fd);
@@ -554,14 +557,6 @@ int check_stored_cookie(unsigned char *cookie, int size)
 			goto error;
 		}
 
-		/* Change mod only allow root process to read */
-		ret = fchmod(fd, 0600);
-		if (ret < 0)
-		{
-			SEC_SVR_DBG("%s", "Cannot chmod default cookie");
-			ret = SECURITY_SERVER_ERROR_FILE_OPERATION;
-			goto error;
-		}
 		close(fd);
 		return SECURITY_SERVER_SUCCESS;
 	}

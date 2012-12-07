@@ -20,12 +20,8 @@
  * @brief       This is main routing for Security Daemon
  */
 
-#include <string>
-
-#include <dpl/application.h>
 #include <dpl/log/log.h>
 #include <dpl/single_instance.h>
-#include <dpl/wrt-dao-ro/global_config.h>
 
 #include "security_daemon.h"
 

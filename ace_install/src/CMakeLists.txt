@@ -27,7 +27,8 @@ SET(ACE_INSTALL_INCLUDES
     ${ACE_INSTALL_INCLUDE_DIR}
     ${PROJECT_SOURCE_DIR}/ace_common/include
     ${PROJECT_SOURCE_DIR}/ace/include
-    ${PROJECT_SOURCE_DIR}/src/services/ace/dbus/api        
+    ${PROJECT_SOURCE_DIR}/src/services/ace
+    ${PROJECT_SOURCE_DIR}/src/services/ace/dbus/api
     ${PROJECT_SOURCE_DIR}/src/daemon/dbus
     )
 
