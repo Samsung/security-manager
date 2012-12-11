@@ -32,10 +32,11 @@
 #include <ace/Request.h>
 #include <ace/WRT_INTERFACE.h>
 #include <ace-dao-ro/BaseAttribute.h>
+#include <dpl/noncopyable.h>
 
 typedef int PipResponse;
 
-class PolicyInformationPoint
+class PolicyInformationPoint : public DPL::Noncopyable
 {
   private:
 

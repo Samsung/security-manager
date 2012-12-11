@@ -1,7 +1,7 @@
 #sbs-git:slp/pkgs/s/security-server security-server 0.0.37
 Name:       security-server
 Summary:    Security server and utilities
-Version:    0.0.54
+Version:    0.0.55
 Release:    1
 Group:      TO_BE/FILLED_IN
 License:    Apache License, Version 2.0
@@ -9,7 +9,6 @@ URL:        N/A
 Source0:    %{name}-%{version}.tar.gz
 Source1:    security-server.manifest
 Source2:    libsecurity-server-client.manifest
-Source3:    security-server.service
 BuildRequires: cmake
 BuildRequires: zip
 BuildRequires: pkgconfig(dlog)
@@ -24,9 +23,6 @@ BuildRequires: pkgconfig(libpcrecpp)
 BuildRequires: pkgconfig(icu-i18n)
 BuildRequires: pkgconfig(libsoup-2.4)
 BuildRequires: pkgconfig(xmlsec1)
-Requires(preun):  systemd
-Requires(post):   systemd
-Requires(postun): systemd
 
 %description
 Security server and utilities
@@ -88,21 +84,11 @@ cp LICENSE %{buildroot}/usr/share/license/libsecurity-server-client
 install -D %{SOURCE1} %{buildroot}%{_datadir}/security-server.manifest
 install -D %{SOURCE2} %{buildroot}%{_datadir}/libsecurity-server-client.manifest
 
-mkdir -p %{buildroot}%{_libdir}/systemd/system/multi-user.target.wants
-install -m 0644 %{SOURCE3} %{buildroot}%{_libdir}/systemd/system/security-server.service
-ln -s ../security-server.service %{buildroot}%{_libdir}/systemd/system/multi-user.target.wants/security-server.service
+%clean
+rm -rf %{buildroot}
 
-
-%preun
-if [ $1 == 0 ]; then
-    systemctl stop security-server.service
-fi
 
 %post
-systemctl daemon-reload
-if [ $1 == 1 ]; then
-    systemctl restart security-server.service
-fi
 mkdir -p /etc/rc.d/rc3.d
 mkdir -p /etc/rc.d/rc5.d
 ln -s /etc/rc.d/init.d/security-serverd /etc/rc.d/rc3.d/S10security-server
@@ -137,7 +123,8 @@ fi
 echo "[WRT] wrt-security postinst done ..."
 
 %postun
-systemctl daemon-reload
+rm -f /etc/rc.d/rc3.d/S10security-server
+rm -f /etc/rc.d/rc5.d/S10security-server
 
 %post -n libsecurity-server-client -p /sbin/ldconfig
 
@@ -147,8 +134,6 @@ systemctl daemon-reload
 %files -n security-server
 %manifest %{_datadir}/security-server.manifest
 %defattr(-,root,root,-)
-%{_libdir}/systemd/system/multi-user.target.wants/security-server.service
-%{_libdir}/systemd/system/security-server.service
 /usr/share/security-server/mw-list
 %attr(755,root,root) /etc/rc.d/init.d/security-serverd
 #/etc/rc.d/rc3.d/S10security-server

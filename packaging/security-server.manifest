@@ -7,6 +7,6 @@
 		</provide>
 	</define>
 	<request>
-		<domain name="security-server" />
+		<domain name="_" />
 	</request>
 </manifest>

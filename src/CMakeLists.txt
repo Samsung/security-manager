@@ -65,14 +65,22 @@ SET(DAEMON_SOURCES
   )
 
 SET_SOURCE_FILES_PROPERTIES(${DAEMON_SOURCES} PROPERTIES COMPILE_FLAGS "-std=c++0x")
-SET(DAEMON_SOURCES
-    ${DAEMON_SOURCES}
+
+SET(LEGACY_DAEMON_SOURCES
     #security-server
     ${DAEMON_SOURCES_PATH}/security-srv/communication/security-server-comm.c
     ${DAEMON_SOURCES_PATH}/security-srv/server/security-server-cookie.c
     ${DAEMON_SOURCES_PATH}/security-srv/server/security-server-main.c
     ${DAEMON_SOURCES_PATH}/security-srv/server/security-server-password.c
     ${DAEMON_SOURCES_PATH}/security-srv/util/security-server-util-common.c)
+
+SET_SOURCE_FILES_PROPERTIES(${LEGACY_DAEMON_SOURCES}
+    PROPERTIES COMPILE_FLAGS "-DSECURITY_SERVER_DEBUG_DLOG")
+
+SET(DAEMON_SOURCES
+    ${DAEMON_SOURCES}
+    #security-server
+    ${LEGACY_DAEMON_SOURCES})
 
 SET_SOURCE_FILES_PROPERTIES(
     ${DAEMON_SOURCES_PATH}/security-srv/communication/security-server-comm.c

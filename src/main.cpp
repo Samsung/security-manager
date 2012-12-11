@@ -58,6 +58,5 @@ int main(int argc, char* argv[])
     daemon.shutdown();
     instance.Release();
 
-    pthread_exit(NULL);
     return retVal;
 }

@@ -1,6 +1,0 @@
-usr/bin/security-server
-etc/rc.d/rc3.d/S10security-server
-etc/rc.d/rc5.d/S10security-server
-etc/rc.d/init.d/security-serverd
-usr/share/security-server/mw-list
-#/usr/bin/sec-svr-util

@@ -1,9 +1,0 @@
-
-[Unit]
-Description=Start the security server
-
-[Service]
-ExecStart=/usr/bin/security-server
-
-[Install]
-WantedBy=multi-user.target

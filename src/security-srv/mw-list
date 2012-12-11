@@ -1,12 +1,13 @@
 /usr/bin/telephony-server
 /usr/bin/ss-server
+/usr/bin/dnet
 /usr/bin/msg-server
 /usr/bin/alarm-server
+/usr/bin/dnet
+/usr/bin/audio-session-mgr-server
 /usr/bin/lbs_server
 /usr/bin/power_manager
 /usr/bin/system_server
+/opt/home/root/security_server_tc_server
 /usr/bin/sec-svr-util
-/usr/bin/mdm-server
-/usr/bin/smartcard-daemon
-/usr/bin/sound_server
-/usr/bin/nfc-manager-daemon
+
