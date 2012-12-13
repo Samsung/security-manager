@@ -36,6 +36,8 @@ typedef struct
 	unsigned char return_code;
 } response_header;
 
+#define SECURITY_SERVER_MIDDLEWARE_USER "app"
+
 /* Message Types */
 #define SECURITY_SERVER_MSG_TYPE_COOKIE_REQUEST		0x01
 #define SECURITY_SERVER_MSG_TYPE_COOKIE_RESPONSE	0x02
