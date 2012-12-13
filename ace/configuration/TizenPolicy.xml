@@ -139,6 +139,40 @@
             </condition>
         </rule>
 
+        <rule effect="permit">
+            <condition combine="or">
+                <resource-match attr="device-cap" func="equal" match="alarm" />
+            </condition>
+        </rule>
+
+        <rule effect="permit">
+            <condition combine="or">
+                <resource-match attr="device-cap" func="equal" match="log" />
+            </condition>
+        </rule>
+
+        <rule effect="permit">
+            <condition combine="or">
+                <resource-match attr="device-cap" func="equal" match="messaging.read" />
+                <resource-match attr="device-cap" func="equal" match="messaging.write" />
+                <resource-match attr="device-cap" func="equal" match="messaging.send" />
+            </condition>
+        </rule>
+
+        <rule effect="permit">
+            <condition combine="or">
+                <resource-match attr="device-cap" func="equal" match="filesystem.read" />
+                <resource-match attr="device-cap" func="equal" match="filesystem.write" />
+            </condition>
+        </rule>
+
+        <rule effect="permit">
+            <condition combine="or">
+                <resource-match attr="device-cap" func="equal" match="notification.read" />
+                <resource-match attr="device-cap" func="equal" match="notification.write" />
+            </condition>
+        </rule>
+
         <rule effect="deny" />
     </policy>
     <policy id="Tizen-Policy-Trusted" description="Tizen's policy for trusted domain" combine="permit-overrides">
@@ -280,7 +314,41 @@
             </condition>
         </rule>
 
-        <rule effect="permit" />
+        <rule effect="permit">
+            <condition combine="or">
+                <resource-match attr="device-cap" func="equal" match="alarm" />
+            </condition>
+        </rule>
+
+        <rule effect="permit">
+            <condition combine="or">
+                <resource-match attr="device-cap" func="equal" match="log" />
+            </condition>
+        </rule>
+
+        <rule effect="permit">
+            <condition combine="or">
+                <resource-match attr="device-cap" func="equal" match="messaging.read" />
+                <resource-match attr="device-cap" func="equal" match="messaging.write" />
+                <resource-match attr="device-cap" func="equal" match="messaging.send" />
+            </condition>
+        </rule>
+
+        <rule effect="permit">
+            <condition combine="or">
+                <resource-match attr="device-cap" func="equal" match="filesystem.read" />
+                <resource-match attr="device-cap" func="equal" match="filesystem.write" />
+            </condition>
+        </rule>
+
+        <rule effect="permit">
+            <condition combine="or">
+                <resource-match attr="device-cap" func="equal" match="notification.read" />
+                <resource-match attr="device-cap" func="equal" match="notification.write" />
+            </condition>
+        </rule>
+
+        <rule effect="deny" />
     </policy>
 
     <policy id="Tizen-Policy-Untrusted" description="Tizen's policy for untrusted domain" combine="deny-overrides">
@@ -412,6 +480,40 @@
                     <resource-match attr="device-cap" func="equal" match="externalNetworkAccess" />
                 </condition>
                 <environment-match attr="roaming" match="true" />
+            </condition>
+        </rule>
+
+        <rule effect="permit">
+            <condition combine="or">
+                <resource-match attr="device-cap" func="equal" match="alarm" />
+            </condition>
+        </rule>
+
+        <rule effect="permit">
+            <condition combine="or">
+                <resource-match attr="device-cap" func="equal" match="log" />
+            </condition>
+        </rule>
+
+        <rule effect="permit">
+            <condition combine="or">
+                <resource-match attr="device-cap" func="equal" match="messaging.read" />
+                <resource-match attr="device-cap" func="equal" match="messaging.write" />
+                <resource-match attr="device-cap" func="equal" match="messaging.send" />
+            </condition>
+        </rule>
+
+        <rule effect="permit">
+            <condition combine="or">
+                <resource-match attr="device-cap" func="equal" match="filesystem.read" />
+                <resource-match attr="device-cap" func="equal" match="filesystem.write" />
+            </condition>
+        </rule>
+
+        <rule effect="permit">
+            <condition combine="or">
+                <resource-match attr="device-cap" func="equal" match="notification.read" />
+                <resource-match attr="device-cap" func="equal" match="notification.write" />
             </condition>
         </rule>
 
