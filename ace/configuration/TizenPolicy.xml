@@ -173,6 +173,31 @@
             </condition>
         </rule>
 
+        <rule effect="permit">
+            <condition combine="or">
+                <resource-match attr="device-cap" func="equal" match="networkbearerselection" />
+            </condition>
+        </rule>
+
+        <rule effect="permit">
+            <condition combine="or">
+                <resource-match attr="device-cap" func="equal" match="datacontrol.consumer" />
+            </condition>
+        </rule>
+
+        <rule effect="permit">
+            <condition combine="or">
+                <resource-match attr="device-cap" func="equal" match="se" />
+            </condition>
+        </rule>
+
+        <rule effect="permit">
+            <condition combine="or">
+                <resource-match attr="device-cap" func="equal" match="account.read" />
+				<resource-match attr="device-cap" func="equal" match="account.write" />
+            </condition>
+        </rule>
+
         <rule effect="deny" />
     </policy>
     <policy id="Tizen-Policy-Trusted" description="Tizen's policy for trusted domain" combine="permit-overrides">
@@ -351,7 +376,7 @@
         <rule effect="deny" />
     </policy>
 
-    <policy id="Tizen-Policy-Untrusted" description="Tizen's policy for untrusted domain" combine="deny-overrides">
+    <policy id="Tizen-Policy-Untrusted" description="Tizen's policy for untrusted domain" combine="permit-overrides">
         <!-- Specific Untrusted Policy for Tizen -->
 
         <rule effect="permit">
@@ -517,5 +542,6 @@
             </condition>
         </rule>
 
+        <rule effect="deny" />
     </policy>
 </policy-set>
