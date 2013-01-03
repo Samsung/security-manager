@@ -20,23 +20,22 @@ SET(ACE_CLIENT_INCLUDE_DIR
     )
 
 SET(ACE_CLIENT_SOURCES
+    ${COMMUNICATION_CLIENT_SOURCES}
     ${ACE_CLIENT_SRC_DIR}/ace_client.cpp
     ${ACE_CLIENT_SRC_DIR}/ace_api_client.cpp
     ${PROJECT_SOURCE_DIR}/src/services/ace/logic/attribute_facade.cpp
     ${PROJECT_SOURCE_DIR}/src/services/ace/logic/simple_roaming_agent.cpp
-    ${PROJECT_SOURCE_DIR}/popup_process/PopupInvoker.cpp
-    ${PROJECT_SOURCE_DIR}/popup_process/PopupSerializer.cpp
     )
 
 SET(ACE_CLIENT_INCLUDES
+    ${COMMUNICATION_CLIENT_INCLUDES}
     ${ACE_CLIENT_DEPS_INCLUDE_DIRS}
     ${ACE_CLIENT_INCLUDE_DIR}
     ${PROJECT_SOURCE_DIR}/ace_common/include
     ${PROJECT_SOURCE_DIR}/src/services/ace
-    ${PROJECT_SOURCE_DIR}/src/services/ace/dbus/api
+    ${PROJECT_SOURCE_DIR}/src/services/ace/
     ${PROJECT_SOURCE_DIR}/src/services/ace/logic
     ${PROJECT_SOURCE_DIR}/src/services/popup
-    ${PROJECT_SOURCE_DIR}/src/daemon/dbus
     ${PROJECT_SOURCE_DIR}/popup_process
     ${PROJECT_SOURCE_DIR}/ace/include
     )

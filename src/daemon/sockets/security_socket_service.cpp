@@ -25,6 +25,7 @@
 #include <sys/un.h>
 #include <sys/signalfd.h>
 #include <sys/select.h>
+#include <sys/stat.h>
 #include <signal.h>
 #include <fcntl.h>
 #include <cstring>
@@ -132,9 +133,15 @@ void SecuritySocketService::initialize(){
     strcpy(server_address.sun_path, m_serverAddress.c_str());
     unlink(server_address.sun_path);
 
+    mode_t socket_umask, original_umask;
+    socket_umask = 0;
+    original_umask = umask(socket_umask);
+
     if(-1 == bind(m_listenFd, (struct sockaddr *)&server_address, SUN_LEN(&server_address))){
         throwWithErrnoMessage("bind()");
     }
+
+    umask(original_umask);
 
     LogInfo("Initialized");
 }
@@ -268,15 +275,16 @@ void * SecuritySocketService::connectionThread(void * data){
     pthread_detach(pthread_self());
     std::auto_ptr<Connection_Info> c (static_cast<Connection_Info *>(data));
     SecuritySocketService &t = *static_cast<SecuritySocketService *>(c->data);
-
+    LogInfo("Starting connection thread");
     Try {
         t.connectionService(c->connfd);
     } Catch (DPL::Exception){
-        LogError("Connection thread error");
+        LogError("Connection thread error : " << _rethrown_exception.DumpToString());
         t.removeClientSocket(c->connfd);
         close(c->connfd);
         return (void*)1;
     }
+    LogInfo("Client serviced");
     return (void*)0;
 }
 
@@ -312,6 +320,7 @@ void SecuritySocketService::connectionService(int fd){
         }
     }
 
+    LogInfo("Calling service");
     Try{
         m_callbackMap[interfaceName][methodName]->serviceCallback(&connector);
     } Catch (ServiceCallbackApi::Exception::ServiceCallbackException){
@@ -319,11 +328,9 @@ void SecuritySocketService::connectionService(int fd){
         ReThrowMsg(DPL::Exception, "Service callback error");
     }
 
+    LogInfo("Removing client");
     removeClientSocket(fd);
-    if(-1 == close(fd)){
-        LogError("close() : " << strerror(errno));
-        ThrowMsg(DPL::Exception, "shutdown() : " << strerror(errno));
-    }
+    close(fd);
 
     LogInfo("Call served");
 

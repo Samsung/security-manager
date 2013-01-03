@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011 Samsung Electronics Co., Ltd All Rights Reserved
+ * Copyright (c) 2012 Samsung Electronics Co., Ltd All Rights Reserved
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -13,21 +13,14 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
+/*
+ * @file        popup_service_callbacks.cpp
+ * @author      Lukasz Wrzosek (l.wrzosek@samsung.com)
+ * @version     1.0
+ * @brief       Implementation of Security Caller Thread singleton
+ */
 
-#ifndef WRT_POPUP_SERIALIZER_H
-#define WRT_POPUP_SERIALIZER_H
+#include <security_caller.h>
+#include <dpl/singleton_impl.h>
 
-#include <string>
-#include <dpl/binary_queue.h>
-
-namespace PopupSerializer {
-
-void appendArg(int arg, DPL::BinaryQueue &buffer);
-void appendArg(const std::string &arg, DPL::BinaryQueue &buffer);
-
-int getIntArg(DPL::BinaryQueue &buffer);
-std::string getStringArg(DPL::BinaryQueue &buffer);
-
-}
-
-#endif
+IMPLEMENT_SINGLETON(SecurityCallerThread)

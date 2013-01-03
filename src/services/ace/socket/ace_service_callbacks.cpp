@@ -27,6 +27,7 @@
 #include <ace/Request.h>
 #include <ace/PolicyResult.h>
 #include <security_controller.h>
+#include <security_caller.h>
 #include <attribute_facade.h>
 
 namespace RPC {
@@ -66,8 +67,7 @@ void AceServiceCallbacks::checkAccess(SocketConnection * connector){
     request.addDeviceCapability(resource);
 
     PolicyResult result(PolicyEffect::DENY);
-    CONTROLLER_POST_SYNC_EVENT(
-        SecurityController,
+    SecurityCallerSingleton::Instance().SendSyncEvent(
         SecurityControllerEvents::CheckRuntimeCallSyncEvent(
             &result,
             &request,
@@ -106,11 +106,10 @@ void AceServiceCallbacks::checkAccessInstall(SocketConnection * connector){
     request.addDeviceCapability(resource);
 
     PolicyResult result(PolicyEffect::DENY);
-    CONTROLLER_POST_SYNC_EVENT(
-    SecurityController,
-    SecurityControllerEvents::CheckFunctionCallSyncEvent(
-         &result,
-         &request));
+    SecurityCallerSingleton::Instance().SendSyncEvent(
+            SecurityControllerEvents::CheckFunctionCallSyncEvent(
+                    &result,
+                    &request));
 
     int response = PolicyResult::serialize(result);
 
@@ -127,9 +126,8 @@ void AceServiceCallbacks::updatePolicy(SocketConnection * /*connector*/){
 
 
     LogDebug("Policy update socket message received");
-    CONTROLLER_POST_SYNC_EVENT(
-                SecurityController,
-                SecurityControllerEvents::UpdatePolicySyncEvent());
+    SecurityCallerSingleton::Instance().SendSyncEvent(
+            SecurityControllerEvents::UpdatePolicySyncEvent());
 }
 
 } //namespace RPC

@@ -14,4 +14,13 @@
 #    limitations under the License.
 #
 
-dbus-send --system --print-reply --dest=org.tizen.SecurityDaemon /org/tizen/SecurityDaemon org.tizen.AceCheckAccessInterface.update_policy
+#Uncomment this when IPC is set to DBus
+#dbus-send --system --print-reply --dest=org.tizen.SecurityDaemon /org/tizen/SecurityDaemon org.tizen.AceCheckAccessInterface.update_policy
+
+#Uncomment this when IPC is set to sockets
+echo "delete from AcePolicyResult where 1==1;" | sqlite3 /opt/dbspace/.ace.db
+echo "delete from AceAttribute where 1==1;" | sqlite3 /opt/dbspace/.ace.db
+echo "delete from AcePromptDecision where 1==1;" | sqlite3 /opt/dbspace/.ace.db
+pkill -9 security-ser
+sleep 3
+

@@ -26,14 +26,13 @@
 #include <dpl/log/log.h>
 #include <dpl/foreach.h>
 #include <dpl/string.h>
-#include <dpl/dbus/dbus_client.h>
+#include "SecurityCommunicationClient.h"
 #include <ace-dao-rw/AceDAO.h>
-#include "ace_server_dbus_api.h"
-#include "security_daemon_dbus_config.h"
+#include "ace_server_api.h"
 
 #include "ace_api_install.h"
 
-static DPL::DBus::Client *dbusClient = NULL;
+static WrtSecurity::Communication::Client *communicationClient = NULL;
 
 // helper functions
 
@@ -64,23 +63,15 @@ static ace_widget_type_t to_ace_widget_type(AceDB::AppTypes app_type)
 
 ace_return_t ace_install_initialize(void)
 {
-    if (NULL != dbusClient) {
+    if (NULL != communicationClient) {
         LogError("ace_api_install already initialized");
         return ACE_INTERNAL_ERROR;
     }
     AceDB::AceDAO::attachToThreadRW();
     Try {
-        dbusClient = new DPL::DBus::Client(
-                   WrtSecurity::SecurityDaemonConfig::OBJECT_PATH(),
-                   WrtSecurity::SecurityDaemonConfig::SERVICE_NAME(),
+        communicationClient = new WrtSecurity::Communication::Client(
                    WrtSecurity::AceServerApi::INTERFACE_NAME());
-        std::string hello = "RPC test.";
-        std::string response;
-        dbusClient->call(WrtSecurity::AceServerApi::ECHO_METHOD(),
-                          hello,
-                          &response);
-        LogInfo("Security daemon response from echo: " << response);
-    } Catch (DPL::DBus::Client::Exception::DBusClientException) {
+    } Catch (WrtSecurity::Communication::Client::Exception::SecurityCommunicationClientException) {
         LogError("Can't connect to daemon");
         return ACE_INTERNAL_ERROR;
     }
@@ -89,12 +80,12 @@ ace_return_t ace_install_initialize(void)
 
 ace_return_t ace_install_shutdown(void)
 {
-    if (NULL == dbusClient) {
+    if (NULL == communicationClient) {
         LogError("ace_api_install not initialized");
         return ACE_INTERNAL_ERROR;
     }
-    delete dbusClient;
-    dbusClient = NULL;
+    delete communicationClient;
+    communicationClient = NULL;
     AceDB::AceDAO::detachFromThread();
     return ACE_OK;
 }
@@ -102,8 +93,8 @@ ace_return_t ace_install_shutdown(void)
 ace_return_t ace_update_policy(void)
 {
     Try {
-        dbusClient->call(WrtSecurity::AceServerApi::UPDATE_POLICY_METHOD());
-    } Catch (DPL::DBus::Client::Exception::DBusClientException) {
+        communicationClient->call(WrtSecurity::AceServerApi::UPDATE_POLICY_METHOD());
+    } Catch (WrtSecurity::Communication::Client::Exception::SecurityCommunicationClientException) {
         LogError("Problem with connection to daemon");
         return ACE_INTERNAL_ERROR;
     }
@@ -325,11 +316,11 @@ ace_return_t ace_get_policy_result(const ace_resource_t resource,
     int serializedPolicyResult = 0;
     Try {
        std::string resource_str(resource);
-       dbusClient->call(WrtSecurity::AceServerApi::CHECK_ACCESS_INSTALL_METHOD(),
+       communicationClient->call(WrtSecurity::AceServerApi::CHECK_ACCESS_INSTALL_METHOD(),
                         handle,
                         resource_str,
                         &serializedPolicyResult);
-   } Catch (DPL::DBus::Client::Exception::DBusClientException) {
+   } Catch (WrtSecurity::Communication::Client::Exception::SecurityCommunicationClientException) {
        LogError("Can't connect to daemon");
        return ACE_INTERNAL_ERROR;
    }

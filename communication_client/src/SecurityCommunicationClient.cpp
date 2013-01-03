@@ -23,15 +23,16 @@
 
 #include "SecurityCommunicationClient.h"
 
-//#ifdef DBUS_CONNECTION
+#ifdef DBUS_CONNECTION
 #include "security_daemon_dbus_config.h"
-//#endif
+#endif
 
 namespace WrtSecurity{
 namespace Communication{
 
   Client::Client(const std::string& interfaceName){
-    #ifdef DBUS_CONNECTION
+    #if DBUS_CONNECTION
+      LogInfo("DBus create");
     Try {
       m_dbusClient.reset(new DPL::DBus::Client(WrtSecurity::SecurityDaemonConfig::OBJECT_PATH(),
                          WrtSecurity::SecurityDaemonConfig::SERVICE_NAME(),
@@ -47,9 +48,10 @@ namespace Communication{
                "Error getting client");
     }
     #endif //DBUS_CONNECTION
+
     #ifdef SOCKET_CONNECTION
     m_socketClient.reset(new SecuritySocketClient(interfaceName));
-    if(NULL == m_sockeClient.get()){
+    if(NULL == m_socketClient.get()){
         LogError("Couldn't get client");
         ThrowMsg(Exception::SecurityCommunicationClientException,
                  "Error getting client");
@@ -60,7 +62,14 @@ namespace Communication{
 
   void Client::connect(){
     #ifdef SOCKET_CONNECTION
-      m_socketClient->connect();
+      Try {
+          m_socketClient->connect();
+      } Catch(SecuritySocketClient::Exception::SecuritySocketClientException){
+          LogError("Couldn't connect");
+          ReThrowMsg(Exception::SecurityCommunicationClientException,
+                     "Error connecting");
+      }
+
     #endif //SOCKET_CONNECTION
       LogInfo("Connected");
   }

@@ -19,15 +19,18 @@ SET(ACE_POPUP_VALIDATION_INCLUDE_DIR
     )
 
 SET(ACE_POPUP_VALIDATION_SOURCES
+    ${COMMUNICATION_CLIENT_SOURCES}
     ${ACE_POPUP_VALIDATION_SRC_DIR}/ace_api_popup_validation.cpp    
     )
 
 SET(ACE_POPUP_VALIDATION_INCLUDES
+    ${COMMUNICATION_CLIENT_INCLUDES}
     ${ACE_POPUP_VALIDATION_DEPS_INCLUDE_DIRS}
     ${ACE_POPUP_VALIDATION_INCLUDE_DIR}
     ${PROJECT_SOURCE_DIR}/ace_common/include
     ${PROJECT_SOURCE_DIR}/ace/include
     ${PROJECT_SOURCE_DIR}/src/services/ace/dbus/api        
+    ${PROJECT_SOURCE_DIR}/src/services/ace
     ${PROJECT_SOURCE_DIR}/src/services/popup/
     ${PROJECT_SOURCE_DIR}/src/daemon/dbus    
     )

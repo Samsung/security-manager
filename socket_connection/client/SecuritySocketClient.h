@@ -66,6 +66,11 @@ public:
     void connect();
     void disconnect();
 
+    void call(std::string methodName){
+        make_call(m_interfaceName);
+        make_call(methodName);
+    }
+
     template<typename ...Args>
     void call(std::string methodName, const Args&... args){
         make_call(m_interfaceName);

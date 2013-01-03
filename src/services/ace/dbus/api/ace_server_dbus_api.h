@@ -28,7 +28,6 @@
 namespace WrtSecurity{
 namespace AceServerApi{
 
-
     // RPC test function
     // IN std::string
     // OUT std::string

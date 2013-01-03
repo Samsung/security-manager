@@ -33,6 +33,7 @@
 #include <dpl/singleton_impl.h>
 #include <dpl/log/log.h>
 #include <security_logic.h>
+#include <security_caller.h>
 
 IMPLEMENT_SINGLETON(SecurityController)
 
@@ -53,6 +54,7 @@ SecurityController::~SecurityController()
 void SecurityController::OnEventReceived(
     const SecurityControllerEvents::InitializeSyncEvent & /* event */)
 {
+    SecurityCallerSingleton::Instance().Run();
     m_impl->logic.initialize();
 }
 
@@ -65,6 +67,7 @@ void SecurityController::OnEventReceived(
 void SecurityController::OnEventReceived(
     const SecurityControllerEvents::TerminateSyncEvent & /*event*/)
 {
+    SecurityCallerSingleton::Instance().Quit();
     m_impl->logic.terminate();
 }
 

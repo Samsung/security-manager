@@ -23,13 +23,13 @@
 #include <string>
 #include <vector>
 #include <dpl/log/log.h>
-#include <dpl/dbus/dbus_client.h>
+#include "SecurityCommunicationClient.h"
 #include "popup_response_server_api.h"
 #include "security_daemon_dbus_config.h"
 #include "ace_api_popup_validation.h"
 
 namespace {
-static DPL::DBus::Client *dbusClient = NULL;
+static WrtSecurity::Communication::Client *communicationClient = NULL;
 static const int VALIDITY_ONCE_VALUE = 0;
 static const int VALIDITY_SESSION_VALUE = 1;
 static const int VALIDITY_ALWAYS_VALUE = 1;
@@ -37,16 +37,14 @@ static const int VALIDITY_ALWAYS_VALUE = 1;
 
 ace_return_t ace_popup_validation_initialize(void)
 {
-    if (NULL != dbusClient) {
+    if (NULL != communicationClient) {
         LogError("ace_api_popup_validation already initialized");
         return ACE_INTERNAL_ERROR;
     }
     Try {
-        dbusClient = new DPL::DBus::Client(
-                   WrtSecurity::SecurityDaemonConfig::OBJECT_PATH(),
-                   WrtSecurity::SecurityDaemonConfig::SERVICE_NAME(),
+        communicationClient = new WrtSecurity::Communication::Client(
                    WrtSecurity::PopupServerApi::INTERFACE_NAME());
-    } Catch (DPL::DBus::Client::Exception::DBusClientException) {
+    } Catch (WrtSecurity::Communication::Client::Exception::SecurityCommunicationClientException) {
         LogError("Can't connect to daemon");
         return ACE_INTERNAL_ERROR;
     }
@@ -56,12 +54,12 @@ ace_return_t ace_popup_validation_initialize(void)
 
 ace_return_t ace_popup_validation_shutdown(void)
 {
-    if (NULL == dbusClient) {
+    if (NULL == communicationClient) {
         LogError("ace_api_popup_validation not initialized");
         return ACE_INTERNAL_ERROR;
     }
-    delete dbusClient;
-    dbusClient = NULL;
+    delete communicationClient;
+    communicationClient = NULL;
 
     return ACE_OK;
 }
@@ -116,7 +114,7 @@ ace_return_t ace_validate_answer(ace_bool_t answer,
 
     bool response = false;
     Try{
-        dbusClient->call(WrtSecurity::PopupServerApi::VALIDATION_METHOD(),
+        communicationClient->call(WrtSecurity::PopupServerApi::VALIDATION_METHOD(),
                          dbusAnswer,
                          dbusValidity,
                          handle,
@@ -126,7 +124,7 @@ ace_return_t ace_validate_answer(ace_bool_t answer,
                          values,
                          sessionId,
                          &response);
-    } Catch (DPL::DBus::Client::Exception::DBusClientException) {
+    } Catch (WrtSecurity::Communication::Client::Exception::SecurityCommunicationClientException) {
         LogError("Can't call daemon");
         return ACE_INTERNAL_ERROR;
     }

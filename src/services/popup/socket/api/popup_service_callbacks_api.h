@@ -34,7 +34,7 @@ namespace WrtSecurity{
 namespace PopupServiceCallbacksApi{
 
 inline std::pair<std::string, socketServerCallback> VALIDATION_METHOD_CALLBACK(){
-    return std::make_pair(WrtSecurity::PopupServerApi::INTERFACE_NAME(), RPC::PopupServiceCallbacks::validate);
+    return std::make_pair(WrtSecurity::PopupServerApi::VALIDATION_METHOD(), RPC::PopupServiceCallbacks::validate);
 }
 
 } // namespace PopupServiceCallbacksApi

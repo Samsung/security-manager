@@ -106,7 +106,6 @@ void SocketStream::Read(size_t num, void * bytes){
 
     }
     memcpy(bytes, whole_buffer.c_str(), num);
-    LogInfo("Message read");
 }
 
 void SocketStream::Write(size_t num, const void * bytes){
@@ -164,5 +163,4 @@ void SocketStream::Write(size_t num, const void * bytes){
             bytes_to_write -= write_res;
         }
     }
-    LogInfo("Message wrote");
 }

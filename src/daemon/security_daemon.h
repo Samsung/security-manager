@@ -30,6 +30,7 @@
 #include <dpl/singleton.h>
 #include <dpl/assert.h>
 
+
 namespace SecurityDaemon {
 
 class DaemonService : DPL::Noncopyable {

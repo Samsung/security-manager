@@ -28,6 +28,7 @@
 #include "attribute_facade.h"
 #include "popup_ace_data_types.h"
 #include "security_controller.h"
+#include <security_caller.h>
 
 namespace RPC {
 
@@ -75,7 +76,7 @@ void PopupServiceCallbacks::validate(SocketConnection * connector){
         validity,
         acedata.sessionId,
         &response);
-    CONTROLLER_POST_SYNC_EVENT(SecurityController, ev);
+    SecurityCallerSingleton::Instance().SendSyncEvent(ev);
 
     Try {
         connector->write(response);
@@ -87,4 +88,3 @@ void PopupServiceCallbacks::validate(SocketConnection * connector){
 }
 
 } // namespace RPC
-

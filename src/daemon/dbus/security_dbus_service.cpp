@@ -32,6 +32,7 @@
 #include <ocsp_server_dbus_interface.h>
 #include <popup_response_dbus_interface.h>
 
+
 void SecurityDBusService::start()
 {
     LogDebug("SecurityDBusService starting");
@@ -89,4 +90,6 @@ void SecurityDBusService::deinitialize()
     m_dispatchers.clear();
 }
 
+#ifdef DBUS_CONNECTION
 DAEMON_REGISTER_SERVICE_MODULE(SecurityDBusService)
+#endif //DBUS_CONNECTION

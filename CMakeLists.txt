@@ -68,6 +68,10 @@ ADD_DEFINITIONS("-Wextra")                      # Generate even more extra warni
 ADD_DEFINITIONS("-Wno-variadic-macros")         # Inhibit variadic macros warnings (needed for ORM)
 ADD_DEFINITIONS("-Wno-deprecated")               # No warnings about deprecated features
 ADD_DEFINITIONS("-std=c++0x")               # No warnings about deprecated features
+
+ADD_DEFINITIONS("-DSOCKET_CONNECTION")      #defines sockets as used IPC
+#ADD_DEFINITIONS("-DDBUS_CONNECTION")        #defines DBus as used IPC
+
 STRING(REGEX MATCH "([^.]*)" API_VERSION "${VERSION}")
 ADD_DEFINITIONS("-DAPI_VERSION=\"$(API_VERSION)\"")
 
@@ -86,7 +90,6 @@ SET(TARGET_ACE_SETTINGS_LIB "ace-settings")
 SET(TARGET_ACE_INSTALL_LIB "ace-install")
 SET(TARGET_ACE_POPUP_VALIDATION_LIB "ace-popup-validation")
 SET(TARGET_COMMUNICATION_CLIENT_LIB "communication-client")
-SET(TARGET_WRT_POPUP "wrt-popup")
 SET(TARGET_WRT_OCSP_LIB "wrt-ocsp")
 SET(TARGET_SEC_SRV_LIB "sec-srv")
 SET(security-server-client "security-server-client")
@@ -133,7 +136,6 @@ ADD_SUBDIRECTORY(ace_settings)
 ADD_SUBDIRECTORY(ace_popup_validation)
 ADD_SUBDIRECTORY(communication_client)
 ADD_SUBDIRECTORY(wrt_ocsp)
-ADD_SUBDIRECTORY(popup_process)
 ADD_SUBDIRECTORY(src)
 ADD_SUBDIRECTORY(build)
 ADD_SUBDIRECTORY(etc)

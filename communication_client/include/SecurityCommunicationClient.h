@@ -41,8 +41,6 @@
 #include <string>
 #include <memory>
 
-#define DBUS_CONNECTION
-
 
 namespace WrtSecurity {
 namespace Communication {
@@ -69,11 +67,11 @@ public:
         #ifdef DBUS_CONNECTION
             m_dbusClient->call(methodName, args...);
         } Catch (DPL::DBus::Client::Exception::DBusClientException){
-        #endif
+        #endif //DBUS_CONNECTION
         #ifdef SOCKET_CONNECTION
             m_socketClient->call(methodName, args...);
         } Catch (SecuritySocketClient::Exception::SecuritySocketClientException){
-        #endif
+        #endif //SOCKET_CONNECTION
             LogError("Error getting response");
             disconnect();
             ReThrowMsg(Exception::SecurityCommunicationClientException,

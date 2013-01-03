@@ -35,13 +35,14 @@ PKG_CHECK_MODULES(DAEMON_DEP
     ${DAEMON_BASIC_DEP}
     REQUIRED)
 
-
 SET(DAEMON_SOURCES_PATH ${PROJECT_SOURCE_DIR}/src)
 
 SET(DAEMON_SOURCES
     #socket connection
     ${PROJECT_SOURCE_DIR}/socket_connection/connection/SocketConnection.cpp
     ${PROJECT_SOURCE_DIR}/socket_connection/connection/SocketStream.cpp
+    #caller
+    ${DAEMON_SOURCES_PATH}/services/caller/security_caller.cpp
     #daemon
     ${DAEMON_SOURCES_PATH}/daemon/dbus/security_dbus_service.cpp
     ${DAEMON_SOURCES_PATH}/daemon/sockets/security_socket_service.cpp
@@ -86,6 +87,7 @@ SET_SOURCE_FILES_PROPERTIES(
     ${DAEMON_SOURCES_PATH}/security-srv/communication/security-server-comm.c
     PROPERTIES COMPILE_FLAGS "-D_GNU_SOURCE")
 
+
 ############################# Lets start compilation process ##################
 #ace library
 INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/ace/include)
@@ -97,6 +99,8 @@ INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/src/daemon)
 INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/src/daemon/dbus)
 INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/src/daemon/sockets/api)
 INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/src/daemon/sockets)
+#caller
+INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/src/services/caller)
 #ace
 INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/src/services/ace)
 INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/src/services/ace/dbus)
@@ -119,6 +123,8 @@ INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/ace/include)
 INCLUDE_DIRECTORIES(${DAEMON_DEP_INCLUDE_DIRS})
 #security-server
 INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/src/security-srv/include)
+
+
 
 ADD_EXECUTABLE(${TARGET_DAEMON}
     ${DAEMON_SOURCES})
@@ -182,4 +188,3 @@ INSTALL(FILES
     DESTINATION /etc/rc.d/init.d)
 
 INSTALL(TARGETS security-server-client DESTINATION lib)
-

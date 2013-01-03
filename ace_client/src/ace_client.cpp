@@ -33,10 +33,8 @@
 
 #include <ace_popup_handler.h>
 
-#include "ace_server_dbus_api.h"
+#include "ace_server_api.h"
 #include "popup_response_server_api.h"
-#include "security_daemon_dbus_config.h"
-
 #include "ace-client/ace_client.h"
 #include "ace-client/ace_client_helper.h"
 #include <attribute_facade.h>
@@ -45,16 +43,14 @@
 // ACE tests need to use mock implementations
 #ifdef ACE_CLIENT_TESTS
 
-#include "PopupInvoker_mock.h"
 #include "AceDAOReadOnly_mock.h"
-#include "dbus_client_mock.h"
+#include "communication_client_mock.h"
 #include "PolicyInformationPoint_mock.h"
 
 #else
 
-#include "PopupInvoker.h"
 #include <ace-dao-ro/AceDAOReadOnly.h>
-#include <dpl/dbus/dbus_client.h>
+#include "SecurityCommunicationClient.h"
 #include <ace/PolicyInformationPoint.h>
 
 #endif // ACE_CLIENT_TESTS
@@ -103,7 +99,7 @@ class AceThinClientImpl {
     WebRuntimeImpl* m_wrt;
     ResourceInformationImpl* m_res;
     OperationSystemImpl* m_sys;
-    DPL::DBus::Client *m_dbusClient, *m_dbusPopupValidationClient;
+    WrtSecurity::Communication::Client *m_communicationClient, *m_popupValidationClient;
 
     AceSubject getSubjectForHandle(AceWidgetHandle handle) const;
     AceCachedPromptResult getCachedPromptResult(
@@ -125,8 +121,8 @@ class AceThinClientImpl {
 };
 
 AceThinClientImpl::AceThinClientImpl()
-  : m_dbusClient(NULL),
-    m_dbusPopupValidationClient(NULL),
+  : m_communicationClient(NULL),
+    m_popupValidationClient(NULL),
     m_wrt(new WebRuntimeImpl()),
     m_res(new ResourceInformationImpl()),
     m_sys(new OperationSystemImpl()),
@@ -134,23 +130,11 @@ AceThinClientImpl::AceThinClientImpl()
 {
     AceDB::AceDAOReadOnly::attachToThreadRO();
     Try {
-        m_dbusClient = new DPL::DBus::Client(
-               WrtSecurity::SecurityDaemonConfig::OBJECT_PATH(),
-               WrtSecurity::SecurityDaemonConfig::SERVICE_NAME(),
-               WrtSecurity::AceServerApi::INTERFACE_NAME());
-        m_dbusPopupValidationClient = new DPL::DBus::Client(
-               WrtSecurity::SecurityDaemonConfig::OBJECT_PATH(),
-               WrtSecurity::SecurityDaemonConfig::SERVICE_NAME(),
-               WrtSecurity::PopupServerApi::INTERFACE_NAME());
-        std::string hello = "RPC test.";
-        std::string response;
-        m_dbusClient->call(WrtSecurity::AceServerApi::ECHO_METHOD(),
-                          hello,
-                          &response);
-        LogInfo("Security daemon response from echo: " << response);
-    } Catch (DPL::DBus::Client::Exception::DBusClientException) {
-        if(m_dbusClient) delete m_dbusClient;
-        if(m_dbusPopupValidationClient) delete m_dbusPopupValidationClient;
+        m_communicationClient = new WrtSecurity::Communication::Client(WrtSecurity::AceServerApi::INTERFACE_NAME());
+        m_popupValidationClient = new WrtSecurity::Communication::Client(WrtSecurity::PopupServerApi::INTERFACE_NAME());
+    } Catch (WrtSecurity::Communication::Client::Exception::SecurityCommunicationClientException) {
+        if(m_communicationClient) delete m_communicationClient;
+        if(m_popupValidationClient) delete m_popupValidationClient;
         delete m_wrt;
         delete m_res;
         delete m_sys;
@@ -161,22 +145,22 @@ AceThinClientImpl::AceThinClientImpl()
 
 AceThinClientImpl::~AceThinClientImpl()
 {
-    Assert(NULL != m_dbusClient);
-    Assert(NULL != m_dbusPopupValidationClient);
-    delete m_dbusClient;
-    delete m_dbusPopupValidationClient;
+    Assert(NULL != m_communicationClient);
+    Assert(NULL != m_popupValidationClient);
+    delete m_communicationClient;
+    delete m_popupValidationClient;
     delete m_wrt;
     delete m_res;
     delete m_sys;
-    m_dbusClient = NULL;
-    m_dbusPopupValidationClient = NULL;
+    m_communicationClient = NULL;
+    m_popupValidationClient = NULL;
     AceDB::AceDAOReadOnly::detachFromThread();
 
 }
 
 bool AceThinClientImpl::isInitialized() const
 {
-    return NULL != m_dbusClient && NULL != m_dbusPopupValidationClient;
+    return NULL != m_communicationClient && NULL != m_popupValidationClient;
 }
 
 bool AceThinClientImpl::containsNetworkDevCap(const AceRequest &ace_request)
@@ -399,7 +383,7 @@ bool AceThinClientImpl::checkFunctionCall(const AceRequest& ace_request)
             LogInfo("Asking security daemon");
             int serializedPolicyResult = 0;
             Try {
-                m_dbusClient->call(WrtSecurity::AceServerApi::CHECK_ACCESS_METHOD(),
+                m_communicationClient->call(WrtSecurity::AceServerApi::CHECK_ACCESS_METHOD(),
                                    ace_request.widgetHandle,
                                    request.getSubjectId(),
                                    request.getResourceId(),
@@ -407,7 +391,7 @@ bool AceThinClientImpl::checkFunctionCall(const AceRequest& ace_request)
                                    request.getFunctionParam().getValues(),
                                    ace_request.sessionId,
                                    &serializedPolicyResult);
-            } Catch (DPL::DBus::Client::Exception::DBusClientException) {
+            } Catch (WrtSecurity::Communication::Client::Exception::SecurityCommunicationClientException) {
                 ReThrowMsg(AceThinClient::Exception::AceThinClientException,
                          "Failed to call security daemon");
             }
@@ -449,110 +433,69 @@ bool AceThinClientImpl::askUser(PolicyEffect popupType,
                                 const AceBasicRequest& request)
 {
     LogInfo("Asking popup");
+    Assert(NULL != popup_func);
 
-    // TODO this is evaluation version of popup code
-    // that uses UI handler if it is setup with new ACE API
-    // Final version should use ONLY popup func here
+    const AceFunctionParam& fParam = request.getFunctionParam();
+    AceParamKeys keys = fParam.getKeys();
+    AceParamValues values = fParam.getValues();
 
-    if (NULL != popup_func) {
-        LogInfo("Using popup handler function");
+    ace_popup_t ace_popup_type;
+    ace_resource_t resource = const_cast<ace_session_id_t>(
+            request.getResourceId().c_str());
+    ace_session_id_t session = const_cast<ace_session_id_t>(
+            ace_request.sessionId.c_str());;
+    ace_param_list_t parameters;
+    ace_widget_handle_t handle = ace_request.widgetHandle;
 
-        const AceFunctionParam& fParam = request.getFunctionParam();
-        AceParamKeys keys = fParam.getKeys();
-        AceParamValues values = fParam.getValues();
-
-        ace_popup_t ace_popup_type;
-        ace_resource_t resource = const_cast<ace_session_id_t>(
-                request.getResourceId().c_str());
-        ace_session_id_t session = const_cast<ace_session_id_t>(
-                ace_request.sessionId.c_str());;
-        ace_param_list_t parameters;
-        ace_widget_handle_t handle = ace_request.widgetHandle;
-
-        parameters.count = keys.size();
-        parameters.items = new ace_param_t[parameters.count];
-        unsigned int i;
-        for (i = 0; i < parameters.count; ++i) {
-            parameters.items[i].name =
-                    const_cast<ace_string_t>(keys[i].c_str());
-            parameters.items[i].value =
-                    const_cast<ace_string_t>(values[i].c_str());
-        }
-
-        switch (popupType) {
-        case PolicyEffect::PROMPT_ONESHOT: {
-            ace_popup_type = ACE_ONESHOT;
-            break; }
-        case PolicyEffect::PROMPT_SESSION: {
-            ace_popup_type = ACE_SESSION;
-            break; }
-        case PolicyEffect::PROMPT_BLANKET: {
-            ace_popup_type = ACE_BLANKET;
-            break; }
-        default: {
-            LogError("Unknown popup type passed!");
-            LogError("Maybe effect isn't a popup?");
-            LogError("Effect number is: " << static_cast<int>(popupType));
-            Assert(0); }
-        }
-
-        ace_bool_t answer = ACE_FALSE;
-        ace_return_t ret = popup_func(ace_popup_type,
-                       resource,
-                       session,
-                       &parameters,
-                       handle,
-                       &answer);
-
-        delete [] parameters.items;
-
-        if (ACE_OK != ret) {
-            LogError("Error in popup handler");
-            return false;
-        }
-
-        if (ACE_TRUE == answer) {
-            m_grantedDevCaps->insert(
-                DPL::FromASCIIString(request.getResourceId()));
-            return true;
-        }
-
-        return false;
-    } else {
-        bool result = true;
-        // We do not use rpc client popup in current implementation.
-        // Assert(m_popupClientInitialized && "Client was not initialized");
-        switch(popupType) {
-        //these case statements without break are made on purpose
-        case PolicyEffect::PROMPT_ONESHOT:
-        case PolicyEffect::PROMPT_SESSION:
-        case PolicyEffect::PROMPT_BLANKET: {
-            AceUserdata aceData;
-            aceData.handle = ace_request.widgetHandle;
-            aceData.subject = request.getSubjectId();
-            aceData.resource = request.getResourceId();
-            aceData.paramKeys = request.getFunctionParam().getKeys();
-            aceData.paramValues = request.getFunctionParam().getValues();
-            aceData.sessionId = ace_request.sessionId;
-
-            //Calling Popup process directly!
-            result = PopupInvoker().showSyncPopup(
-                    static_cast<int>(popupType),
-                    aceData);
-
-            if (result)
-                m_grantedDevCaps->insert(
-                    DPL::FromASCIIString(request.getResourceId()));
-            break; }
-        default:
-            LogError("Unknown popup type passed!");
-            LogError("Maybe effect isn't a popup?");
-            LogError("Effect number is: " << static_cast<int>(popupType));
-            Assert(0);
-        }
-
-        return result;
+    parameters.count = keys.size();
+    parameters.items = new ace_param_t[parameters.count];
+    unsigned int i;
+    for (i = 0; i < parameters.count; ++i) {
+        parameters.items[i].name =
+                const_cast<ace_string_t>(keys[i].c_str());
+        parameters.items[i].value =
+                const_cast<ace_string_t>(values[i].c_str());
     }
+
+    switch (popupType) {
+    case PolicyEffect::PROMPT_ONESHOT: {
+        ace_popup_type = ACE_ONESHOT;
+        break; }
+    case PolicyEffect::PROMPT_SESSION: {
+        ace_popup_type = ACE_SESSION;
+        break; }
+    case PolicyEffect::PROMPT_BLANKET: {
+        ace_popup_type = ACE_BLANKET;
+        break; }
+    default: {
+        LogError("Unknown popup type passed!");
+        LogError("Maybe effect isn't a popup?");
+        LogError("Effect number is: " << static_cast<int>(popupType));
+        Assert(0); }
+    }
+
+    ace_bool_t answer = ACE_FALSE;
+    ace_return_t ret = popup_func(ace_popup_type,
+                    resource,
+                    session,
+                    &parameters,
+                    handle,
+                    &answer);
+
+    delete [] parameters.items;
+
+    if (ACE_OK != ret) {
+        LogError("Error in popup handler");
+        return false;
+    }
+
+    if (ACE_TRUE == answer) {
+        m_grantedDevCaps->insert(
+            DPL::FromASCIIString(request.getResourceId()));
+        return true;
+    }
+
+    return false;
 }
 
 bool AceThinClientImpl::validatePopupResponse(
@@ -564,7 +507,7 @@ bool AceThinClientImpl::validatePopupResponse(
 {
     bool response = false;
     Try{
-        m_dbusPopupValidationClient->call(
+        m_popupValidationClient->call(
                            WrtSecurity::PopupServerApi::VALIDATION_METHOD(),
                            answer,
                            static_cast<int>(validity),
@@ -575,7 +518,7 @@ bool AceThinClientImpl::validatePopupResponse(
                            request.getFunctionParam().getValues(),
                            ace_request.sessionId,
                            &response);
-    } Catch (DPL::DBus::Client::Exception::DBusClientException) {
+    } Catch (WrtSecurity::Communication::Client::Exception::SecurityCommunicationClientException) {
         ReThrowMsg(AceThinClient::Exception::AceThinClientException,
                  "Failed to call security daemon");
     }
