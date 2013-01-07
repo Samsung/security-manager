@@ -110,18 +110,20 @@ class SecurityCallerThread : public DPL::Thread
     {
       if (m_eventHolder) // if m_eventHolder is set, the request has been received
       {
-        m_eventHolder->FinalizeSending(); // send actuall event in charge of calling thread
+        m_eventHolder->FinalizeSending(); // send actual event in charge of calling thread
         delete m_eventHolder;
         m_eventHolder = NULL;
+        LogDebug("setting finished state");
         pthread_mutex_lock(&m_syncMutex); // lock m_finished
         m_finished = true;
         pthread_mutex_unlock(&m_syncMutex); // unlock m_finished
+        LogDebug("finished");
         pthread_cond_signal(&m_cond2); // signal a calling thread that event has been posted.
       }
       LogDebug("waiting for event");
       // atomically:
       // unlock m_mutex, wait on m_cond until signal received, lock m_mutex
-      pthread_cond_wait(&m_cond, &m_mutex); 
+      pthread_cond_wait(&m_cond, &m_mutex);
       LogDebug("found an event");
     }
 
@@ -155,19 +157,23 @@ class SecurityCallerThread : public DPL::Thread
     }
     Assert(correct_thread &&
            "This method may not be called from DPL managed thread or main thread");
+    LogDebug("putting an event to be posted");
     pthread_mutex_lock(&m_mutex);  // lock shared data
     Assert(m_eventHolder == NULL && "Whooops");
     m_eventHolder = new EventHolderImpl<EventType>(event); // put an event to be posted
     pthread_mutex_unlock(&m_mutex); // unlock shared data
+    LogDebug("Signal caller thread that new event has been created");
     pthread_cond_signal(&m_cond);   // signal SecurityCallerThread to wake up because new
                                     // event is waiting to be posted
 
+    LogDebug("waiting untill send completes");
     pthread_mutex_lock(&m_syncMutex); /* wait until send completes */
-    m_finished = false;
     while (!m_finished)
     {
         pthread_cond_wait(&m_cond2, &m_syncMutex); // wait until event is posted
     }
+    LogDebug("done");
+    m_finished = false;
     pthread_mutex_unlock(&m_syncMutex);
     pthread_mutex_unlock(&m_mutex2);
   }
@@ -177,5 +183,7 @@ class SecurityCallerThread : public DPL::Thread
 };
 
 typedef DPL::Singleton<SecurityCallerThread> SecurityCallerSingleton;
+
+
 
 #endif //SECURITY_CALLER_H__
