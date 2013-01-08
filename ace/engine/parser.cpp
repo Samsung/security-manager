@@ -574,7 +574,7 @@ ExtendedEffect Parser::convertToEffect(xmlChar *effect)
         Assert(false && "Effect is Error");
         return ExtendedEffect();
     }
-    return ExtendedEffect(Inapplicable);
+    //return ExtendedEffect(Inapplicable); //unreachable statement
 }
 
 Attribute::Match Parser::convertToMatchFunction(xmlChar * func)
@@ -594,7 +594,6 @@ Attribute::Match Parser::convertToMatchFunction(xmlChar * func)
         LogError("[ERROR] match function value is NULL");
         return Attribute::Match::Error;
     }
-    Assert(false);
 }
 
 void Parser::handleAttr(xmlTextReaderPtr reader)

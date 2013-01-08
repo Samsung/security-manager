@@ -304,7 +304,7 @@ int check_password(const unsigned char *cur_pwd, const unsigned char *requested_
 			const unsigned int max_attempts, const unsigned int expire_time,
 			int *current_attempt)
 {
-	unsigned int current_time;
+	unsigned int current_time = time(NULL);
 
 	if(max_attempts != 0)
 	{

@@ -56,7 +56,11 @@ int main(int argc, char* argv[])
     auto retVal = daemon.execute();
 
     daemon.shutdown();
-    instance.Release();
+    try {
+        instance.Release();
+    } catch (const DPL::SingleInstance::Exception::LockError &e) {
+        LogError(e.DumpToString());
+    }
 
     return retVal;
 }
