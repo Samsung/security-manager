@@ -1092,7 +1092,8 @@ void *security_server_main_thread(void *data)
 
 	for(retval = 0 ; retval < SECURITY_SERVER_NUM_THREADS; retval++)
 		thread_status[retval] = 0;
-	int initiate_try();
+
+	initiate_try();
 
 	/* Create and bind a Unix domain socket */
 	retval = create_new_socket(&server_sockfd);
