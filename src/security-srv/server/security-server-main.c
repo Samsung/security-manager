@@ -28,6 +28,7 @@
 #include <errno.h>
 #include <signal.h>
 #include <pthread.h>
+#include <limits.h>
 
 #include "security-server-cookie.h"
 #include "security-server-common.h"
@@ -786,7 +787,7 @@ int process_tool_request(int client_sockfd, int server_sockfd)
 	/* Receive Total number of argv */
 	argcnum = 0;
 	retval = read(client_sockfd, &argcnum, sizeof(int));
-	if(retval < sizeof(int))
+	if((retval < sizeof(int)) || argcnum > (UINT_MAX/sizeof(char *))-2 || argcnum < 0)
 	{
 		SEC_SVR_DBG("Error: argc recieve failed: %d", retval);
 		retval = send_generic_response(client_sockfd,

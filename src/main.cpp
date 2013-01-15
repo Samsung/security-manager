@@ -43,8 +43,13 @@ int main(int argc, char* argv[])
     }
 
     DPL::SingleInstance instance;
-    if (!instance.TryLock(DAEMON_INSTANCE_UUID)) {
-        LogError("Security Daemon is already running");
+    try {
+        if (!instance.TryLock(DAEMON_INSTANCE_UUID)) {
+            LogError("Security Daemon is already running");
+            return -1;
+        }
+    } catch (const DPL::SingleInstance::Exception::LockError &e) {
+        LogError(e.DumpToString());
         return -1;
     }
 
