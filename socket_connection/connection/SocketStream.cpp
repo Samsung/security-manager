@@ -150,7 +150,7 @@ void SocketStream::Write(size_t num, const void * bytes){
 
         if(FD_ISSET(m_socketFd, &wset)){
             if(-1 == (write_res = write(m_socketFd, reinterpret_cast<const char *>(bytes) + current_offset, bytes_to_write))){
-                if(errno == ECONNRESET){
+                if(errno == ECONNRESET || errno == EPIPE){
                     LogInfo("Connection closed : " << strerror(errno));
                     ThrowMsg(Exception::SocketStreamException,
                             "Connection closed : " << strerror(errno) << ". Couldn't write whole data");

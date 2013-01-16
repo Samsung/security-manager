@@ -166,6 +166,7 @@ void SecuritySocketService::start(){
     }
 
     pthread_t mainThread;
+
     if((returned_value = pthread_create(&mainThread, NULL, &serverThread, this)) < 0){
         errno = returned_value;
         throwWithErrnoMessage("pthread_create()");
@@ -218,6 +219,13 @@ void SecuritySocketService::mainLoop(){
     timespec timeout;
     maxfd = (m_listenFd > signal_fd) ? (m_listenFd) : (signal_fd);
     ++maxfd;
+    //this will block SIGPIPE for this thread and every thread created in it
+    //reason : from here on we don't won't to receive SIGPIPE on writing to closed socket
+    //instead of signal we want to receive error from write - hence blocking SIGPIPE
+    sigset_t set;
+    sigemptyset(&set);
+    sigaddset(&set, SIGPIPE);
+    pthread_sigmask(SIG_BLOCK, &set, NULL);
 
     while(1){
         timeout.tv_sec = TIMEOUT_SEC;
