@@ -30,18 +30,8 @@
 static const std::string DAEMON_INSTANCE_UUID =
     "5ebf3f24-dad6-4a27-88b4-df7970efe7a9";
 
-extern "C" void *security_server_main_thread(void *data);
-
 int main(int argc, char* argv[])
 {
-
-    pthread_t main_thread;
-
-    if (0 != pthread_create(&main_thread, NULL, security_server_main_thread, NULL)) {
-        LogError("Cannot create security server thread");
-        return -1;
-    }
-
     DPL::SingleInstance instance;
     try {
         if (!instance.TryLock(DAEMON_INSTANCE_UUID)) {

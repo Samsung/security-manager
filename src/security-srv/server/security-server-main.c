@@ -1174,7 +1174,6 @@ error:
 	pthread_exit(NULL);
 }
 
-/*
 int main(int argc, char* argv[])
 {
 	int res;
@@ -1193,4 +1192,4 @@ int main(int argc, char* argv[])
 	pthread_exit(NULL);
 	return 0;
 }
-*/
+
