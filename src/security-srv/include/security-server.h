@@ -984,6 +984,34 @@ int security_server_set_pwd_history(int number_of_history);
 */
 int security_server_launch_debug_tool(int argc, const char **argv);
 
+/*
+ * This function allows to get process SMACK label by passing cookie assigned
+ * to process. Function returns pointer to allocated buffer with label.
+ * User has to free the buffer after using.
+ *
+ * \param[in] Pointer to cookie
+ *
+ * \return Pointer to SMACK label or NULL
+ *
+ * \par For free label use free(), label allocated by calloc()
+ *      User responsibility is to free resource.
+ */
+char * security_server_get_smacklabel_cookie(const char *cookie);
+
+/*
+ * This function allows to get process SMACK label by passing socket descriptor.
+ * Function returns pointer to allocated buffer with label.
+ * User has to free the buffer after using.
+ *
+ * \param[in] Socket descriptor
+ *
+ * \return Pointer to SMACK label or NULL
+ *
+ * \par For free label use free(), label allocated by calloc().
+ *      User responsibility is to free resource.
+ */
+char * security_server_get_smacklabel_sockfd(int fd);
+
 #ifdef __cplusplus
 }
 #endif

@@ -27,6 +27,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <sys/smack.h>
+#include <fcntl.h>
 
 #include "security-server.h"
 #include "security-server-common.h"
@@ -1018,3 +1019,93 @@ error:
 	retval = convert_to_public_error_code(retval);
 	return retval;
 }
+
+SECURITY_SERVER_API
+char * security_server_get_smacklabel_cookie(const char * cookie)
+{
+    char * label = NULL;
+    int sockfd = -1, retval, pid = -1;
+    response_header hdr;
+
+    if(cookie == NULL)
+    {
+        retval = SECURITY_SERVER_ERROR_INPUT_PARAM;
+        goto error;
+    }
+
+    retval = connect_to_server(&sockfd);
+    if(retval != SECURITY_SERVER_SUCCESS)
+    {
+        /* Error on socket */
+        goto error;
+    }
+
+    /* make request packet */
+    retval = send_smack_request(sockfd, cookie);
+    if(retval != SECURITY_SERVER_SUCCESS)
+    {
+        /* Error on socket */
+        SEC_SVR_DBG("Client: Send failed: %d", retval);
+        goto error;
+    }
+
+    //allocating buffer for storing SMACK label received from server
+    label = calloc(SMACK_LABEL_LEN + 1, 1);
+    if(NULL == label)
+    {
+        SEC_SVR_DBG("Client ERROR: Memory allocation error");
+        goto error;
+    }
+
+    retval = recv_smack_response(sockfd, &hdr, label);
+
+    retval = return_code_to_error_code(hdr.return_code);
+    if(hdr.basic_hdr.msg_id != SECURITY_SERVER_MSG_TYPE_SMACK_RESPONSE)	/* Wrong response */
+    {
+        if(hdr.basic_hdr.msg_id == SECURITY_SERVER_MSG_TYPE_GENERIC_RESPONSE)
+        {
+            /* There must be some error */
+            SEC_SVR_DBG("Client: Error has been received. return code:%d", hdr.return_code);
+        }
+        else
+        {
+            /* Something wrong with response */
+            SEC_SVR_DBG("Client ERROR: Unexpected error occurred:%d", retval);
+            retval = SECURITY_SERVER_ERROR_BAD_RESPONSE;
+        }
+        goto error;
+    }
+    if(hdr.return_code == SECURITY_SERVER_RETURN_CODE_NO_SUCH_COOKIE)
+    {
+        SEC_SVR_DBG("%s"," Client: There is no such cookie exist");
+    }
+
+error:
+    if(sockfd > 0)
+        close(sockfd);
+
+    retval = convert_to_public_error_code(retval);
+    if(retval == 0)
+        return label;
+
+    if(NULL != label)
+        free(label);
+
+    return NULL;
+}
+
+	SECURITY_SERVER_API
+char * security_server_get_smacklabel_sockfd(int fd)
+{
+	char * label = NULL;
+
+	if(smack_new_label_from_socket(fd, &label) != 0)
+	{
+		SEC_SVR_DBG("Client ERROR: Unable to get socket SMACK label");
+		return NULL;
+	}
+
+	return label;
+}
+
+

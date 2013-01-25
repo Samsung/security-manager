@@ -731,6 +731,64 @@ int send_pid(int sockfd, int pid)
 	return SECURITY_SERVER_SUCCESS;
 }
 
+/* Send SMACK label to client with lenght N
+ *  0                   1                   2                   3
+ *  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+ * |---------------------------------------------------------------|
+ * | version=0x01  |MessageID=0x1e |  Message Length = SMACK_LABEL_LEN + 1
+ * |---------------------------------------------------------------|
+ * |  return code  |           SMACK label byte 0                  |
+ * |---------------------------------------------------------------|
+ * |                      ..................                       |
+ * |---------------------------------------------------------------|
+ * |                      SMACK label byte N                       |
+ * |---------------------------------------------------------------|
+*/
+int send_smack(int sockfd, char * label)
+{
+	response_header hdr;
+    //added 1 to the size is for NULL terminating label
+    int LABEL_SIZE = SMACK_LABEL_LEN + 1;
+    int PACKET_SIZE = sizeof(hdr) + LABEL_SIZE;
+	unsigned char msg[PACKET_SIZE];
+	int ret;
+
+	/* Assemble header */
+	hdr.basic_hdr.version = SECURITY_SERVER_MSG_VERSION;
+	hdr.basic_hdr.msg_id = SECURITY_SERVER_MSG_TYPE_SMACK_RESPONSE;
+	hdr.basic_hdr.msg_len = LABEL_SIZE;
+	hdr.return_code = SECURITY_SERVER_RETURN_CODE_SUCCESS;
+
+	/* Perpare packet */
+	memcpy(msg, &hdr, sizeof(hdr));
+	memcpy(msg + sizeof(hdr), label, LABEL_SIZE);
+    memset(msg + sizeof(hdr) + SMACK_LABEL_LEN, 0x00, 1); //adding NULL ad the label end
+
+	/* Check poll */
+	ret = check_socket_poll(sockfd, POLLOUT, SECURITY_SERVER_SOCKET_TIMEOUT_MILISECOND);
+	if(ret == SECURITY_SERVER_ERROR_POLL)
+	{
+		SEC_SVR_DBG("%s", "poll() error");
+		return SECURITY_SERVER_ERROR_SEND_FAILED;
+	}
+	if(ret == SECURITY_SERVER_ERROR_TIMEOUT)
+	{
+		SEC_SVR_DBG("%s", "poll() timeout");
+		return SECURITY_SERVER_ERROR_SEND_FAILED;
+	}
+
+	/* Send it */
+	ret = write(sockfd, msg, PACKET_SIZE);
+	if(ret <  PACKET_SIZE)
+	{
+		/* Error on writing */
+		SEC_SVR_DBG("Error on write(): %d", ret);
+		ret = SECURITY_SERVER_ERROR_SEND_FAILED;
+		return ret;
+	}
+	return SECURITY_SERVER_SUCCESS;
+}
+
 /* Send Check password response to client
  *
  * Check password response packet format
@@ -1071,6 +1129,58 @@ int send_privilege_check_new_request(int sock_fd,
 	/* Send to server */
 	retval = write(sock_fd, buf, size);
 	if(retval < size)
+	{
+		/* Write error */
+		SEC_SVR_DBG("Error on write(): %d", retval);
+		return SECURITY_SERVER_ERROR_SEND_FAILED;
+	}
+	return SECURITY_SERVER_SUCCESS;
+}
+
+/* Send SMACK request message to security server *
+ *
+ * Message format
+ *  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+ * |---------------------------------------------------------------|
+ * | version=0x01  |MessageID=0x1d |      Message Length = 20      |
+ * |---------------------------------------------------------------|
+ * |                                                               |
+ * |                                                               |
+ * |                      Cookie (20bytes)                         |
+ * |                                                               |
+ * |                                                               |
+ * |---------------------------------------------------------------|
+ */
+int send_smack_request(int sock_fd, const char * cookie)
+{
+	basic_header hdr;
+	int retval;
+	unsigned char buf[sizeof(hdr) + SECURITY_SERVER_COOKIE_LEN];
+
+	/* Assemble header */
+	hdr.version = SECURITY_SERVER_MSG_VERSION;
+	hdr.msg_id = SECURITY_SERVER_MSG_TYPE_SMACK_REQUEST;
+	hdr.msg_len = SECURITY_SERVER_COOKIE_LEN;
+
+	memcpy(buf, &hdr, sizeof(hdr));
+	memcpy(buf + sizeof(hdr), cookie, SECURITY_SERVER_COOKIE_LEN);
+
+	/* Check poll */
+	retval = check_socket_poll(sock_fd, POLLOUT, SECURITY_SERVER_SOCKET_TIMEOUT_MILISECOND);
+	if(retval == SECURITY_SERVER_ERROR_POLL)
+	{
+		SEC_SVR_DBG("%s", "poll() error");
+		return SECURITY_SERVER_ERROR_SEND_FAILED;
+	}
+	if(retval == SECURITY_SERVER_ERROR_TIMEOUT)
+	{
+		SEC_SVR_DBG("%s", "poll() timeout");
+		return SECURITY_SERVER_ERROR_SEND_FAILED;
+	}
+
+	/* Send to server */
+	retval = write(sock_fd, buf, sizeof(buf));
+	if(retval < sizeof(buf))
 	{
 		/* Write error */
 		SEC_SVR_DBG("Error on write(): %d", retval);
@@ -1863,6 +1973,19 @@ int recv_pid_request(int sockfd, unsigned char *requested_cookie)
 	return SECURITY_SERVER_SUCCESS;
 }
 
+/* receiving cookie from package */
+int recv_smack_request(int sockfd, unsigned char *requested_cookie)
+{
+	int retval;
+	retval = read(sockfd, requested_cookie, SECURITY_SERVER_COOKIE_LEN);
+	if(retval < SECURITY_SERVER_COOKIE_LEN)
+	{
+		SEC_SVR_DBG("Received cookie size is too small: %d", retval);
+		return SECURITY_SERVER_ERROR_RECV_FAILED;
+	}
+	return SECURITY_SERVER_SUCCESS;
+}
+
 /* Receive pid request packet body */
 int recv_launch_tool_request(int sockfd, int argc, char *argv[])
 {
@@ -2068,6 +2191,24 @@ int recv_privilege_check_new_response(int sockfd, response_header *hdr)
 	{
 		SEC_SVR_DBG("response error: %d", hdr->return_code);
 		return return_code_to_error_code(hdr->return_code);
+	}
+	return SECURITY_SERVER_SUCCESS;
+}
+
+int recv_smack_response(int sockfd, response_header *hdr, char * label)
+{
+	int retval;
+
+	retval = recv_generic_response(sockfd, hdr);
+	if(retval != SECURITY_SERVER_SUCCESS)
+		return return_code_to_error_code(hdr->return_code);
+
+	retval = read(sockfd, label, SMACK_LABEL_LEN + 1);
+	if(retval < sizeof(int))
+	{
+		/* Error on socket */
+		SEC_SVR_DBG("Client: Receive failed %d", retval);
+		return  SECURITY_SERVER_ERROR_RECV_FAILED;
 	}
 	return SECURITY_SERVER_SUCCESS;
 }

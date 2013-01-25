@@ -29,6 +29,8 @@
 #include <signal.h>
 #include <pthread.h>
 #include <limits.h>
+#include <fcntl.h>
+#include <sys/smack.h>
 
 #include "security-server-cookie.h"
 #include "security-server-common.h"
@@ -336,6 +338,7 @@ int process_cookie_request(int sockfd)
 		goto error;
 	}
 	/* If client application is root process, just respond default cookie */
+    /*
 	if( client_uid == 0)
 	{
 		SEC_SVR_DBG("%s", "Requested application is a root process");
@@ -348,6 +351,9 @@ int process_cookie_request(int sockfd)
 	}
 	else
 	{
+    */
+        //TODO: Remove above code if there will be no crashes without it
+        //All process should be treaded the same
 		/* Create a new cookie. or find existing one */
 		pthread_mutex_lock(&cookie_mutex);
 		created_cookie = create_cookie_item(client_pid, sockfd, c_list);
@@ -357,7 +363,7 @@ int process_cookie_request(int sockfd)
 			SEC_SVR_DBG("%s","Cannot create a cookie");
 			goto error;
 		}
-	}
+	//}
 	/* send cookie as response */
 	retval = send_cookie(sockfd, created_cookie->cookie);
 	if(retval != SECURITY_SERVER_SUCCESS)
@@ -764,6 +770,120 @@ error:
 	return retval;
 }
 
+int process_smack_request(int sockfd)
+{
+	int retval, client_pid;
+	unsigned char requested_cookie[SECURITY_SERVER_COOKIE_LEN];
+	cookie_list *search_result = NULL;
+    //handler for SMACK label
+    char * label = NULL;
+    //buffer for storing file path
+    const int BUFFSIZE = 30;
+    char path[BUFFSIZE];
+    int fd;
+
+	/* Authenticate client */
+	retval = authenticate_client_middleware(sockfd, &client_pid);
+	if(retval != SECURITY_SERVER_SUCCESS)
+	{
+		SEC_SVR_DBG("%s", "Client Authentication Failed");
+		retval = send_generic_response(sockfd,
+				SECURITY_SERVER_MSG_TYPE_SMACK_RESPONSE,
+				SECURITY_SERVER_RETURN_CODE_AUTHENTICATION_FAILED);
+		if(retval != SECURITY_SERVER_SUCCESS)
+		{
+			SEC_SVR_DBG("ERROR: Cannot send generic response: %d", retval);
+		}
+		goto error;
+	}
+
+	retval = recv_smack_request(sockfd, requested_cookie);
+	if(retval == SECURITY_SERVER_ERROR_RECV_FAILED)
+	{
+		SEC_SVR_DBG("%s", "Receiving request failed");
+		retval = send_generic_response(sockfd,
+				SECURITY_SERVER_MSG_TYPE_SMACK_RESPONSE,
+				SECURITY_SERVER_RETURN_CODE_BAD_REQUEST);
+		if(retval != SECURITY_SERVER_SUCCESS)
+		{
+			SEC_SVR_DBG("ERROR: Cannot send generic response: %d", retval);
+		}
+		goto error;
+	}
+
+	/* Search cookie list */
+	pthread_mutex_lock(&cookie_mutex);
+	search_result = search_cookie(c_list, requested_cookie, 0);
+	pthread_mutex_unlock(&cookie_mutex);
+	if(search_result != NULL)
+	{
+		/* We found */
+		SEC_SVR_DBG("We found the cookie and pid:%d", search_result->pid);
+		SEC_SVR_DBG("%s", "Cookie comparison succeeded. Access granted.");
+
+        //clearing buffer
+        memset(path, 0x00, BUFFSIZE);
+
+        //preparing file path
+        snprintf(path, BUFFSIZE, "/proc/%d/attr/current", search_result->pid);
+        SEC_SVR_DBG("Path to file: %s\n", path);
+
+        //allocation place for label
+        label = calloc(SMACK_LABEL_LEN, 1);
+        if(NULL == label)
+        {
+            SEC_SVR_DBG("Client ERROR: Memory allocation error");
+            goto error;
+        }
+
+        //clearing buffer for label
+        memset(label, 0x00, SMACK_LABEL_LEN);
+
+        //opening file /proc/<pid>/attr/curent with SMACK label
+        fd = open(path, O_RDONLY);
+        if(fd < 0)
+        {
+            SEC_SVR_DBG("Client ERROR: Unable to open file in /proc");
+            goto error;
+        }
+
+        //reading label from file, it is NOT NULL TERMINATED
+        retval = read(fd, label, SMACK_LABEL_LEN);
+        close(fd);
+        if(retval < 0)
+        {
+            SEC_SVR_DBG("Client ERROR: Unable to read from file");
+            goto error;
+        }
+
+        SEC_SVR_DBG("Readed label is: %s\n", label);
+
+		retval = send_smack(sockfd, label);
+
+		if(retval != SECURITY_SERVER_SUCCESS)
+		{
+			SEC_SVR_DBG("ERROR: Cannot send generic response: %d", retval);
+		}
+	}
+	else
+	{
+		/* It's not exist */
+		SEC_SVR_DBG("%s", "Could not find the cookie");
+		retval = send_generic_response(sockfd,
+				SECURITY_SERVER_MSG_TYPE_SMACK_RESPONSE,
+				SECURITY_SERVER_RETURN_CODE_NO_SUCH_COOKIE);
+		if(retval != SECURITY_SERVER_SUCCESS)
+		{
+			SEC_SVR_DBG("ERROR: Cannot send SMACK label response: %d", retval);
+		}
+	}
+error:
+    if(NULL != label)
+        free(label);
+
+	return retval;
+}
+
 int process_tool_request(int client_sockfd, int server_sockfd)
 {
 	int retval, argcnum;
@@ -946,6 +1066,11 @@ void *security_server_thread(void *param)
 		case SECURITY_SERVER_MSG_TYPE_PID_REQUEST:
 			SEC_SVR_DBG("%s", "pid request received");
 			process_pid_request(client_sockfd);
+			break;
+
+		case SECURITY_SERVER_MSG_TYPE_SMACK_REQUEST:
+			SEC_SVR_DBG("%s", "SMACK label request received");
+			process_smack_request(client_sockfd);
 			break;
 
 		case SECURITY_SERVER_MSG_TYPE_TOOL_REQUEST:

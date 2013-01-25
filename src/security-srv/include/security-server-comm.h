@@ -67,6 +67,8 @@ typedef struct
 #define SECURITY_SERVER_MSG_TYPE_SET_PWD_MAX_CHALLENGE_RESPONSE  0x1a
 #define SECURITY_SERVER_MSG_TYPE_SET_PWD_VALIDITY_REQUEST    0x1b
 #define SECURITY_SERVER_MSG_TYPE_SET_PWD_VALIDITY_RESPONSE   0x1c
+#define SECURITY_SERVER_MSG_TYPE_SMACK_REQUEST		0x1d
+#define SECURITY_SERVER_MSG_TYPE_SMACK_RESPONSE	0x1e
 #define SECURITY_SERVER_MSG_TYPE_GENERIC_RESPONSE	0xff
 
 /* Return code */
@@ -122,6 +124,10 @@ int send_pid_request(int sock_fd, const char*cookie);
 int recv_pid_response(int sockfd, response_header *hdr, int *pid);
 int recv_pid_request(int sockfd, unsigned char *requested_cookie);
 int send_pid(int sockfd, int pid);
+int send_smack_request(int sockfd, const char * cookie);
+int recv_smack_response(int sockfd, response_header *hdr, char * label);
+int recv_smack_request(int sockfd, unsigned char *requested_cookie);
+int send_smack(int sockfd, char * label);
 int send_launch_tool_request(int sock_fd, int argc, const char **argv);
 int recv_generic_response(int sockfd, response_header *hdr);
 int recv_launch_tool_request(int sockfd, int argc, char *argv[]);
