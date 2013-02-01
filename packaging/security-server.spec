@@ -1,7 +1,7 @@
 #sbs-git:slp/pkgs/s/security-server security-server 0.0.37
 Name:       security-server
 Summary:    Security server and utilities
-Version:    0.0.62
+Version:    0.0.63
 Release:    1
 Group:      TO_BE/FILLED_IN
 License:    Apache License, Version 2.0
