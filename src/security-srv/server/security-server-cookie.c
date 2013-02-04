@@ -233,26 +233,27 @@ cookie_list *search_cookie(const cookie_list *c_list, const unsigned char *cooki
 		if(current == NULL)
 			break;
 
+        //searching for cookie
 		if(memcmp(current->cookie, cookie, SECURITY_SERVER_COOKIE_LEN) == 0)
 		{
 			SEC_SVR_DBG("%s", "cookie has been found");
 
-			/* default cookie is for root process which is pid is set to 0 */
-			if(current->pid == 0 || privilege == 0)
+            //check if this cookie belongs to root process
+            if(current->is_roots_process == 1)
+            {
+                SEC_SVR_DBG("%s", "Root process cookie, special privileges");
+                //we can skip privilege checking
+                retval = current;
+                goto finish;
+            }
+
+			for(i=0 ; i < current->permission_len ; i++)
 			{
-				retval = current;
-				goto finish;
-			}
-			else
-			{
-				for(i=0 ; i < current->permission_len ; i++)
+				if(privilege == current->permissions[i])
 				{
-					if(privilege == current->permissions[i])
-					{
-						SEC_SVR_DBG("Found privilege %d", privilege);
-						retval = current;
-						goto finish;
-					}
+					SEC_SVR_DBG("Found privilege %d", privilege);
+					retval = current;
+					goto finish;
 				}
 			}
 		}

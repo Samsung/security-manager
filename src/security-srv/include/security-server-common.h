@@ -95,7 +95,8 @@ typedef struct _cookie_list
 	pid_t		pid;					/* Client process's PID */
 	char		*path;					/* Client process's cmd line string */
 	int		*permissions;				/* Array of GID that the client process has */
-        char            *smack_label;                           /* SMACK label of the client process */
+    char            *smack_label;                           /* SMACK label of the client process */
+    char    is_roots_process;           /* Is cookie belongs to roots process */
 	struct _cookie_list	*prev;				/* Next cookie list */
 	struct _cookie_list	*next;				/* Previous cookie list */
 } cookie_list;

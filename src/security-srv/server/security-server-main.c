@@ -363,6 +363,13 @@ int process_cookie_request(int sockfd)
 			SEC_SVR_DBG("%s","Cannot create a cookie");
 			goto error;
 		}
+
+    //let others know if this cookie belongs to root process
+    if(client_uid == 0)
+        created_cookie->is_roots_process = 1;
+    else
+        created_cookie->is_roots_process = 0;
+
 	//}
 	/* send cookie as response */
 	retval = send_cookie(sockfd, created_cookie->cookie);
