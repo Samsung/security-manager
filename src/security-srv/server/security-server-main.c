@@ -943,7 +943,7 @@ int process_tool_request(int client_sockfd, int server_sockfd)
 	memset(recved_argv, 0, sizeof(char *) * argcnum);
 
 	retval = recv_launch_tool_request(client_sockfd, argcnum -1, recved_argv);
-	if(retval == SECURITY_SERVER_ERROR_RECV_FAILED)
+	if(retval == SECURITY_SERVER_ERROR_RECV_FAILED || retval == SECURITY_SERVER_ERROR_OUT_OF_MEMORY)
 	{
 		SEC_SVR_DBG("%s", "Receiving request failed");
 		recved_argv = NULL;

@@ -762,7 +762,7 @@ int process_set_pwd_request(int sockfd)
 		goto error;
 	}
 	retval = read(sockfd, &new_pwd_len, sizeof(char));
-	if(retval < sizeof(char)  || new_pwd_len > SECURITY_SERVER_MAX_PASSWORD_LEN)
+	if(retval < sizeof(char)  || new_pwd_len > SECURITY_SERVER_MAX_PASSWORD_LEN || new_pwd_len < 0)
 	{
 		SEC_SVR_DBG("Server Error: new password length recieve failed: %d, %d", retval, new_pwd_len);
 		retval = send_generic_response(sockfd,
