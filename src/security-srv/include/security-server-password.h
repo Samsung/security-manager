@@ -32,6 +32,6 @@ int process_reset_pwd_request(int sockfd);
 int process_chk_pwd_request(int sockfd);
 int process_set_pwd_max_challenge_request(int sockfd);
 int process_set_pwd_validity_request(int sockfd);
-int init_try(void);
+void initiate_try(void);
 
 #endif

@@ -31,6 +31,7 @@
 #include <errno.h>
 #include <unistd.h>
 #include <sys/stat.h>
+#include <limits.h>
 
 #include "security-server-common.h"
 #include "security-server-comm.h"
@@ -1935,7 +1936,7 @@ int recv_check_privilege_new_request(int sockfd,
 	}
 
 	retval = read(sockfd, &alen, sizeof(int));
-	if(retval < sizeof(int) || alen < 0 || olen > MAX_MODE_STR_LEN)
+	if(retval < sizeof(int) || alen < 0 || alen > MAX_MODE_STR_LEN)
 	{
 		SEC_SVR_DBG("error reading access_rights len: %d", retval);
 		return SECURITY_SERVER_ERROR_RECV_FAILED;
@@ -2000,6 +2001,13 @@ int recv_launch_tool_request(int sockfd, int argc, char *argv[])
 		if(retval < sizeof(int))
 		{
 			SEC_SVR_DBG("Error: argv length recieve failed: %d", retval);
+			free_argv(argv, argc);
+			return SECURITY_SERVER_ERROR_RECV_FAILED;
+		}
+
+		if(argv_len <= 0 || argv_len >= INT_MAX)
+		{
+			SEC_SVR_DBG("Error: argv length out of boundaries");
 			free_argv(argv, argc);
 			return SECURITY_SERVER_ERROR_RECV_FAILED;
 		}

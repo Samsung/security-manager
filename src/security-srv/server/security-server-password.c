@@ -33,7 +33,7 @@
 
 struct timeval prev_try;
 
-int initiate_try()
+void initiate_try()
 {
 	gettimeofday(&prev_try, NULL);
 }
@@ -1042,7 +1042,7 @@ int process_reset_pwd_request(int sockfd)
 
 	/* Receive size of pwd */
 	retval = read(sockfd, &new_pwd_len, sizeof(char));
-	if(retval < sizeof(char)  || new_pwd_len > SECURITY_SERVER_MAX_PASSWORD_LEN)
+	if(retval < sizeof(char) || new_pwd_len < 0 || new_pwd_len > SECURITY_SERVER_MAX_PASSWORD_LEN)
 	{
 		SEC_SVR_DBG("Server Error: new password length recieve failed: %d, %d", retval, new_pwd_len);
 		retval = send_generic_response(sockfd,

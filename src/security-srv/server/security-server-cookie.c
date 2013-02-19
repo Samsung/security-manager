@@ -325,7 +325,6 @@ int generate_random_cookie(unsigned char *cookie, int size)
 		ret = SECURITY_SERVER_ERROR_FILE_OPERATION;
 		goto error;
 	}
-	close(fd);
 	ret = SECURITY_SERVER_SUCCESS;
 error:
 	if(fd >= 0)
