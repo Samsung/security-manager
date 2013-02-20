@@ -121,13 +121,15 @@ if [ $1 == 1 ]; then
 fi
 mkdir -p /etc/rc.d/rc3.d
 mkdir -p /etc/rc.d/rc5.d
-ln -s /etc/rc.d/init.d/security-serverd /etc/rc.d/rc3.d/S10security-server
-ln -s /etc/rc.d/init.d/security-serverd /etc/rc.d/rc5.d/S10security-server
+ln -sf /etc/rc.d/init.d/security-serverd /etc/rc.d/rc3.d/S10security-server
+ln -sf /etc/rc.d/init.d/security-serverd /etc/rc.d/rc5.d/S10security-server
 
 %postun
 systemctl daemon-reload
-rm -f /etc/rc.d/rc3.d/S10security-server
-rm -f /etc/rc.d/rc5.d/S10security-server
+if [ "$1" = 0 ]; then
+    rm -f /etc/rc.d/rc3.d/S10security-server
+    rm -f /etc/rc.d/rc5.d/S10security-server
+fi
 
 %post -n libsecurity-server-client -p /sbin/ldconfig
 
