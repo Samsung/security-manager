@@ -95,6 +95,7 @@ int connect_to_server(int *fd);
 int accept_client(int server_sockfd);
 int authenticate_client_application(int sockfd, int *pid, int *uid);
 int authenticate_client_middleware(int sockfd, int *pid);
+int get_client_gid_list(int sockfd, int ** privileges);
 int authenticate_developer_shell(int sockfd);
 char *read_cmdline_from_proc(pid_t pid);
 int send_generic_response (int sockfd, unsigned char msgid, unsigned char return_code);

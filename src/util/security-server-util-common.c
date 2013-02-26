@@ -336,6 +336,7 @@ int util_process_cookie_from_cookie(int sockfd, cookie_list* list)
 {
 	unsigned char cookie[SECURITY_SERVER_COOKIE_LEN];
 	int ret;
+    int privileges[] = { 0 };   //only one privilege to check - root
 	cookie_list *result = NULL;
 
 	ret = read(sockfd, cookie, SECURITY_SERVER_COOKIE_LEN);
@@ -344,7 +345,7 @@ int util_process_cookie_from_cookie(int sockfd, cookie_list* list)
 		SEC_SVR_DBG("Received cookie size is too small: %d", ret);
 		return SECURITY_SERVER_ERROR_RECV_FAILED;
 	}
-	result = search_cookie(list, cookie, 0);
+	result = search_cookie(list, cookie, privileges, 1);
 	if(result == NULL)
 	{
 		ret = send_generic_response(sockfd, SECURITY_SERVER_MSG_TYPE_GET_COOKIEINFO_RESPONSE,

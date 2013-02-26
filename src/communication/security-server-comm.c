@@ -2426,6 +2426,115 @@ error:
 	return retval;
 }
 
+/* Get app PID from socked and read its privilege (GID) list
+ * from /proc/<PDI>/status.
+ *
+ * param 1: socket descriptor
+ * param 2: pointer for hold returned array
+ *
+ * ret: size of array or -1 in case of error
+ *
+ * Notice that user must free space allocated in this function and
+ * returned by second parameter (int * privileges)
+ * */
+int get_client_gid_list(int sockfd, int ** privileges)
+{
+    int ret;
+    //for read socket options
+    struct ucred socopt;
+    unsigned int socoptSize = sizeof(socopt);
+    //privileges to be returned
+    int privilegesSize;
+    //buffer for store /proc/<PID>/status filepath
+    const int PATHSIZE = 24;
+    char path[PATHSIZE];
+    //file pointer
+    FILE * fp = NULL;
+    //buffer for filelines
+    const int LINESIZE = 128;
+    char fileLine[LINESIZE];
+    //for parsing file
+    char delim[] = ": ";
+    char * token = NULL;
+
+
+    //clear pointer
+    *privileges = NULL;
+
+    //read socket options
+    ret = getsockopt(sockfd, SOL_SOCKET, SO_PEERCRED, &socopt, &socoptSize);
+    if(ret != 0)
+    {
+        SEC_SVR_DBG("%s", "Error on getsockopt");
+        return -1;
+    }
+
+    //now we have PID in sockopt.pid
+    bzero(path, PATHSIZE);
+    snprintf(path, PATHSIZE, "/proc/%d/status", socopt.pid);
+
+    fp = fopen(path, "r");
+    if(fp == NULL)
+    {
+        SEC_SVR_DBG("%s", "Error on fopen");
+        return -1;
+    }
+
+    bzero(fileLine, LINESIZE);
+
+    //search for line beginning with "Groups:"
+    while(strncmp(fileLine, "Groups:", 7) != 0)
+    {
+        ret = fgets(fileLine, LINESIZE, fp);
+        if(ret == NULL)
+        {
+            SEC_SVR_DBG("%s", "Error on fgets");
+            fclose(fp);
+            return -1;
+        }
+    }
+
+    fclose(fp);
+    
+    //now we have "Groups:" line in fileLine[]
+    ret = 0;
+    token = strtok(fileLine, delim);
+    while(token = strtok(NULL, delim))
+    {
+        //add found GID
+        if(*privileges == NULL)
+        {
+            //first GID on list
+            *privileges = (int *)malloc(sizeof(int) * 1);
+            if(*privileges == NULL)
+            {
+                SEC_SVR_DBG("%s", "Error on malloc");
+                return -1;
+            }
+            (*privileges)[0] = atoi(token);
+        }
+        else
+        {
+            *privileges = realloc(*privileges, sizeof(int) * (ret + 1));
+            (*privileges)[ret] = atoi(token);
+        }
+
+        ret++;
+    }
+
+    //check if we found any GIDs for process
+    if(*privileges == NULL)
+    {
+        SEC_SVR_DBG("%s %d", "No GIDs found for PID:", socopt.pid);
+    }
+    else
+    {
+        SEC_SVR_DBG("%s %d", "Number of GIDs found:", ret);
+    }
+
+    return ret;
+}
+
 /* Authenticate the application is middleware daemon
  * The middleware must run as root and the cmd line must be pre listed */
 int authenticate_developer_shell(int sockfd)

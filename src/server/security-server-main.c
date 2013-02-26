@@ -391,6 +391,7 @@ int process_check_privilege_request(int sockfd)
 {
 	/* Authenticate client */
 	int retval, client_pid, requested_privilege;
+    int privileges[1];
 	unsigned char requested_cookie[SECURITY_SERVER_COOKIE_LEN];
 	cookie_list *search_result = NULL;
 
@@ -438,7 +439,8 @@ int process_check_privilege_request(int sockfd)
 
 	/* Search cookie list */
 	pthread_mutex_lock(&cookie_mutex);
-	search_result = search_cookie(c_list, requested_cookie, requested_privilege);
+    privileges[0] = requested_privilege;
+	search_result = search_cookie(c_list, requested_cookie, privileges, 1);
 	pthread_mutex_unlock(&cookie_mutex);
 	if(search_result != NULL)
 	{
@@ -714,6 +716,7 @@ int process_pid_request(int sockfd)
 {
 	int retval, client_pid;
 	unsigned char requested_cookie[SECURITY_SERVER_COOKIE_LEN];
+    int * privileges;
 	cookie_list *search_result = NULL;
 
 	/* Authenticate client */
@@ -747,7 +750,17 @@ int process_pid_request(int sockfd)
 
 	/* Search cookie list */
 	pthread_mutex_lock(&cookie_mutex);
-	search_result = search_cookie(c_list, requested_cookie, 0);
+
+    retval = get_client_gid_list(sockfd, &privileges);
+    if(retval < 0)
+    {
+        SEC_SVR_DBG("ERROR: Cannot get GID list");
+        goto error;
+    }
+
+	search_result = search_cookie(c_list, requested_cookie, privileges, retval);
+    free(privileges);
+
 	pthread_mutex_unlock(&cookie_mutex);
 	if(search_result != NULL)
 	{
@@ -779,9 +792,10 @@ error:
 
 int process_smack_request(int sockfd)
 {
-	int retval, client_pid;
-	unsigned char requested_cookie[SECURITY_SERVER_COOKIE_LEN];
-	cookie_list *search_result = NULL;
+    int retval, client_pid;
+    int privileges[1];
+    unsigned char requested_cookie[SECURITY_SERVER_COOKIE_LEN];
+    cookie_list *search_result = NULL;
     //handler for SMACK label
     char * label = NULL;
     //buffer for storing file path
@@ -804,29 +818,39 @@ int process_smack_request(int sockfd)
 		goto error;
 	}
 
-	retval = recv_smack_request(sockfd, requested_cookie);
-	if(retval == SECURITY_SERVER_ERROR_RECV_FAILED)
-	{
-		SEC_SVR_DBG("%s", "Receiving request failed");
-		retval = send_generic_response(sockfd,
-				SECURITY_SERVER_MSG_TYPE_SMACK_RESPONSE,
-				SECURITY_SERVER_RETURN_CODE_BAD_REQUEST);
-		if(retval != SECURITY_SERVER_SUCCESS)
-		{
-			SEC_SVR_DBG("ERROR: Cannot send generic response: %d", retval);
-		}
-		goto error;
-	}
+    retval = recv_smack_request(sockfd, requested_cookie);
+    if(retval == SECURITY_SERVER_ERROR_RECV_FAILED)
+    {
+        SEC_SVR_DBG("%s", "Receiving request failed");
+        retval = send_generic_response(sockfd,
+            SECURITY_SERVER_MSG_TYPE_SMACK_RESPONSE,
+            SECURITY_SERVER_RETURN_CODE_BAD_REQUEST);
+        if(retval != SECURITY_SERVER_SUCCESS)
+        {
+            SEC_SVR_DBG("ERROR: Cannot send generic response: %d", retval);
+        }
+        goto error;
+    }
 
-	/* Search cookie list */
-	pthread_mutex_lock(&cookie_mutex);
-	search_result = search_cookie(c_list, requested_cookie, 0);
-	pthread_mutex_unlock(&cookie_mutex);
-	if(search_result != NULL)
-	{
-		/* We found */
-		SEC_SVR_DBG("We found the cookie and pid:%d", search_result->pid);
-		SEC_SVR_DBG("%s", "Cookie comparison succeeded. Access granted.");
+    /* Search cookie list */
+    pthread_mutex_lock(&cookie_mutex);
+
+    retval = get_client_gid_list(sockfd, &privileges);
+    if(retval < 0)
+    {
+        SEC_SVR_DBG("ERROR: Cannot get GID list");
+        goto error;
+    }
+
+    search_result = search_cookie(c_list, requested_cookie, privileges, retval);
+    free(privileges);
+
+    pthread_mutex_unlock(&cookie_mutex);
+    if(search_result != NULL)
+    {
+        /* We found */
+        SEC_SVR_DBG("We found the cookie and pid:%d", search_result->pid);
+        SEC_SVR_DBG("%s", "Cookie comparison succeeded. Access granted.");
 
         //clearing buffer
         memset(path, 0x00, BUFFSIZE);

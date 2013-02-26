@@ -27,7 +27,7 @@
 int free_cookie_item(cookie_list *cookie);
 cookie_list *delete_cookie_item(cookie_list *cookie);
 cookie_list *search_existing_cookie(int pid, const cookie_list *c_list);
-cookie_list *search_cookie(const cookie_list *c_list, const unsigned char *cookie, int privilege);
+cookie_list *search_cookie(const cookie_list *c_list, const unsigned char *cookie, int * privileges, int privilegesSize);
 cookie_list *search_cookie_new(const cookie_list *c_list,
                                const unsigned char *cookie,
                                const char *object,
