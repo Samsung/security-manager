@@ -2427,7 +2427,7 @@ error:
 }
 
 /* Get app PID from socked and read its privilege (GID) list
- * from /proc/<PDI>/status.
+ * from /proc/<PID>/status.
  *
  * param 1: socket descriptor
  * param 2: pointer for hold returned array
@@ -2451,7 +2451,7 @@ int get_client_gid_list(int sockfd, int ** privileges)
     //file pointer
     FILE * fp = NULL;
     //buffer for filelines
-    const int LINESIZE = 128;
+    const int LINESIZE = 256;
     char fileLine[LINESIZE];
     //for parsing file
     char delim[] = ": ";
