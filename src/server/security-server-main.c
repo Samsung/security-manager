@@ -748,9 +748,6 @@ int process_pid_request(int sockfd)
 		goto error;
 	}
 
-	/* Search cookie list */
-	pthread_mutex_lock(&cookie_mutex);
-
     retval = get_client_gid_list(sockfd, &privileges);
     if(retval < 0)
     {
@@ -758,10 +755,13 @@ int process_pid_request(int sockfd)
         goto error;
     }
 
-	search_result = search_cookie(c_list, requested_cookie, privileges, retval);
+    /* Search cookie list */
+    pthread_mutex_lock(&cookie_mutex);
+    search_result = search_cookie(c_list, requested_cookie, privileges, retval);
+    pthread_mutex_unlock(&cookie_mutex);
+
     free(privileges);
 
-	pthread_mutex_unlock(&cookie_mutex);
 	if(search_result != NULL)
 	{
 		/* We found */
@@ -832,9 +832,6 @@ int process_smack_request(int sockfd)
         goto error;
     }
 
-    /* Search cookie list */
-    pthread_mutex_lock(&cookie_mutex);
-
     retval = get_client_gid_list(sockfd, &privileges);
     if(retval < 0)
     {
@@ -842,10 +839,13 @@ int process_smack_request(int sockfd)
         goto error;
     }
 
+    /* Search cookie list */
+    pthread_mutex_lock(&cookie_mutex);
     search_result = search_cookie(c_list, requested_cookie, privileges, retval);
+    pthread_mutex_unlock(&cookie_mutex);
+
     free(privileges);
 
-    pthread_mutex_unlock(&cookie_mutex);
     if(search_result != NULL)
     {
         /* We found */
@@ -917,114 +917,106 @@ error:
 
 int process_tool_request(int client_sockfd, int server_sockfd)
 {
-	int retval, argcnum;
-	char **recved_argv = NULL;
+    int retval, argcnum = 0;
+    char **recved_argv = NULL;
 
-	/* Authenticate client */
-	retval = authenticate_developer_shell(client_sockfd);
-	if(retval != SECURITY_SERVER_SUCCESS)
-	{
-		SEC_SVR_DBG("%s", "Client Authentication Failed");
-		retval = send_generic_response(client_sockfd,
-				SECURITY_SERVER_MSG_TYPE_TOOL_RESPONSE,
-				SECURITY_SERVER_RETURN_CODE_AUTHENTICATION_FAILED);
-		if(retval != SECURITY_SERVER_SUCCESS)
-		{
-			SEC_SVR_DBG("ERROR: Cannot send generic response: %d", retval);
-		}
-		goto error;
-	}
+    /* Authenticate client */
+    retval = authenticate_developer_shell(client_sockfd);
+    if(retval != SECURITY_SERVER_SUCCESS)
+    {
+        SEC_SVR_DBG("%s", "Client Authentication Failed");
+        retval = send_generic_response(client_sockfd,
+                SECURITY_SERVER_MSG_TYPE_TOOL_RESPONSE,
+                SECURITY_SERVER_RETURN_CODE_AUTHENTICATION_FAILED);
+        if(retval != SECURITY_SERVER_SUCCESS)
+        {
+            SEC_SVR_DBG("ERROR: Cannot send generic response: %d", retval);
+        }
+        goto error;
+    }
 
-	/* Receive Total number of argv */
-	argcnum = 0;
-	retval = read(client_sockfd, &argcnum, sizeof(int));
-	if((retval < sizeof(int)) || argcnum > (UINT_MAX/sizeof(char *))-2 || argcnum < 0)
-	{
-		SEC_SVR_DBG("Error: argc recieve failed: %d", retval);
-		retval = send_generic_response(client_sockfd,
-				SECURITY_SERVER_MSG_TYPE_TOOL_RESPONSE,
-				SECURITY_SERVER_RETURN_CODE_BAD_REQUEST);
-		if(retval != SECURITY_SERVER_SUCCESS)
-		{
-			SEC_SVR_DBG("ERROR: Cannot send generic response: %d", retval);
-		}
-		goto error;
-	}
-	argcnum += 2;
-	recved_argv = (char **)malloc(sizeof(char *) * argcnum);
-	if(recved_argv == NULL)
-	{
-		SEC_SVR_DBG("Error: malloc() failed: %d", retval);
-		retval = send_generic_response(client_sockfd,
-				SECURITY_SERVER_MSG_TYPE_TOOL_RESPONSE,
-				SECURITY_SERVER_RETURN_CODE_SERVER_ERROR);
-		if(retval != SECURITY_SERVER_SUCCESS)
-		{
-			SEC_SVR_DBG("ERROR: Cannot send generic response: %d", retval);
-		}
-		goto error;
-	}
-	memset(recved_argv, 0, sizeof(char *) * argcnum);
+    /* Receive Total number of argv */
+    retval = read(client_sockfd, &argcnum, sizeof(int));
+    if((retval < sizeof(int)) || argcnum > (UINT_MAX/sizeof(char *))-2 || argcnum < 0)
+    {
+        SEC_SVR_DBG("Error: argc recieve failed: %d", retval);
+        retval = send_generic_response(client_sockfd,
+                SECURITY_SERVER_MSG_TYPE_TOOL_RESPONSE,
+                SECURITY_SERVER_RETURN_CODE_BAD_REQUEST);
+        if(retval != SECURITY_SERVER_SUCCESS)
+        {
+            SEC_SVR_DBG("ERROR: Cannot send generic response: %d", retval);
+        }
+        goto error;
+    }
+    argcnum += 2;
+    recved_argv = (char **)malloc(sizeof(char *) * argcnum);
+    if(recved_argv == NULL)
+    {
+        SEC_SVR_DBG("Error: malloc() failed: %d", retval);
+        retval = send_generic_response(client_sockfd,
+                SECURITY_SERVER_MSG_TYPE_TOOL_RESPONSE,
+                SECURITY_SERVER_RETURN_CODE_SERVER_ERROR);
+        if(retval != SECURITY_SERVER_SUCCESS)
+        {
+            SEC_SVR_DBG("ERROR: Cannot send generic response: %d", retval);
+        }
+        goto error;
+    }
+    memset(recved_argv, 0, sizeof(char *) * argcnum);
 
-	retval = recv_launch_tool_request(client_sockfd, argcnum -1, recved_argv);
-	if(retval == SECURITY_SERVER_ERROR_RECV_FAILED || retval == SECURITY_SERVER_ERROR_OUT_OF_MEMORY)
-	{
-		SEC_SVR_DBG("%s", "Receiving request failed");
-		recved_argv = NULL;
-		retval = send_generic_response(client_sockfd,
-				SECURITY_SERVER_MSG_TYPE_TOOL_RESPONSE,
-				SECURITY_SERVER_RETURN_CODE_BAD_REQUEST);
-		if(retval != SECURITY_SERVER_SUCCESS)
-		{
-			SEC_SVR_DBG("ERROR: Cannot send generic response: %d", retval);
-		}
-		goto error;
-	}
-	if(argcnum < 2)
-	{
-		SEC_SVR_DBG("Error: Too small number of argv [%d]", argcnum);
-		retval = send_generic_response(client_sockfd,
-				SECURITY_SERVER_MSG_TYPE_TOOL_RESPONSE,
-				SECURITY_SERVER_RETURN_CODE_BAD_REQUEST);
-		if(retval != SECURITY_SERVER_SUCCESS)
-		{
-			SEC_SVR_DBG("ERROR: Cannot send generic response: %d", retval);
-		}
-		goto error;
-	}
-	/* Execute the command */
-	retval = execute_debug_tool(argcnum, recved_argv, server_sockfd, client_sockfd);
-	if(retval != SECURITY_SERVER_SUCCESS)
-	{
-		SEC_SVR_DBG("Error: Cannot execute debug tool [%d]", retval);
-		retval = send_generic_response(client_sockfd,
-				SECURITY_SERVER_MSG_TYPE_TOOL_RESPONSE,
-				SECURITY_SERVER_RETURN_CODE_SERVER_ERROR);
-		if(retval != SECURITY_SERVER_SUCCESS)
-		{
-			SEC_SVR_DBG("ERROR: Cannot send generic response: %d", retval);
-		}
-	}
-	else
-	{
-		SEC_SVR_DBG("%s", "Tool has been executed");
-		retval = send_generic_response(client_sockfd,
-				SECURITY_SERVER_MSG_TYPE_TOOL_RESPONSE,
-				SECURITY_SERVER_RETURN_CODE_SUCCESS);
-		if(retval != SECURITY_SERVER_SUCCESS)
-		{
-			SEC_SVR_DBG("ERROR: Cannot send generic response: %d", retval);
-		}
-	}
+    retval = recv_launch_tool_request(client_sockfd, argcnum-1, recved_argv);
+    if(retval == SECURITY_SERVER_ERROR_RECV_FAILED || retval == SECURITY_SERVER_ERROR_OUT_OF_MEMORY)
+    {
+        SEC_SVR_DBG("%s", "Receiving request failed");
+        retval = send_generic_response(client_sockfd,
+                SECURITY_SERVER_MSG_TYPE_TOOL_RESPONSE,
+                SECURITY_SERVER_RETURN_CODE_BAD_REQUEST);
+        if(retval != SECURITY_SERVER_SUCCESS)
+        {
+            SEC_SVR_DBG("ERROR: Cannot send generic response: %d", retval);
+        }
+        goto error;
+    }
+    if(argcnum < 2)
+    {
+        SEC_SVR_DBG("Error: Too small number of argv [%d]", argcnum);
+        retval = send_generic_response(client_sockfd,
+                SECURITY_SERVER_MSG_TYPE_TOOL_RESPONSE,
+                SECURITY_SERVER_RETURN_CODE_BAD_REQUEST);
+        if(retval != SECURITY_SERVER_SUCCESS)
+        {
+            SEC_SVR_DBG("ERROR: Cannot send generic response: %d", retval);
+        }
+        goto error;
+    }
+    /* Execute the command */
+    retval = execute_debug_tool(argcnum, recved_argv, server_sockfd, client_sockfd);
+    if(retval != SECURITY_SERVER_SUCCESS)
+    {
+        SEC_SVR_DBG("Error: Cannot execute debug tool [%d]", retval);
+        retval = send_generic_response(client_sockfd,
+                SECURITY_SERVER_MSG_TYPE_TOOL_RESPONSE,
+                SECURITY_SERVER_RETURN_CODE_SERVER_ERROR);
+        if(retval != SECURITY_SERVER_SUCCESS)
+        {
+            SEC_SVR_DBG("ERROR: Cannot send generic response: %d", retval);
+        }
+    }
+    else
+    {
+        SEC_SVR_DBG("%s", "Tool has been executed");
+        retval = send_generic_response(client_sockfd,
+                SECURITY_SERVER_MSG_TYPE_TOOL_RESPONSE,
+                SECURITY_SERVER_RETURN_CODE_SUCCESS);
+        if(retval != SECURITY_SERVER_SUCCESS)
+        {
+            SEC_SVR_DBG("ERROR: Cannot send generic response: %d", retval);
+        }
+    }
 error:
-	if(recved_argv != NULL)
-	{
-		/* Free */
-		free_argv(recved_argv, argcnum);
-		recved_argv = NULL;
-		argcnum =0;;
-	}
-	return retval;
+    free_argv(recved_argv, argcnum);
+    return retval;
 }
 
 void *security_server_thread(void *param)

@@ -1988,49 +1988,46 @@ int recv_smack_request(int sockfd, unsigned char *requested_cookie)
 }
 
 /* Receive pid request packet body */
+/* Table argv and content will be freed by function caller */
 int recv_launch_tool_request(int sockfd, int argc, char *argv[])
 {
-	int retval, i, argv_len;
+    int retval, i, argv_len;
 
-	argv[0] = malloc(strlen(SECURITY_SERVER_DEBUG_TOOL_PATH) + 1);
-	strncpy(argv[0], SECURITY_SERVER_DEBUG_TOOL_PATH, (strlen(SECURITY_SERVER_DEBUG_TOOL_PATH) + 1));
+    argv[0] = malloc(strlen(SECURITY_SERVER_DEBUG_TOOL_PATH) + 1);
+    strncpy(argv[0], SECURITY_SERVER_DEBUG_TOOL_PATH, (strlen(SECURITY_SERVER_DEBUG_TOOL_PATH) + 1));
 
-	for(i=1;i<argc;i++)
-	{
-		retval = read(sockfd, &argv_len, sizeof(int));
-		if(retval < sizeof(int))
-		{
-			SEC_SVR_DBG("Error: argv length recieve failed: %d", retval);
-			free_argv(argv, argc);
-			return SECURITY_SERVER_ERROR_RECV_FAILED;
-		}
+    for(i=1;i<argc;i++)
+    {
+        retval = read(sockfd, &argv_len, sizeof(int));
+        if(retval < sizeof(int))
+        {
+            SEC_SVR_DBG("Error: argv length recieve failed: %d", retval);
+            return SECURITY_SERVER_ERROR_RECV_FAILED;
+        }
 
-		if(argv_len <= 0 || argv_len >= INT_MAX)
-		{
-			SEC_SVR_DBG("Error: argv length out of boundaries");
-			free_argv(argv, argc);
-			return SECURITY_SERVER_ERROR_RECV_FAILED;
-		}
+        if(argv_len <= 0 || argv_len >= INT_MAX)
+        {
+            SEC_SVR_DBG("Error: argv length out of boundaries");
+            return SECURITY_SERVER_ERROR_RECV_FAILED;
+        }
 
-		argv[i] = malloc(argv_len + 1);
-		if(argv[i] == NULL)
-		{
-			SEC_SVR_DBG("Error: malloc() failed: %d", retval);
-			free_argv(argv, argc);
-			return SECURITY_SERVER_ERROR_OUT_OF_MEMORY;
-		}
+        argv[i] = malloc(argv_len + 1);
+        if(argv[i] == NULL)
+        {
+            SEC_SVR_DBG("Error: malloc() failed: %d", retval);
+            return SECURITY_SERVER_ERROR_OUT_OF_MEMORY;
+        }
 
-		memset(argv[i], 0x00, argv_len + 1);
-		retval = read(sockfd, argv[i], argv_len);
-		if(retval < argv_len)
-		{
-			SEC_SVR_DBG("Error: argv recieve failed: %d", retval);
-			free_argv(argv, argc);
-			return SECURITY_SERVER_ERROR_RECV_FAILED;
-		}
-	}
+        memset(argv[i], 0x00, argv_len + 1);
+        retval = read(sockfd, argv[i], argv_len);
+        if(retval < argv_len)
+        {
+            SEC_SVR_DBG("Error: argv recieve failed: %d", retval);
+            return SECURITY_SERVER_ERROR_RECV_FAILED;
+        }
+    }
 
-	return SECURITY_SERVER_SUCCESS;
+    return SECURITY_SERVER_SUCCESS;
 }
 
 int recv_generic_response(int sockfd, response_header *hdr)
@@ -2495,10 +2492,10 @@ int get_client_gid_list(int sockfd, int ** privileges)
     }
 
     fclose(fp);
-    
+
     //now we have "Groups:" line in fileLine[]
     ret = 0;
-    token = strtok(fileLine, delim);
+    strtok(fileLine, delim);
     while(token = strtok(NULL, delim))
     {
         //add found GID
