@@ -31,6 +31,9 @@
 #include <limits.h>
 #include <fcntl.h>
 #include <sys/smack.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/wait.h>
 
 #include "security-server-cookie.h"
 #include "security-server-common.h"
@@ -166,7 +169,7 @@ int search_object_name(int gid, char *obj, int obj_size)
 		if(tmp_gid == gid)
 		{
 			/* We found it */
-			if(strlen(token) > obj_size)
+			if((int)strlen(token) > obj_size)
 			{
 				ret = SECURITY_SERVER_ERROR_BUFFER_TOO_SMALL;
 				SEC_SVR_DBG("buffer is too small. %d --> %d", obj_size, strlen(token));
@@ -272,50 +275,55 @@ error:
 /* Signal handler for processes */
 static void security_server_sig_child(int signo, siginfo_t *info, void *data)
 {
-	int status;
-	pid_t child_pid;
-	pid_t child_pgid;
+    int status;
+    pid_t child_pid;
+    pid_t child_pgid;
 
-	child_pgid = getpgid(info->si_pid);
-	SEC_SVR_DBG("Signal handler: dead_pid=%d, pgid=%d",info->si_pid,child_pgid);
+    (void)signo;
+    (void)data;
 
-	while ((child_pid = waitpid(-1, &status, WNOHANG)) > 0) {
-		if(child_pid == child_pgid)
-			killpg(child_pgid,SIGKILL);
-	}
+    child_pgid = getpgid(info->si_pid);
+    SEC_SVR_DBG("Signal handler: dead_pid=%d, pgid=%d",info->si_pid,child_pgid);
 
-	return;
+    while ((child_pid = waitpid(-1, &status, WNOHANG)) > 0) {
+        if(child_pid == child_pgid)
+            killpg(child_pgid,SIGKILL);
+    }
+
+    return;
 }
 
 /* Execute a debugging tool by fork() and execve() */
 int execute_debug_tool(int argc, char *const *argv, int server_sockfd, int client_sockfd)
 {
-	int ret, i;
-	SEC_SVR_DBG("%s", "Executing tool");
+    int ret, i;
+    SEC_SVR_DBG("%s", "Executing tool");
 
-	ret = fork();
-	if(ret == 0)
-	{
-		close(client_sockfd);
-		close(server_sockfd);
-		setsid();
+    (void)argc;
 
-		for(i=0;i<_NSIG;i++)
-			signal(i, SIG_DFL);
+    ret = fork();
+    if(ret == 0)
+    {
+        close(client_sockfd);
+        close(server_sockfd);
+        setsid();
 
-		ret = execv(argv[0], argv);
-		if(ret == -1)
-		{
-			SEC_SVR_DBG("Error:Failed to execute [%d]", errno);
-			exit(-1);
-		}
-	}
-	if(ret < 0)
-	{
-		SEC_SVR_DBG("Error: Failed to fork [%d]", errno);
-		return SECURITY_SERVER_ERROR_SERVER_ERROR;
-	}
-	return SECURITY_SERVER_SUCCESS;
+        for(i=0;i<_NSIG;i++)
+            signal(i, SIG_DFL);
+
+        ret = execv(argv[0], argv);
+        if(ret == -1)
+        {
+            SEC_SVR_DBG("Error:Failed to execute [%d]", errno);
+            exit(-1);
+        }
+    }
+    if(ret < 0)
+    {
+        SEC_SVR_DBG("Error: Failed to fork [%d]", errno);
+        return SECURITY_SERVER_ERROR_SERVER_ERROR;
+    }
+    return SECURITY_SERVER_SUCCESS;
 }
 
 int process_cookie_request(int sockfd)
@@ -567,7 +575,7 @@ int process_object_name_request(int sockfd)
 
 	/* Receive GID */
 	retval = read(sockfd, &requested_privilege, sizeof(requested_privilege));
-	if (retval < sizeof(requested_privilege))
+	if (retval < (int)sizeof(requested_privilege))
 	{
 		SEC_SVR_DBG("%s", "Receiving request failed");
 		retval = send_generic_response(sockfd,
@@ -936,8 +944,8 @@ int process_tool_request(int client_sockfd, int server_sockfd)
     }
 
     /* Receive Total number of argv */
-    retval = read(client_sockfd, &argcnum, sizeof(int));
-    if((retval < sizeof(int)) || argcnum > (UINT_MAX/sizeof(char *))-2 || argcnum < 0)
+    retval = TEMP_FAILURE_RETRY(read(client_sockfd, &argcnum, sizeof(int)));
+    if((retval < (int)sizeof(int)) || argcnum > (UINT_MAX/sizeof(char *))-2 || argcnum < 0)
     {
         SEC_SVR_DBG("Error: argc recieve failed: %d", retval);
         retval = send_generic_response(client_sockfd,
@@ -1225,118 +1233,123 @@ error:
 
 void *security_server_main_thread(void *data)
 {
-	int server_sockfd = 0, retval, client_sockfd = -1, args[2], rc;
-	struct sigaction act, dummy;
-	pthread_t threads[SECURITY_SERVER_NUM_THREADS];
-	struct security_server_thread_param param[SECURITY_SERVER_NUM_THREADS];
+    int server_sockfd = 0, retval, client_sockfd = -1, rc;
+    struct sigaction act, dummy;
+    pthread_t threads[SECURITY_SERVER_NUM_THREADS];
+    struct security_server_thread_param param[SECURITY_SERVER_NUM_THREADS];
 
-	SEC_SVR_DBG("%s", "Starting Security Server main thread");
+    (void)data;
 
-	/* security server must be executed by root */
-	if(getuid() != 0)
-	{
-		fprintf(stderr, "%s\n", "You are not root. exiting...");
-		goto error;
-	}
+    SEC_SVR_DBG("%s", "Starting Security Server main thread");
 
-	for(retval = 0 ; retval < SECURITY_SERVER_NUM_THREADS; retval++)
-		thread_status[retval] = 0;
-	initiate_try();
+    /* security server must be executed by root */
+    if(getuid() != 0)
+    {
+        fprintf(stderr, "%s\n", "You are not root. exiting...");
+        goto error;
+    }
 
-	/* Create and bind a Unix domain socket */
-	retval = create_new_socket(&server_sockfd);
-	if(retval != SECURITY_SERVER_SUCCESS)
-	{
-		SEC_SVR_DBG("%s", "cannot create socket. exiting...");
-		goto error;
-	}
+    for(retval = 0 ; retval < SECURITY_SERVER_NUM_THREADS; retval++)
+        thread_status[retval] = 0;
+    initiate_try();
 
-	if(listen(server_sockfd, 5) < 0)
-	{
-		SEC_SVR_DBG("%s", "listen() failed. exiting...");
-		goto error;
-	}
+    /* Create and bind a Unix domain socket */
+    retval = create_new_socket(&server_sockfd);
+    if(retval != SECURITY_SERVER_SUCCESS)
+    {
+        SEC_SVR_DBG("%s", "cannot create socket. exiting...");
+        goto error;
+    }
 
-	/* Create a default cookie --> Cookie for root process */
-	c_list = create_default_cookie();
-	if(c_list == NULL)
-	{
-		SEC_SVR_DBG("%s", "cannot make a default cookie. exiting...");
-		goto error;
-	}
+    if(listen(server_sockfd, 5) < 0)
+    {
+        SEC_SVR_DBG("%s", "listen() failed. exiting...");
+        goto error;
+    }
 
-	/* Init signal handler */
-	act.sa_handler = NULL;
-	act.sa_sigaction = security_server_sig_child;
-	sigemptyset(&act.sa_mask);
-	act.sa_flags = SA_NOCLDSTOP | SA_SIGINFO;
+    /* Create a default cookie --> Cookie for root process */
+    c_list = create_default_cookie();
+    if(c_list == NULL)
+    {
+        SEC_SVR_DBG("%s", "cannot make a default cookie. exiting...");
+        goto error;
+    }
 
-	if (sigaction(SIGCHLD, &act, &dummy) < 0)
-	{
-		SEC_SVR_DBG("%s", "cannot change session");
-	}
+    /* Init signal handler */
+    act.sa_handler = NULL;
+    act.sa_sigaction = security_server_sig_child;
+    sigemptyset(&act.sa_mask);
+    act.sa_flags = SA_NOCLDSTOP | SA_SIGINFO;
 
-	pthread_mutex_init(&cookie_mutex, NULL);
+    if (sigaction(SIGCHLD, &act, &dummy) < 0)
+    {
+        SEC_SVR_DBG("%s", "cannot change session");
+    }
 
-	while(1)
-	{
-		/* Accept a new client */
-		if(client_sockfd < 0)
-			client_sockfd = accept_client(server_sockfd);
+    pthread_mutex_init(&cookie_mutex, NULL);
 
-		if(client_sockfd == SECURITY_SERVER_ERROR_TIMEOUT)
-			continue;
-		if(client_sockfd < 0)
-			goto error;
-		SEC_SVR_DBG("Server: new connection has been accepted: %d", client_sockfd);
-		retval = 0;
-		while(1)
-		{
-			if(thread_status[retval] == 0)
-			{
-				thread_status[retval] = 1;
-				param[retval].client_sockfd = client_sockfd;
-				param[retval].server_sockfd = server_sockfd;
-				param[retval].thread_status= retval;
-				SEC_SVR_DBG("Server: Creating a new thread: %d", retval);
-				rc =pthread_create(&threads[retval], NULL, security_server_thread, (void *)&param[retval]);
-				if (rc)
-				{
-					SEC_SVR_DBG("Error: Server: Cannot create thread:%d", rc);
-					goto error;
-				}
-				break;
-			}
-			retval++;
-			if(retval >= SECURITY_SERVER_NUM_THREADS)
-				retval = 0;
-		}
-		client_sockfd = -1;
-	}
+    while(1)
+    {
+        /* Accept a new client */
+        if(client_sockfd < 0)
+            client_sockfd = accept_client(server_sockfd);
+
+        if(client_sockfd == SECURITY_SERVER_ERROR_TIMEOUT)
+            continue;
+        if(client_sockfd < 0)
+            goto error;
+        SEC_SVR_DBG("Server: new connection has been accepted: %d", client_sockfd);
+        retval = 0;
+        while(1)
+        {
+            if(thread_status[retval] == 0)
+            {
+                thread_status[retval] = 1;
+                param[retval].client_sockfd = client_sockfd;
+                param[retval].server_sockfd = server_sockfd;
+                param[retval].thread_status= retval;
+                SEC_SVR_DBG("Server: Creating a new thread: %d", retval);
+                rc =pthread_create(&threads[retval], NULL, security_server_thread, (void *)&param[retval]);
+                if (rc)
+                {
+                    SEC_SVR_DBG("Error: Server: Cannot create thread:%d", rc);
+                    goto error;
+                }
+                break;
+            }
+            retval++;
+            if(retval >= SECURITY_SERVER_NUM_THREADS)
+                retval = 0;
+        }
+        client_sockfd = -1;
+    }
 error:
-	if(server_sockfd > 0)
-		close(server_sockfd);
+    if(server_sockfd > 0)
+        close(server_sockfd);
 
-	pthread_detach(pthread_self());
-	pthread_exit(NULL);
+    pthread_detach(pthread_self());
+    pthread_exit(NULL);
 }
 
 int main(int argc, char* argv[])
 {
-	int res;
-	pthread_t main_thread;
+    int res;
+    pthread_t main_thread;
 
-	res = pthread_create(&main_thread, NULL, security_server_main_thread, NULL);
-	if (res == 0)
-	{
-		while (1)
-			sleep(60);
-	}
-	else
-	{
-		SEC_SVR_DBG("Error: Server: Cannot create main security server thread: %d", res);
-	}
-	pthread_exit(NULL);
-	return 0;
+    (void)argc;
+    (void)argv;
+
+    res = pthread_create(&main_thread, NULL, security_server_main_thread, NULL);
+    if (res == 0)
+    {
+        while (1)
+            sleep(60);
+    }
+    else
+    {
+        SEC_SVR_DBG("Error: Server: Cannot create main security server thread: %d", res);
+    }
+    pthread_exit(NULL);
+    return 0;
 }
 

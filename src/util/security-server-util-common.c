@@ -295,7 +295,7 @@ int util_process_cookie_from_pid(int sockfd, cookie_list* list)
 	cookie_list *result = NULL;
 
 	ret = read(sockfd, &pid, sizeof(int));
-	if(ret < sizeof(int))
+	if(ret < (int)sizeof(int))
 	{
 		SEC_SVR_DBG("Received cookie size is too small: %d", ret);
 		return SECURITY_SERVER_ERROR_RECV_FAILED;

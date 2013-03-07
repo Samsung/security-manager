@@ -26,6 +26,8 @@
 #include <errno.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/time.h>
+#include <unistd.h>
 #include <fcntl.h>
 #include <openssl/sha.h>
 
@@ -48,7 +50,7 @@ int validate_pwd_file(char *filename)
 		return SECURITY_SERVER_ERROR_NO_PASSWORD;
 	}
 
-	for(i=0;i<(strlen(filename) -4);i++)
+	for(i=0;i<((int)strlen(filename) -4);i++)
 	{
 		if(filename[i] > '9' || filename[i] < '0')
 		{

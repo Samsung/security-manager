@@ -1,7 +1,7 @@
 /*
  *  security-server
  *
- *  Copyright (c) 2000 - 2012 Samsung Electronics Co., Ltd All Rights Reserved
+ *  Copyright (c) 2000 - 2013 Samsung Electronics Co., Ltd All Rights Reserved
  *
  *  Contact: Bumjin Im <bj.im@samsung.com>
  *
@@ -16,23 +16,16 @@
  *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  *  See the License for the specific language governing permissions and
  *  limitations under the License
- *
  */
 
-#ifndef SECURITY_SERVER_PASSWORD_H
-#define SECURITY_SERVER_PASSWORD_H
+#ifndef _SMACK_CHECK_H_
+#define _SMACK_CHECK_H_
 
-#include "security-server-common.h"
-#include "security-server-comm.h"
+/*
+ * A very simple runtime check for SMACK on the platform
+ * Returns 1 if SMACK is present, 0 otherwise
+ */
 
-int process_valid_pwd_request(int sockfd);
-int process_set_pwd_request(int sockfd);
-int process_set_pwd_history_request(int sockfd);
-int process_reset_pwd_request(int sockfd);
-int process_reset_pwd_request(int sockfd);
-int process_chk_pwd_request(int sockfd);
-int process_set_pwd_max_challenge_request(int sockfd);
-int process_set_pwd_validity_request(int sockfd);
-void initiate_try(void);
+int smack_runtime_check(void);
 
-#endif
+#endif // _SMACK_CHECK_H_

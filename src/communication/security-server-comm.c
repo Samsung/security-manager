@@ -517,7 +517,7 @@ int send_generic_response (int sockfd, unsigned char msgid, unsigned char return
 	/* Send to client */
 	size = write(sockfd, &hdr, sizeof(hdr));
 
-	if(size < sizeof(hdr))
+	if(size < (int)sizeof(hdr))
 		return SECURITY_SERVER_ERROR_SEND_FAILED;
 	return SECURITY_SERVER_SUCCESS;
 }
@@ -564,7 +564,7 @@ int send_cookie(int sockfd, unsigned char *cookie)
 	}
 
 	ret = write(sockfd, msg, sizeof(hdr) + SECURITY_SERVER_COOKIE_LEN);
-	if(ret <  sizeof(hdr) + SECURITY_SERVER_COOKIE_LEN)
+	if(ret <  (int)(sizeof(hdr) + SECURITY_SERVER_COOKIE_LEN))
 	{
 		/* Error on writing */
 		SEC_SVR_DBG("Error on write: %d", ret);

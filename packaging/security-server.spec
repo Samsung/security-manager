@@ -89,7 +89,6 @@ Certificates for wrt.
 export LDFLAGS+="-Wl,--rpath=%{_prefix}/lib"
 
 cmake . -DCMAKE_INSTALL_PREFIX=%{_prefix} \
-        -DDPL_LOG="ON"                    \
         -DVERSION=%{version}              \
         -DCMAKE_BUILD_TYPE=%{?build_type:%build_type}
 make %{?jobs:-j%jobs}
