@@ -515,7 +515,7 @@ int send_generic_response (int sockfd, unsigned char msgid, unsigned char return
 	}
 
 	/* Send to client */
-	size = write(sockfd, &hdr, sizeof(hdr));
+	size = TEMP_FAILURE_RETRY(write(sockfd, &hdr, sizeof(hdr)));
 
 	if(size < (int)sizeof(hdr))
 		return SECURITY_SERVER_ERROR_SEND_FAILED;
@@ -563,7 +563,7 @@ int send_cookie(int sockfd, unsigned char *cookie)
 		return SECURITY_SERVER_ERROR_SEND_FAILED;
 	}
 
-	ret = write(sockfd, msg, sizeof(hdr) + SECURITY_SERVER_COOKIE_LEN);
+	ret = TEMP_FAILURE_RETRY(write(sockfd, msg, sizeof(hdr) + SECURITY_SERVER_COOKIE_LEN));
 	if(ret <  (int)(sizeof(hdr) + SECURITY_SERVER_COOKIE_LEN))
 	{
 		/* Error on writing */
@@ -613,7 +613,7 @@ int send_object_name(int sockfd, char *obj)
 		return SECURITY_SERVER_ERROR_SEND_FAILED;
 	}
 
-	ret = write(sockfd, msg, sizeof(hdr) + strlen(obj));
+	ret = TEMP_FAILURE_RETRY(write(sockfd, msg, sizeof(hdr) + strlen(obj)));
 	if(ret <  sizeof(hdr) + strlen(obj))
 	{
 		/* Error on writing */
@@ -667,7 +667,7 @@ int send_gid(int sockfd, int gid)
 	}
 
 	/* Send it */
-	ret = write(sockfd, msg, sizeof(hdr) + sizeof(gid));
+	ret = TEMP_FAILURE_RETRY(write(sockfd, msg, sizeof(hdr) + sizeof(gid)));
 	if(ret <  sizeof(hdr) + sizeof(gid))
 	{
 		/* Error on writing */
@@ -721,7 +721,7 @@ int send_pid(int sockfd, int pid)
 	}
 
 	/* Send it */
-	ret = write(sockfd, msg, sizeof(hdr) + sizeof(pid));
+	ret = TEMP_FAILURE_RETRY(write(sockfd, msg, sizeof(hdr) + sizeof(pid)));
 	if(ret <  sizeof(hdr) + sizeof(pid))
 	{
 		/* Error on writing */
@@ -779,7 +779,7 @@ int send_smack(int sockfd, char * label)
 	}
 
 	/* Send it */
-	ret = write(sockfd, msg, PACKET_SIZE);
+	ret = TEMP_FAILURE_RETRY(write(sockfd, msg, PACKET_SIZE));
 	if(ret <  PACKET_SIZE)
 	{
 		/* Error on writing */
@@ -850,7 +850,7 @@ int send_pwd_response(const int sockfd,
 	}
 
 	/* Send it */
-	ret = write(sockfd, msg, ptr);
+	ret = TEMP_FAILURE_RETRY(write(sockfd, msg, ptr));
 	if(ret <  ptr)
 	{
 		/* Error on writing */
@@ -893,7 +893,7 @@ int send_cookie_request(int sock_fd)
 	}
 
 	/* Send to server */
-	retval = write(sock_fd, &hdr, sizeof(hdr));
+	retval = TEMP_FAILURE_RETRY(write(sock_fd, &hdr, sizeof(hdr)));
 	if(retval < sizeof(hdr))
 	{
 		/* Write error */
@@ -959,7 +959,7 @@ int send_gid_request(int sock_fd, const char* object)
 		goto error;
 	}
 
-	retval = write(sock_fd, buf, send_len);
+	retval = TEMP_FAILURE_RETRY(write(sock_fd, buf, send_len));
 	if(retval < send_len)
 	{
 		/* Write error */
@@ -1014,7 +1014,7 @@ int send_object_name_request(int sock_fd, int gid)
 	}
 
 	/* Send to server */
-	retval = write(sock_fd, buf, sizeof(buf));
+	retval = TEMP_FAILURE_RETRY(write(sock_fd, buf, sizeof(buf)));
 	if(retval < sizeof(buf))
 	{
 		/* Write error */
@@ -1069,7 +1069,7 @@ int send_privilege_check_request(int sock_fd, const char*cookie, int gid)
 	}
 
 	/* Send to server */
-	retval = write(sock_fd, buf, sizeof(buf));
+	retval = TEMP_FAILURE_RETRY(write(sock_fd, buf, sizeof(buf)));
 	if(retval < sizeof(buf))
 	{
 		/* Write error */
@@ -1128,7 +1128,7 @@ int send_privilege_check_new_request(int sock_fd,
 
         size = sizeof(hdr) + SECURITY_SERVER_COOKIE_LEN + 2*sizeof(int) + olen + alen;
 	/* Send to server */
-	retval = write(sock_fd, buf, size);
+	retval = TEMP_FAILURE_RETRY(write(sock_fd, buf, size));
 	if(retval < size)
 	{
 		/* Write error */
@@ -1180,7 +1180,7 @@ int send_smack_request(int sock_fd, const char * cookie)
 	}
 
 	/* Send to server */
-	retval = write(sock_fd, buf, sizeof(buf));
+	retval = TEMP_FAILURE_RETRY(write(sock_fd, buf, sizeof(buf)));
 	if(retval < sizeof(buf))
 	{
 		/* Write error */
@@ -1232,7 +1232,7 @@ int send_pid_request(int sock_fd, const char*cookie)
 	}
 
 	/* Send to server */
-	retval = write(sock_fd, buf, sizeof(buf));
+	retval = TEMP_FAILURE_RETRY(write(sock_fd, buf, sizeof(buf)));
 	if(retval < sizeof(buf))
 	{
 		/* Write error */
@@ -1345,7 +1345,7 @@ int send_launch_tool_request(int sock_fd, int argc, const char **argv)
 	}
 
 	/* Send to server */
-	retval = write(sock_fd, buf, total_length);
+	retval = TEMP_FAILURE_RETRY(write(sock_fd, buf, total_length));
 	if(retval < sizeof(buf))
 	{
 		/* Write error */
@@ -1395,7 +1395,7 @@ int send_valid_pwd_request(int sock_fd)
 	}
 
 	/* Send to server */
-	retval = write(sock_fd, &hdr, sizeof(hdr));
+	retval = TEMP_FAILURE_RETRY(write(sock_fd, &hdr, sizeof(hdr)));
 	if(retval < sizeof(hdr))
 	{
 		/* Write error */
@@ -1493,7 +1493,7 @@ int send_set_pwd_request(int sock_fd,
 	}
 
 	/* Send to server */
-	retval = write(sock_fd, buf, total_length);
+	retval = TEMP_FAILURE_RETRY(write(sock_fd, buf, total_length));
 	if(retval < sizeof(buf))
 	{
 		/* Write error */
@@ -1559,7 +1559,7 @@ int send_set_pwd_validity_request(int sock_fd, const unsigned int valid_period_i
     }
 
     /* Send to server */
-    retval = write(sock_fd, buf, total_length);
+    retval = TEMP_FAILURE_RETRY(write(sock_fd, buf, total_length));
     if(retval < sizeof(buf))
     {
         /* Write error */
@@ -1625,7 +1625,7 @@ int send_set_pwd_max_challenge_request(int sock_fd, const unsigned int max_chall
     }
 
     /* Send to server */
-    retval = write(sock_fd, buf, total_length);
+    retval = TEMP_FAILURE_RETRY(write(sock_fd, buf, total_length));
     if(retval < sizeof(buf))
     {
         /* Write error */
@@ -1711,7 +1711,7 @@ int send_reset_pwd_request(int sock_fd,
 	}
 
 	/* Send to server */
-	retval = write(sock_fd, buf, total_length);
+	retval = TEMP_FAILURE_RETRY(write(sock_fd, buf, total_length));
 	if(retval < sizeof(buf))
 	{
 		/* Write error */
@@ -1784,7 +1784,7 @@ int send_chk_pwd_request(int sock_fd, const char*challenge)
 	}
 
 	/* Send to server */
-	retval = write(sock_fd, buf, total_length);
+	retval = TEMP_FAILURE_RETRY(write(sock_fd, buf, total_length));
 	if(retval < sizeof(buf))
 	{
 		/* Write error */
@@ -1846,7 +1846,7 @@ int send_set_pwd_history_request(int sock_fd, int num)
 	}
 
 	/* Send to server */
-	retval = write(sock_fd, buf, ptr);
+	retval = TEMP_FAILURE_RETRY(write(sock_fd, buf, ptr));
 	if(retval < sizeof(buf))
 	{
 		/* Write error */
@@ -1879,7 +1879,7 @@ int recv_hdr(int client_sockfd, basic_header *basic_hdr)
 	}
 
 	/* Receive request header first */
-	retval = read(client_sockfd, basic_hdr, sizeof(basic_header));
+	retval = TEMP_FAILURE_RETRY(read(client_sockfd, basic_hdr, sizeof(basic_header)));
 	if(retval < sizeof(basic_header))
 	{
 		SEC_SVR_DBG("read failed. closing socket %d", retval);
@@ -1896,14 +1896,14 @@ int recv_hdr(int client_sockfd, basic_header *basic_hdr)
 int recv_check_privilege_request(int sockfd, unsigned char *requested_cookie, int *requested_privilege)
 {
 	int retval;
-	retval = read(sockfd, requested_cookie, SECURITY_SERVER_COOKIE_LEN);
+	retval = TEMP_FAILURE_RETRY(read(sockfd, requested_cookie, SECURITY_SERVER_COOKIE_LEN));
 	if(retval < SECURITY_SERVER_COOKIE_LEN)
 	{
 		SEC_SVR_DBG("Received cookie size is too small: %d", retval);
 		return SECURITY_SERVER_ERROR_RECV_FAILED;
 	}
 
-	retval = read(sockfd, requested_privilege, sizeof(int));
+	retval = TEMP_FAILURE_RETRY(read(sockfd, requested_privilege, sizeof(int)));
 	if(retval < sizeof(int))
 	{
 		SEC_SVR_DBG("privilege size is too small: %d", retval);
@@ -1921,28 +1921,28 @@ int recv_check_privilege_new_request(int sockfd,
 	int retval;
         int olen, alen;
 
-	retval = read(sockfd, requested_cookie, SECURITY_SERVER_COOKIE_LEN);
+	retval = TEMP_FAILURE_RETRY(read(sockfd, requested_cookie, SECURITY_SERVER_COOKIE_LEN));
 	if(retval < SECURITY_SERVER_COOKIE_LEN)
 	{
 		SEC_SVR_DBG("Received cookie size is too small: %d", retval);
 		return SECURITY_SERVER_ERROR_RECV_FAILED;
 	}
 
-	retval = read(sockfd, &olen, sizeof(int));
+	retval = TEMP_FAILURE_RETRY(read(sockfd, &olen, sizeof(int)));
 	if(retval < sizeof(int) || olen < 0 || olen > MAX_OBJECT_LABEL_LEN)
 	{
 		SEC_SVR_DBG("error reading object_label len: %d", retval);
 		return SECURITY_SERVER_ERROR_RECV_FAILED;
 	}
 
-	retval = read(sockfd, &alen, sizeof(int));
+	retval = TEMP_FAILURE_RETRY(read(sockfd, &alen, sizeof(int)));
 	if(retval < sizeof(int) || alen < 0 || alen > MAX_MODE_STR_LEN)
 	{
 		SEC_SVR_DBG("error reading access_rights len: %d", retval);
 		return SECURITY_SERVER_ERROR_RECV_FAILED;
 	}
 
-	retval = read(sockfd, object_label, olen);
+	retval = TEMP_FAILURE_RETRY(read(sockfd, object_label, olen));
 	if(retval < olen)
 	{
 		SEC_SVR_DBG("error reading object_label: %d", retval);
@@ -1950,7 +1950,7 @@ int recv_check_privilege_new_request(int sockfd,
 	}
         object_label[olen] = '\0';
 
-	retval = read(sockfd, access_rights, olen);
+	retval = TEMP_FAILURE_RETRY(read(sockfd, access_rights, alen));
 	if(retval < alen)
 	{
 		SEC_SVR_DBG("error reading access_rights: %d", retval);
@@ -1965,7 +1965,7 @@ int recv_check_privilege_new_request(int sockfd,
 int recv_pid_request(int sockfd, unsigned char *requested_cookie)
 {
 	int retval;
-	retval = read(sockfd, requested_cookie, SECURITY_SERVER_COOKIE_LEN);
+	retval = TEMP_FAILURE_RETRY(read(sockfd, requested_cookie, SECURITY_SERVER_COOKIE_LEN));
 	if(retval < SECURITY_SERVER_COOKIE_LEN)
 	{
 		SEC_SVR_DBG("Received cookie size is too small: %d", retval);
@@ -1978,7 +1978,7 @@ int recv_pid_request(int sockfd, unsigned char *requested_cookie)
 int recv_smack_request(int sockfd, unsigned char *requested_cookie)
 {
 	int retval;
-	retval = read(sockfd, requested_cookie, SECURITY_SERVER_COOKIE_LEN);
+	retval = TEMP_FAILURE_RETRY(read(sockfd, requested_cookie, SECURITY_SERVER_COOKIE_LEN));
 	if(retval < SECURITY_SERVER_COOKIE_LEN)
 	{
 		SEC_SVR_DBG("Received cookie size is too small: %d", retval);
@@ -1998,7 +1998,7 @@ int recv_launch_tool_request(int sockfd, int argc, char *argv[])
 
     for(i=1;i<argc;i++)
     {
-        retval = read(sockfd, &argv_len, sizeof(int));
+        retval = TEMP_FAILURE_RETRY(read(sockfd, &argv_len, sizeof(int)));
         if(retval < sizeof(int))
         {
             SEC_SVR_DBG("Error: argv length recieve failed: %d", retval);
@@ -2019,7 +2019,7 @@ int recv_launch_tool_request(int sockfd, int argc, char *argv[])
         }
 
         memset(argv[i], 0x00, argv_len + 1);
-        retval = read(sockfd, argv[i], argv_len);
+        retval = TEMP_FAILURE_RETRY(read(sockfd, argv[i], argv_len));
         if(retval < argv_len)
         {
             SEC_SVR_DBG("Error: argv recieve failed: %d", retval);
@@ -2048,7 +2048,7 @@ int recv_generic_response(int sockfd, response_header *hdr)
 	}
 
 	/* Receive response */
-	retval = read(sockfd, hdr, sizeof(response_header));
+	retval = TEMP_FAILURE_RETRY(read(sockfd, hdr, sizeof(response_header)));
 	if(retval < sizeof(response_header) )
 	{
 		/* Error on socket */
@@ -2072,7 +2072,7 @@ int recv_get_gid_response(int sockfd, response_header *hdr, int *gid)
 	if(retval != SECURITY_SERVER_SUCCESS)
 		return return_code_to_error_code(hdr->return_code);
 
-	retval = read(sockfd, gid, sizeof(int));
+	retval = TEMP_FAILURE_RETRY(read(sockfd, gid, sizeof(int)));
 	if(retval < sizeof(int))
 	{
 		/* Error on socket */
@@ -2101,7 +2101,7 @@ int recv_get_object_name(int sockfd, response_header *hdr, char *object, int max
 	}
 
 	/* Read response */
-	retval = read(sockfd, hdr, sizeof(response_header));
+	retval = TEMP_FAILURE_RETRY(read(sockfd, hdr, sizeof(response_header)));
 	if(retval < sizeof(hdr) )
 	{
 		/* Error on socket */
@@ -2129,7 +2129,7 @@ int recv_get_object_name(int sockfd, response_header *hdr, char *object, int max
 			return SECURITY_SERVER_ERROR_OUT_OF_MEMORY;
 		}
 
-		retval = read(sockfd, local_obj_name, hdr->basic_hdr.msg_len);
+		retval = TEMP_FAILURE_RETRY(read(sockfd, local_obj_name, hdr->basic_hdr.msg_len));
 		if(retval < (hdr->basic_hdr.msg_len))
 		{
 			/* Error on socket */
@@ -2162,7 +2162,7 @@ int recv_cookie(int sockfd, response_header *hdr, char *cookie)
 	if(retval != SECURITY_SERVER_SUCCESS)
 		return return_code_to_error_code(hdr->return_code);
 
-	retval = read(sockfd, cookie, SECURITY_SERVER_COOKIE_LEN);
+	retval = TEMP_FAILURE_RETRY(read(sockfd, cookie, SECURITY_SERVER_COOKIE_LEN));
 	if(retval < SECURITY_SERVER_COOKIE_LEN)
 	{
 		/* Error on socket */
@@ -2208,7 +2208,7 @@ int recv_smack_response(int sockfd, response_header *hdr, char * label)
 	if(retval != SECURITY_SERVER_SUCCESS)
 		return return_code_to_error_code(hdr->return_code);
 
-	retval = read(sockfd, label, SMACK_LABEL_LEN + 1);
+	retval = TEMP_FAILURE_RETRY(read(sockfd, label, SMACK_LABEL_LEN + 1));
 	if(retval < sizeof(int))
 	{
 		/* Error on socket */
@@ -2226,7 +2226,7 @@ int recv_pid_response(int sockfd, response_header *hdr, int *pid)
 	if(retval != SECURITY_SERVER_SUCCESS)
 		return return_code_to_error_code(hdr->return_code);
 
-	retval = read(sockfd, pid, sizeof(int));
+	retval = TEMP_FAILURE_RETRY(read(sockfd, pid, sizeof(int)));
 	if(retval < sizeof(int))
 	{
 		/* Error on socket */
@@ -2263,21 +2263,21 @@ int recv_pwd_response(int sockfd, response_header *hdr,
 			return return_code_to_error_code(hdr->return_code);
 	}
 
-	retval = read(sockfd, current_attempts, sizeof(unsigned int));
+	retval = TEMP_FAILURE_RETRY(read(sockfd, current_attempts, sizeof(unsigned int)));
 	if(retval < sizeof(unsigned int))
 	{
 		/* Error on socket */
 		SEC_SVR_DBG("Client: Receive failed %d", retval);
 		return  SECURITY_SERVER_ERROR_RECV_FAILED;
 	}
-	retval = read(sockfd, max_attempts, sizeof(unsigned int));
+	retval = TEMP_FAILURE_RETRY(read(sockfd, max_attempts, sizeof(unsigned int)));
 	if(retval < sizeof(unsigned int))
 	{
 		/* Error on socket */
 		SEC_SVR_DBG("Client: Receive failed %d", retval);
 		return  SECURITY_SERVER_ERROR_RECV_FAILED;
 	}
-	retval = read(sockfd, valid_secs, sizeof(unsigned int));
+	retval = TEMP_FAILURE_RETRY(read(sockfd, valid_secs, sizeof(unsigned int)));
 	if(retval < sizeof(unsigned int))
 	{
 		/* Error on socket */

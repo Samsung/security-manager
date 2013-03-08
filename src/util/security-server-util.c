@@ -115,7 +115,7 @@ int send_all_cookie_info_request(int sockfd)
 	}
 
 	/* Send to server */
-	retval = write(sockfd, &hdr, sizeof(hdr));
+	retval = TEMP_FAILURE_RETRY(write(sockfd, &hdr, sizeof(hdr)));
 	if(retval < sizeof(hdr))
 	{
 		/* Write error */
@@ -145,7 +145,7 @@ int recv_all_cookie_info(int sockfd)
 	}
 
 	/* Receive response */
-	retval = read(sockfd, &hdr, sizeof(response_header));
+	retval = TEMP_FAILURE_RETRY(read(sockfd, &hdr, sizeof(response_header)));
 	if(retval < sizeof(hdr) )
 	{
 		/* Error on socket */
@@ -172,7 +172,7 @@ int recv_all_cookie_info(int sockfd)
 		return SECURITY_SERVER_ERROR_OUT_OF_MEMORY;
 	}
 
-	retval = read(sockfd, buf, hdr.basic_hdr.msg_len);
+	retval = TEMP_FAILURE_RETRY(read(sockfd, buf, hdr.basic_hdr.msg_len));
 	if(retval < hdr.basic_hdr.msg_len)
 	{
 		printf("Error: receiving too small amount. %d, %d\n", retval,  hdr.basic_hdr.msg_len);
@@ -272,7 +272,7 @@ int send_cookie_info_request_from_cookie(int sockfd, const unsigned char *cookie
 	}
 
 	/* Send to server */
-	retval = write(sockfd, buf, size);
+	retval = TEMP_FAILURE_RETRY(write(sockfd, buf, size));
 	if(retval < size)
 	{
 		/* Write error */
@@ -320,7 +320,7 @@ int send_cookie_info_request_from_pid(int sockfd, int pid)
 	}
 
 	/* Send to server */
-	retval = write(sockfd, buf, size);
+	retval = TEMP_FAILURE_RETRY(write(sockfd, buf, size));
 	if(retval < size)
 	{
 		/* Write error */
@@ -350,7 +350,7 @@ int recv_cookie_info_response(sockfd)
 	}
 
 	/* Receive response */
-	retval = read(sockfd, &hdr, sizeof(response_header));
+	retval = TEMP_FAILURE_RETRY(read(sockfd, &hdr, sizeof(response_header)));
 	if(retval < sizeof(hdr) )
 	{
 		/* Error on socket */
@@ -377,7 +377,7 @@ int recv_cookie_info_response(sockfd)
 		return SECURITY_SERVER_ERROR_OUT_OF_MEMORY;
 	}
 
-	retval = read(sockfd, buf, hdr.basic_hdr.msg_len);
+	retval = TEMP_FAILURE_RETRY(read(sockfd, buf, hdr.basic_hdr.msg_len));
 	if(retval < hdr.basic_hdr.msg_len)
 	{
 		printf("Error: receiving too small amount. %d, %d\n", retval,  hdr.basic_hdr.msg_len);

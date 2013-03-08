@@ -339,7 +339,7 @@ int generate_random_cookie(unsigned char *cookie, int size)
 		SEC_SVR_DBG("%s", "Cannot open /dev/urandom");
 		return SECURITY_SERVER_ERROR_FILE_OPERATION;
 	}
-	ret = read(fd, cookie, size);
+	ret = TEMP_FAILURE_RETRY(read(fd, cookie, size));
 	if(ret < size)
 	{
 		SEC_SVR_DBG("Cannot read /dev/urandom: %d", ret);
@@ -570,7 +570,7 @@ int check_stored_cookie(unsigned char *cookie, int size)
 			ret = SECURITY_SERVER_ERROR_FILE_OPERATION;
 			goto error;
 		}
-		ret = write(fd, cookie, size);
+		ret = TEMP_FAILURE_RETRY(write(fd, cookie, size));
 		if(ret < size)
 		{
 			SEC_SVR_DBG("%s", "Cannot save default cookie");
@@ -582,7 +582,7 @@ int check_stored_cookie(unsigned char *cookie, int size)
 		return SECURITY_SERVER_SUCCESS;
 	}
 
-	ret = read (fd, cookie, size);
+	ret = TEMP_FAILURE_RETRY(read(fd, cookie, size));
 	if(ret < size)
 	{
 		SEC_SVR_DBG("Cannot read default cookie errno=%d", errno);

@@ -574,7 +574,7 @@ int process_object_name_request(int sockfd)
 	}
 
 	/* Receive GID */
-	retval = read(sockfd, &requested_privilege, sizeof(requested_privilege));
+	retval = TEMP_FAILURE_RETRY(read(sockfd, &requested_privilege, sizeof(requested_privilege)));
 	if (retval < (int)sizeof(requested_privilege))
 	{
 		SEC_SVR_DBG("%s", "Receiving request failed");
@@ -665,7 +665,7 @@ int process_gid_request(int sockfd, int msg_len)
 	}
 
 	/* Receive group name */
-	retval = read(sockfd, object_name, msg_len);
+	retval = TEMP_FAILURE_RETRY(read(sockfd, object_name, msg_len));
 	if (retval < msg_len )
 	{
 		SEC_SVR_DBG("%s", "Failed to read object name");
