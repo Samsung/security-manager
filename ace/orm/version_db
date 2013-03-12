@@ -1,0 +1,5 @@
+SQL(
+    BEGIN TRANSACTION;
+    CREATE TABLE DB_CHECKSUM (version INT);
+    COMMIT;
+)

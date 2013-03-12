@@ -1,0 +1,6 @@
+DATABASE_START(ace)
+
+#include "ace_db"
+#include "version_db"
+
+DATABASE_END()

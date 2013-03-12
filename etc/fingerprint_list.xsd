@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+
+<xs:element name="CertificateSet" type="CertificateSetType" />
+<xs:complexType name="CertificateSetType">
+  <xs:sequence>
+    <xs:element ref="CertificateDomain" minOccurs="0" maxOccurs="unbounded" />
+  </xs:sequence>
+</xs:complexType>
+
+<xs:element name="CertificateDomain" type="CertificateDomainType" />
+<xs:complexType name="CertificateDomainType">
+  <xs:sequence>
+    <xs:element ref="FingerprintSHA1" minOccurs="0" maxOccurs="unbounded" />
+  </xs:sequence>
+  <xs:attribute name="name" type="xs:string" use="required" />
+</xs:complexType>
+
+<xs:element name="FingerprintSHA1" type="xs:string"/>
+
+</xs:schema>

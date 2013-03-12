@@ -1,0 +1,5 @@
+<policy-set id="Policy-1" combine="first-matching-target">
+    <policy>
+        <rule effect="permit" />
+    </policy>
+</policy-set>

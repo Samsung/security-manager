@@ -1,0 +1,136 @@
+/*
+ *  security-server
+ *
+ *  Copyright (c) 2000 - 2012 Samsung Electronics Co., Ltd All Rights Reserved
+ *
+ *  Contact: Bumjin Im <bj.im@samsung.com>
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License
+ *
+ */
+
+#ifndef SECURITY_SERVER_COMM_H
+#define SECURITY_SERVER_COMM_H
+
+/* Message */
+typedef struct
+{
+	unsigned char version;
+	unsigned char msg_id;
+	unsigned short msg_len;
+} basic_header;
+
+typedef struct
+{
+	basic_header basic_hdr;
+	unsigned char return_code;
+} response_header;
+
+/* Message Types */
+#define SECURITY_SERVER_MSG_TYPE_COOKIE_REQUEST		0x01
+#define SECURITY_SERVER_MSG_TYPE_COOKIE_RESPONSE	0x02
+#define SECURITY_SERVER_MSG_TYPE_CHECK_PRIVILEGE_REQUEST	0x03
+#define SECURITY_SERVER_MSG_TYPE_CHECK_PRIVILEGE_RESPONSE	0x04
+#define SECURITY_SERVER_MSG_TYPE_OBJECT_NAME_REQUEST	0x05
+#define SECURITY_SERVER_MSG_TYPE_OBJECT_NAME_RESPONSE	0x06
+#define SECURITY_SERVER_MSG_TYPE_GID_REQUEST		0x07
+#define SECURITY_SERVER_MSG_TYPE_GID_RESPONSE		0x08
+#define SECURITY_SERVER_MSG_TYPE_PID_REQUEST		0x09
+#define SECURITY_SERVER_MSG_TYPE_PID_RESPONSE		0x0a
+#define SECURITY_SERVER_MSG_TYPE_TOOL_REQUEST		0x0b
+#define SECURITY_SERVER_MSG_TYPE_TOOL_RESPONSE		0x0c
+#define SECURITY_SERVER_MSG_TYPE_VALID_PWD_REQUEST	0x0d
+#define SECURITY_SERVER_MSG_TYPE_VALID_PWD_RESPONSE	0x0e
+#define SECURITY_SERVER_MSG_TYPE_SET_PWD_REQUEST	0x0f
+#define SECURITY_SERVER_MSG_TYPE_SET_PWD_RESPONSE	0x10
+#define SECURITY_SERVER_MSG_TYPE_RESET_PWD_REQUEST	0x11
+#define SECURITY_SERVER_MSG_TYPE_RESET_PWD_RESPONSE	0x12
+#define SECURITY_SERVER_MSG_TYPE_CHK_PWD_REQUEST	0x13
+#define SECURITY_SERVER_MSG_TYPE_CHK_PWD_RESPONSE	0x14
+#define SECURITY_SERVER_MSG_TYPE_SET_PWD_HISTORY_REQUEST	0x15
+#define SECURITY_SERVER_MSG_TYPE_SET_PWD_HISTORY_RESPONSE	0x16
+#define SECURITY_SERVER_MSG_TYPE_CHECK_PRIVILEGE_NEW_REQUEST	0x17
+#define SECURITY_SERVER_MSG_TYPE_CHECK_PRIVILEGE_NEW_RESPONSE	0x18
+#define SECURITY_SERVER_MSG_TYPE_SET_PWD_MAX_CHALLENGE_REQUEST   0x19
+#define SECURITY_SERVER_MSG_TYPE_SET_PWD_MAX_CHALLENGE_RESPONSE  0x1a
+#define SECURITY_SERVER_MSG_TYPE_SET_PWD_VALIDITY_REQUEST    0x1b
+#define SECURITY_SERVER_MSG_TYPE_SET_PWD_VALIDITY_RESPONSE   0x1c
+#define SECURITY_SERVER_MSG_TYPE_GENERIC_RESPONSE	0xff
+
+/* Return code */
+#define SECURITY_SERVER_RETURN_CODE_SUCCESS		0x00
+#define SECURITY_SERVER_RETURN_CODE_BAD_REQUEST		0x01
+#define SECURITY_SERVER_RETURN_CODE_AUTHENTICATION_FAILED	0x02
+#define SECURITY_SERVER_RETURN_CODE_ACCESS_GRANTED	0x03
+#define SECURITY_SERVER_RETURN_CODE_ACCESS_DENIED	0x04
+#define SECURITY_SERVER_RETURN_CODE_NO_SUCH_OBJECT	0x05
+#define SECURITY_SERVER_RETURN_CODE_NO_SUCH_COOKIE	0x06
+#define SECURITY_SERVER_RETURN_CODE_NO_PASSWORD		0x07
+#define SECURITY_SERVER_RETURN_CODE_PASSWORD_EXIST		0x08
+#define SECURITY_SERVER_RETURN_CODE_PASSWORD_MISMATCH	0x09
+#define SECURITY_SERVER_RETURN_CODE_PASSWORD_MAX_ATTEMPTS_EXCEEDED	0x0a
+#define SECURITY_SERVER_RETURN_CODE_PASSWORD_EXPIRED	0x0b
+#define SECURITY_SERVER_RETURN_CODE_PASSWORD_REUSED	0x0c
+#define SECURITY_SERVER_RETURN_CODE_PASSWORD_RETRY_TIMER	0x0d
+#define SECURITY_SERVER_RETURN_CODE_SERVER_ERROR	0x0e
+
+int return_code_to_error_code(int ret_code);
+int create_new_socket(int *sockfd);
+int safe_server_sock_close(int client_sockfd);
+int connect_to_server(int *fd);
+int accept_client(int server_sockfd);
+int authenticate_client_application(int sockfd, int *pid, int *uid);
+int authenticate_client_middleware(int sockfd, int *pid);
+int authenticate_developer_shell(int sockfd);
+char *read_cmdline_from_proc(pid_t pid);
+int send_generic_response (int sockfd, unsigned char msgid, unsigned char return_code);
+int send_cookie(int sockfd, unsigned char *cookie);
+int send_object_name(int sockfd, char *obj);
+int send_gid(int sockfd, int gid);
+int send_cookie_request(int sock_fd);
+int send_gid_request(int sock_fd, const char* object);
+int send_object_name_request(int sock_fd, int gid);
+int send_privilege_check_request(int sock_fd, const char*cookie, int gid);
+int send_privilege_check_new_request(int sock_fd,
+                                     const char *cookie,
+                                     const char *object,
+                                     const char *access_rights);
+int recv_get_gid_response(int sockfd, response_header *hdr, int *gid);
+int recv_get_object_name(int sockfd, response_header *hdr, char *object, int max_object_size);
+int recv_cookie(int sockfd, response_header *hdr, char *cookie);
+int recv_privilege_check_response(int sockfd, response_header *hdr);
+int recv_privilege_check_new_response(int sockfd, response_header *hdr);
+int recv_hdr(int client_sockfd, basic_header *basic_hdr);
+int recv_check_privilege_request(int sockfd, unsigned char *requested_cookie, int *requested_privilege);
+int recv_check_privilege_new_request(int sockfd,
+                                     unsigned char *requested_cookie,
+                                     char *object_label,
+                                     char *access_rights);
+int send_pid_request(int sock_fd, const char*cookie);
+int recv_pid_response(int sockfd, response_header *hdr, int *pid);
+int recv_pid_request(int sockfd, unsigned char *requested_cookie);
+int send_pid(int sockfd, int pid);
+int send_launch_tool_request(int sock_fd, int argc, const char **argv);
+int recv_generic_response(int sockfd, response_header *hdr);
+int recv_launch_tool_request(int sockfd, int argc, char *argv[]);
+int recv_pwd_response(int sockfd, response_header *hdr, unsigned int *current_attempts,
+	unsigned int *max_attempts, unsigned int *valid_days);
+int send_set_pwd_request(int sock_fd, const char*cur_pwd, const char*new_pwd,
+	const unsigned int max_challenge, const unsigned int valid_period_in_days);
+int send_set_pwd_validity_request(int sock_fd, const unsigned int valid_period_in_days);
+int send_set_pwd_max_challenge_request(int sock_fd, const unsigned int max_challenge);
+int send_chk_pwd_request(int sock_fd, const char*challenge);
+int check_socket_poll(int sockfd, int event, int timeout);
+int free_argv(char **argv, int argc);
+
+#endif

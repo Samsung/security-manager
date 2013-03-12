@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+  <xs:element name="policy-set">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" ref="target"/>
+        <xs:choice minOccurs="0" maxOccurs="unbounded">
+          <xs:element ref="policy-set"/>
+          <xs:element ref="policy"/>
+        </xs:choice>
+      </xs:sequence>
+      <xs:attributeGroup ref="policy-set.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="policy-set.attlist">
+    <xs:attribute name="combine" default="deny-overrides">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="deny-overrides"/>
+          <xs:enumeration value="permit-overrides"/>
+          <xs:enumeration value="first-matching-target"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="id"/>
+  </xs:attributeGroup>
+  <xs:element name="policy">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" ref="target"/>
+        <xs:element minOccurs="0" maxOccurs="unbounded" ref="rule"/>
+      </xs:sequence>
+      <xs:attributeGroup ref="policy.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="policy.attlist">
+    <xs:attribute name="combine" default="deny-overrides">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="deny-overrides"/>
+          <xs:enumeration value="permit-overrides"/>
+          <xs:enumeration value="first-applicable"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="description"/>
+    <xs:attribute name="id"/>
+  </xs:attributeGroup>
+  <xs:element name="rule">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" ref="condition"/>
+      </xs:sequence>
+      <xs:attributeGroup ref="rule.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="rule.attlist">
+    <xs:attribute name="effect" default="permit">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="permit"/>
+          <xs:enumeration value="prompt-blanket"/>
+          <xs:enumeration value="prompt-session"/>
+          <xs:enumeration value="prompt-oneshot"/>
+          <xs:enumeration value="deny"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+  </xs:attributeGroup>
+  <xs:element name="target">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" ref="subject"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="subject">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" ref="subject-match"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="condition">
+    <xs:complexType>
+      <xs:choice maxOccurs="unbounded">
+        <xs:element ref="condition"/>
+        <xs:element ref="subject-match"/>
+        <xs:element ref="resource-match"/>
+        <xs:element ref="environment-match"/>
+      </xs:choice>
+      <xs:attributeGroup ref="condition.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="condition.attlist">
+    <xs:attribute name="combine" default="and">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="and"/>
+          <xs:enumeration value="or"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+  </xs:attributeGroup>
+  <xs:attributeGroup name="match-attrs">
+    <xs:attribute name="attr" use="required"/>
+    <xs:attribute name="match"/>
+    <xs:attribute name="func" default="glob">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="equal"/>
+          <xs:enumeration value="glob"/>
+          <xs:enumeration value="regexp"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+  </xs:attributeGroup>
+  <xs:element name="subject-match">
+    <xs:complexType mixed="true">
+      <xs:attributeGroup ref="subject-match.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="subject-match.attlist">
+    <xs:attributeGroup ref="match-attrs"/>
+  </xs:attributeGroup>
+  <xs:complexType name="match-model" mixed="true">
+    <xs:choice minOccurs="0" maxOccurs="unbounded">
+      <xs:element ref="subject-attr"/>
+      <xs:element ref="resource-attr"/>
+      <xs:element ref="environment-attr"/>
+    </xs:choice>
+  </xs:complexType>
+  <xs:element name="resource-match">
+    <xs:complexType>
+      <xs:complexContent>
+        <xs:extension base="match-model">
+          <xs:attributeGroup ref="resource-match.attlist"/>
+        </xs:extension>
+      </xs:complexContent>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="resource-match.attlist">
+    <xs:attributeGroup ref="match-attrs"/>
+  </xs:attributeGroup>
+  <xs:element name="environment-match">
+    <xs:complexType>
+      <xs:complexContent>
+        <xs:extension base="match-model">
+          <xs:attributeGroup ref="environment-match.attlist"/>
+        </xs:extension>
+      </xs:complexContent>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="environment-match.attlist">
+    <xs:attributeGroup ref="match-attrs"/>
+  </xs:attributeGroup>
+  <xs:attributeGroup name="attr-attrs">
+    <xs:attribute name="attr" use="required"/>
+  </xs:attributeGroup>
+  <xs:element name="subject-attr">
+    <xs:complexType>
+      <xs:attributeGroup ref="subject-attr.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="subject-attr.attlist">
+    <xs:attributeGroup ref="attr-attrs"/>
+  </xs:attributeGroup>
+  <xs:element name="resource-attr">
+    <xs:complexType>
+      <xs:attributeGroup ref="resource-attr.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="resource-attr.attlist">
+    <xs:attributeGroup ref="attr-attrs"/>
+  </xs:attributeGroup>
+  <xs:element name="environment-attr">
+    <xs:complexType>
+      <xs:attributeGroup ref="environment-attr.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="environment-attr.attlist">
+    <xs:attributeGroup ref="attr-attrs"/>
+  </xs:attributeGroup>
+</xs:schema>

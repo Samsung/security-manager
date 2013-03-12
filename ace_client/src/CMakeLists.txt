@@ -1,0 +1,71 @@
+include(FindPkgConfig)
+
+PKG_CHECK_MODULES(ACE_CLIENT_DEPS
+    dpl-efl
+    dpl-event-efl
+    dpl-dbus-efl
+    REQUIRED
+    )
+
+SET(ACE_CLIENT_DIR
+    ${PROJECT_SOURCE_DIR}/ace_client
+    )
+
+SET(ACE_CLIENT_SRC_DIR
+    ${ACE_CLIENT_DIR}/src
+    )
+
+SET(ACE_CLIENT_INCLUDE_DIR
+    ${ACE_CLIENT_DIR}/include
+    )
+
+SET(ACE_CLIENT_SOURCES
+    ${COMMUNICATION_CLIENT_SOURCES}
+    ${ACE_CLIENT_SRC_DIR}/ace_client.cpp
+    ${ACE_CLIENT_SRC_DIR}/ace_api_client.cpp
+    ${PROJECT_SOURCE_DIR}/src/services/ace/logic/attribute_facade.cpp
+    ${PROJECT_SOURCE_DIR}/src/services/ace/logic/simple_roaming_agent.cpp
+    )
+
+SET(ACE_CLIENT_INCLUDES
+    ${COMMUNICATION_CLIENT_INCLUDES}
+    ${ACE_CLIENT_DEPS_INCLUDE_DIRS}
+    ${ACE_CLIENT_INCLUDE_DIR}
+    ${PROJECT_SOURCE_DIR}/ace_common/include
+    ${PROJECT_SOURCE_DIR}/src/services/ace
+    ${PROJECT_SOURCE_DIR}/src/services/ace/
+    ${PROJECT_SOURCE_DIR}/src/services/ace/logic
+    ${PROJECT_SOURCE_DIR}/src/services/popup
+    ${PROJECT_SOURCE_DIR}/popup_process
+    ${PROJECT_SOURCE_DIR}/ace/include
+    )
+
+ADD_DEFINITIONS(${ACE_CLIENT_DEPS_CFLAGS})
+ADD_DEFINITIONS(${ACE_CLIENT_CFLAGS_OTHER})
+
+INCLUDE_DIRECTORIES(${ACE_CLIENT_INCLUDES})
+
+ADD_LIBRARY(${TARGET_ACE_CLIENT_LIB} SHARED ${ACE_CLIENT_SOURCES})
+
+SET_TARGET_PROPERTIES(${TARGET_ACE_CLIENT_LIB} PROPERTIES
+    SOVERSION ${API_VERSION}
+    VERSION ${VERSION})
+
+SET_TARGET_PROPERTIES(${TARGET_ACE_CLIENT_LIB} PROPERTIES
+    COMPILE_FLAGS -fPIC)
+
+TARGET_LINK_LIBRARIES(${TARGET_ACE_CLIENT_LIB}
+    ${ACE_CLIENT_DEPS_LIBRARIES}
+    ${TARGET_ACE_DAO_RO_LIB}
+    ${TARGET_ACE_LIB}
+    )
+
+INSTALL(TARGETS ${TARGET_ACE_CLIENT_LIB}
+    DESTINATION lib)
+
+INSTALL(FILES
+#    ${ACE_CLIENT_INCLUDE_DIR}/ace-client/ace_client.h
+#    ${ACE_CLIENT_INCLUDE_DIR}/ace-client/ace_client_types.h
+    ${ACE_CLIENT_INCLUDE_DIR}/ace_api_client.h
+    DESTINATION include/ace-client
+    )

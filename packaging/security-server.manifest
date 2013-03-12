@@ -1,0 +1,12 @@
+<manifest>
+	<define>
+		<domain name="security-server" />
+		<provide>
+			<label name="security-server::daemon" />
+			<label name="security-server::db" />
+		</provide>
+	</define>
+	<request>
+		<domain name="_" />
+	</request>
+</manifest>

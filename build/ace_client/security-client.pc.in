@@ -1,0 +1,11 @@
+prefix=@CMAKE_INSTALL_PREFIX@
+exec_prefix=${prefix}
+libdir=${prefix}/lib
+includedir=${prefix}/include
+
+Name: ace-client
+Description: ACE thin client library
+Version: @VERSION@
+Requires: dpl-wrt-dao-ro dpl-efl dpl-event-efl dpl-dbus-efl security-dao-ro
+Libs: -lace-client -L${libdir}
+Cflags: -I${includedir}/ace-client -I${includedir}/ace-common
