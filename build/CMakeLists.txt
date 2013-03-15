@@ -15,12 +15,5 @@
 # @file        CMakeLists.txt
 # @author      Tomasz Swierczek (t.swierczek@samsung.com)
 #
-ADD_SUBDIRECTORY(ace)
-ADD_SUBDIRECTORY(ace_client)
-ADD_SUBDIRECTORY(ace_settings)
-ADD_SUBDIRECTORY(ace_install)
-ADD_SUBDIRECTORY(ace_popup_validation)
-ADD_SUBDIRECTORY(communication_client)
-ADD_SUBDIRECTORY(wrt-security)
+
 ADD_SUBDIRECTORY(security-server)
-ADD_SUBDIRECTORY(wrt_ocsp)

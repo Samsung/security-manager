@@ -1,0 +1,12 @@
+/usr/bin/telephony-server
+/usr/bin/ss-server
+/usr/bin/msg-server
+/usr/bin/alarm-server
+/usr/bin/lbs_server
+/usr/bin/power_manager
+/usr/bin/system_server
+/usr/bin/sec-svr-util
+/usr/bin/mdm-server
+/usr/bin/smartcard-daemon
+/usr/bin/sound_server
+/usr/bin/nfc-manager-daemon
