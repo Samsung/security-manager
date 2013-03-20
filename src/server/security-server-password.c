@@ -573,11 +573,11 @@ int check_retry(const struct timeval cur_try)
 	interval_sec = cur_try.tv_sec - prev_try.tv_sec;
 	interval_usec = cur_try.tv_usec - prev_try.tv_usec;
 	prev_try = cur_try;
-	if(interval_sec > SECURITY_SERVER_PASSWORD_RETRY_TIMEOUT_SECOND)
+	if(interval_sec == 0
+               && interval_usec > SECURITY_SERVER_PASSWORD_RETRY_TIMEOUT_MICROSECOND)
 		return SECURITY_SERVER_SUCCESS;
 
-	if(interval_sec == SECURITY_SERVER_PASSWORD_RETRY_TIMEOUT_SECOND
-			&& interval_usec >= 0)
+	if(interval_sec > 0)
 		return SECURITY_SERVER_SUCCESS;
 
 	SEC_SVR_DBG("%s", "retry timer hit");
