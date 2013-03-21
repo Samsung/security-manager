@@ -27,7 +27,6 @@ BuildRequires: pkgconfig(xmlsec1)
 Requires(preun):  systemd
 Requires(post):   systemd
 Requires(postun): systemd
-
 %description
 Security server and utilities
 
@@ -86,10 +85,9 @@ Certificates for wrt.
 %setup -q
 
 %build
-export LDFLAGS+="-Wl,--rpath=%{_prefix}/lib"
+export LDFLAGS+="-Wl,--rpath=%{_libdir}"
 
-cmake . -DCMAKE_INSTALL_PREFIX=%{_prefix} \
-        -DVERSION=%{version}              \
+%cmake . -DVERSION=%{version} \
         -DCMAKE_BUILD_TYPE=%{?build_type:%build_type}
 make %{?jobs:-j%jobs}
 
@@ -103,9 +101,9 @@ cp LICENSE %{buildroot}/usr/share/license/libsecurity-server-client
 install -D %{SOURCE1} %{buildroot}%{_datadir}/security-server.manifest
 install -D %{SOURCE2} %{buildroot}%{_datadir}/libsecurity-server-client.manifest
 
-mkdir -p %{buildroot}%{_libdir}/systemd/system/multi-user.target.wants
-install -m 0644 %{SOURCE3} %{buildroot}%{_libdir}/systemd/system/security-server.service
-ln -s ../security-server.service %{buildroot}%{_libdir}/systemd/system/multi-user.target.wants/security-server.service
+mkdir -p %{buildroot}/usr/lib/systemd/system/multi-user.target.wants
+install -m 0644 %{SOURCE3} %{buildroot}/usr/lib/systemd/system/security-server.service
+ln -s ../security-server.service %{buildroot}/usr/lib/systemd/system/multi-user.target.wants/security-server.service
 
 
 %preun
@@ -137,25 +135,22 @@ fi
 %files -n security-server
 %manifest %{_datadir}/security-server.manifest
 %defattr(-,root,root,-)
-%{_libdir}/systemd/system/multi-user.target.wants/security-server.service
-%{_libdir}/systemd/system/security-server.service
+/usr/lib/systemd/system/multi-user.target.wants/security-server.service
+/usr/lib/systemd/system/security-server.service
 /usr/share/security-server/mw-list
 %attr(755,root,root) /etc/rc.d/init.d/security-serverd
-#/etc/rc.d/rc3.d/S10security-server
-#/etc/rc.d/rc5.d/S10security-server
 %attr(755,root,root) /usr/bin/security-server
-%attr(755,root,root) /etc/rc.d/init.d/security-serverd
-/usr/share/security-server/mw-list
+
 %{_datadir}/license/%{name}
 
 %files -n libsecurity-server-client
 %manifest %{_datadir}/libsecurity-server-client.manifest
 %defattr(-,root,root,-)
-/usr/lib/libsecurity-server-client.so.*
+%{_libdir}/libsecurity-server-client.so.*
 %{_datadir}/license/libsecurity-server-client
 
 %files -n libsecurity-server-client-devel
 %defattr(-,root,root,-)
-/usr/lib/libsecurity-server-client.so
+%{_libdir}/libsecurity-server-client.so
 /usr/include/security-server/security-server.h
 %{_libdir}/pkgconfig/*.pc
