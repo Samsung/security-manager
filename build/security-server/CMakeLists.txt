@@ -22,5 +22,5 @@ CONFIGURE_FILE(security-server.pc.in security-server.pc @ONLY)
 INSTALL(FILES
     ${CMAKE_BINARY_DIR}/build/security-server/security-server.pc
     DESTINATION
-    lib/pkgconfig
+    ${LIB_INSTALL_DIR}/pkgconfig
     )
