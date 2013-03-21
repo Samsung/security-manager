@@ -716,7 +716,7 @@ int process_pid_request(int sockfd)
 {
 	int retval, client_pid;
 	unsigned char requested_cookie[SECURITY_SERVER_COOKIE_LEN];
-    int * privileges;
+    int * privileges = NULL;
 	cookie_list *search_result = NULL;
 
 	/* Authenticate client */
@@ -793,7 +793,7 @@ error:
 int process_smack_request(int sockfd)
 {
     int retval, client_pid;
-    int privileges[1];
+    int * privileges = NULL;
     unsigned char requested_cookie[SECURITY_SERVER_COOKIE_LEN];
     cookie_list *search_result = NULL;
     //handler for SMACK label
