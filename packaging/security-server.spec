@@ -1,7 +1,7 @@
 #sbs-git:slp/pkgs/s/security-server security-server 0.0.37
 Name:       security-server
 Summary:    Security server and utilities
-Version:    0.0.69
+Version:    0.0.70
 Release:    1
 Group:      TO_BE/FILLED_IN
 License:    Apache License, Version 2.0
@@ -89,7 +89,6 @@ Certificates for wrt.
 export LDFLAGS+="-Wl,--rpath=%{_prefix}/lib"
 
 cmake . -DCMAKE_INSTALL_PREFIX=%{_prefix} \
-        -DDPL_LOG="ON"                    \
         -DVERSION=%{version}              \
         -DCMAKE_BUILD_TYPE=%{?build_type:%build_type}
 make %{?jobs:-j%jobs}

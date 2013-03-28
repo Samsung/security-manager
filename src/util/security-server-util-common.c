@@ -175,7 +175,7 @@ int send_all_cookie_info(const unsigned char *buf, int size, int sockfd)
 	}
 
 	/* Send to client */
-	ret = write(sockfd, buf, size);
+	ret = TEMP_FAILURE_RETRY(write(sockfd, buf, size));
 
 	if(ret < size)
 		return SECURITY_SERVER_ERROR_SEND_FAILED;
@@ -266,7 +266,7 @@ int send_one_cookie_info(const cookie_list *list, int sockfd)
 	}
 
 	/* Send to client */
-	ret = write(sockfd, buf, total_size);
+	ret = TEMP_FAILURE_RETRY(write(sockfd, buf, total_size));
 	free(buf);
 	if(ret < total_size)
 	    return SECURITY_SERVER_ERROR_SEND_FAILED;
@@ -294,8 +294,8 @@ int util_process_cookie_from_pid(int sockfd, cookie_list* list)
 	int pid, ret;
 	cookie_list *result = NULL;
 
-	ret = read(sockfd, &pid, sizeof(int));
-	if(ret < sizeof(int))
+	ret = TEMP_FAILURE_RETRY(read(sockfd, &pid, sizeof(int)));
+	if(ret < (int)sizeof(int))
 	{
 		SEC_SVR_DBG("Received cookie size is too small: %d", ret);
 		return SECURITY_SERVER_ERROR_RECV_FAILED;
@@ -339,7 +339,7 @@ int util_process_cookie_from_cookie(int sockfd, cookie_list* list)
     int privileges[] = { 0 };   //only one privilege to check - root
 	cookie_list *result = NULL;
 
-	ret = read(sockfd, cookie, SECURITY_SERVER_COOKIE_LEN);
+	ret = TEMP_FAILURE_RETRY(read(sockfd, cookie, SECURITY_SERVER_COOKIE_LEN));
 	if(ret < SECURITY_SERVER_COOKIE_LEN)
 	{
 		SEC_SVR_DBG("Received cookie size is too small: %d", ret);
