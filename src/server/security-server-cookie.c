@@ -126,7 +126,7 @@ cookie_list * garbage_collection(cookie_list *cookie)
 cookie_list *search_existing_cookie(int pid, const cookie_list *c_list)
 {
 	cookie_list *current =(cookie_list *)c_list, *cookie = NULL;
-	char *cmdline = NULL, *debug_cmdline = NULL;
+	char *exe = NULL, *debug_cmdline = NULL;
 
 	/* Search from the list */
 	while(current != NULL)
@@ -141,27 +141,26 @@ cookie_list *search_existing_cookie(int pid, const cookie_list *c_list)
 		{
 			/* Found cookie for the pid. Check the cookie is reused by dirrent executable */
 			/* Check the path of the process */
-			cmdline = (char*)read_cmdline_from_proc(pid);
-			if(cmdline == NULL)
+			exe = read_exe_path_from_proc(pid);
+			if(exe == NULL)
 			{
 				SEC_SVR_DBG("%s", "cannot read cmdline");
 				return NULL;
 			}
-			/* Check the path is different */
-			if(strncmp(cmdline, current->path, current->path_len) != 0
-                || (int)strlen(cmdline) != current->path_len)
+			/* Check the path is different.  */
+			if(strcmp(exe, current->path) != 0)
 			{
-				SEC_SVR_DBG("pid [%d] has been reused by %s. deleting the old cookie.", pid, cmdline);
+				SEC_SVR_DBG("pid [%d] has been reused by %s. deleting the old cookie.", pid, exe);
 				debug_cmdline = malloc(current->path_len + 1);
 				if(debug_cmdline == NULL)
 				{
 					SEC_SVR_DBG("%s", "out of memory error");
-					free(cmdline);
+					free(exe);
 					return NULL;
 				}
 				strncpy(debug_cmdline, current->path, current->path_len);
 				debug_cmdline[current->path_len] = 0;
-				SEC_SVR_DBG("[%s] --> [%s]", cmdline, debug_cmdline);
+				SEC_SVR_DBG("[%s] --> [%s]", exe, debug_cmdline);
 				if(debug_cmdline != NULL)
 				{
 					free(debug_cmdline);
@@ -169,10 +168,10 @@ cookie_list *search_existing_cookie(int pid, const cookie_list *c_list)
 				}
 				/* Okay. delete current cookie */
 				current = delete_cookie_item(current);
-				if(cmdline != NULL)
+				if(exe != NULL)
 				{
-					free(cmdline);
-					cmdline = NULL;
+					free(exe);
+					exe = NULL;
 				}
 				continue;
 			}
@@ -182,10 +181,10 @@ cookie_list *search_existing_cookie(int pid, const cookie_list *c_list)
 				cookie = current;
 			}
 
-			if(cmdline != NULL)
+			if(exe != NULL)
 			{
-				free(cmdline);
-				cmdline = NULL;
+				free(exe);
+				exe = NULL;
 			}
 		}
 		current = current->next;
@@ -358,7 +357,7 @@ cookie_list *create_cookie_item(int pid, int sockfd, cookie_list *c_list)
 {
 	int ret, tempint;
 	cookie_list *added = NULL, *current = NULL;
-	char path[24], *cmdline = NULL;
+	char path[24], *exe = NULL;
 	char *buf = NULL, inputed, *tempptr = NULL;
 	char delim[] = ": ", *token = NULL;
 	int *permissions = NULL, perm_num = 1, cnt, i, *tempperm = NULL;
@@ -374,11 +373,11 @@ cookie_list *create_cookie_item(int pid, int sockfd, cookie_list *c_list)
 		goto error;
 	}
 
-	/* Read command line of the PID from proc fs */
-	cmdline = (char *)read_cmdline_from_proc(pid);
-	if(cmdline == NULL)
+	/* Read executable name of the PID from proc fs */
+    exe = (char *)read_exe_path_from_proc(pid);
+	if(exe == NULL)
 	{
-		SEC_SVR_DBG("Error on reading /proc/%d/cmdline", pid);
+		SEC_SVR_DBG("Error on reading /proc/%d/exe", pid);
 		goto error;
 	}
 
@@ -518,9 +517,9 @@ out_of_while:
 		goto error;
 	}
 
-	added->path_len = strlen(cmdline);
-	added->path = calloc(1, strlen(cmdline));
-	memcpy(added->path, cmdline, strlen(cmdline));
+	added->path_len = strlen(exe);
+	added->path = calloc(1, strlen(exe));
+	memcpy(added->path, exe, strlen(exe));
 
 	added->permission_len = perm_num;
 	added->pid = pid;
@@ -531,8 +530,8 @@ out_of_while:
 	added->next = NULL;
 
 error:
-	if(cmdline != NULL)
-		free(cmdline);
+	if(exe != NULL)
+		free(exe);
 	if(fp != NULL)
 		fclose(fp);
 	if(buf != NULL)

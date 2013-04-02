@@ -32,6 +32,8 @@
 #include <unistd.h>
 #include <sys/stat.h>
 #include <limits.h>
+#include <ctype.h>
+#include <stdint.h>
 
 #include "security-server-common.h"
 #include "security-server-comm.h"
@@ -51,58 +53,49 @@ void printhex(const unsigned char *data, int size)
 	printf("\n");
 }
 
-char *read_cmdline_from_proc(pid_t pid)
+char *read_exe_path_from_proc(pid_t pid)
 {
-	int memsize = 32;
-	char path[32];
-	char *cmdline = NULL, *tempptr = NULL;
-	FILE *fp = NULL;
+	char link[32];
+	char *exe = NULL;
+	size_t size = 64;
+	ssize_t cnt = 0;
 
-	snprintf(path, sizeof(path), "/proc/%d/cmdline", pid);
+	// get link to executable
+	snprintf(link, sizeof(link), "/proc/%d/exe", pid);
 
-	fp = fopen(path, "r");
-	if(fp == NULL)
+	for (;;)
 	{
-		SEC_SVR_DBG("Cannot open cmdline on pid[%d]", pid);
-		return NULL;
-	}
+        exe = malloc(size);
+        if (exe == NULL) {
+            SEC_SVR_DBG("Out of memory");
+            return NULL;
+        }
 
-	cmdline = malloc(32);
-	if(cmdline == NULL)
-	{
-		SEC_SVR_DBG("%s", "Out of memory");
-		fclose(fp);
-		return NULL;
-	}
+        // read link target
+        cnt = readlink(link, exe, size);
 
-	bzero(cmdline, memsize);
-	if(fgets(cmdline, 32, fp) == NULL)
-	{
-		SEC_SVR_DBG("%s", "Cannot read cmdline");
-		free(cmdline);
-		fclose(fp);
-		return NULL;
-	}
+        // error
+        if (cnt < 0 || (size_t)cnt > size) {
+            SEC_SVR_DBG("Can't locate process binary for pid[%d]", pid);
+            free(exe);
+            return NULL;
+        }
 
-	while(cmdline[memsize -2] != 0)
-	{
-		cmdline[memsize -1] = (char) fgetc(fp);
-		tempptr = realloc(cmdline, memsize + 32);
-		if(tempptr == NULL)
-		{
-			fclose(fp);
-			SEC_SVR_DBG("%s", "Out of memory");
-			return NULL;
-		}
-		cmdline = tempptr;
-		bzero(cmdline + memsize, 32);
-		fgets(cmdline + memsize, 32, fp);
-		memsize += 32;
-	}
+        // read less than requested
+        if ((size_t)cnt < size)
+            break;
 
-	if(fp != NULL)
-		fclose(fp);
-	return cmdline;
+        // read exactly the number of bytes requested
+        free(exe);
+        if (size > (SIZE_MAX >> 1)) {
+            SEC_SVR_DBG("Exe path too long (more than %d characters)", size);
+            return NULL;
+        }
+        size <<= 1;
+    }
+	// readlink does not append null byte to buffer.
+	exe[cnt] = '\0';
+	return exe;
 }
 
 /* Return code in packet is positive integer *
@@ -314,7 +307,7 @@ int authenticate_server(int sockfd)
 	int retval;
 	struct ucred cr;
 	unsigned int cl = sizeof(cr);
-/*	char *cmdline = NULL;*/
+/*	char *exe = NULL;*/
 
 	/* get socket peer credential */
 	if(getsockopt(sockfd, SOL_SOCKET, SO_PEERCRED, &cr, &cl) != 0)
@@ -336,22 +329,22 @@ int authenticate_server(int sockfd)
 
 	/* Read command line of the PID from proc fs */
 	/* This is commented out because non root process cannot read link of /proc/pid/exe */
-/*	cmdline = read_cmdline_from_proc(cr.pid);
+/*	exe = read_exe_path_from_proc(cr.pid);
 
-	if(strcmp(cmdline, SECURITY_SERVER_DAEMON_PATH) != 0)
+	if(strcmp(exe, SECURITY_SERVER_DAEMON_PATH) != 0)
 	{
 		retval = SECURITY_SERVER_ERROR_AUTHENTICATION_FAILED;
-		SEC_SVR_DBG("Cmdline is different. auth failed. cmdline=%s", cmdline);
+		SEC_SVR_DBG("Executable path is different. auth failed. Exe path=%s", exe);
 	}
 	else
 	{
 		retval = SECURITY_SERVER_SUCCESS;
-		SEC_SVR_DBG("Server authenticatd. %s, sockfd=%d", cmdline, sockfd);
+		SEC_SVR_DBG("Server authenticatd. %s, sockfd=%d", exe, sockfd);
 	}
 */
 error:
-/*	if(cmdline != NULL)
-		free(cmdline);
+/*	if(exe != NULL)
+		free(exe);
 */
 	return retval;
 }
@@ -2318,13 +2311,16 @@ error:
 
 /* Checking client is pre-defined middleware daemons *
  * Check privilege API is only allowed to middleware daemons *
- * cmd line list of middleware daemons are listed in
+ * list of middleware daemons' executables are listed in
  * /usr/share/security-server/mw-list */
-int search_middleware_cmdline(char *cmdline)
+int search_middleware_exe_path(char *exe)
 {
 	FILE *fp = NULL;
-	int ret;
-	char middleware[SECURITY_SERVER_MAX_PATH_LEN];
+	int ret= SECURITY_SERVER_ERROR_AUTHENTICATION_FAILED;
+	size_t len = 0;
+	ssize_t cnt = 0;
+	char *middleware = NULL;
+	int cmp = 0;
 
 	/* Open the list file */
 	fp = fopen(SECURITY_SERVER_MIDDLEWARE_LIST_PATH, "r");
@@ -2335,19 +2331,26 @@ int search_middleware_cmdline(char *cmdline)
 		return SECURITY_SERVER_ERROR_FILE_OPERATION;
 	}
 
-	/* Search each line */
-	ret = SECURITY_SERVER_ERROR_AUTHENTICATION_FAILED;
-	while(fgets(middleware, SECURITY_SERVER_MAX_PATH_LEN, fp) != NULL)
-	{
-		if(strncmp(middleware, cmdline, strlen(middleware)-1) == 0)
-		{
-			/* found */
-			SEC_SVR_DBG("%s", "found matching cmd line");
-			ret = SECURITY_SERVER_SUCCESS;
-			break;
-		}
+	/* read file line by line */
+	while ((cnt = getline(&middleware, &len, fp)) != -1) {
 
-	}
+	    /* trim trailing whitespaces */
+        while (cnt > 0 && isspace(middleware[cnt-1])!=0 )
+            cnt--;
+        middleware[cnt]='\0';
+
+        /* compare middleware list entry with executable */
+        cmp = strcmp(middleware, exe);
+        free(middleware);
+        middleware = NULL;
+        if (cmp == 0)
+        {
+            /* found */
+            SEC_SVR_DBG("%s", "found matching executable");
+            ret = SECURITY_SERVER_SUCCESS;
+            break;
+        }
+    }
 	if(fp != NULL)
 		fclose(fp);
 	return ret;
@@ -2361,7 +2364,7 @@ int authenticate_client_middleware(int sockfd, int *pid)
 	int retval = SECURITY_SERVER_ERROR_AUTHENTICATION_FAILED;
 	struct ucred cr;
 	unsigned int cl = sizeof(cr);
-	char *cmdline = NULL;
+	char *exe = NULL;
 	struct passwd pw, *ppw;
 	size_t buf_size;
 	char *buf;
@@ -2403,22 +2406,22 @@ int authenticate_client_middleware(int sockfd, int *pid)
 	}
 
 	/* Read command line of the PID from proc fs */
-	cmdline = read_cmdline_from_proc(cr.pid);
-	if(cmdline  == NULL)
+	exe = read_exe_path_from_proc(cr.pid);
+	if(exe  == NULL)
 	{
 		/* It's weired. no file in proc file system, */
 		retval = SECURITY_SERVER_ERROR_FILE_OPERATION;
-		SEC_SVR_DBG("Error on opening /proc/%d/cmdline", cr.pid);
+		SEC_SVR_DBG("Error on opening /proc/%d/exe", cr.pid);
 		goto error;
 	}
 
-	/* Search cmdline of the peer that is really middleware executable */
-	retval = search_middleware_cmdline(cmdline);
+	/* Search executable of the peer that is really middleware executable */
+	retval = search_middleware_exe_path(exe);
 	*pid = cr.pid;
 
 error:
-	if(cmdline != NULL)
-		free(cmdline);
+	if(exe != NULL)
+		free(exe);
 
 	return retval;
 }
@@ -2539,7 +2542,7 @@ int authenticate_developer_shell(int sockfd)
 	int retval = SECURITY_SERVER_ERROR_AUTHENTICATION_FAILED;
 	struct ucred cr;
 	unsigned int cl = sizeof(cr);
-	char *cmdline = NULL;
+	char *exe = NULL;
 
 	/* get PID of socket peer */
 	if(getsockopt(sockfd, SOL_SOCKET, SO_PEERCRED, &cr, &cl) != 0)
@@ -2557,20 +2560,20 @@ int authenticate_developer_shell(int sockfd)
 		goto error;
 	}
 
-	/* Read command line of the PID from proc fs */
-	cmdline = read_cmdline_from_proc(cr.pid);
-	if(cmdline  == NULL)
+	/* Read executable path of the PID from proc fs */
+	exe = read_exe_path_from_proc(cr.pid);
+	if(exe  == NULL)
 	{
 		/* It's weired. no file in proc file system, */
 		retval = SECURITY_SERVER_ERROR_FILE_OPERATION;
-		SEC_SVR_DBG("Error on opening /proc/%d/cmdline", cr.pid);
+		SEC_SVR_DBG("Error on opening /proc/%d/exe", cr.pid);
 		goto error;
 	}
 
-	/* Search cmdline of the peer that is really debug tool */
-	if(strncmp(cmdline, SECURITY_SERVER_DEBUG_TOOL_PATH, strlen(SECURITY_SERVER_DEBUG_TOOL_PATH)) != 0)
+	/* Search exe of the peer that is really debug tool */
+	if(strcmp(exe, SECURITY_SERVER_DEBUG_TOOL_PATH) != 0)
 	{
-		SEC_SVR_DBG("Error: Wrong cmdline [%s]", cmdline);
+		SEC_SVR_DBG("Error: Wrong exe path [%s]", exe);
 		retval = SECURITY_SERVER_ERROR_AUTHENTICATION_FAILED;
 		goto error;
 	}
@@ -2578,8 +2581,8 @@ int authenticate_developer_shell(int sockfd)
 	SEC_SVR_DBG("%s", "Client Authenticated");
 
 error:
-	if(cmdline != NULL)
-		free(cmdline);
+	if(exe != NULL)
+		free(exe);
 
 	return retval;
 }
