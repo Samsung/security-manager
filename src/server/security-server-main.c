@@ -38,6 +38,7 @@
 #include <poll.h>
 
 #include <privilege-control.h>
+
 #include <security-server-system-observer.h>
 #include <security-server-rules-revoker.h>
 
@@ -61,7 +62,7 @@ struct security_server_thread_param {
 
 int process_app_get_access_request(int sockfd, size_t msg_len);
 static int netlink_enabled = 1; /* prevent memory leaks when netlink is disabled */
-static system_observer_config so_config;
+
 
 /************************************************************************************************/
 /* Just for test. This code must be removed on release */
@@ -1247,16 +1248,8 @@ void *security_server_thread(void *param)
             break;
 
         case SECURITY_SERVER_MSG_TYPE_APP_GIVE_ACCESS_REQUEST:
-            if (client_has_access(client_sockfd, LABEL_SECURITY_SERVER_API_DATA_SHARE)) {
-                SEC_SVR_DBG("%s", "Server: app give access request received");
-                process_app_get_access_request(client_sockfd,
-                    basic_hdr.msg_len - sizeof(basic_hdr));
-            } else {
-                SEC_SVR_DBG("%s", "Server: app give access request received (API DENIED - request will not proceed)");
-                send_generic_response(client_sockfd,
-                    SECURITY_SERVER_MSG_TYPE_GENERIC_RESPONSE,
-                    SECURITY_SERVER_RETURN_CODE_ACCESS_DENIED);
-            }
+            SEC_SVR_DBG("%s", "Server: app give access requset received");
+            process_app_get_access_request(client_sockfd, basic_hdr.msg_len - sizeof(basic_hdr));
             break;
 /************************************************************************************************/
 /* Just for test. This code must be removed on release */
@@ -1470,13 +1463,10 @@ int process_app_get_access_request(int sockfd, size_t msg_len)
     char *message_buffer = NULL;
     char *client_label = NULL;
     char *provider_label = NULL;
-    struct smack_accesses *smack = NULL;
     int ret = SECURITY_SERVER_ERROR_SERVER_ERROR;
     int send_message_id = SECURITY_SERVER_MSG_TYPE_GENERIC_RESPONSE;
     int send_error_id = SECURITY_SERVER_RETURN_CODE_SERVER_ERROR;
     int client_pid = 0;
-    static const char * const revoke = "-----";
-    const char *permissions = "rwxat";
 
     message_buffer = malloc(msg_len+1);
     if (!message_buffer)
@@ -1492,39 +1482,30 @@ int process_app_get_access_request(int sockfd, size_t msg_len)
         goto error;
     }
 
-    // Currently we don't use client_pid
     memcpy(&client_pid, message_buffer, sizeof(int));
     client_label = message_buffer + sizeof(int);
 
-    if (smack_check()) {
-        if (0 != smack_new_label_from_socket(sockfd, &provider_label)) {
-            SEC_SVR_DBG("%s", "Error in smack_new_label_from_socket");
-            goto error;
-        }
+    if (0 != smack_new_label_from_socket(sockfd, &provider_label)) {
+        SEC_SVR_DBG("%s", "Error in smack_new_label_from_socket");
+        goto error;
+    }
 
-        if (!util_smack_label_is_valid(client_label)) {
-            send_error_id = SECURITY_SERVER_RETURN_CODE_BAD_REQUEST;
-            goto error;
-        }
-
-        if (smack_accesses_new(&smack))
-            goto error;
-
-        if (smack_accesses_add_modify(smack, client_label,
-                    provider_label, permissions, revoke))
-            goto error;
-
-        if (smack_accesses_apply(smack)){
-            send_message_id = SECURITY_SERVER_RETURN_CODE_ACCESS_DENIED;
-            goto error;
-        }
-
+    if (PC_OPERATION_SUCCESS != app_give_access(client_label, provider_label, "rwxat")) {
+        SEC_SVR_DBG("%s", "Error in app_give_access");
+        goto error;
     }
 
     ret = SECURITY_SERVER_SUCCESS;
     send_message_id = SECURITY_SERVER_MSG_TYPE_APP_GIVE_ACCESS_RESPONSE;
     send_error_id = SECURITY_SERVER_RETURN_CODE_SUCCESS;
 
+    if (!netlink_enabled) {
+        SEC_SVR_DBG("Netlink not supported: Garbage collector inactive.");
+        goto error;
+    }
+
+    if (0 != rules_revoker_add(client_pid, client_label, provider_label))
+        SEC_SVR_DBG("%s", "Error in rules_revoker_add.");
 
 error:
     retval = send_generic_response(sockfd, send_message_id, send_error_id);
@@ -1533,7 +1514,6 @@ error:
 
     free(message_buffer);
     free(provider_label);
-    smack_accesses_free(smack);
     return ret;
 }
 
@@ -1549,23 +1529,18 @@ int main(int argc, char* argv[])
 {
     int res;
     pthread_t main_thread;
+    pthread_t system_observer;
 
     (void)argc;
     (void)argv;
 
-    // create observer thread only if smack is enabled
-    if (smack_check()) {
-        pthread_t system_observer;
-        so_config.event_callback = rules_revoker_callback;
+    system_observer_config so_config;
+    so_config.event_callback = rules_revoker_callback;
 
-        res = pthread_create(&system_observer, NULL, system_observer_main_thread, (void*)&so_config);
+    res = pthread_create(&system_observer, NULL, system_observer_main_thread, (void*)&so_config);
 
-        if (res != 0)
-            return -1;
-    }
-    else {
-        SEC_SVR_DBG("SMACK is not available. Observer thread disabled.");
-    }
+    if (res != 0)
+        return -1;
 
     res = pthread_create(&main_thread, NULL, security_server_main_thread, NULL);
     if (res == 0)

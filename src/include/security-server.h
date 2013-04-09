@@ -1019,20 +1019,6 @@ char * security_server_get_smacklabel_sockfd(int fd);
  * */
 int security_server_app_give_access(const char* customer_label, int customer_pid);
 
-/*
- * This function allows middleware to check priviliges of process with specified PID.
- * Service is able to check proces acces to the specified object label with specified
- * access rights.
- * 
- * \param[in] PID number of process to be checked
- * \param[in] SMACK object label
- * \param[in] SMACK access rights to be checked
- *
- * \return Privilege confirm or error code
- * SECURITY_SERVER_SUCCESS - on succes
- */
-int security_server_check_privilege_by_pid(int pid, const char *object, const char *access_rights);
-
 #ifdef __cplusplus
 }
 #endif
