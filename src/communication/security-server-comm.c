@@ -2309,59 +2309,12 @@ error:
 	return retval;
 }
 
-/* Checking client is pre-defined middleware daemons *
- * Check privilege API is only allowed to middleware daemons *
- * list of middleware daemons' executables are listed in
- * /usr/share/security-server/mw-list */
-int search_middleware_exe_path(char *exe)
-{
-	FILE *fp = NULL;
-	int ret= SECURITY_SERVER_ERROR_AUTHENTICATION_FAILED;
-	size_t len = 0;
-	ssize_t cnt = 0;
-	char *middleware = NULL;
-	int cmp = 0;
-
-	/* Open the list file */
-	fp = fopen(SECURITY_SERVER_MIDDLEWARE_LIST_PATH, "r");
-	if(fp == NULL)
-	{
-		/* error on file */
-		SEC_SVR_DBG("%s", "Error oening mw-list file");
-		return SECURITY_SERVER_ERROR_FILE_OPERATION;
-	}
-
-	/* read file line by line */
-	while ((cnt = getline(&middleware, &len, fp)) != -1) {
-
-	    /* trim trailing whitespaces */
-        while (cnt > 0 && isspace(middleware[cnt-1])!=0 )
-            cnt--;
-        middleware[cnt]='\0';
-
-        /* compare middleware list entry with executable */
-        cmp = strcmp(middleware, exe);
-        free(middleware);
-        middleware = NULL;
-        if (cmp == 0)
-        {
-            /* found */
-            SEC_SVR_DBG("%s", "found matching executable");
-            ret = SECURITY_SERVER_SUCCESS;
-            break;
-        }
-    }
-	if(fp != NULL)
-		fclose(fp);
-	return ret;
-}
-
 /* Authenticate the application is middleware daemon
  * The middleware must run as root (or middleware user) and the cmd line must be
  * pre listed for authentication to succeed */
 int authenticate_client_middleware(int sockfd, int *pid)
 {
-	int retval = SECURITY_SERVER_ERROR_AUTHENTICATION_FAILED;
+	int retval = SECURITY_SERVER_SUCCESS;
 	struct ucred cr;
 	unsigned int cl = sizeof(cr);
 	char *exe = NULL;
@@ -2415,8 +2368,6 @@ int authenticate_client_middleware(int sockfd, int *pid)
 		goto error;
 	}
 
-	/* Search executable of the peer that is really middleware executable */
-	retval = search_middleware_exe_path(exe);
 	*pid = cr.pid;
 
 error:

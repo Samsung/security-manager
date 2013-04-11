@@ -60,7 +60,6 @@
 #define SECURITY_SERVER_COOKIE_LEN			20
 #define MAX_OBJECT_LABEL_LEN                            32
 #define MAX_MODE_STR_LEN                                16
-#define SECURITY_SERVER_MIDDLEWARE_LIST_PATH		"/usr/share/security-server/mw-list"
 #define SECURITY_SERVER_MAX_OBJ_NAME			30
 #define SECURITY_SERVER_MSG_VERSION			0x01
 #define SECURITY_SERVER_ACCEPT_TIMEOUT_MILISECOND	10000

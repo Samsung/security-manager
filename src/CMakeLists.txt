@@ -67,11 +67,6 @@ INSTALL(FILES
     )
 
 INSTALL(FILES
-    ${SECURITY_SERVER_PATH}/mw-list
-    DESTINATION /usr/share/security-server
-    )
-
-INSTALL(FILES
     ${SECURITY_SERVER_PATH}/security-serverd
     DESTINATION /etc/rc.d/init.d
     )

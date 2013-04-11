@@ -137,7 +137,6 @@ fi
 %defattr(-,root,root,-)
 /usr/lib/systemd/system/multi-user.target.wants/security-server.service
 /usr/lib/systemd/system/security-server.service
-/usr/share/security-server/mw-list
 %attr(755,root,root) /etc/rc.d/init.d/security-serverd
 %attr(755,root,root) /usr/bin/security-server
 
