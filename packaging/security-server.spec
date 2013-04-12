@@ -16,14 +16,6 @@ BuildRequires: pkgconfig(dlog)
 BuildRequires: pkgconfig(openssl)
 BuildRequires: libattr-devel
 BuildRequires: pkgconfig(libsmack)
-BuildRequires: pkgconfig(dbus-1)
-BuildRequires: pkgconfig(dpl-efl)
-BuildRequires: pkgconfig(dpl-utils-efl)
-BuildRequires: pkgconfig(dpl-dbus-efl)
-BuildRequires: pkgconfig(libpcrecpp)
-BuildRequires: pkgconfig(icu-i18n)
-BuildRequires: pkgconfig(libsoup-2.4)
-BuildRequires: pkgconfig(xmlsec1)
 Requires(preun):  systemd
 Requires(post):   systemd
 Requires(postun): systemd
