@@ -1,7 +1,7 @@
 #sbs-git:slp/pkgs/s/security-server security-server 0.0.37
 Name:       security-server
 Summary:    Security server and utilities
-Version:    0.0.70
+Version:    0.0.71
 Release:    1
 Group:      TO_BE/FILLED_IN
 License:    Apache License, Version 2.0
@@ -137,7 +137,6 @@ fi
 %defattr(-,root,root,-)
 /usr/lib/systemd/system/multi-user.target.wants/security-server.service
 /usr/lib/systemd/system/security-server.service
-/usr/share/security-server/mw-list
 %attr(755,root,root) /etc/rc.d/init.d/security-serverd
 %attr(755,root,root) /usr/bin/security-server
 

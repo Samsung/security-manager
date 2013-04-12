@@ -97,7 +97,7 @@ int authenticate_client_application(int sockfd, int *pid, int *uid);
 int authenticate_client_middleware(int sockfd, int *pid);
 int get_client_gid_list(int sockfd, int ** privileges);
 int authenticate_developer_shell(int sockfd);
-char *read_cmdline_from_proc(pid_t pid);
+char *read_exe_path_from_proc(pid_t pid);
 int send_generic_response (int sockfd, unsigned char msgid, unsigned char return_code);
 int send_cookie(int sockfd, unsigned char *cookie);
 int send_object_name(int sockfd, char *obj);
