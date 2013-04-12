@@ -2095,7 +2095,7 @@ int recv_get_object_name(int sockfd, response_header *hdr, char *object, int max
 
 	/* Read response */
 	retval = TEMP_FAILURE_RETRY(read(sockfd, hdr, sizeof(response_header)));
-	if(retval < sizeof(hdr) )
+	if(retval < sizeof(response_header))
 	{
 		/* Error on socket */
 		SEC_SVR_DBG("cannot recv respons: %d", retval);
