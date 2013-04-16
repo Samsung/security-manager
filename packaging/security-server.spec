@@ -1,7 +1,7 @@
 #sbs-git:slp/pkgs/s/security-server security-server 0.0.37
 Name:       security-server
 Summary:    Security server and utilities
-Version:    0.0.71
+Version:    0.0.72
 Release:    1
 Group:      TO_BE/FILLED_IN
 License:    Apache License, Version 2.0
@@ -16,14 +16,6 @@ BuildRequires: pkgconfig(dlog)
 BuildRequires: pkgconfig(openssl)
 BuildRequires: libattr-devel
 BuildRequires: pkgconfig(libsmack)
-BuildRequires: pkgconfig(dbus-1)
-BuildRequires: pkgconfig(dpl-efl)
-BuildRequires: pkgconfig(dpl-utils-efl)
-BuildRequires: pkgconfig(dpl-dbus-efl)
-BuildRequires: pkgconfig(libpcrecpp)
-BuildRequires: pkgconfig(icu-i18n)
-BuildRequires: pkgconfig(libsoup-2.4)
-BuildRequires: pkgconfig(xmlsec1)
 Requires(preun):  systemd
 Requires(post):   systemd
 Requires(postun): systemd
