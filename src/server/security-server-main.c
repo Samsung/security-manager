@@ -38,7 +38,6 @@
 #include <poll.h>
 
 #include <privilege-control.h>
-
 #include <security-server-system-observer.h>
 #include <security-server-rules-revoker.h>
 
@@ -47,6 +46,8 @@
 #include "security-server-password.h"
 #include "security-server-comm.h"
 #include "smack-check.h"
+
+const char * const LABEL_SECURITY_SERVER_API_DATA_SHARE = "security-server::api-data-share";
 
 const char * const LABEL_SECURITY_SERVER_API_DATA_SHARE = "security-server::api-data-share";
 
@@ -1111,15 +1112,12 @@ int client_has_access(int sockfd, const char *object) {
     char *label = NULL;
     int ret = 0;
 
-    if (smack_check())
-    {
+    if(smack_new_label_from_socket(sockfd, &label))
+        return 0;
 
-        if(smack_new_label_from_socket(sockfd, &label))
-            return 0;
+    if (0 >= (ret = smack_have_access(label, object, "rw")))
+        ret = 0;
 
-        if (0 >= (ret = smack_have_access(label, object, "rw")))
-            ret = 0;
-    }
     free(label);
     return ret;
 }
