@@ -278,7 +278,7 @@ cookie_list *search_cookie_new(const cookie_list *c_list,
         if(memcmp(current->cookie, cookie, SECURITY_SERVER_COOKIE_LEN) == 0)
         {
             SEC_SVR_DBG("%s", "cookie has been found");
-            if (smack_check())
+            if (smack_runtime_check())
             {
                 ret = smack_have_access(current->smack_label, object, access_rights);
                 SEC_SVR_DBG("SMACK have access returned %d", ret);
