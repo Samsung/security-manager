@@ -28,6 +28,8 @@
 #include <string.h>
 #include <sys/smack.h>
 #include <fcntl.h>
+#include <sys/socket.h>
+#include <sys/un.h>
 
 #include "smack-check.h"
 #include "security-server.h"
@@ -454,23 +456,38 @@ int security_server_check_privilege_by_sockfd(int sockfd,
                                               const char *object,
                                               const char *access_rights)
 {
-    if (!smack_check())
+    char *subject;
+    int ret;
+    char * path = NULL;
+
+    //for get socket options
+    struct ucred cr;
+    unsigned int len;
+
+    //SMACK runtime check
+    if (!smack_runtime_check())
     {
         SEC_SVR_DBG("%s","No SMACK support on device");
         return SECURITY_SERVER_API_SUCCESS;
     }
 
-    char *subject;
-    int ret;
     ret = smack_new_label_from_socket(sockfd, &subject);
     if (ret != 0)
     {
         return SECURITY_SERVER_API_ERROR_SERVER_ERROR;
     }
+
+    ret = getsockopt(sockfd, SOL_SOCKET, SO_PEERCRED, &cr, &len);
+    if (ret < 0)
+        SEC_SVR_DBG("Error in getsockopt()");
+    else
+        path = read_exe_path_from_proc(cr.pid);
     ret = smack_have_access(subject, object, access_rights);
     SEC_SVR_DBG("SMACK have access returned %d", ret);
-    SEC_SVR_DBG("SS_SMACK: subject=%s, object=%s, access=%s, result=%d", subject, object, access_rights, ret);
+    SEC_SVR_DBG("SS_SMACK: caller_pid=%d, subject=%s, object=%s, access=%s, result=%d, caller_path=%s", cr.pid, subject, object, access_rights, ret, path);
 
+    if (path != NULL)
+        free(path);
     free(subject);
     if (ret == 1)
     {

@@ -915,6 +915,7 @@ int process_pid_privilege_check(int sockfd, int datasize)
     int fd = -1;
     const int B_SIZE = 64;
     char buff[B_SIZE];
+    char * path = NULL;
 
     //authenticate client
     retval = authenticate_client_middleware(sockfd, &client_pid);
@@ -975,7 +976,14 @@ int process_pid_privilege_check(int sockfd, int datasize)
         retval = 1;
     }
 
-    SEC_SVR_DBG("SS_SMACK: caller_pid=%d, subject=%s, object=%s, access=%s, result=%d", pid, buff, object, access_rights, retval);
+    path = read_exe_path_from_proc(pid);
+    //now we have SMACK label in buff and we call libsmack
+    SEC_SVR_DBG("Subject label of client PID %d is: %s", pid, buff);
+    retval = smack_have_access(buff, object, access_rights);
+    SEC_SVR_DBG("SMACK have access returned %d", retval);
+    SEC_SVR_DBG("SS_SMACK: caller_pid=%d, subject=%s, object=%s, access=%s, result=%d, caller_path=%s", pid, buff, object, access_rights, retval, path);
+    if (path != NULL)
+        free(path);
 
     if (retval == 1)   //there is permission
         return_code = SECURITY_SERVER_RETURN_CODE_SUCCESS;

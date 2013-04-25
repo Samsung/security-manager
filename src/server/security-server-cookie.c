@@ -282,7 +282,7 @@ cookie_list *search_cookie_new(const cookie_list *c_list,
             {
                 ret = smack_have_access(current->smack_label, object, access_rights);
                 SEC_SVR_DBG("SMACK have access returned %d", ret);
-                SEC_SVR_DBG("SS_SMACK: subject=%s, object=%s, access=%s, result=%d", current->smack_label, object, access_rights, ret);
+                SEC_SVR_DBG("SS_SMACK: caller_pid=%d, subject=%s, object=%s, access=%s, result=%d, caller_path=%s", current->pid, current->smack_label, object, access_rights, ret, current->path);
 
                 if (ret == 1)
                 {
