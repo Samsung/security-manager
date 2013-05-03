@@ -49,8 +49,6 @@
 
 const char * const LABEL_SECURITY_SERVER_API_DATA_SHARE = "security-server::api-data-share";
 
-const char * const LABEL_SECURITY_SERVER_API_DATA_SHARE = "security-server::api-data-share";
-
 /* Set cookie as a global variable */
 cookie_list *c_list;
 pthread_mutex_t cookie_mutex;

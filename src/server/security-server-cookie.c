@@ -477,17 +477,26 @@ out_of_while:
     if(added == NULL)
         goto error;
 
+    ret = generate_random_cookie(added->cookie, SECURITY_SERVER_COOKIE_LEN);
+    if(ret != SECURITY_SERVER_SUCCESS)
+    {
+        SEC_SVR_DBG("Error on making random cookie: %d", ret);
+        free(added);
+        added = NULL;
+        goto error;
+    }
+
     /* Check SMACK label */
     if (smack_check())
     {
         ret = smack_new_label_from_socket(sockfd, &smack_label);
         if (ret != 0)
-		{
-			SEC_SVR_DBG("Error checking peer label: %d", ret);
-			free(added);
-			added = NULL;
-			goto error;
-		}
+        {
+            SEC_SVR_DBG("Error checking peer label: %d", ret);
+            free(added);
+            added = NULL;
+            goto error;
+        }
     }
 
     /* Check SMACK label */
@@ -503,8 +512,6 @@ out_of_while:
         }
     }
 
-	added->path = exe;
-	exe = NULL;
     added->permission_len = perm_num;
     added->pid = pid;
     added->permissions = permissions;
