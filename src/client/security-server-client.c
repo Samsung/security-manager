@@ -462,7 +462,7 @@ int security_server_check_privilege_by_sockfd(int sockfd,
 
     //for get socket options
     struct ucred cr;
-    unsigned int len;
+    unsigned int len = sizeof(cr);
 
     //SMACK runtime check
     if (!smack_runtime_check())
@@ -478,11 +478,20 @@ int security_server_check_privilege_by_sockfd(int sockfd,
     }
 
     ret = getsockopt(sockfd, SOL_SOCKET, SO_PEERCRED, &cr, &len);
-    if (ret < 0)
-        SEC_SVR_DBG("Error in getsockopt()");
+    if (ret < 0) {
+        SEC_SVR_ERR("Error in getsockopt(). Errno: %s", strerror(errno));
+        ret = 0;
+        goto err;
+    }
+    path = read_exe_path_from_proc(cr.pid);
+
+    ret = security_server_check_privilege_by_pid(cr.pid, object, access_rights);
+    if (ret == SECURITY_SERVER_RETURN_CODE_SUCCESS)
+        ret = 1;
     else
-        path = read_exe_path_from_proc(cr.pid);
-    ret = smack_have_access(subject, object, access_rights);
+        ret = 0;
+
+err:
 
     SEC_SVR_DBG("SMACK have access returned %d", ret);
     if (ret > 0)
@@ -1256,4 +1265,3 @@ error:
     retval = convert_to_public_error_code(retval);
     return retval;
 }
-

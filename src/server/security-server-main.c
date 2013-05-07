@@ -925,11 +925,9 @@ int process_pid_privilege_check(int sockfd, int datasize)
     char * object = NULL;
     char * access_rights = NULL;
     unsigned char return_code;
-    //file descriptor
-    int fd = -1;
-    const int B_SIZE = 64;
-    char buff[B_SIZE];
     char * path = NULL;
+    char subject[SMACK_LABEL_LEN + 1];
+    subject[0] = '\0';
 
     //authenticate client
     retval = authenticate_client_middleware(sockfd, &client_pid);
@@ -961,46 +959,28 @@ int process_pid_privilege_check(int sockfd, int datasize)
         goto error;
     }
 
-    bzero(buff, B_SIZE);
     if (smack_check()) {
-        //get SMACK label of process
-        snprintf(buff, B_SIZE, "/proc/%d/attr/current", pid);
+        retval = smack_pid_have_access(pid, object, access_rights);
+        SEC_SVR_DBG("smack_pid_have_access returned %d", retval);
 
-        fd = open(buff, O_RDONLY, 0644);
-        if (fd < 0) {
-            SEC_SVR_ERR("%s", "Error open()");
-            retval = SECURITY_SERVER_ERROR_UNKNOWN;
-            goto error;
+        if(get_smack_label_from_process(pid, subject) != PC_OPERATION_SUCCESS) {
+            // subject label is set to empty string
+            SEC_SVR_ERR("get_smack_label_from_process failed. Subject label has not been read.");
+        } else {
+            SEC_SVR_DBG("Subject label of client PID %d is: %s", pid, subject);
         }
-
-        bzero(buff, B_SIZE);
-        retval = read(fd, buff, B_SIZE);
-        if (retval < 0) {
-            SEC_SVR_ERR("%s", "Error read()");
-            retval = SECURITY_SERVER_ERROR_UNKNOWN;
-            goto error;
-        }
-
-        //now we have SMACK label in buff and we call libsmack
-        SEC_SVR_DBG("Subject label of client PID %d is: %s", pid, buff);
-        retval = smack_have_access(buff, object, access_rights);
-        SEC_SVR_DBG("SMACK have access returned %d", retval);
     } else {
         SEC_SVR_DBG("SMACK is not available. Subject label has not been read.");
         retval = 1;
     }
 
     path = read_exe_path_from_proc(pid);
-    //now we have SMACK label in buff and we call libsmack
-    SEC_SVR_DBG("Subject label of client PID %d is: %s", pid, buff);
 
-    retval = smack_have_access(buff, object, access_rights);
-    SEC_SVR_DBG("SMACK have access returned %d", retval);
     if (retval > 0)
-        SEC_SVR_DBG("SS_SMACK: caller_pid=%d, subject=%s, object=%s, access=%s, result=%d, caller_path=%s", pid, buff, object, access_rights, retval, path);
+        SEC_SVR_DBG("SS_SMACK: caller_pid=%d, subject=%s, object=%s, access=%s, result=%d, caller_path=%s", pid, subject, object, access_rights, retval, path);
     else
-        SEC_SVR_ERR("SS_SMACK: caller_pid=%d, subject=%s, object=%s, access=%s, result=%d, caller_path=%s", pid, buff, object, access_rights, retval, path);
-    
+        SEC_SVR_ERR("SS_SMACK: caller_pid=%d, subject=%s, object=%s, access=%s, result=%d, caller_path=%s", pid, subject, object, access_rights, retval, path);
+
     if (path != NULL)
         free(path);
 
@@ -1018,8 +998,6 @@ int process_pid_privilege_check(int sockfd, int datasize)
         SEC_SVR_ERR("ERROR: Cannot send generic response: %d", retval);
 
 error:
-    if (fd >= 0)
-        close(fd);
 
     if (object != NULL)
         free(object);
@@ -1138,15 +1116,27 @@ int client_has_access(int sockfd, const char *object) {
     int ret = 0;
     int pid = -1;
     int uid = -1;
+    int retval;
+    struct ucred socopt;
+    unsigned int socoptSize = sizeof(socopt);
 
     if (smack_check())
     {
-
-        if(smack_new_label_from_socket(sockfd, &label))
+        retval = getsockopt(sockfd, SOL_SOCKET, SO_PEERCRED, &socopt, &socoptSize);
+        if (retval != 0) {
+            SEC_SVR_DBG("%s", "Error on getsockopt");
             return 0;
+        }
+        //now we have PID in sockopt.pid
 
-        if (0 >= (ret = smack_have_access(label, object, "rw")))
+        if(smack_new_label_from_socket(sockfd, &label)) {
+            SEC_SVR_ERR("%s", "Error on smack_new_label_from_socket");
+            label = NULL;
+        }
+
+        if (0 >= (ret = smack_pid_have_access(socopt.pid, object, "rw"))) {
             ret = 0;
+        }
     }
 
     if (SECURITY_SERVER_SUCCESS == authenticate_client_application(sockfd, &pid, &uid))

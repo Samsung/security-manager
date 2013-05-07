@@ -280,7 +280,7 @@ cookie_list *search_cookie_new(const cookie_list *c_list,
             SEC_SVR_DBG("%s", "cookie has been found");
             if (smack_check())
             {
-                ret = smack_have_access(current->smack_label, object, access_rights);
+                ret = smack_pid_have_access(current->pid, object, access_rights);
 
                 SEC_SVR_DBG("SMACK have access returned %d", ret);
                 if (ret > 0)
