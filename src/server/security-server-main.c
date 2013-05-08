@@ -505,7 +505,7 @@ int process_check_privilege_new_request(int sockfd)
 	if(retval != SECURITY_SERVER_SUCCESS)
 	{
 		SEC_SVR_ERR("%s", "Client Authentication Failed");
-		retval = send_generic_response(sockfd, 
+		retval = send_generic_response(sockfd,
 				SECURITY_SERVER_MSG_TYPE_CHECK_PRIVILEGE_NEW_RESPONSE,
 				SECURITY_SERVER_RETURN_CODE_AUTHENTICATION_FAILED);
 		if(retval != SECURITY_SERVER_SUCCESS)
@@ -1122,6 +1122,8 @@ error:
 int client_has_access(int sockfd, const char *object) {
     char *label = NULL;
     int ret = 0;
+    int pid = -1;
+    int uid = -1;
 
     if (smack_check())
     {
@@ -1132,6 +1134,11 @@ int client_has_access(int sockfd, const char *object) {
         if (0 >= (ret = smack_have_access(label, object, "rw")))
             ret = 0;
     }
+
+    if (SECURITY_SERVER_SUCCESS == authenticate_client_application(sockfd, &pid, &uid))
+        SEC_SVR_DBG("SS_SMACK: caller_pid=%d, subject=%s, object=%s, access=rw, result=%d",
+            pid, label, object, ret);
+
     free(label);
     return ret;
 }

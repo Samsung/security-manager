@@ -2454,20 +2454,17 @@ int recv_pwd_response(int sockfd, response_header *hdr,
  * If we need, we can extend in the futer */
 int authenticate_client_application(int sockfd, int *pid, int *uid)
 {
-	int retval = 0;
-	struct ucred cr;
-	unsigned int cl = sizeof(cr);
+    struct ucred cr;
+    unsigned int cl = sizeof(cr);
 
     /* get PID of socket peer */
     if(getsockopt(sockfd, SOL_SOCKET, SO_PEERCRED, &cr, &cl) != 0)
     {
-        SEC_SVR_ERR("%s", "getsockopt failed");
+        SEC_SVR_DBG("%s", "getsockopt failed");
         return SECURITY_SERVER_ERROR_SOCKET;
     }
-
     *pid = cr.pid;
     *uid = cr.uid;
-
     return SECURITY_SERVER_SUCCESS;
 }
 
@@ -2476,7 +2473,8 @@ int authenticate_client_application(int sockfd, int *pid, int *uid)
  * pre listed for authentication to succeed */
 int authenticate_client_middleware(int sockfd, int *pid)
 {
-	return SECURITY_SERVER_SUCCESS;
+    int uid;
+    return authenticate_client_application(sockfd, pid, &uid);
 #if 0
 	int retval = SECURITY_SERVER_SUCCESS;
 	struct ucred cr;
