@@ -437,7 +437,7 @@ void util_send_all_cookie_info_request(void)
 	if(retval != SECURITY_SERVER_SUCCESS)
 	{
 		/* Error on socket */
-		SEC_SVR_DBG("Error: send request failed: %d", retval);
+		SEC_SVR_ERR("Error: send request failed: %d", retval);
 		goto error;
 	}
 	retval = recv_all_cookie_info(sockfd);
@@ -512,7 +512,7 @@ void util_send_cookie_info_request_from_cookie(unsigned char *cookie)
 	if(retval != SECURITY_SERVER_SUCCESS)
 	{
 		/* Error on socket */
-		SEC_SVR_DBG("Error: send request failed: %d", retval);
+		SEC_SVR_ERR("Error: send request failed: %d", retval);
 		goto error;
 	}
 	retval = recv_cookie_info_response(sockfd);
@@ -671,7 +671,7 @@ void util_send_cookie_info_request_from_pid(const char *str_pid)
 	pid = strtoul(str_pid, 0, 10);
 	if (errno != 0)
 	{
-		SEC_SVR_DBG("cannot change string to integer [%s]", str_pid);
+		SEC_SVR_ERR("cannot change string to integer [%s]", str_pid);
 		return;
 	}
 
@@ -688,7 +688,7 @@ void util_send_cookie_info_request_from_pid(const char *str_pid)
 	if(retval != SECURITY_SERVER_SUCCESS)
 	{
 		/* Error on socket */
-		SEC_SVR_DBG("Error: send request failed: %d", retval);
+		SEC_SVR_ERR("Error: send request failed: %d", retval);
 		goto error;
 	}
 	retval = recv_cookie_info_response(sockfd);

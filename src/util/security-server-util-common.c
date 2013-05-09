@@ -142,7 +142,7 @@ unsigned char * get_all_cookie_info(cookie_list *list, int *size)
 		tempptr = realloc(buf, total_size);
 		if(tempptr == NULL)
 		{
-			SEC_SVR_DBG("%s", "Out of memory");
+			SEC_SVR_ERR("%s", "Out of memory");
 			return NULL;
 		}
 		buf = tempptr;
@@ -153,7 +153,7 @@ unsigned char * get_all_cookie_info(cookie_list *list, int *size)
 
 	if(total_size > 65530)
 	{
-		SEC_SVR_DBG("Packet too big. message length overflow: %d", total_size);
+		SEC_SVR_ERR("Packet too big. message length overflow: %d", total_size);
 		free(buf);
 		return  NULL;
 	}
@@ -178,12 +178,12 @@ int send_all_cookie_info(const unsigned char *buf, int size, int sockfd)
 	ret = check_socket_poll(sockfd, POLLOUT, SECURITY_SERVER_SOCKET_TIMEOUT_MILISECOND);
 	if(ret == SECURITY_SERVER_ERROR_POLL)
 	{
-		SEC_SVR_DBG("%s", "poll() error");
+		SEC_SVR_ERR("%s", "poll() error");
 		return SECURITY_SERVER_ERROR_SEND_FAILED;
 	}
 	if(ret == SECURITY_SERVER_ERROR_TIMEOUT)
 	{
-		SEC_SVR_DBG("%s", "poll() timeout");
+		SEC_SVR_ERR("%s", "poll() timeout");
 		return SECURITY_SERVER_ERROR_SEND_FAILED;
 	}
 
@@ -234,7 +234,7 @@ int send_one_cookie_info(const cookie_list *list, int sockfd)
 	buf = malloc(total_size);
 	if(buf == NULL)
 	{
-		SEC_SVR_DBG("%s", "Out of memory");
+		SEC_SVR_ERR("%s", "Out of memory");
 		return SECURITY_SERVER_ERROR_OUT_OF_MEMORY;
 	}
 
@@ -251,13 +251,13 @@ int send_one_cookie_info(const cookie_list *list, int sockfd)
 	ret = check_socket_poll(sockfd, POLLOUT, SECURITY_SERVER_SOCKET_TIMEOUT_MILISECOND);
 	if(ret == SECURITY_SERVER_ERROR_POLL)
 	{
-		SEC_SVR_DBG("%s", "poll() error");
+		SEC_SVR_ERR("%s", "poll() error");
 		free(buf);
 		return SECURITY_SERVER_ERROR_SEND_FAILED;
 	}
 	if(ret == SECURITY_SERVER_ERROR_TIMEOUT)
 	{
-		SEC_SVR_DBG("%s", "poll() timeout");
+		SEC_SVR_ERR("%s", "poll() timeout");
 		free(buf);
 		return SECURITY_SERVER_ERROR_SEND_FAILED;
 	}
@@ -294,17 +294,17 @@ int util_process_cookie_from_pid(int sockfd, cookie_list* list)
 	ret = TEMP_FAILURE_RETRY(read(sockfd, &pid, sizeof(int)));
 	if(ret < (int)sizeof(int))
 	{
-		SEC_SVR_DBG("Received cookie size is too small: %d", ret);
+		SEC_SVR_ERR("Received cookie size is too small: %d", ret);
 		return SECURITY_SERVER_ERROR_RECV_FAILED;
 	}
 	if(pid == 0)
 	{
-		SEC_SVR_DBG("%s", "ERROR: Default cookie is not allowed to be retrieved");
+		SEC_SVR_ERR("%s", "ERROR: Default cookie is not allowed to be retrieved");
 		ret = send_generic_response(sockfd, SECURITY_SERVER_MSG_TYPE_GET_COOKIEINFO_RESPONSE,
 			SECURITY_SERVER_RETURN_CODE_BAD_REQUEST);
 		if(ret != SECURITY_SERVER_SUCCESS)
 		{
-			SEC_SVR_DBG("ERROR: Cannot send generic response: %d", ret);
+			SEC_SVR_ERR("ERROR: Cannot send generic response: %d", ret);
 		}
 	}
 	result = search_cookie_from_pid(list, pid);
@@ -314,7 +314,7 @@ int util_process_cookie_from_pid(int sockfd, cookie_list* list)
 			SECURITY_SERVER_RETURN_CODE_NO_SUCH_COOKIE);
 		if(ret != SECURITY_SERVER_SUCCESS)
 		{
-			SEC_SVR_DBG("ERROR: Cannot send generic response: %d", ret);
+			SEC_SVR_ERR("ERROR: Cannot send generic response: %d", ret);
 		}
 	}
 	else
@@ -322,7 +322,7 @@ int util_process_cookie_from_pid(int sockfd, cookie_list* list)
 		ret = send_one_cookie_info(result, sockfd);
 		if(ret != SECURITY_SERVER_SUCCESS)
 		{
-			SEC_SVR_DBG("ERROR: Cannot send cookie info response: %d", ret);
+			SEC_SVR_ERR("ERROR: Cannot send cookie info response: %d", ret);
 		}
 	}
 	
@@ -339,7 +339,7 @@ int util_process_cookie_from_cookie(int sockfd, cookie_list* list)
 	ret = TEMP_FAILURE_RETRY(read(sockfd, cookie, SECURITY_SERVER_COOKIE_LEN));
 	if(ret < SECURITY_SERVER_COOKIE_LEN)
 	{
-		SEC_SVR_DBG("Received cookie size is too small: %d", ret);
+		SEC_SVR_ERR("Received cookie size is too small: %d", ret);
 		return SECURITY_SERVER_ERROR_RECV_FAILED;
 	}
 	result = search_cookie(list, cookie, privileges, 1);
@@ -349,7 +349,7 @@ int util_process_cookie_from_cookie(int sockfd, cookie_list* list)
 			SECURITY_SERVER_RETURN_CODE_NO_SUCH_COOKIE);
 		if(ret != SECURITY_SERVER_SUCCESS)
 		{
-			SEC_SVR_DBG("ERROR: Cannot send generic response: %d", ret);
+			SEC_SVR_ERR("ERROR: Cannot send generic response: %d", ret);
 		}
 	}
 	else
@@ -357,7 +357,7 @@ int util_process_cookie_from_cookie(int sockfd, cookie_list* list)
 		ret = send_one_cookie_info(result, sockfd);
 		if(ret != SECURITY_SERVER_SUCCESS)
 		{
-			SEC_SVR_DBG("ERROR: Cannot send cookie info response: %d", ret);
+			SEC_SVR_ERR("ERROR: Cannot send cookie info response: %d", ret);
 		}
 	}
 	

@@ -107,13 +107,16 @@ void printhex(const unsigned char *data, int size);
 
 /* Debug */
 #ifdef SECURITY_SERVER_DEBUG_TO_CONSOLE /* debug msg will be printed in console */
-#define SEC_SVR_DBG(FMT, ARG ...) fprintf(stderr, "[%s:%d] "FMT"\n", \
+#define SEC_SVR_DBG(FMT, ARG ...) fprintf(stderr, "[DBG:%s:%d] "FMT"\n", \
+	       	__FILE__, __LINE__, ##ARG)
+#define SEC_SVR_ERR(FMT, ARG ...) fprintf(stderr, "[ERR:%s:%d] "FMT"\n", \
 	       	__FILE__, __LINE__, ##ARG)
 
 #elif SECURITY_SERVER_DEBUG_DLOG	/* debug msg will be printed by dlog daemon */
 #define LOG_TAG "SECURITY_SERVER"
 #include <dlog.h>
 #define SEC_SVR_DBG	SLOGD
+#define SEC_SVR_ERR LOGE
 #else /* No debug output */
 #define SEC_SVR_DBG(FMT, ARG ...) {}
 #endif

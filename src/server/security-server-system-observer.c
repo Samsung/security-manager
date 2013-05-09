@@ -49,7 +49,7 @@ int connect_to_netlink()
     nl_sock = socket(PF_NETLINK, SOCK_DGRAM, NETLINK_CONNECTOR);
 
     if (-1 == nl_sock) {
-        SEC_SVR_DBG("socket failed: %s", strerror(errno));
+        SEC_SVR_ERR("socket failed: %s", strerror(errno));
         return SECURITY_SERVER_ERROR_SOCKET;
     }
 
@@ -59,7 +59,7 @@ int connect_to_netlink()
     sa_nl.nl_pid    = getpid();
 
     if (-1 == bind(nl_sock, (struct sockaddr *)&sa_nl, sizeof(sa_nl))) {
-        SEC_SVR_DBG("bind failed: %s", strerror(errno));
+        SEC_SVR_ERR("bind failed: %s", strerror(errno));
         close(nl_sock);
         return SECURITY_SERVER_ERROR_SOCKET;
     }
@@ -83,7 +83,7 @@ int connect_to_netlink()
     *(int*)msg->data = PROC_CN_MCAST_LISTEN;
 
     if (-1 == send(nl_sock, hdr, hdr->nlmsg_len, 0)) {
-        SEC_SVR_DBG("send failed: %s", strerror(errno));
+        SEC_SVR_ERR("send failed: %s", strerror(errno));
         close(nl_sock);
         return SECURITY_SERVER_ERROR_SOCKET;
     }
@@ -104,7 +104,7 @@ void handle_events(system_observer_config *data)
         FD_SET(nl_sock, &fds);
 
         if (0 > select(nl_sock + 1, &fds, NULL, NULL, NULL)) {
-            SEC_SVR_DBG("select failed: %s", strerror(errno));
+            SEC_SVR_ERR("select failed: %s", strerror(errno));
             return ;
         }
 
@@ -115,14 +115,14 @@ void handle_events(system_observer_config *data)
 
         /* if there are events, make calls */
         if (-1 == recv(nl_sock, buff, sizeof(buff), 0)) {
-            SEC_SVR_DBG("recv failed: %s", strerror(errno));
+            SEC_SVR_ERR("recv failed: %s", strerror(errno));
             return ;
         }
 
         hdr = (struct nlmsghdr *)buff;
 
         if (NLMSG_ERROR == hdr->nlmsg_type) {
-            SEC_SVR_DBG("%s", "NLMSG_ERROR");
+            SEC_SVR_ERR("%s", "NLMSG_ERROR");
         } else if (NLMSG_DONE == hdr->nlmsg_type) {
             event = (struct proc_event *)((struct cn_msg *)NLMSG_DATA(hdr))->data;
             if (data->event_callback)

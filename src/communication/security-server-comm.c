@@ -68,7 +68,7 @@ char *read_exe_path_from_proc(pid_t pid)
 	{
         exe = malloc(size);
         if (exe == NULL) {
-            SEC_SVR_DBG("Out of memory");
+            SEC_SVR_ERR("Out of memory");
             return NULL;
         }
 
@@ -77,7 +77,7 @@ char *read_exe_path_from_proc(pid_t pid)
 
         // error
         if (cnt < 0 || (size_t)cnt > size) {
-            SEC_SVR_DBG("Can't locate process binary for pid[%d]", pid);
+            SEC_SVR_ERR("Can't locate process binary for pid[%d]", pid);
             free(exe);
             return NULL;
         }
@@ -89,7 +89,7 @@ char *read_exe_path_from_proc(pid_t pid)
         // read exactly the number of bytes requested
         free(exe);
         if (size > (SIZE_MAX >> 1)) {
-            SEC_SVR_DBG("Exe path too long (more than %d characters)", size);
+            SEC_SVR_ERR("Exe path too long (more than %d characters)", size);
             return NULL;
         }
         size <<= 1;
@@ -166,7 +166,7 @@ int check_socket_poll(int sockfd, int event, int timeout)
 	retval = poll(poll_fd, 1, timeout);
 	if(retval < 0)
 	{
-		SEC_SVR_DBG("poll() error. errno=%d", errno);
+		SEC_SVR_ERR("poll() error. errno=%d", errno);
 		if(errno != EINTR)
 			return SECURITY_SERVER_ERROR_POLL;
 		else
@@ -184,7 +184,7 @@ int check_socket_poll(int sockfd, int event, int timeout)
 
 	if(poll_fd[0].revents != event)
 	{
-		SEC_SVR_DBG("Something wrong on the peer socket. event=0x%x", poll_fd[0].revents);
+		SEC_SVR_ERR("Something wrong on the peer socket. event=0x%x", poll_fd[0].revents);
 		return SECURITY_SERVER_ERROR_POLL;
 	}
 	return SECURITY_SERVER_SUCCESS;
@@ -216,7 +216,7 @@ int create_new_socket(int *sockfd)
     if (retval == -1 && errno != ENOENT) {
         retval = SECURITY_SERVER_ERROR_UNKNOWN;
         localsockfd = -1;
-        SEC_SVR_DBG("%s", "Unable to remove /tmp/.security_server.sock");
+        SEC_SVR_ERR("%s", "Unable to remove /tmp/.security_server.sock");
         goto error;
     }
 
@@ -225,7 +225,7 @@ int create_new_socket(int *sockfd)
 	{
 		retval = SECURITY_SERVER_ERROR_SOCKET;
 		localsockfd = -1;
-		SEC_SVR_DBG("%s", "Socket creation failed");
+		SEC_SVR_ERR("%s", "Socket creation failed");
 		goto error;
 	}
 
@@ -233,7 +233,7 @@ int create_new_socket(int *sockfd)
 	if (smack_runtime_check()) {
 		if(smack_fsetlabel(localsockfd, "@", SMACK_LABEL_IPOUT) != 0)
 		{
-			SEC_SVR_DBG("%s", "SMACK labeling failed");
+			SEC_SVR_ERR("%s", "SMACK labeling failed");
 			if(errno != EOPNOTSUPP)
 			{
 				retval = SECURITY_SERVER_ERROR_SOCKET;
@@ -243,7 +243,7 @@ int create_new_socket(int *sockfd)
 			}
 		}
 		if(smack_fsetlabel(localsockfd, "*", SMACK_LABEL_IPIN) != 0)
-		{	SEC_SVR_DBG("%s", "SMACK labeling failed");
+		{	SEC_SVR_ERR("%s", "SMACK labeling failed");
 			if(errno != EOPNOTSUPP)
 			{
 				retval = SECURITY_SERVER_ERROR_SOCKET;
@@ -264,7 +264,7 @@ int create_new_socket(int *sockfd)
 		retval = SECURITY_SERVER_ERROR_SOCKET;
 		close(localsockfd);
 		localsockfd = -1;
-		SEC_SVR_DBG("%s", "Cannot go to nonblocking mode");
+		SEC_SVR_ERR("%s", "Cannot go to nonblocking mode");
 		goto error;
 	}
 
@@ -278,7 +278,7 @@ int create_new_socket(int *sockfd)
 	if((bind(localsockfd, (struct sockaddr *)&serveraddr, sizeof(serveraddr))) < 0)
 	{
 		retval = SECURITY_SERVER_ERROR_SOCKET_BIND;
-		SEC_SVR_DBG("%s", "Cannot bind");
+		SEC_SVR_ERR("%s", "Cannot bind");
 		close(localsockfd);
 		localsockfd = -1;
 		goto error;
@@ -292,7 +292,7 @@ int create_new_socket(int *sockfd)
 	 * But, fchmod doesn't work on socket file so there is no other choice at this point */
 	if(chmod(SECURITY_SERVER_SOCK_PATH, sock_mode) < 0)		/* Flawfinder: ignore */
 	{
-		SEC_SVR_DBG("%s", "chmod() error");
+		SEC_SVR_ERR("%s", "chmod() error");
 		retval = SECURITY_SERVER_ERROR_SOCKET;
 		close(localsockfd);
 		localsockfd = -1;
@@ -320,7 +320,7 @@ int authenticate_server(int sockfd)
 	if(getsockopt(sockfd, SOL_SOCKET, SO_PEERCRED, &cr, &cl) != 0)
 	{
 		retval = SECURITY_SERVER_ERROR_SOCKET;
-		SEC_SVR_DBG("%s", "getsockopt() failed");
+		SEC_SVR_ERR("%s", "getsockopt() failed");
 		goto error;
 	}
 
@@ -328,7 +328,7 @@ int authenticate_server(int sockfd)
 	if(cr.uid != 0)
 	{
 		retval = SECURITY_SERVER_ERROR_AUTHENTICATION_FAILED;
-		SEC_SVR_DBG("Peer is not root: uid=%d", cr.uid);
+		SEC_SVR_ERR("Peer is not root: uid=%d", cr.uid);
 		goto error;
 	}
 	else
@@ -367,7 +367,7 @@ int connect_to_server(int *fd)
 	localsockfd = socket(AF_UNIX, SOCK_STREAM, 0);
 	if(localsockfd < 0)
 	{
-		SEC_SVR_DBG("%s", "Error on socket()");
+		SEC_SVR_ERR("%s", "Error on socket()");
 		return SECURITY_SERVER_ERROR_SOCKET;
 	}
 
@@ -376,7 +376,7 @@ int connect_to_server(int *fd)
 			fcntl(localsockfd, F_SETFL, flags | O_NONBLOCK) < 0)
 	{
 		close(localsockfd);
-		SEC_SVR_DBG("%s", "Cannot go to nonblocking mode");
+		SEC_SVR_ERR("%s", "Cannot go to nonblocking mode");
 		return SECURITY_SERVER_ERROR_SOCKET;
 	}
 
@@ -395,27 +395,27 @@ int connect_to_server(int *fd)
 			ret = check_socket_poll(localsockfd, POLLOUT, SECURITY_SERVER_SOCKET_TIMEOUT_MILISECOND);
 			if(ret == SECURITY_SERVER_ERROR_POLL)
 			{
-				SEC_SVR_DBG("%s", "poll() error");
+				SEC_SVR_ERR("%s", "poll() error");
 				close(localsockfd);
 				return SECURITY_SERVER_ERROR_SOCKET;
 			}
 			if(ret == SECURITY_SERVER_ERROR_TIMEOUT)
 			{
-				SEC_SVR_DBG("%s", "poll() timeout");
+				SEC_SVR_ERR("%s", "poll() timeout");
 				close(localsockfd);
 				return SECURITY_SERVER_ERROR_SOCKET;
 			}
 			ret = connect(localsockfd, (struct sockaddr*)&clientaddr, client_len);
 			if(ret < 0)
 			{
-				SEC_SVR_DBG("%s", "connection failed");
+				SEC_SVR_ERR("%s", "connection failed");
 				close(localsockfd);
 				return SECURITY_SERVER_ERROR_SOCKET;
 			}
 		}
 		else
 		{
-			SEC_SVR_DBG("%s", "Connection failed");
+			SEC_SVR_ERR("%s", "Connection failed");
 			close(localsockfd);
 			return SECURITY_SERVER_ERROR_SOCKET;
 		}
@@ -426,7 +426,7 @@ int connect_to_server(int *fd)
 	if(ret  != SECURITY_SERVER_SUCCESS)
 	{
 		close(localsockfd);
-		SEC_SVR_DBG("Authentication failed. %d", ret);
+		SEC_SVR_ERR("Authentication failed. %d", ret);
 		return ret;
 	}
 	*fd = localsockfd;
@@ -447,7 +447,7 @@ int accept_client(int server_sockfd)
 	retval = check_socket_poll(server_sockfd, POLLIN, SECURITY_SERVER_ACCEPT_TIMEOUT_MILISECOND);
 	if(retval == SECURITY_SERVER_ERROR_POLL)
 	{
-		SEC_SVR_DBG("%s", "Error on polling");
+		SEC_SVR_ERR("%s", "Error on polling");
 		return SECURITY_SERVER_ERROR_SOCKET;
 	}
 
@@ -464,7 +464,7 @@ int accept_client(int server_sockfd)
 
 	if(localsockfd < 0)
 	{
-		SEC_SVR_DBG("Cannot accept client. errno=%d", errno);
+		SEC_SVR_ERR("Cannot accept client. errno=%d", errno);
 		return SECURITY_SERVER_ERROR_SOCKET;
 	}
 	return localsockfd;
@@ -505,12 +505,12 @@ int send_generic_response (int sockfd, unsigned char msgid, unsigned char return
 	size = check_socket_poll(sockfd, POLLOUT, SECURITY_SERVER_SOCKET_TIMEOUT_MILISECOND);
 	if(size == SECURITY_SERVER_ERROR_POLL)
 	{
-		SEC_SVR_DBG("%s", "poll() error");
+		SEC_SVR_ERR("%s", "poll() error");
 		return SECURITY_SERVER_ERROR_SEND_FAILED;
 	}
 	if(size == SECURITY_SERVER_ERROR_TIMEOUT)
 	{
-		SEC_SVR_DBG("%s", "poll() timeout");
+		SEC_SVR_ERR("%s", "poll() timeout");
 		return SECURITY_SERVER_ERROR_SEND_FAILED;
 	}
 
@@ -554,12 +554,12 @@ int send_cookie(int sockfd, unsigned char *cookie)
 	ret = check_socket_poll(sockfd, POLLOUT, SECURITY_SERVER_SOCKET_TIMEOUT_MILISECOND);
 	if(ret == SECURITY_SERVER_ERROR_POLL)
 	{
-		SEC_SVR_DBG("%s", "poll() error");
+		SEC_SVR_ERR("%s", "poll() error");
 		return SECURITY_SERVER_ERROR_SEND_FAILED;
 	}
 	if(ret == SECURITY_SERVER_ERROR_TIMEOUT)
 	{
-		SEC_SVR_DBG("%s", "poll() timeout");
+		SEC_SVR_ERR("%s", "poll() timeout");
 		return SECURITY_SERVER_ERROR_SEND_FAILED;
 	}
 
@@ -567,7 +567,7 @@ int send_cookie(int sockfd, unsigned char *cookie)
 	if(ret <  (int)(sizeof(hdr) + SECURITY_SERVER_COOKIE_LEN))
 	{
 		/* Error on writing */
-		SEC_SVR_DBG("Error on write: %d", ret);
+		SEC_SVR_ERR("Error on write: %d", ret);
 		ret = SECURITY_SERVER_ERROR_SEND_FAILED;
 		return ret;
 	}
@@ -604,12 +604,12 @@ int send_object_name(int sockfd, char *obj)
 	ret = check_socket_poll(sockfd, POLLOUT, SECURITY_SERVER_SOCKET_TIMEOUT_MILISECOND);
 	if(ret == SECURITY_SERVER_ERROR_POLL)
 	{
-		SEC_SVR_DBG("%s", "poll() error");
+		SEC_SVR_ERR("%s", "poll() error");
 		return SECURITY_SERVER_ERROR_SEND_FAILED;
 	}
 	if(ret == SECURITY_SERVER_ERROR_TIMEOUT)
 	{
-		SEC_SVR_DBG("%s", "poll() timeout");
+		SEC_SVR_ERR("%s", "poll() timeout");
 		return SECURITY_SERVER_ERROR_SEND_FAILED;
 	}
 
@@ -617,7 +617,7 @@ int send_object_name(int sockfd, char *obj)
 	if(ret <  sizeof(hdr) + strlen(obj))
 	{
 		/* Error on writing */
-		SEC_SVR_DBG("Error on write: %d", ret);
+		SEC_SVR_ERR("Error on write: %d", ret);
 		ret = SECURITY_SERVER_ERROR_SEND_FAILED;
 		return ret;
 	}
@@ -657,12 +657,12 @@ int send_gid(int sockfd, int gid)
 	ret = check_socket_poll(sockfd, POLLOUT, SECURITY_SERVER_SOCKET_TIMEOUT_MILISECOND);
 	if(ret == SECURITY_SERVER_ERROR_POLL)
 	{
-		SEC_SVR_DBG("%s", "poll() error");
+		SEC_SVR_ERR("%s", "poll() error");
 		return SECURITY_SERVER_ERROR_SEND_FAILED;
 	}
 	if(ret == SECURITY_SERVER_ERROR_TIMEOUT)
 	{
-		SEC_SVR_DBG("%s", "poll() timeout");
+		SEC_SVR_ERR("%s", "poll() timeout");
 		return SECURITY_SERVER_ERROR_SEND_FAILED;
 	}
 
@@ -671,7 +671,7 @@ int send_gid(int sockfd, int gid)
 	if(ret <  sizeof(hdr) + sizeof(gid))
 	{
 		/* Error on writing */
-		SEC_SVR_DBG("Error on write(): %d", ret);
+		SEC_SVR_ERR("Error on write(): %d", ret);
 		ret = SECURITY_SERVER_ERROR_SEND_FAILED;
 		return ret;
 	}
@@ -711,12 +711,12 @@ int send_pid(int sockfd, int pid)
 	ret = check_socket_poll(sockfd, POLLOUT, SECURITY_SERVER_SOCKET_TIMEOUT_MILISECOND);
 	if(ret == SECURITY_SERVER_ERROR_POLL)
 	{
-		SEC_SVR_DBG("%s", "poll() error");
+		SEC_SVR_ERR("%s", "poll() error");
 		return SECURITY_SERVER_ERROR_SEND_FAILED;
 	}
 	if(ret == SECURITY_SERVER_ERROR_TIMEOUT)
 	{
-		SEC_SVR_DBG("%s", "poll() timeout");
+		SEC_SVR_ERR("%s", "poll() timeout");
 		return SECURITY_SERVER_ERROR_SEND_FAILED;
 	}
 
@@ -725,7 +725,7 @@ int send_pid(int sockfd, int pid)
 	if(ret <  sizeof(hdr) + sizeof(pid))
 	{
 		/* Error on writing */
-		SEC_SVR_DBG("Error on write(): %d", ret);
+		SEC_SVR_ERR("Error on write(): %d", ret);
 		ret = SECURITY_SERVER_ERROR_SEND_FAILED;
 		return ret;
 	}
@@ -769,12 +769,12 @@ int send_smack(int sockfd, char * label)
 	ret = check_socket_poll(sockfd, POLLOUT, SECURITY_SERVER_SOCKET_TIMEOUT_MILISECOND);
 	if(ret == SECURITY_SERVER_ERROR_POLL)
 	{
-		SEC_SVR_DBG("%s", "poll() error");
+		SEC_SVR_ERR("%s", "poll() error");
 		return SECURITY_SERVER_ERROR_SEND_FAILED;
 	}
 	if(ret == SECURITY_SERVER_ERROR_TIMEOUT)
 	{
-		SEC_SVR_DBG("%s", "poll() timeout");
+		SEC_SVR_ERR("%s", "poll() timeout");
 		return SECURITY_SERVER_ERROR_SEND_FAILED;
 	}
 
@@ -783,7 +783,7 @@ int send_smack(int sockfd, char * label)
 	if(ret <  PACKET_SIZE)
 	{
 		/* Error on writing */
-		SEC_SVR_DBG("Error on write(): %d", ret);
+		SEC_SVR_ERR("Error on write(): %d", ret);
 		ret = SECURITY_SERVER_ERROR_SEND_FAILED;
 		return ret;
 	}
@@ -840,12 +840,12 @@ int send_pwd_response(const int sockfd,
 	ret = check_socket_poll(sockfd, POLLOUT, SECURITY_SERVER_SOCKET_TIMEOUT_MILISECOND);
 	if(ret == SECURITY_SERVER_ERROR_POLL)
 	{
-		SEC_SVR_DBG("%s", "Server: poll() error");
+		SEC_SVR_ERR("%s", "Server: poll() error");
 		return SECURITY_SERVER_ERROR_SEND_FAILED;
 	}
 	if(ret == SECURITY_SERVER_ERROR_TIMEOUT)
 	{
-		SEC_SVR_DBG("%s", "Server: poll() timeout");
+		SEC_SVR_ERR("%s", "Server: poll() timeout");
 		return SECURITY_SERVER_ERROR_SEND_FAILED;
 	}
 
@@ -854,7 +854,7 @@ int send_pwd_response(const int sockfd,
 	if(ret <  ptr)
 	{
 		/* Error on writing */
-		SEC_SVR_DBG("Server: ERROR on write(): %d", ret);
+		SEC_SVR_ERR("Server: ERROR on write(): %d", ret);
 		ret = SECURITY_SERVER_ERROR_SEND_FAILED;
 		return ret;
 	}
@@ -883,12 +883,12 @@ int send_cookie_request(int sock_fd)
 	retval = check_socket_poll(sock_fd, POLLOUT, SECURITY_SERVER_SOCKET_TIMEOUT_MILISECOND);
 	if(retval == SECURITY_SERVER_ERROR_POLL)
 	{
-		SEC_SVR_DBG("%s", "poll() error");
+		SEC_SVR_ERR("%s", "poll() error");
 		return SECURITY_SERVER_ERROR_SEND_FAILED;
 	}
 	if(retval == SECURITY_SERVER_ERROR_TIMEOUT)
 	{
-		SEC_SVR_DBG("%s", "poll() timeout");
+		SEC_SVR_ERR("%s", "poll() timeout");
 		return SECURITY_SERVER_ERROR_SEND_FAILED;
 	}
 
@@ -897,7 +897,7 @@ int send_cookie_request(int sock_fd)
 	if(retval < sizeof(hdr))
 	{
 		/* Write error */
-		SEC_SVR_DBG("Error on write(): %d", retval);
+		SEC_SVR_ERR("Error on write(): %d", retval);
 		return SECURITY_SERVER_ERROR_SEND_FAILED;
 	}
 	return SECURITY_SERVER_SUCCESS;
@@ -924,7 +924,7 @@ int send_gid_request(int sock_fd, const char* object)
 	if(strlen(object) > SECURITY_SERVER_MAX_OBJ_NAME)
 	{
 		/* Object name is too big*/
-		SEC_SVR_DBG("Object name is too big %dbytes", strlen(object));
+		SEC_SVR_ERR("Object name is too big %dbytes", strlen(object));
 		return SECURITY_SERVER_ERROR_INPUT_PARAM;
 	}
 
@@ -937,7 +937,7 @@ int send_gid_request(int sock_fd, const char* object)
 	buf = malloc(send_len);
 	if(buf == NULL)
 	{
-		SEC_SVR_DBG("%s", "out of memory");
+		SEC_SVR_ERR("%s", "out of memory");
 		return SECURITY_SERVER_ERROR_OUT_OF_MEMORY;
 	}
 
@@ -948,13 +948,13 @@ int send_gid_request(int sock_fd, const char* object)
 	retval = check_socket_poll(sock_fd, POLLOUT, SECURITY_SERVER_SOCKET_TIMEOUT_MILISECOND);
 	if(retval == SECURITY_SERVER_ERROR_POLL)
 	{
-		SEC_SVR_DBG("%s", "poll() error");
+		SEC_SVR_ERR("%s", "poll() error");
 		retval = SECURITY_SERVER_ERROR_SEND_FAILED;
 		goto error;
 	}
 	if(retval == SECURITY_SERVER_ERROR_TIMEOUT)
 	{
-		SEC_SVR_DBG("%s", "poll() timeout");
+		SEC_SVR_ERR("%s", "poll() timeout");
 		retval =  SECURITY_SERVER_ERROR_SEND_FAILED;
 		goto error;
 	}
@@ -963,7 +963,7 @@ int send_gid_request(int sock_fd, const char* object)
 	if(retval < send_len)
 	{
 		/* Write error */
-		SEC_SVR_DBG("Error on write(): %d. errno=%d, sockfd=%d", retval, errno, sock_fd);
+		SEC_SVR_ERR("Error on write(): %d. errno=%d, sockfd=%d", retval, errno, sock_fd);
 		retval = SECURITY_SERVER_ERROR_SEND_FAILED;
 	}
 	else
@@ -1004,12 +1004,12 @@ int send_object_name_request(int sock_fd, int gid)
 	retval = check_socket_poll(sock_fd, POLLOUT, SECURITY_SERVER_SOCKET_TIMEOUT_MILISECOND);
 	if(retval == SECURITY_SERVER_ERROR_POLL)
 	{
-		SEC_SVR_DBG("%s", "poll() error");
+		SEC_SVR_ERR("%s", "poll() error");
 		return SECURITY_SERVER_ERROR_SEND_FAILED;
 	}
 	if(retval == SECURITY_SERVER_ERROR_TIMEOUT)
 	{
-		SEC_SVR_DBG("%s", "poll() timeout");
+		SEC_SVR_ERR("%s", "poll() timeout");
 		return SECURITY_SERVER_ERROR_SEND_FAILED;
 	}
 
@@ -1018,7 +1018,7 @@ int send_object_name_request(int sock_fd, int gid)
 	if(retval < sizeof(buf))
 	{
 		/* Write error */
-		SEC_SVR_DBG("Error on write(): %d", retval);
+		SEC_SVR_ERR("Error on write(): %d", retval);
 		return SECURITY_SERVER_ERROR_SEND_FAILED;
 	}
 	return SECURITY_SERVER_SUCCESS;
@@ -1059,12 +1059,12 @@ int send_privilege_check_request(int sock_fd, const char*cookie, int gid)
 	retval = check_socket_poll(sock_fd, POLLOUT, SECURITY_SERVER_SOCKET_TIMEOUT_MILISECOND);
 	if(retval == SECURITY_SERVER_ERROR_POLL)
 	{
-		SEC_SVR_DBG("%s", "poll() error");
+		SEC_SVR_ERR("%s", "poll() error");
 		return SECURITY_SERVER_ERROR_SEND_FAILED;
 	}
 	if(retval == SECURITY_SERVER_ERROR_TIMEOUT)
 	{
-		SEC_SVR_DBG("%s", "poll() timeout");
+		SEC_SVR_ERR("%s", "poll() timeout");
 		return SECURITY_SERVER_ERROR_SEND_FAILED;
 	}
 
@@ -1073,7 +1073,7 @@ int send_privilege_check_request(int sock_fd, const char*cookie, int gid)
 	if(retval < sizeof(buf))
 	{
 		/* Write error */
-		SEC_SVR_DBG("Error on write(): %d", retval);
+		SEC_SVR_ERR("Error on write(): %d", retval);
 		return SECURITY_SERVER_ERROR_SEND_FAILED;
 	}
 	return SECURITY_SERVER_SUCCESS;
@@ -1117,12 +1117,12 @@ int send_privilege_check_new_request(int sock_fd,
 	retval = check_socket_poll(sock_fd, POLLOUT, SECURITY_SERVER_SOCKET_TIMEOUT_MILISECOND);
 	if(retval == SECURITY_SERVER_ERROR_POLL)
 	{
-		SEC_SVR_DBG("%s", "poll() error");
+		SEC_SVR_ERR("%s", "poll() error");
 		return SECURITY_SERVER_ERROR_SEND_FAILED;
 	}
 	if(retval == SECURITY_SERVER_ERROR_TIMEOUT)
 	{
-		SEC_SVR_DBG("%s", "poll() timeout");
+		SEC_SVR_ERR("%s", "poll() timeout");
 		return SECURITY_SERVER_ERROR_SEND_FAILED;
 	}
 
@@ -1132,7 +1132,7 @@ int send_privilege_check_new_request(int sock_fd,
 	if(retval < size)
 	{
 		/* Write error */
-		SEC_SVR_DBG("Error on write(): %d", retval);
+		SEC_SVR_ERR("Error on write(): %d", retval);
 		return SECURITY_SERVER_ERROR_SEND_FAILED;
 	}
 	return SECURITY_SERVER_SUCCESS;
@@ -1170,12 +1170,12 @@ int send_smack_request(int sock_fd, const char * cookie)
 	retval = check_socket_poll(sock_fd, POLLOUT, SECURITY_SERVER_SOCKET_TIMEOUT_MILISECOND);
 	if(retval == SECURITY_SERVER_ERROR_POLL)
 	{
-		SEC_SVR_DBG("%s", "poll() error");
+		SEC_SVR_ERR("%s", "poll() error");
 		return SECURITY_SERVER_ERROR_SEND_FAILED;
 	}
 	if(retval == SECURITY_SERVER_ERROR_TIMEOUT)
 	{
-		SEC_SVR_DBG("%s", "poll() timeout");
+		SEC_SVR_ERR("%s", "poll() timeout");
 		return SECURITY_SERVER_ERROR_SEND_FAILED;
 	}
 
@@ -1184,7 +1184,7 @@ int send_smack_request(int sock_fd, const char * cookie)
 	if(retval < sizeof(buf))
 	{
 		/* Write error */
-		SEC_SVR_DBG("Error on write(): %d", retval);
+		SEC_SVR_ERR("Error on write(): %d", retval);
 		return SECURITY_SERVER_ERROR_SEND_FAILED;
 	}
 	return SECURITY_SERVER_SUCCESS;
@@ -1204,13 +1204,13 @@ int send_pid_privilege_request(int sockfd, int pid, const char *object, const ch
     int offset = 0;
 
     if (pid < 0) {
-        SEC_SVR_DBG("%s", "Error input param");
+        SEC_SVR_ERR("%s", "Error input param");
         retval = SECURITY_SERVER_ERROR_INPUT_PARAM;
         goto error;
     }
 
     if (object == NULL) {
-        SEC_SVR_DBG("%s", "Error input param");
+        SEC_SVR_ERR("%s", "Error input param");
         retval = SECURITY_SERVER_ERROR_INPUT_PARAM;
         goto error;
     }
@@ -1221,7 +1221,7 @@ int send_pid_privilege_request(int sockfd, int pid, const char *object, const ch
     message_size = sizeof(int) + strlen(object) + 1 + strlen(access_rights) + 1;
     buff = (char *)malloc(message_size + sizeof(hdr));
     if (buff == NULL) {
-        SEC_SVR_DBG("%s", "malloc() error");
+        SEC_SVR_ERR("%s", "malloc() error");
         retval = SECURITY_SERVER_ERROR_OUT_OF_MEMORY;
         goto error;
     }
@@ -1256,13 +1256,13 @@ int send_pid_privilege_request(int sockfd, int pid, const char *object, const ch
     //check pool
     retval = check_socket_poll(sockfd, POLLOUT, SECURITY_SERVER_SOCKET_TIMEOUT_MILISECOND);
     if (retval == SECURITY_SERVER_ERROR_POLL) {
-        SEC_SVR_DBG("%s", "poll() error");
+        SEC_SVR_ERR("%s", "poll() error");
         retval = SECURITY_SERVER_ERROR_SEND_FAILED;
         goto error;
 
     }
     if (retval == SECURITY_SERVER_ERROR_TIMEOUT) {
-        SEC_SVR_DBG("%s", "poll() timeout");
+        SEC_SVR_ERR("%s", "poll() timeout");
         retval = SECURITY_SERVER_ERROR_SEND_FAILED;
         goto error;
     }
@@ -1271,7 +1271,7 @@ int send_pid_privilege_request(int sockfd, int pid, const char *object, const ch
     retval = TEMP_FAILURE_RETRY(write(sockfd, buff, message_size + sizeof(hdr)));
     if (retval < message_size) {
         //error on write
-        SEC_SVR_DBG("Error on write(): %d", retval);
+        SEC_SVR_ERR("Error on write(): %d", retval);
         retval = SECURITY_SERVER_ERROR_SEND_FAILED;
         goto error;
     }
@@ -1315,12 +1315,12 @@ int send_pid_request(int sock_fd, const char*cookie)
 	retval = check_socket_poll(sock_fd, POLLOUT, SECURITY_SERVER_SOCKET_TIMEOUT_MILISECOND);
 	if(retval == SECURITY_SERVER_ERROR_POLL)
 	{
-		SEC_SVR_DBG("%s", "poll() error");
+		SEC_SVR_ERR("%s", "poll() error");
 		return SECURITY_SERVER_ERROR_SEND_FAILED;
 	}
 	if(retval == SECURITY_SERVER_ERROR_TIMEOUT)
 	{
-		SEC_SVR_DBG("%s", "poll() timeout");
+		SEC_SVR_ERR("%s", "poll() timeout");
 		return SECURITY_SERVER_ERROR_SEND_FAILED;
 	}
 
@@ -1329,7 +1329,7 @@ int send_pid_request(int sock_fd, const char*cookie)
 	if(retval < sizeof(buf))
 	{
 		/* Write error */
-		SEC_SVR_DBG("Error on write(): %d", retval);
+		SEC_SVR_ERR("Error on write(): %d", retval);
 		return SECURITY_SERVER_ERROR_SEND_FAILED;
 	}
 	return SECURITY_SERVER_SUCCESS;
@@ -1376,7 +1376,7 @@ int send_launch_tool_request(int sock_fd, int argc, const char **argv)
 	{
 		if(argv[i] == NULL)
 		{
-			SEC_SVR_DBG("Error: %dth argv is NULL", i);
+			SEC_SVR_ERR("Error: %dth argv is NULL", i);
 			return SECURITY_SERVER_ERROR_INPUT_PARAM;
 		}
 		total_length += strlen(argv[i]);
@@ -1384,21 +1384,21 @@ int send_launch_tool_request(int sock_fd, int argc, const char **argv)
 
 	if(total_length < 1)
 	{
-		SEC_SVR_DBG("Error: There is a problem in argv. [%d]", total_length);
+		SEC_SVR_ERR("Error: There is a problem in argv. [%d]", total_length);
 		return SECURITY_SERVER_ERROR_INPUT_PARAM;
 	}
 	total_length += sizeof(hdr) + sizeof(int) +(argc * sizeof(int));
 
 	if(total_length > 0xffff)
 	{
-		SEC_SVR_DBG("Buffer overflow. too big payload. [%d]", total_length);
+		SEC_SVR_ERR("Buffer overflow. too big payload. [%d]", total_length);
 		return SECURITY_SERVER_ERROR_INPUT_PARAM;
 	}
 
 	buf = malloc(total_length);
 	if(buf == NULL)
 	{
-		SEC_SVR_DBG("%s", "Error: failed to malloc()");
+		SEC_SVR_ERR("%s", "Error: failed to malloc()");
 		return SECURITY_SERVER_ERROR_OUT_OF_MEMORY;
 	}
 
@@ -1425,14 +1425,14 @@ int send_launch_tool_request(int sock_fd, int argc, const char **argv)
 	retval = check_socket_poll(sock_fd, POLLOUT, SECURITY_SERVER_SOCKET_TIMEOUT_MILISECOND);
 	if(retval == SECURITY_SERVER_ERROR_POLL)
 	{
-		SEC_SVR_DBG("%s", "poll() error");
+		SEC_SVR_ERR("%s", "poll() error");
 		retval =  SECURITY_SERVER_ERROR_SEND_FAILED;
 		goto error;
 
 	}
 	if(retval == SECURITY_SERVER_ERROR_TIMEOUT)
 	{
-		SEC_SVR_DBG("%s", "poll() timeout");
+		SEC_SVR_ERR("%s", "poll() timeout");
 		retval =  SECURITY_SERVER_ERROR_SEND_FAILED;
 		goto error;
 	}
@@ -1442,7 +1442,7 @@ int send_launch_tool_request(int sock_fd, int argc, const char **argv)
 	if(retval < sizeof(buf))
 	{
 		/* Write error */
-		SEC_SVR_DBG("Error on write(): %d", retval);
+		SEC_SVR_ERR("Error on write(): %d", retval);
 		retval =  SECURITY_SERVER_ERROR_SEND_FAILED;
 		goto error;
 	}
@@ -1475,14 +1475,14 @@ int send_valid_pwd_request(int sock_fd)
 	retval = check_socket_poll(sock_fd, POLLOUT, SECURITY_SERVER_SOCKET_TIMEOUT_MILISECOND);
 	if(retval == SECURITY_SERVER_ERROR_POLL)
 	{
-		SEC_SVR_DBG("%s", "poll() error");
+		SEC_SVR_ERR("%s", "poll() error");
 		retval =  SECURITY_SERVER_ERROR_SEND_FAILED;
 		goto error;
 
 	}
 	if(retval == SECURITY_SERVER_ERROR_TIMEOUT)
 	{
-		SEC_SVR_DBG("%s", "poll() timeout");
+		SEC_SVR_ERR("%s", "poll() timeout");
 		retval =  SECURITY_SERVER_ERROR_SEND_FAILED;
 		goto error;
 	}
@@ -1492,7 +1492,7 @@ int send_valid_pwd_request(int sock_fd)
 	if(retval < sizeof(hdr))
 	{
 		/* Write error */
-		SEC_SVR_DBG("Error on write(): %d", retval);
+		SEC_SVR_ERR("Error on write(): %d", retval);
 		retval =  SECURITY_SERVER_ERROR_SEND_FAILED;
 		goto error;
 	}
@@ -1544,7 +1544,7 @@ int send_set_pwd_request(int sock_fd,
 	buf = malloc(total_length);
 	if(buf == NULL)
 	{
-		SEC_SVR_DBG("%s", "Error: failed to malloc()");
+		SEC_SVR_ERR("%s", "Error: failed to malloc()");
 		return SECURITY_SERVER_ERROR_OUT_OF_MEMORY;
 	}
 
@@ -1573,14 +1573,14 @@ int send_set_pwd_request(int sock_fd,
 	retval = check_socket_poll(sock_fd, POLLOUT, SECURITY_SERVER_SOCKET_TIMEOUT_MILISECOND);
 	if(retval == SECURITY_SERVER_ERROR_POLL)
 	{
-		SEC_SVR_DBG("%s", "poll() error");
+		SEC_SVR_ERR("%s", "poll() error");
 		retval =  SECURITY_SERVER_ERROR_SEND_FAILED;
 		goto error;
 
 	}
 	if(retval == SECURITY_SERVER_ERROR_TIMEOUT)
 	{
-		SEC_SVR_DBG("%s", "poll() timeout");
+		SEC_SVR_ERR("%s", "poll() timeout");
 		retval =  SECURITY_SERVER_ERROR_SEND_FAILED;
 		goto error;
 	}
@@ -1590,7 +1590,7 @@ int send_set_pwd_request(int sock_fd,
 	if(retval < sizeof(buf))
 	{
 		/* Write error */
-		SEC_SVR_DBG("Error on write(): %d", retval);
+		SEC_SVR_ERR("Error on write(): %d", retval);
 		retval =  SECURITY_SERVER_ERROR_SEND_FAILED;
 		goto error;
 	}
@@ -1623,7 +1623,7 @@ int send_set_pwd_validity_request(int sock_fd, const unsigned int valid_period_i
     buf = malloc(total_length);
     if(buf == NULL)
     {
-        SEC_SVR_DBG("%s", "Error: failed to malloc()");
+        SEC_SVR_ERR("%s", "Error: failed to malloc()");
         return SECURITY_SERVER_ERROR_OUT_OF_MEMORY;
     }
 
@@ -1639,14 +1639,14 @@ int send_set_pwd_validity_request(int sock_fd, const unsigned int valid_period_i
     retval = check_socket_poll(sock_fd, POLLOUT, SECURITY_SERVER_SOCKET_TIMEOUT_MILISECOND);
     if(retval == SECURITY_SERVER_ERROR_POLL)
     {
-        SEC_SVR_DBG("%s", "poll() error");
+        SEC_SVR_ERR("%s", "poll() error");
         retval =  SECURITY_SERVER_ERROR_SEND_FAILED;
         goto error;
 
     }
     if(retval == SECURITY_SERVER_ERROR_TIMEOUT)
     {
-        SEC_SVR_DBG("%s", "poll() timeout");
+        SEC_SVR_ERR("%s", "poll() timeout");
         retval =  SECURITY_SERVER_ERROR_SEND_FAILED;
         goto error;
     }
@@ -1656,7 +1656,7 @@ int send_set_pwd_validity_request(int sock_fd, const unsigned int valid_period_i
     if(retval < sizeof(buf))
     {
         /* Write error */
-        SEC_SVR_DBG("Error on write(): %d", retval);
+        SEC_SVR_ERR("Error on write(): %d", retval);
         retval =  SECURITY_SERVER_ERROR_SEND_FAILED;
         goto error;
     }
@@ -1689,7 +1689,7 @@ int send_set_pwd_max_challenge_request(int sock_fd, const unsigned int max_chall
     buf = malloc(total_length);
     if(buf == NULL)
     {
-        SEC_SVR_DBG("%s", "Error: failed to malloc()");
+        SEC_SVR_ERR("%s", "Error: failed to malloc()");
         return SECURITY_SERVER_ERROR_OUT_OF_MEMORY;
     }
 
@@ -1705,14 +1705,14 @@ int send_set_pwd_max_challenge_request(int sock_fd, const unsigned int max_chall
     retval = check_socket_poll(sock_fd, POLLOUT, SECURITY_SERVER_SOCKET_TIMEOUT_MILISECOND);
     if(retval == SECURITY_SERVER_ERROR_POLL)
     {
-        SEC_SVR_DBG("%s", "poll() error");
+        SEC_SVR_ERR("%s", "poll() error");
         retval =  SECURITY_SERVER_ERROR_SEND_FAILED;
         goto error;
 
     }
     if(retval == SECURITY_SERVER_ERROR_TIMEOUT)
     {
-        SEC_SVR_DBG("%s", "poll() timeout");
+        SEC_SVR_ERR("%s", "poll() timeout");
         retval =  SECURITY_SERVER_ERROR_SEND_FAILED;
         goto error;
     }
@@ -1722,7 +1722,7 @@ int send_set_pwd_max_challenge_request(int sock_fd, const unsigned int max_chall
     if(retval < sizeof(buf))
     {
         /* Write error */
-        SEC_SVR_DBG("Error on write(): %d", retval);
+        SEC_SVR_ERR("Error on write(): %d", retval);
         retval =  SECURITY_SERVER_ERROR_SEND_FAILED;
         goto error;
     }
@@ -1769,7 +1769,7 @@ int send_reset_pwd_request(int sock_fd,
 	buf = malloc(total_length);
 	if(buf == NULL)
 	{
-		SEC_SVR_DBG("%s", "Error: failed to malloc()");
+		SEC_SVR_ERR("%s", "Error: failed to malloc()");
 		return SECURITY_SERVER_ERROR_OUT_OF_MEMORY;
 	}
 
@@ -1791,14 +1791,14 @@ int send_reset_pwd_request(int sock_fd,
 	retval = check_socket_poll(sock_fd, POLLOUT, SECURITY_SERVER_SOCKET_TIMEOUT_MILISECOND);
 	if(retval == SECURITY_SERVER_ERROR_POLL)
 	{
-		SEC_SVR_DBG("%s", "poll() error");
+		SEC_SVR_ERR("%s", "poll() error");
 		retval =  SECURITY_SERVER_ERROR_SEND_FAILED;
 		goto error;
 
 	}
 	if(retval == SECURITY_SERVER_ERROR_TIMEOUT)
 	{
-		SEC_SVR_DBG("%s", "poll() timeout");
+		SEC_SVR_ERR("%s", "poll() timeout");
 		retval =  SECURITY_SERVER_ERROR_SEND_FAILED;
 		goto error;
 	}
@@ -1808,7 +1808,7 @@ int send_reset_pwd_request(int sock_fd,
 	if(retval < sizeof(buf))
 	{
 		/* Write error */
-		SEC_SVR_DBG("Error on write(): %d", retval);
+		SEC_SVR_ERR("Error on write(): %d", retval);
 		retval =  SECURITY_SERVER_ERROR_SEND_FAILED;
 		goto error;
 	}
@@ -1845,7 +1845,7 @@ int send_chk_pwd_request(int sock_fd, const char*challenge)
 	buf = malloc(total_length);
 	if(buf == NULL)
 	{
-		SEC_SVR_DBG("%s", "Error: failed to malloc()");
+		SEC_SVR_ERR("%s", "Error: failed to malloc()");
 		return SECURITY_SERVER_ERROR_OUT_OF_MEMORY;
 	}
 
@@ -1864,14 +1864,14 @@ int send_chk_pwd_request(int sock_fd, const char*challenge)
 	retval = check_socket_poll(sock_fd, POLLOUT, SECURITY_SERVER_SOCKET_TIMEOUT_MILISECOND);
 	if(retval == SECURITY_SERVER_ERROR_POLL)
 	{
-		SEC_SVR_DBG("%s", "poll() error");
+		SEC_SVR_ERR("%s", "poll() error");
 		retval =  SECURITY_SERVER_ERROR_SEND_FAILED;
 		goto error;
 
 	}
 	if(retval == SECURITY_SERVER_ERROR_TIMEOUT)
 	{
-		SEC_SVR_DBG("%s", "poll() timeout");
+		SEC_SVR_ERR("%s", "poll() timeout");
 		retval =  SECURITY_SERVER_ERROR_SEND_FAILED;
 		goto error;
 	}
@@ -1881,7 +1881,7 @@ int send_chk_pwd_request(int sock_fd, const char*challenge)
 	if(retval < sizeof(buf))
 	{
 		/* Write error */
-		SEC_SVR_DBG("Error on write(): %d", retval);
+		SEC_SVR_ERR("Error on write(): %d", retval);
 		retval =  SECURITY_SERVER_ERROR_SEND_FAILED;
 		goto error;
 	}
@@ -1926,14 +1926,14 @@ int send_set_pwd_history_request(int sock_fd, int num)
 	retval = check_socket_poll(sock_fd, POLLOUT, SECURITY_SERVER_SOCKET_TIMEOUT_MILISECOND);
 	if(retval == SECURITY_SERVER_ERROR_POLL)
 	{
-		SEC_SVR_DBG("%s", "poll() error");
+		SEC_SVR_ERR("%s", "poll() error");
 		retval =  SECURITY_SERVER_ERROR_SEND_FAILED;
 		goto error;
 
 	}
 	if(retval == SECURITY_SERVER_ERROR_TIMEOUT)
 	{
-		SEC_SVR_DBG("%s", "poll() timeout");
+		SEC_SVR_ERR("%s", "poll() timeout");
 		retval =  SECURITY_SERVER_ERROR_SEND_FAILED;
 		goto error;
 	}
@@ -1943,7 +1943,7 @@ int send_set_pwd_history_request(int sock_fd, int num)
 	if(retval < sizeof(buf))
 	{
 		/* Write error */
-		SEC_SVR_DBG("Error on write(): %d", retval);
+		SEC_SVR_ERR("Error on write(): %d", retval);
 		retval =  SECURITY_SERVER_ERROR_SEND_FAILED;
 		goto error;
 	}
@@ -1962,12 +1962,12 @@ int recv_hdr(int client_sockfd, basic_header *basic_hdr)
 	retval = check_socket_poll(client_sockfd, POLLIN, SECURITY_SERVER_SOCKET_TIMEOUT_MILISECOND);
 	if(retval == SECURITY_SERVER_ERROR_POLL)
 	{
-		SEC_SVR_DBG("%s", "poll() error");
+		SEC_SVR_ERR("%s", "poll() error");
 		return SECURITY_SERVER_ERROR_SOCKET;
 	}
 	if(retval == SECURITY_SERVER_ERROR_TIMEOUT)
 	{
-		SEC_SVR_DBG("%s", "poll() timeout");
+		SEC_SVR_ERR("%s", "poll() timeout");
 		return SECURITY_SERVER_ERROR_TIMEOUT;
 	}
 
@@ -1975,7 +1975,7 @@ int recv_hdr(int client_sockfd, basic_header *basic_hdr)
 	retval = TEMP_FAILURE_RETRY(read(client_sockfd, basic_hdr, sizeof(basic_header)));
 	if(retval < sizeof(basic_header))
 	{
-		SEC_SVR_DBG("read failed. closing socket %d", retval);
+		SEC_SVR_ERR("read failed. closing socket %d", retval);
 		return SECURITY_SERVER_ERROR_RECV_FAILED;
 	}
 
@@ -1992,14 +1992,14 @@ int recv_check_privilege_request(int sockfd, unsigned char *requested_cookie, in
 	retval = TEMP_FAILURE_RETRY(read(sockfd, requested_cookie, SECURITY_SERVER_COOKIE_LEN));
 	if(retval < SECURITY_SERVER_COOKIE_LEN)
 	{
-		SEC_SVR_DBG("Received cookie size is too small: %d", retval);
+		SEC_SVR_ERR("Received cookie size is too small: %d", retval);
 		return SECURITY_SERVER_ERROR_RECV_FAILED;
 	}
 
 	retval = TEMP_FAILURE_RETRY(read(sockfd, requested_privilege, sizeof(int)));
 	if(retval < sizeof(int))
 	{
-		SEC_SVR_DBG("privilege size is too small: %d", retval);
+		SEC_SVR_ERR("privilege size is too small: %d", retval);
 		return SECURITY_SERVER_ERROR_RECV_FAILED;
 	}
 	return SECURITY_SERVER_SUCCESS;
@@ -2017,28 +2017,28 @@ int recv_check_privilege_new_request(int sockfd,
 	retval = TEMP_FAILURE_RETRY(read(sockfd, requested_cookie, SECURITY_SERVER_COOKIE_LEN));
 	if(retval < SECURITY_SERVER_COOKIE_LEN)
 	{
-		SEC_SVR_DBG("Received cookie size is too small: %d", retval);
+		SEC_SVR_ERR("Received cookie size is too small: %d", retval);
 		return SECURITY_SERVER_ERROR_RECV_FAILED;
 	}
 
 	retval = TEMP_FAILURE_RETRY(read(sockfd, &olen, sizeof(int)));
 	if(retval < sizeof(int) || olen < 0 || olen > MAX_OBJECT_LABEL_LEN)
 	{
-		SEC_SVR_DBG("error reading object_label len: %d", retval);
+		SEC_SVR_ERR("error reading object_label len: %d", retval);
 		return SECURITY_SERVER_ERROR_RECV_FAILED;
 	}
 
 	retval = TEMP_FAILURE_RETRY(read(sockfd, &alen, sizeof(int)));
 	if(retval < sizeof(int) || alen < 0 || alen > MAX_MODE_STR_LEN)
 	{
-		SEC_SVR_DBG("error reading access_rights len: %d", retval);
+		SEC_SVR_ERR("error reading access_rights len: %d", retval);
 		return SECURITY_SERVER_ERROR_RECV_FAILED;
 	}
 
 	retval = TEMP_FAILURE_RETRY(read(sockfd, object_label, olen));
 	if(retval < olen)
 	{
-		SEC_SVR_DBG("error reading object_label: %d", retval);
+		SEC_SVR_ERR("error reading object_label: %d", retval);
 		return SECURITY_SERVER_ERROR_RECV_FAILED;
 	}
         object_label[olen] = '\0';
@@ -2046,7 +2046,7 @@ int recv_check_privilege_new_request(int sockfd,
 	retval = TEMP_FAILURE_RETRY(read(sockfd, access_rights, alen));
 	if(retval < alen)
 	{
-		SEC_SVR_DBG("error reading access_rights: %d", retval);
+		SEC_SVR_ERR("error reading access_rights: %d", retval);
 		return SECURITY_SERVER_ERROR_RECV_FAILED;
 	}
         access_rights[alen] = '\0';
@@ -2061,7 +2061,7 @@ int recv_pid_request(int sockfd, unsigned char *requested_cookie)
 	retval = TEMP_FAILURE_RETRY(read(sockfd, requested_cookie, SECURITY_SERVER_COOKIE_LEN));
 	if(retval < SECURITY_SERVER_COOKIE_LEN)
 	{
-		SEC_SVR_DBG("Received cookie size is too small: %d", retval);
+		SEC_SVR_ERR("Received cookie size is too small: %d", retval);
 		return SECURITY_SERVER_ERROR_RECV_FAILED;
 	}
 	return SECURITY_SERVER_SUCCESS;
@@ -2074,7 +2074,7 @@ int recv_smack_request(int sockfd, unsigned char *requested_cookie)
 	retval = TEMP_FAILURE_RETRY(read(sockfd, requested_cookie, SECURITY_SERVER_COOKIE_LEN));
 	if(retval < SECURITY_SERVER_COOKIE_LEN)
 	{
-		SEC_SVR_DBG("Received cookie size is too small: %d", retval);
+		SEC_SVR_ERR("Received cookie size is too small: %d", retval);
 		return SECURITY_SERVER_ERROR_RECV_FAILED;
 	}
 	return SECURITY_SERVER_SUCCESS;
@@ -2094,7 +2094,7 @@ int recv_pid_privilege_request(int sockfd, int datasize, int * pid, char ** obje
     //receive all data to buffer
     retval = TEMP_FAILURE_RETRY(read(sockfd, buff, datasize));
 	if (retval < datasize) {
-		SEC_SVR_DBG("Received data size is too small: %d / %d", retval, datasize);
+		SEC_SVR_ERR("Received data size is too small: %d / %d", retval, datasize);
 		retval =  SECURITY_SERVER_ERROR_RECV_FAILED;
         goto error;
 	}
@@ -2107,7 +2107,7 @@ int recv_pid_privilege_request(int sockfd, int datasize, int * pid, char ** obje
         object_size++;
 
         if (object_size > datasize) {
-            SEC_SVR_DBG("%s", "Wrong object_size");
+            SEC_SVR_ERR("%s", "Wrong object_size");
             retval = SECURITY_SERVER_ERROR_UNKNOWN;
             goto error;
         }
@@ -2149,20 +2149,20 @@ int recv_launch_tool_request(int sockfd, int argc, char *argv[])
         retval = TEMP_FAILURE_RETRY(read(sockfd, &argv_len, sizeof(int)));
         if(retval < sizeof(int))
         {
-            SEC_SVR_DBG("Error: argv length recieve failed: %d", retval);
+            SEC_SVR_ERR("Error: argv length recieve failed: %d", retval);
             return SECURITY_SERVER_ERROR_RECV_FAILED;
         }
 
         if(argv_len <= 0 || argv_len >= INT_MAX)
         {
-            SEC_SVR_DBG("Error: argv length out of boundaries");
+            SEC_SVR_ERR("Error: argv length out of boundaries");
             return SECURITY_SERVER_ERROR_RECV_FAILED;
         }
 
         argv[i] = malloc(argv_len + 1);
         if(argv[i] == NULL)
         {
-            SEC_SVR_DBG("Error: malloc() failed: %d", retval);
+            SEC_SVR_ERR("Error: malloc() failed: %d", retval);
             return SECURITY_SERVER_ERROR_OUT_OF_MEMORY;
         }
 
@@ -2170,7 +2170,7 @@ int recv_launch_tool_request(int sockfd, int argc, char *argv[])
         retval = TEMP_FAILURE_RETRY(read(sockfd, argv[i], argv_len));
         if(retval < argv_len)
         {
-            SEC_SVR_DBG("Error: argv recieve failed: %d", retval);
+            SEC_SVR_ERR("Error: argv recieve failed: %d", retval);
             return SECURITY_SERVER_ERROR_RECV_FAILED;
         }
     }
@@ -2186,12 +2186,12 @@ int recv_generic_response(int sockfd, response_header *hdr)
 	retval = check_socket_poll(sockfd, POLLIN, SECURITY_SERVER_SOCKET_TIMEOUT_MILISECOND);
 	if(retval == SECURITY_SERVER_ERROR_POLL)
 	{
-		SEC_SVR_DBG("%s", "Client: poll() error");
+		SEC_SVR_ERR("%s", "Client: poll() error");
 		return SECURITY_SERVER_ERROR_RECV_FAILED;
 	}
 	if(retval == SECURITY_SERVER_ERROR_TIMEOUT)
 	{
-		SEC_SVR_DBG("%s", "Client: poll() timeout");
+		SEC_SVR_ERR("%s", "Client: poll() timeout");
 		return SECURITY_SERVER_ERROR_RECV_FAILED;
 	}
 
@@ -2200,13 +2200,13 @@ int recv_generic_response(int sockfd, response_header *hdr)
 	if(retval < sizeof(response_header) )
 	{
 		/* Error on socket */
-		SEC_SVR_DBG("Client: Receive failed %d", retval);
+		SEC_SVR_ERR("Client: Receive failed %d", retval);
 		return  SECURITY_SERVER_ERROR_RECV_FAILED;
 	}
 
 	if(hdr->return_code != SECURITY_SERVER_RETURN_CODE_SUCCESS)
 	{
-		SEC_SVR_DBG("Client: return code is not success: %d", hdr->return_code);
+		SEC_SVR_ERR("Client: return code is not success: %d", hdr->return_code);
 		return return_code_to_error_code(hdr->return_code);
 	}
 	return SECURITY_SERVER_SUCCESS;
@@ -2224,7 +2224,7 @@ int recv_get_gid_response(int sockfd, response_header *hdr, int *gid)
 	if(retval < sizeof(int))
 	{
 		/* Error on socket */
-		SEC_SVR_DBG("Receive failed %d", retval);
+		SEC_SVR_ERR("Receive failed %d", retval);
 		return  SECURITY_SERVER_ERROR_RECV_FAILED;
 	}
 	return SECURITY_SERVER_SUCCESS;
@@ -2239,12 +2239,12 @@ int recv_get_object_name(int sockfd, response_header *hdr, char *object, int max
 	retval = check_socket_poll(sockfd, POLLIN, SECURITY_SERVER_SOCKET_TIMEOUT_MILISECOND);
 	if(retval == SECURITY_SERVER_ERROR_POLL)
 	{
-		SEC_SVR_DBG("%s", "poll() error");
+		SEC_SVR_ERR("%s", "poll() error");
 		return SECURITY_SERVER_ERROR_RECV_FAILED;
 	}
 	if(retval == SECURITY_SERVER_ERROR_TIMEOUT)
 	{
-		SEC_SVR_DBG("%s", "poll() timeout");
+		SEC_SVR_ERR("%s", "poll() timeout");
 		return SECURITY_SERVER_ERROR_RECV_FAILED;
 	}
 
@@ -2253,7 +2253,7 @@ int recv_get_object_name(int sockfd, response_header *hdr, char *object, int max
 	if(retval < sizeof(response_header))
 	{
 		/* Error on socket */
-		SEC_SVR_DBG("cannot recv respons: %d", retval);
+		SEC_SVR_ERR("cannot recv respons: %d", retval);
 		return SECURITY_SERVER_ERROR_RECV_FAILED;
 	}
 
@@ -2261,19 +2261,19 @@ int recv_get_object_name(int sockfd, response_header *hdr, char *object, int max
 	{
 		if(max_object_size < hdr->basic_hdr.msg_len)
 		{
-			SEC_SVR_DBG("Object name is too small need %d bytes, but %d bytes", hdr->basic_hdr.msg_len, max_object_size);
+			SEC_SVR_ERR("Object name is too small need %d bytes, but %d bytes", hdr->basic_hdr.msg_len, max_object_size);
 			return SECURITY_SERVER_ERROR_BUFFER_TOO_SMALL;
 		}
 		if(hdr->basic_hdr.msg_len > SECURITY_SERVER_MAX_OBJ_NAME)
 		{
-			SEC_SVR_DBG("Received object name is too big. %d", hdr->basic_hdr.msg_len);
+			SEC_SVR_ERR("Received object name is too big. %d", hdr->basic_hdr.msg_len);
 			return SECURITY_SERVER_ERROR_BAD_RESPONSE;
 		}
 
 		local_obj_name = malloc(hdr->basic_hdr.msg_len + 1);
 		if(local_obj_name == NULL)
 		{
-			SEC_SVR_DBG("%s", "Out of memory error");
+			SEC_SVR_ERR("%s", "Out of memory error");
 			return SECURITY_SERVER_ERROR_OUT_OF_MEMORY;
 		}
 
@@ -2281,7 +2281,7 @@ int recv_get_object_name(int sockfd, response_header *hdr, char *object, int max
 		if(retval < (hdr->basic_hdr.msg_len))
 		{
 			/* Error on socket */
-			SEC_SVR_DBG("read() failed: %d", retval);
+			SEC_SVR_ERR("read() failed: %d", retval);
 			if(local_obj_name != NULL)
 				free(local_obj_name);
 			return SECURITY_SERVER_ERROR_RECV_FAILED;
@@ -2292,7 +2292,7 @@ int recv_get_object_name(int sockfd, response_header *hdr, char *object, int max
 	}
 	else
 	{
-		SEC_SVR_DBG("Error received. return code: %d", hdr->return_code);
+		SEC_SVR_ERR("Error received. return code: %d", hdr->return_code);
 		retval = return_code_to_error_code(hdr->return_code);
 		return retval;
 	}
@@ -2314,7 +2314,7 @@ int recv_cookie(int sockfd, response_header *hdr, char *cookie)
 	if(retval < SECURITY_SERVER_COOKIE_LEN)
 	{
 		/* Error on socket */
-		SEC_SVR_DBG("read() failed: %d", retval);
+		SEC_SVR_ERR("read() failed: %d", retval);
 		return SECURITY_SERVER_ERROR_RECV_FAILED;
 	}
 	return SECURITY_SERVER_SUCCESS;
@@ -2328,7 +2328,7 @@ int recv_privilege_check_response(int sockfd, response_header *hdr)
 	if(hdr->return_code != SECURITY_SERVER_RETURN_CODE_ACCESS_GRANTED &&
 			hdr->return_code != SECURITY_SERVER_RETURN_CODE_ACCESS_DENIED)
 	{
-		SEC_SVR_DBG("response error: %d", hdr->return_code);
+		SEC_SVR_ERR("response error: %d", hdr->return_code);
 		return return_code_to_error_code(hdr->return_code);
 	}
 	return SECURITY_SERVER_SUCCESS;
@@ -2342,7 +2342,7 @@ int recv_privilege_check_new_response(int sockfd, response_header *hdr)
 	if(hdr->return_code != SECURITY_SERVER_RETURN_CODE_ACCESS_GRANTED &&
 			hdr->return_code != SECURITY_SERVER_RETURN_CODE_ACCESS_DENIED)
 	{
-		SEC_SVR_DBG("response error: %d", hdr->return_code);
+		SEC_SVR_ERR("response error: %d", hdr->return_code);
 		return return_code_to_error_code(hdr->return_code);
 	}
 	return SECURITY_SERVER_SUCCESS;
@@ -2360,7 +2360,7 @@ int recv_smack_response(int sockfd, response_header *hdr, char * label)
 	if(retval < sizeof(int))
 	{
 		/* Error on socket */
-		SEC_SVR_DBG("Client: Receive failed %d", retval);
+		SEC_SVR_ERR("Client: Receive failed %d", retval);
 		return  SECURITY_SERVER_ERROR_RECV_FAILED;
 	}
 	return SECURITY_SERVER_SUCCESS;
@@ -2390,7 +2390,7 @@ int recv_pid_response(int sockfd, response_header *hdr, int *pid)
 	if(retval < sizeof(int))
 	{
 		/* Error on socket */
-		SEC_SVR_DBG("Client: Receive failed %d", retval);
+		SEC_SVR_ERR("Client: Receive failed %d", retval);
 		return  SECURITY_SERVER_ERROR_RECV_FAILED;
 	}
 	return SECURITY_SERVER_SUCCESS;
@@ -2427,21 +2427,21 @@ int recv_pwd_response(int sockfd, response_header *hdr,
 	if(retval < sizeof(unsigned int))
 	{
 		/* Error on socket */
-		SEC_SVR_DBG("Client: Receive failed %d", retval);
+		SEC_SVR_ERR("Client: Receive failed %d", retval);
 		return  SECURITY_SERVER_ERROR_RECV_FAILED;
 	}
 	retval = TEMP_FAILURE_RETRY(read(sockfd, max_attempts, sizeof(unsigned int)));
 	if(retval < sizeof(unsigned int))
 	{
 		/* Error on socket */
-		SEC_SVR_DBG("Client: Receive failed %d", retval);
+		SEC_SVR_ERR("Client: Receive failed %d", retval);
 		return  SECURITY_SERVER_ERROR_RECV_FAILED;
 	}
 	retval = TEMP_FAILURE_RETRY(read(sockfd, valid_secs, sizeof(unsigned int)));
 	if(retval < sizeof(unsigned int))
 	{
 		/* Error on socket */
-		SEC_SVR_DBG("Client: Receive failed %d", retval);
+		SEC_SVR_ERR("Client: Receive failed %d", retval);
 		return  SECURITY_SERVER_ERROR_RECV_FAILED;
 	}
 
@@ -2458,22 +2458,17 @@ int authenticate_client_application(int sockfd, int *pid, int *uid)
 	struct ucred cr;
 	unsigned int cl = sizeof(cr);
 
-	/* get PID of socket peer */
-	if(getsockopt(sockfd, SOL_SOCKET, SO_PEERCRED, &cr, &cl) != 0)
-	{
-		retval = SECURITY_SERVER_ERROR_SOCKET;
-		SEC_SVR_DBG("%s", "getsockopt failed");
-		*pid = 0;
-		goto error;
-	}
-	*pid = cr.pid;
-	*uid = cr.uid;
+    /* get PID of socket peer */
+    if(getsockopt(sockfd, SOL_SOCKET, SO_PEERCRED, &cr, &cl) != 0)
+    {
+        SEC_SVR_ERR("%s", "getsockopt failed");
+        return SECURITY_SERVER_ERROR_SOCKET;
+    }
 
-	/* Authenticate client that it's real client application */
-	/* TBA */
+    *pid = cr.pid;
+    *uid = cr.uid;
 
-error:
-	return retval;
+    return SECURITY_SERVER_SUCCESS;
 }
 
 /* Authenticate the application is middleware daemon
@@ -2498,7 +2493,7 @@ int authenticate_client_middleware(int sockfd, int *pid)
 	if(getsockopt(sockfd, SOL_SOCKET, SO_PEERCRED, &cr, &cl) != 0)
 	{
 		retval = SECURITY_SERVER_ERROR_SOCKET;
-		SEC_SVR_DBG("%s", "Error on getsockopt");
+		SEC_SVR_ERR("%s", "Error on getsockopt");
 		goto error;
 	}
 
@@ -2523,7 +2518,7 @@ int authenticate_client_middleware(int sockfd, int *pid)
 	if(cr.uid != 0 && cr.uid != middleware_uid)
 	{
 		retval = SECURITY_SERVER_ERROR_AUTHENTICATION_FAILED;
-		SEC_SVR_DBG("Non root process has called API: %d", cr.uid);
+		SEC_SVR_ERR("Non root process has called API: %d", cr.uid);
 		goto error;
 	}
 
@@ -2533,7 +2528,7 @@ int authenticate_client_middleware(int sockfd, int *pid)
 	{
 		/* It's weired. no file in proc file system, */
 		retval = SECURITY_SERVER_ERROR_FILE_OPERATION;
-		SEC_SVR_DBG("Error on opening /proc/%d/exe", cr.pid);
+		SEC_SVR_ERR("Error on opening /proc/%d/exe", cr.pid);
 		goto error;
 	}
 
@@ -2584,7 +2579,7 @@ int get_client_gid_list(int sockfd, int ** privileges)
     ret = getsockopt(sockfd, SOL_SOCKET, SO_PEERCRED, &socopt, &socoptSize);
     if(ret != 0)
     {
-        SEC_SVR_DBG("%s", "Error on getsockopt");
+        SEC_SVR_ERR("%s", "Error on getsockopt");
         return -1;
     }
 
@@ -2595,7 +2590,7 @@ int get_client_gid_list(int sockfd, int ** privileges)
     fp = fopen(path, "r");
     if(fp == NULL)
     {
-        SEC_SVR_DBG("%s", "Error on fopen");
+        SEC_SVR_ERR("%s", "Error on fopen");
         return -1;
     }
 
@@ -2606,7 +2601,7 @@ int get_client_gid_list(int sockfd, int ** privileges)
     {
         if(NULL == fgets(fileLine, LINESIZE, fp))
         {
-            SEC_SVR_DBG("%s", "Error on fgets");
+            SEC_SVR_ERR("%s", "Error on fgets");
             fclose(fp);
             return -1;
         }
@@ -2626,7 +2621,7 @@ int get_client_gid_list(int sockfd, int ** privileges)
             *privileges = (int *)malloc(sizeof(int) * 1);
             if(*privileges == NULL)
             {
-                SEC_SVR_DBG("%s", "Error on malloc");
+                SEC_SVR_ERR("%s", "Error on malloc");
                 return -1;
             }
             (*privileges)[0] = atoi(token);
@@ -2666,7 +2661,7 @@ int authenticate_developer_shell(int sockfd)
 	if(getsockopt(sockfd, SOL_SOCKET, SO_PEERCRED, &cr, &cl) != 0)
 	{
 		retval = SECURITY_SERVER_ERROR_SOCKET;
-		SEC_SVR_DBG("%s", "Error on getsockopt");
+		SEC_SVR_ERR("%s", "Error on getsockopt");
 		goto error;
 	}
 
@@ -2674,7 +2669,7 @@ int authenticate_developer_shell(int sockfd)
 	if(cr.uid != SECURITY_SERVER_DEVELOPER_UID)
 	{
 		retval = SECURITY_SERVER_ERROR_AUTHENTICATION_FAILED;
-		SEC_SVR_DBG("Non root process has called API: %d", cr.uid);
+		SEC_SVR_ERR("Non root process has called API: %d", cr.uid);
 		goto error;
 	}
 
@@ -2684,14 +2679,14 @@ int authenticate_developer_shell(int sockfd)
 	{
 		/* It's weired. no file in proc file system, */
 		retval = SECURITY_SERVER_ERROR_FILE_OPERATION;
-		SEC_SVR_DBG("Error on opening /proc/%d/exe", cr.pid);
+		SEC_SVR_ERR("Error on opening /proc/%d/exe", cr.pid);
 		goto error;
 	}
 
 	/* Search exe of the peer that is really debug tool */
 	if(strcmp(exe, SECURITY_SERVER_DEBUG_TOOL_PATH) != 0)
 	{
-		SEC_SVR_DBG("Error: Wrong exe path [%s]", exe);
+		SEC_SVR_ERR("Error: Wrong exe path [%s]", exe);
 		retval = SECURITY_SERVER_ERROR_AUTHENTICATION_FAILED;
 		goto error;
 	}
@@ -2710,7 +2705,7 @@ int free_argv(char **argv, int argc)
 	int i;
 	if(argv == NULL)
 	{
-		SEC_SVR_DBG("%s", "Cannot free NULL pointer");
+		SEC_SVR_ERR("%s", "Cannot free NULL pointer");
 		return SECURITY_SERVER_ERROR_INPUT_PARAM;
 	}
 	for (i=0;i<argc;i++)
@@ -2734,7 +2729,7 @@ int send_app_give_access(int sock_fd, const char* customer_label, int customer_p
 
     buff = malloc(total_len);
     if (!buff) {
-        SEC_SVR_DBG("%s", "Error: failed on malloc()");
+        SEC_SVR_ERR("%s", "Error: failed on malloc()");
         return SECURITY_SERVER_ERROR_OUT_OF_MEMORY;
     }
 
@@ -2750,14 +2745,14 @@ int send_app_give_access(int sock_fd, const char* customer_label, int customer_p
     int retval = check_socket_poll(sock_fd, POLLOUT, SECURITY_SERVER_SOCKET_TIMEOUT_MILISECOND);
     if(retval == SECURITY_SERVER_ERROR_POLL)
     {
-        SEC_SVR_DBG("%s", "poll() error");
+        SEC_SVR_ERR("%s", "poll() error");
         retval =  SECURITY_SERVER_ERROR_SEND_FAILED;
         goto error;
     }
 
     if(retval == SECURITY_SERVER_ERROR_TIMEOUT)
     {
-        SEC_SVR_DBG("%s", "poll() timeout");
+        SEC_SVR_ERR("%s", "poll() timeout");
         retval =  SECURITY_SERVER_ERROR_SEND_FAILED;
         goto error;
     }
@@ -2767,7 +2762,7 @@ int send_app_give_access(int sock_fd, const char* customer_label, int customer_p
     if(retval != (int)total_len)
     {
         /* Write error */
-        SEC_SVR_DBG("Error on write(): %d", retval);
+        SEC_SVR_ERR("Error on write(): %d", retval);
         retval =  SECURITY_SERVER_ERROR_SEND_FAILED;
         goto error;
     }
