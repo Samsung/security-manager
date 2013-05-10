@@ -1,7 +1,7 @@
 /*
  *  security-server
  *
- *  Copyright (c) 2000 - 2013 Samsung Electronics Co., Ltd All Rights Reserved
+ *  Copyright (c) 2000 - 2012 Samsung Electronics Co., Ltd All Rights Reserved
  *
  *  Contact: Bumjin Im <bj.im@samsung.com>
  *
@@ -16,23 +16,19 @@
  *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  *  See the License for the specific language governing permissions and
  *  limitations under the License
+ *
  */
+#ifndef _SECURITY_SERVER_SYSTEM_OBSERVER_H_
+#define _SECURITY_SERVER_SYSTEM_OBSERVER_H_
 
-#ifndef _SMACK_CHECK_H_
-#define _SMACK_CHECK_H_
+#include <linux/cn_proc.h>
 
-/*
- * A very simple runtime check for SMACK on the platform
- * Returns 1 if SMACK is present, 0 otherwise
- */
+typedef void (*system_observer_callback)(const struct proc_event *);
 
-int smack_runtime_check(void);
+typedef struct system_observer_config_t {
+    system_observer_callback event_callback;
+} system_observer_config;
 
-/*
- * A very simple runtime check for SMACK on the platform
- * Returns 1 if SMACK is present, 0 otherwise. If SMACK_ENABLED is not defined
- * It returns 0.
- */
-int smack_check(void);
+void* system_observer_main(void *data);
 
-#endif // _SMACK_CHECK_H_
+#endif // _SECURITY_SERVER_SYSTEM_OBSERVER_H_

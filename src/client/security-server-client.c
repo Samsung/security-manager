@@ -29,6 +29,7 @@
 #include <sys/smack.h>
 #include <fcntl.h>
 
+#include "smack-check.h"
 #include "security-server.h"
 #include "security-server-common.h"
 #include "security-server-comm.h"
@@ -396,7 +397,7 @@ int security_server_check_privilege_by_cookie(const char *cookie,
         olen = strlen(object);
         alen = strlen(access_rights);
 
-        if (olen > MAX_OBJECT_LABEL_LEN || alen > MAX_MODE_STR_LEN)
+        if (olen > SMACK_LABEL_LEN || alen > MAX_MODE_STR_LEN)
 	{
 		retval = SECURITY_SERVER_ERROR_INPUT_PARAM;
 		goto error;
@@ -453,6 +454,12 @@ int security_server_check_privilege_by_sockfd(int sockfd,
                                               const char *object,
                                               const char *access_rights)
 {
+    if (!smack_check())
+    {
+        SEC_SVR_DBG("%s","No SMACK support on device");
+        return SECURITY_SERVER_API_SUCCESS;
+    }
+
     char *subject;
     int ret;
     ret = smack_new_label_from_socket(sockfd, &subject);
@@ -461,8 +468,9 @@ int security_server_check_privilege_by_sockfd(int sockfd,
         return SECURITY_SERVER_API_ERROR_SERVER_ERROR;
     }
     ret = smack_have_access(subject, object, access_rights);
-    SEC_SVR_DBG("check by sockfd, subject >%s< object >%s< rights >%s< ====> %d",
-                subject, object, access_rights, ret);
+    SEC_SVR_DBG("SMACK have access returned %d", ret);
+    SEC_SVR_DBG("SS_SMACK: subject=%s, object=%s, access=%s, result=%d", subject, object, access_rights, ret);
+
     free(subject);
     if (ret == 1)
     {
@@ -1024,7 +1032,7 @@ SECURITY_SERVER_API
 char * security_server_get_smacklabel_cookie(const char * cookie)
 {
     char * label = NULL;
-    int sockfd = -1, retval, pid = -1;
+    int sockfd = -1, retval;
     response_header hdr;
 
     if(cookie == NULL)
@@ -1094,18 +1102,134 @@ error:
     return NULL;
 }
 
-	SECURITY_SERVER_API
+SECURITY_SERVER_API
 char * security_server_get_smacklabel_sockfd(int fd)
 {
-	char * label = NULL;
+    char * label = NULL;
 
-	if(smack_new_label_from_socket(fd, &label) != 0)
-	{
-		SEC_SVR_DBG("Client ERROR: Unable to get socket SMACK label");
-		return NULL;
-	}
+    if (!smack_check())
+    {
+        SEC_SVR_DBG("%s","No SMACK support on device");
+        label = (char*) malloc(1);
+        if (label) label[0] = '\0';
+        return label;
+    }
 
-	return label;
+    if (smack_new_label_from_socket(fd, &label) != 0)
+    {
+        SEC_SVR_DBG("Client ERROR: Unable to get socket SMACK label");
+        return NULL;
+    }
+
+    return label;
 }
 
+SECURITY_SERVER_API
+int security_server_app_give_access(const char *customer_label, int customer_pid)
+{
+    int sockfd = -1, retval;
+    response_header hdr;
+
+    retval = connect_to_server(&sockfd);
+    if(retval != SECURITY_SERVER_SUCCESS)
+    {
+        /* Error on socket */
+        goto out;
+    }
+
+    retval = send_app_give_access(sockfd, customer_label, customer_pid);
+    if(retval != SECURITY_SERVER_SUCCESS)
+    {
+        /* Error on socket */
+        SEC_SVR_DBG("Client: Send failed: %d", retval);
+        goto out;
+    }
+
+    retval = recv_generic_response(sockfd, &hdr);
+
+    retval = return_code_to_error_code(hdr.return_code);
+    if(hdr.basic_hdr.msg_id == SECURITY_SERVER_MSG_TYPE_GENERIC_RESPONSE) {
+        SEC_SVR_DBG("Client: Error has been received. return code:%d", hdr.return_code);
+    } else if (hdr.basic_hdr.msg_id != SECURITY_SERVER_MSG_TYPE_APP_GIVE_ACCESS_RESPONSE) {
+        SEC_SVR_DBG("Client: Wrong response type.");
+        retval = SECURITY_SERVER_ERROR_BAD_RESPONSE;
+    }
+out:
+    if(sockfd > 0)
+        close(sockfd);
+
+    return convert_to_public_error_code(retval);
+}
+
+SECURITY_SERVER_API
+int security_server_check_privilege_by_pid(int pid, const char *object, const char *access_rights)
+{
+    //This function check SMACK privilege betwen subject and object.
+    //Subject is identified by PID number, object is function parameter.
+
+    int sockfd = -1;
+    int retval;
+    response_header hdr;
+
+    //check for input PID param
+    if (pid < 0) {
+        retval = SECURITY_SERVER_ERROR_INPUT_PARAM;
+        goto error;
+    }
+
+    SEC_SVR_DBG("%s","Check privilige by PID called");
+    SEC_SVR_DBG("%s %d","PID", pid);
+    SEC_SVR_DBG("%s %s", "OBJECT:", object);
+    SEC_SVR_DBG("%s %s", "ACCESS_RIGHTS", access_rights);
+
+    //check if able to connect
+    retval = connect_to_server(&sockfd);
+    if (retval != SECURITY_SERVER_SUCCESS)
+        goto error;
+
+    //send request
+    retval = send_pid_privilege_request(sockfd, pid, object, access_rights);
+    if (retval != SECURITY_SERVER_SUCCESS) {
+        /* Error on socket */
+        SEC_SVR_DBG("Client: Send failed: %d", retval);
+        goto error;
+    }
+
+    //get response
+    retval = recv_pid_privilege_response(sockfd, &hdr);
+
+    //convert error code
+    retval = return_code_to_error_code(hdr.return_code);
+
+    //check if frame has correct MSG_ID
+    if (hdr.basic_hdr.msg_id != SECURITY_SERVER_MSG_TYPE_CHECK_PID_PRIVILEGE_RESPONSE) {
+        if (hdr.basic_hdr.msg_id == SECURITY_SERVER_MSG_TYPE_GENERIC_RESPONSE) {
+            /* There must be some error */
+            SEC_SVR_DBG("Client: Error has been received. return code:%d", hdr.return_code);
+        }
+        else {
+            /* Something wrong with response */
+            SEC_SVR_DBG("Client ERROR: Unexpected error occurred:%d", retval);
+            retval = SECURITY_SERVER_ERROR_BAD_RESPONSE;
+        }
+        goto error;
+    }
+
+    //debug info about checking result
+    
+    if (hdr.return_code == SECURITY_SERVER_RETURN_CODE_SUCCESS) {
+        SEC_SVR_DBG("%s","Client: There is privilege match");
+        retval = SECURITY_SERVER_SUCCESS;
+    } else {
+        SEC_SVR_DBG("%s","Client: There is no privilege match");
+        retval = SECURITY_SERVER_ERROR_ACCESS_DENIED;
+    }
+
+error:
+    if(sockfd > 0)
+        close(sockfd);
+
+    retval = convert_to_public_error_code(retval);
+    return retval;
+}
 

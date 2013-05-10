@@ -2,6 +2,7 @@ PKG_CHECK_MODULES(SECURITY_SERVER_DEP
     dlog
     openssl
     libsmack
+    libprivilege-control
     REQUIRED
     )
 
@@ -13,6 +14,9 @@ SET(SECURITY_SERVER_SOURCES
     ${SECURITY_SERVER_PATH}/server/security-server-main.c
     ${SECURITY_SERVER_PATH}/server/security-server-password.c
     ${SECURITY_SERVER_PATH}/util/security-server-util-common.c
+    ${SECURITY_SERVER_PATH}/server/security-server-system-observer.c
+    ${SECURITY_SERVER_PATH}/server/security-server-rules-revoker.c
+    ${SECURITY_SERVER_PATH}/util/smack-check.c
     )
 
 SET_SOURCE_FILES_PROPERTIES(
@@ -39,6 +43,7 @@ SET(SECURITY_CLIENT_VERSION ${SECURITY_CLIENT_VERSION_MAJOR}.0.1)
 SET(SECURITY_CLIENT_SOURCES
     ${SECURITY_SERVER_PATH}/client/security-server-client.c
     ${SECURITY_SERVER_PATH}/communication/security-server-comm.c
+    ${SECURITY_SERVER_PATH}/util/smack-check.c
     )
 
 ADD_LIBRARY(${TARGET_SECURITY_CLIENT} SHARED ${SECURITY_CLIENT_SOURCES})

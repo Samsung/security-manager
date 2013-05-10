@@ -1,7 +1,7 @@
 /*
  *  security-server
  *
- *  Copyright (c) 2000 - 2013 Samsung Electronics Co., Ltd All Rights Reserved
+ *  Copyright (c) 2000 - 2012 Samsung Electronics Co., Ltd All Rights Reserved
  *
  *  Contact: Bumjin Im <bj.im@samsung.com>
  *
@@ -16,23 +16,16 @@
  *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  *  See the License for the specific language governing permissions and
  *  limitations under the License
+ *
  */
+#ifndef _SECURITY_SERVER_RULES_REVOKER_H_
+#define _SECURITY_SERVER_RULES_REVOKER_H_
 
-#ifndef _SMACK_CHECK_H_
-#define _SMACK_CHECK_H_
+#include <linux/cn_proc.h>
 
-/*
- * A very simple runtime check for SMACK on the platform
- * Returns 1 if SMACK is present, 0 otherwise
- */
+void rules_revoker_init(void);
+int rules_revoker_add(int pid, const char *subject, const char *object);
+void rules_revoker_callback(const struct proc_event *event);
 
-int smack_runtime_check(void);
+#endif // _SECURITY_SERVER_RULES_REVOKER_H_
 
-/*
- * A very simple runtime check for SMACK on the platform
- * Returns 1 if SMACK is present, 0 otherwise. If SMACK_ENABLED is not defined
- * It returns 0.
- */
-int smack_check(void);
-
-#endif // _SMACK_CHECK_H_

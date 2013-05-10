@@ -54,6 +54,7 @@ ADD_DEFINITIONS("-Wextra")                      # Generate even more extra warni
 
 STRING(REGEX MATCH "([^.]*)" API_VERSION "${VERSION}")
 ADD_DEFINITIONS("-DAPI_VERSION=\"$(API_VERSION)\"")
+ADD_DEFINITIONS( -DSMACK_ENABLED )
 
 SET(TARGET_SECURITY_SERVER "security-server")
 SET(TARGET_SECURITY_CLIENT "security-server-client")

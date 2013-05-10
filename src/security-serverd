@@ -2,4 +2,3 @@
 
 # start secure-storage server
 /usr/bin/security-server &
-set_pmon -p security-server

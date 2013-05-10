@@ -69,6 +69,10 @@ typedef struct
 #define SECURITY_SERVER_MSG_TYPE_SET_PWD_VALIDITY_RESPONSE   0x1c
 #define SECURITY_SERVER_MSG_TYPE_SMACK_REQUEST		0x1d
 #define SECURITY_SERVER_MSG_TYPE_SMACK_RESPONSE	0x1e
+#define SECURITY_SERVER_MSG_TYPE_APP_GIVE_ACCESS_REQUEST 0x1f
+#define SECURITY_SERVER_MSG_TYPE_APP_GIVE_ACCESS_RESPONSE 0x20
+#define SECURITY_SERVER_MSG_TYPE_CHECK_PID_PRIVILEGE_REQUEST    0x21
+#define SECURITY_SERVER_MSG_TYPE_CHECK_PID_PRIVILEGE_RESPONSE   0x22
 #define SECURITY_SERVER_MSG_TYPE_GENERIC_RESPONSE	0xff
 
 /* Return code */
@@ -122,13 +126,19 @@ int recv_check_privilege_new_request(int sockfd,
                                      char *object_label,
                                      char *access_rights);
 int send_pid_request(int sock_fd, const char*cookie);
-int recv_pid_response(int sockfd, response_header *hdr, int *pid);
 int recv_pid_request(int sockfd, unsigned char *requested_cookie);
 int send_pid(int sockfd, int pid);
+int recv_pid_response(int sockfd, response_header *hdr, int *pid);
+
 int send_smack_request(int sockfd, const char * cookie);
-int recv_smack_response(int sockfd, response_header *hdr, char * label);
 int recv_smack_request(int sockfd, unsigned char *requested_cookie);
 int send_smack(int sockfd, char * label);
+int recv_smack_response(int sockfd, response_header *hdr, char * label);
+
+int send_pid_privilege_request(int sockfd, int pid, const char *object, const char *access_rights);
+int recv_pid_privilege_request(int sockfd, int datasize, int * pid, char ** object, char ** access_rights);
+int recv_pid_privilege_response(int sockfdi, response_header *hdr);
+
 int send_launch_tool_request(int sock_fd, int argc, const char **argv);
 int recv_generic_response(int sockfd, response_header *hdr);
 int recv_launch_tool_request(int sockfd, int argc, char *argv[]);
@@ -141,5 +151,12 @@ int send_set_pwd_max_challenge_request(int sock_fd, const unsigned int max_chall
 int send_chk_pwd_request(int sock_fd, const char*challenge);
 int check_socket_poll(int sockfd, int event, int timeout);
 int free_argv(char **argv, int argc);
+int send_valid_pwd_request(int sock_fd);
+int send_reset_pwd_request(int sock_fd,
+                           const char*new_pwd,
+                           const unsigned int max_challenge,
+                           const unsigned int valid_period_in_days);
+int send_set_pwd_history_request(int sock_fd, int num);
+int send_app_give_access(int sock_df, const char *customer_label, int customer_pid);
 
 #endif

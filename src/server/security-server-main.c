@@ -25,6 +25,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
+#include <sys/smack.h>
 #include <errno.h>
 #include <signal.h>
 #include <pthread.h>
@@ -34,11 +35,19 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/wait.h>
+#include <poll.h>
+
+#include <privilege-control.h>
+#include <security-server-system-observer.h>
+#include <security-server-rules-revoker.h>
 
 #include "security-server-cookie.h"
 #include "security-server-common.h"
 #include "security-server-password.h"
 #include "security-server-comm.h"
+#include "smack-check.h"
+
+const char * const LABEL_SECURITY_SERVER_API_DATA_SHARE = "security-server::api-data-share";
 
 /* Set cookie as a global variable */
 cookie_list *c_list;
@@ -49,6 +58,10 @@ struct security_server_thread_param {
 	int server_sockfd;
 	int thread_status;
 };
+
+int process_app_get_access_request(int sockfd, size_t msg_len);
+static int netlink_enabled = 1; /* prevent memory leaks when netlink is disabled */
+
 
 /************************************************************************************************/
 /* Just for test. This code must be removed on release */
@@ -482,7 +495,7 @@ error:
 int process_check_privilege_new_request(int sockfd)
 {
 	/* Authenticate client */
-	int retval, client_pid, requested_privilege;
+	int retval, client_pid;
 	unsigned char requested_cookie[SECURITY_SERVER_COOKIE_LEN];
 	cookie_list *search_result = NULL;
         char object_label[MAX_OBJECT_LABEL_LEN+1];
@@ -806,33 +819,29 @@ int process_smack_request(int sockfd)
     cookie_list *search_result = NULL;
     //handler for SMACK label
     char * label = NULL;
-    //buffer for storing file path
-    const int BUFFSIZE = 30;
-    char path[BUFFSIZE];
-    int fd;
 
-	/* Authenticate client */
-	retval = authenticate_client_middleware(sockfd, &client_pid);
-	if(retval != SECURITY_SERVER_SUCCESS)
-	{
-		SEC_SVR_DBG("%s", "Client Authentication Failed");
-		retval = send_generic_response(sockfd,
-				SECURITY_SERVER_MSG_TYPE_SMACK_RESPONSE,
-				SECURITY_SERVER_RETURN_CODE_AUTHENTICATION_FAILED);
-		if(retval != SECURITY_SERVER_SUCCESS)
-		{
-			SEC_SVR_DBG("ERROR: Cannot send generic response: %d", retval);
-		}
-		goto error;
-	}
+    /* Authenticate client */
+    retval = authenticate_client_middleware(sockfd, &client_pid);
+    if(retval != SECURITY_SERVER_SUCCESS)
+    {
+        SEC_SVR_DBG("%s", "Client Authentication Failed");
+        retval = send_generic_response(sockfd,
+          SECURITY_SERVER_MSG_TYPE_SMACK_RESPONSE,
+          SECURITY_SERVER_RETURN_CODE_AUTHENTICATION_FAILED);
+        if(retval != SECURITY_SERVER_SUCCESS)
+        {
+            SEC_SVR_DBG("ERROR: Cannot send generic response: %d", retval);
+        }
+        goto error;
+    }
 
     retval = recv_smack_request(sockfd, requested_cookie);
     if(retval == SECURITY_SERVER_ERROR_RECV_FAILED)
     {
         SEC_SVR_DBG("%s", "Receiving request failed");
         retval = send_generic_response(sockfd,
-            SECURITY_SERVER_MSG_TYPE_SMACK_RESPONSE,
-            SECURITY_SERVER_RETURN_CODE_BAD_REQUEST);
+          SECURITY_SERVER_MSG_TYPE_SMACK_RESPONSE,
+          SECURITY_SERVER_RETURN_CODE_BAD_REQUEST);
         if(retval != SECURITY_SERVER_SUCCESS)
         {
             SEC_SVR_DBG("ERROR: Cannot send generic response: %d", retval);
@@ -860,67 +869,137 @@ int process_smack_request(int sockfd)
         SEC_SVR_DBG("We found the cookie and pid:%d", search_result->pid);
         SEC_SVR_DBG("%s", "Cookie comparison succeeded. Access granted.");
 
-        //clearing buffer
-        memset(path, 0x00, BUFFSIZE);
+        label = search_result->smack_label;
 
-        //preparing file path
-        snprintf(path, BUFFSIZE, "/proc/%d/attr/current", search_result->pid);
-        SEC_SVR_DBG("Path to file: %s\n", path);
-
-        //allocation place for label
-        label = calloc(SMACK_LABEL_LEN, 1);
-        if(NULL == label)
+        if (NULL == label)
         {
-            SEC_SVR_DBG("Client ERROR: Memory allocation error");
-            goto error;
+            SEC_SVR_DBG("%s", "No SMACK support on device - returning empty label");
+            label = "";
         }
 
-        //clearing buffer for label
-        memset(label, 0x00, SMACK_LABEL_LEN);
+        SEC_SVR_DBG("Read label is: %s\n", label);
 
-        //opening file /proc/<pid>/attr/curent with SMACK label
-        fd = open(path, O_RDONLY);
-        if(fd < 0)
+        retval = send_smack(sockfd, label);
+
+        if(retval != SECURITY_SERVER_SUCCESS)
         {
-            SEC_SVR_DBG("Client ERROR: Unable to open file in /proc");
-            goto error;
+            SEC_SVR_DBG("ERROR: Cannot send generic response: %d", retval);
         }
-
-        //reading label from file, it is NOT NULL TERMINATED
-        retval = read(fd, label, SMACK_LABEL_LEN);
-        close(fd);
-        if(retval < 0)
+    }
+    else
+    {
+        /* It's not exist */
+        SEC_SVR_DBG("%s", "Could not find the cookie");
+        retval = send_generic_response(sockfd,
+          SECURITY_SERVER_MSG_TYPE_SMACK_RESPONSE,
+          SECURITY_SERVER_RETURN_CODE_NO_SUCH_COOKIE);
+        if(retval != SECURITY_SERVER_SUCCESS)
         {
-            SEC_SVR_DBG("Client ERROR: Unable to read from file");
-            goto error;
+            SEC_SVR_DBG("ERROR: Cannot send SMACK label response: %d", retval);
         }
-
-        SEC_SVR_DBG("Readed label is: %s\n", label);
-
-		retval = send_smack(sockfd, label);
-
-		if(retval != SECURITY_SERVER_SUCCESS)
-		{
-			SEC_SVR_DBG("ERROR: Cannot send generic response: %d", retval);
-		}
-	}
-	else
-	{
-		/* It's not exist */
-		SEC_SVR_DBG("%s", "Could not find the cookie");
-		retval = send_generic_response(sockfd,
-				SECURITY_SERVER_MSG_TYPE_SMACK_RESPONSE,
-				SECURITY_SERVER_RETURN_CODE_NO_SUCH_COOKIE);
-		if(retval != SECURITY_SERVER_SUCCESS)
-		{
-			SEC_SVR_DBG("ERROR: Cannot send SMACK label response: %d", retval);
-		}
-	}
+    }
 error:
-    if(NULL != label)
-        free(label);
+    return retval;
+}
 
-	return retval;
+int process_pid_privilege_check(int sockfd, int datasize)
+{
+    //In this function we parsing received PID privilege check request
+    int retval;
+    int client_pid;
+    int pid;
+    char * object = NULL;
+    char * access_rights = NULL;
+    unsigned char return_code;
+    //file descriptor
+    int fd = -1;
+    const int B_SIZE = 64;
+    char buff[B_SIZE];
+
+    //authenticate client
+    retval = authenticate_client_middleware(sockfd, &client_pid);
+
+    if (retval != SECURITY_SERVER_SUCCESS) {
+        SEC_SVR_DBG("%s", "Client Authentication Failed");
+        retval = send_generic_response(sockfd,
+            SECURITY_SERVER_MSG_TYPE_CHECK_PID_PRIVILEGE_RESPONSE,
+            SECURITY_SERVER_RETURN_CODE_AUTHENTICATION_FAILED);
+
+        if (retval != SECURITY_SERVER_SUCCESS)
+            SEC_SVR_DBG("ERROR: Cannot send generic response: %d", retval);
+
+        goto error;
+    }
+
+    //receive request
+    retval = recv_pid_privilege_request(sockfd, datasize, &pid, &object, &access_rights);
+
+    if (retval == SECURITY_SERVER_ERROR_RECV_FAILED) {
+        SEC_SVR_DBG("%s", "Receiving request failed");
+        retval = send_generic_response(sockfd,
+            SECURITY_SERVER_MSG_TYPE_CHECK_PID_PRIVILEGE_RESPONSE,
+            SECURITY_SERVER_RETURN_CODE_BAD_REQUEST);
+
+        if (retval != SECURITY_SERVER_SUCCESS)
+            SEC_SVR_DBG("ERROR: Cannot send generic response: %d", retval);
+
+        goto error;
+    }
+
+    bzero(buff, B_SIZE);
+    if (smack_check()) {
+        //get SMACK label of process
+        snprintf(buff, B_SIZE, "/proc/%d/attr/current", pid);
+
+        fd = open(buff, O_RDONLY, 0644);
+        if (fd < 0) {
+            SEC_SVR_DBG("%s", "Error open()");
+            retval = SECURITY_SERVER_ERROR_UNKNOWN;
+            goto error;
+        }
+
+        bzero(buff, B_SIZE);
+        retval = read(fd, buff, B_SIZE);
+        if (retval < 0) {
+            SEC_SVR_DBG("%s", "Error read()");
+            retval = SECURITY_SERVER_ERROR_UNKNOWN;
+            goto error;
+        }
+
+        //now we have SMACK label in buff and we call libsmack
+        SEC_SVR_DBG("Subject label of client PID %d is: %s", pid, buff);
+        retval = smack_have_access(buff, object, access_rights);
+        SEC_SVR_DBG("SMACK have access returned %d", retval);
+    } else {
+        SEC_SVR_DBG("SMACK is not available. Subject label has not been read.");
+        retval = 1;
+    }
+
+    SEC_SVR_DBG("SS_SMACK: caller_pid=%d, subject=%s, object=%s, access=%s, result=%d", pid, buff, object, access_rights, retval);
+
+    if (retval == 1)   //there is permission
+        return_code = SECURITY_SERVER_RETURN_CODE_SUCCESS;
+    else                //there is no permission
+        return_code = SECURITY_SERVER_RETURN_CODE_ACCESS_DENIED;
+
+    //send response
+    retval = send_generic_response(sockfd,
+            SECURITY_SERVER_MSG_TYPE_CHECK_PID_PRIVILEGE_RESPONSE,
+            return_code);
+
+    if (retval != SECURITY_SERVER_SUCCESS)
+        SEC_SVR_DBG("ERROR: Cannot send generic response: %d", retval);
+
+error:
+    if (fd >= 0)
+        close(fd);
+
+    if (object != NULL)
+        free(object);
+    if (access_rights != NULL)
+        free(access_rights);
+
+    return retval; 
 }
 
 int process_tool_request(int client_sockfd, int server_sockfd)
@@ -1027,10 +1106,27 @@ error:
     return retval;
 }
 
+int client_has_access(int sockfd, const char *object) {
+    char *label = NULL;
+    int ret = 0;
+
+    if (smack_check())
+    {
+
+        if(smack_new_label_from_socket(sockfd, &label))
+            return 0;
+
+        if (0 >= (ret = smack_have_access(label, object, "rw")))
+            ret = 0;
+    }
+    free(label);
+    return ret;
+}
+
 void *security_server_thread(void *param)
 {
 	int client_sockfd = -1, client_uid, client_pid;
-	int server_sockfd, retval, argcnum;
+	int server_sockfd, retval;
 	basic_header basic_hdr;
 	struct security_server_thread_param *my_param;
 
@@ -1104,6 +1200,12 @@ void *security_server_thread(void *param)
 			process_smack_request(client_sockfd);
 			break;
 
+        case SECURITY_SERVER_MSG_TYPE_CHECK_PID_PRIVILEGE_REQUEST:
+			SEC_SVR_DBG("%s", "PID privilege check request received");
+            //pass data size to function
+			process_pid_privilege_check(client_sockfd, basic_hdr.msg_len);
+			break;
+
 		case SECURITY_SERVER_MSG_TYPE_TOOL_REQUEST:
 			SEC_SVR_DBG("%s", "launch tool request received");
 			process_tool_request(client_sockfd, server_sockfd);
@@ -1144,6 +1246,18 @@ void *security_server_thread(void *param)
             process_set_pwd_validity_request(client_sockfd);
             break;
 
+        case SECURITY_SERVER_MSG_TYPE_APP_GIVE_ACCESS_REQUEST:
+            if (client_has_access(client_sockfd, LABEL_SECURITY_SERVER_API_DATA_SHARE)) {
+                SEC_SVR_DBG("%s", "Server: app give access request received");
+                process_app_get_access_request(client_sockfd,
+                    basic_hdr.msg_len - sizeof(basic_hdr));
+            } else {
+                SEC_SVR_DBG("%s", "Server: app give access request received (API DENIED - request will not proceed)");
+                send_generic_response(client_sockfd,
+                    SECURITY_SERVER_MSG_TYPE_GENERIC_RESPONSE,
+                    SECURITY_SERVER_RETURN_CODE_ACCESS_DENIED);
+            }
+            break;
 /************************************************************************************************/
 /* Just for test. This code must be removed on release */
 		case SECURITY_SERVER_MSG_TYPE_GET_ALL_COOKIES_REQUEST:
@@ -1331,6 +1445,97 @@ error:
     pthread_exit(NULL);
 }
 
+ssize_t read_wrapper(int sockfd, void *buffer, size_t len) {
+    unsigned char *buff = (unsigned char *)buffer;
+    ssize_t done = 0;
+    while(done < (int)len) {
+        struct pollfd fds = { sockfd, POLLIN, 0};
+        if (0 >= poll(&fds, 1, 1000))
+            break;
+        ssize_t ret = read(sockfd, buff+done, len-done);
+        if (0 < ret) {
+            done += ret;
+            continue;
+        }
+        if (0 == ret)
+            break;
+        if (-1 == ret && EAGAIN != errno && EINTR != errno)
+            break;
+    }
+    return done;
+}
+
+int process_app_get_access_request(int sockfd, size_t msg_len)
+{
+    char *message_buffer = NULL;
+    char *client_label = NULL;
+    char *provider_label = NULL;
+    int ret = SECURITY_SERVER_ERROR_SERVER_ERROR;
+    int send_message_id = SECURITY_SERVER_MSG_TYPE_GENERIC_RESPONSE;
+    int send_error_id = SECURITY_SERVER_RETURN_CODE_SERVER_ERROR;
+    int client_pid = 0;
+
+    message_buffer = malloc(msg_len+1);
+    if (!message_buffer)
+        return SECURITY_SERVER_ERROR_OUT_OF_MEMORY;
+    message_buffer[msg_len] = 0;
+
+    ssize_t retval = read_wrapper(sockfd, message_buffer, msg_len);
+
+    if (retval < (ssize_t)msg_len) {
+        SEC_SVR_DBG("%s", "Error in read. Message too short");
+        send_error_id = SECURITY_SERVER_RETURN_CODE_BAD_REQUEST;
+        ret = SECURITY_SERVER_ERROR_BAD_REQUEST;
+        goto error;
+    }
+
+    memcpy(&client_pid, message_buffer, sizeof(int));
+    client_label = message_buffer + sizeof(int);
+
+    if (smack_check()) {
+        if (0 != smack_new_label_from_socket(sockfd, &provider_label)) {
+            SEC_SVR_DBG("%s", "Error in smack_new_label_from_socket");
+            goto error;
+        }
+
+        if (PC_OPERATION_SUCCESS != app_give_access(client_label, provider_label, "rwxat")) {
+            SEC_SVR_DBG("%s", "Error in app_give_access");
+            goto error;
+        }
+    }
+
+    ret = SECURITY_SERVER_SUCCESS;
+    send_message_id = SECURITY_SERVER_MSG_TYPE_APP_GIVE_ACCESS_RESPONSE;
+    send_error_id = SECURITY_SERVER_RETURN_CODE_SUCCESS;
+
+    if (!netlink_enabled) {
+        SEC_SVR_DBG("Netlink not supported: Garbage collector inactive.");
+        goto error;
+    }
+
+    if (smack_check()) {
+        if (0 != rules_revoker_add(client_pid, client_label, provider_label))
+            SEC_SVR_DBG("%s", "Error in rules_revoker_add.");
+    }
+
+error:
+    retval = send_generic_response(sockfd, send_message_id, send_error_id);
+    if(retval != SECURITY_SERVER_SUCCESS)
+        SEC_SVR_DBG("Server ERROR: Cannot send response: %d", retval);
+
+    free(message_buffer);
+    free(provider_label);
+    return ret;
+}
+
+void *system_observer_main_thread(void *data) {
+    system_observer_main(data);
+    SEC_SVR_DBG("%s", "System observer: exit. No garbage collector support.");
+    netlink_enabled = 0;
+    pthread_detach(pthread_self());
+    pthread_exit(NULL);
+}
+
 int main(int argc, char* argv[])
 {
     int res;
@@ -1338,6 +1543,21 @@ int main(int argc, char* argv[])
 
     (void)argc;
     (void)argv;
+
+    // create observer thread only if smack is enabled
+    if (smack_check()) {
+        pthread_t system_observer;
+        system_observer_config so_config;
+        so_config.event_callback = rules_revoker_callback;
+
+        res = pthread_create(&system_observer, NULL, system_observer_main_thread, (void*)&so_config);
+
+        if (res != 0)
+            return -1;
+    }
+    else {
+        SEC_SVR_DBG("SMACK is not available. Observer thread disabled.");
+    }
 
     res = pthread_create(&main_thread, NULL, security_server_main_thread, NULL);
     if (res == 0)

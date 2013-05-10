@@ -74,7 +74,7 @@ cookie_list *delete_cookie_item(cookie_list *cookie)
 	{
 		cookie->prev->next = NULL;
 	}
-	
+
 	free_cookie_item(cookie);
 	return retval;
 }
@@ -289,36 +289,41 @@ cookie_list *search_cookie_new(const cookie_list *c_list,
                                const char *object,
                                const char *access_rights)
 {
-	cookie_list *current = (cookie_list *)c_list, *retval = NULL;
-        int ret;
-	int i;
+    cookie_list *current = (cookie_list *)c_list, *retval = NULL;
+    int ret;
 
-	/* Search from the list */
-	while(current != NULL)
-	{
-		/* print_cookie(current);*/
-		/* PID must be same */
-		current = garbage_collection(current);
-		if(current == NULL)
-			break;
+    /* Search from the list */
+    while(current != NULL)
+    {
+        /* print_cookie(current);*/
+        /* PID must be same */
+        current = garbage_collection(current);
+        if(current == NULL)
+            break;
 
-		if(memcmp(current->cookie, cookie, SECURITY_SERVER_COOKIE_LEN) == 0)
-		{
-			SEC_SVR_DBG("%s", "cookie has been found");
+        if(memcmp(current->cookie, cookie, SECURITY_SERVER_COOKIE_LEN) == 0)
+        {
+            SEC_SVR_DBG("%s", "cookie has been found");
+            if (smack_check())
+            {
+                ret = smack_have_access(current->smack_label, object, access_rights);
+                SEC_SVR_DBG("SMACK have access returned %d", ret);
+                SEC_SVR_DBG("SS_SMACK: subject=%s, object=%s, access=%s, result=%d", current->smack_label, object, access_rights, ret);
 
-                                ret = smack_have_access(current->smack_label, object, access_rights);
-          SEC_SVR_DBG("smack_have_access, subject >%s< object >%s< access >%s< ===> %d",
-                    current->smack_label, object, access_rights, ret);
-                                if (ret == 1)
-                                {
-                                        retval = current;
-                                        goto finish;
-                                }
-		}
-		current = current->next;
-	}
+                if (ret == 1)
+                {
+                    retval = current;
+                    goto finish;
+                }
+            } else {
+                retval = current;
+                goto finish;
+            }
+        }
+        current = current->next;
+    }
 finish:
-	return retval;
+    return retval;
 }
 
 
@@ -355,179 +360,182 @@ error:
 /* Create a cookie item from PID */
 cookie_list *create_cookie_item(int pid, int sockfd, cookie_list *c_list)
 {
-	int ret, tempint;
-	cookie_list *added = NULL, *current = NULL;
-	char path[24], *exe = NULL;
-	char *buf = NULL, inputed, *tempptr = NULL;
-	char delim[] = ": ", *token = NULL;
-	int *permissions = NULL, perm_num = 1, cnt, i, *tempperm = NULL;
-        char *smack_label = NULL;
-	FILE *fp = NULL;
+    int ret, tempint;
+    cookie_list *added = NULL, *current = NULL;
+    char path[24], *exe = NULL;
+    char *buf = NULL, inputed, *tempptr = NULL;
+    char delim[] = ": ", *token = NULL;
+    int *permissions = NULL, perm_num = 1, cnt, i, *tempperm = NULL;
+    char *smack_label = NULL;
+    FILE *fp = NULL;
 
-	current = search_existing_cookie(pid, c_list);
-	if(current != NULL)
-	{
-		/* There is a cookie for this process already */
-		added = current;
-		SEC_SVR_DBG("%s", "Existing cookie found");
-		goto error;
-	}
+    current = search_existing_cookie(pid, c_list);
+    if(current != NULL)
+    {
+        /* There is a cookie for this process already */
+        added = current;
+        SEC_SVR_DBG("%s", "Existing cookie found");
+        goto error;
+    }
 
-	/* Read executable name of the PID from proc fs */
+    /* Read command line of the PID from proc fs */
     exe = (char *)read_exe_path_from_proc(pid);
-	if(exe == NULL)
-	{
-		SEC_SVR_DBG("Error on reading /proc/%d/exe", pid);
-		goto error;
-	}
+    if(exe == NULL)
+    {
+        SEC_SVR_DBG("Error on reading /proc/%d/exe", pid);
+        goto error;
+    }
 
-	/*
-	 * modified by security part
-	 *  - get gid from /etc/group
-	 */
-	/* Read group info of the PID from proc fs - /proc/[PID]/status */
-	snprintf(path, sizeof(path), "/proc/%d/status", pid);
-	fp = fopen(path, "r");
+    /*
+     * modified by security part
+     *  - get gid from /etc/group
+     */
+    /* Read group info of the PID from proc fs - /proc/[PID]/status */
+    snprintf(path, sizeof(path), "/proc/%d/status", pid);
+    fp = fopen(path, "r");
 
-	/* Find the line which starts with 'Groups:' */
-	i = 0;
-	
-	while(1)
-	{
-		buf = (char*)malloc(sizeof(char) * 128);
-		if(buf == NULL)
-		{
-			SEC_SVR_DBG("%s", "Error on malloc()");
-			goto error;
-		}
-		memset(buf, 0x00, 128);
-		cnt = 128;
+    /* Find the line which starts with 'Groups:' */
+    i = 0;
 
-		/* get one line from /proc/[PID]/status */
-		while(1)
-		{
-			tempint = fgetc(fp);
-			inputed = (char)tempint;
-			if(tempint == EOF)
-				goto out_of_while;
-			else if(inputed == '\n')
-			{
-				buf[i] = '\0';
-				break;
-			}
-			else if((i == cnt) && (inputed != '\n'))
-			{
-				tempptr = (char*)realloc(buf, sizeof(char) * (i + 128));
-				if(tempptr == NULL)
-				{
-					SEC_SVR_DBG("%s", "Error on realloc()");
-					goto error;
-				}
-				buf = tempptr;
-				buf[i++] = inputed;
-				cnt = i + 128;
-			}
-			else
-				buf[i++] = inputed;
-		}
-		i = 0;
+    while(1)
+    {
+        buf = (char*)malloc(sizeof(char) * 128);
+        if(buf == NULL)
+        {
+            SEC_SVR_DBG("%s", "Error on malloc()");
+            goto error;
+        }
+        memset(buf, 0x00, 128);
+        cnt = 128;
 
-		/* find 'Groups:' */
-		if(strncmp(buf, "Groups:", 7) == 0)
-		{
-			/* get gid from the line and insert to 'permissions' array */
-			token = strtok(buf, delim); // first string is "Groups"
-			while((token = strtok(NULL, delim)))
-			{
-				tempperm = realloc(permissions, sizeof(int) * perm_num);
-				if(tempperm == NULL)
-				{
-					SEC_SVR_DBG("%s", "Error on realloc()");
-					goto error;
-				}
-				permissions = tempperm;
-				errno = 0;
-				permissions[perm_num - 1] = strtoul(token, 0, 10);
-				if (errno != 0)
-				{
-					SEC_SVR_DBG("cannot change string to integer [%s]", token);
-					ret = SECURITY_SERVER_ERROR_SERVER_ERROR;
-					goto error;
-				}
-				perm_num++;
-			}
-			perm_num--;
+        /* get one line from /proc/[PID]/status */
+        while(1)
+        {
+            tempint = fgetc(fp);
+            inputed = (char)tempint;
+            if(tempint == EOF)
+                goto out_of_while;
+            else if(inputed == '\n')
+            {
+                buf[i] = '\0';
+                break;
+            }
+            else if((i == cnt) && (inputed != '\n'))
+            {
+                tempptr = (char*)realloc(buf, sizeof(char) * (i + 128));
+                if(tempptr == NULL)
+                {
+                    SEC_SVR_DBG("%s", "Error on realloc()");
+                    goto error;
+                }
+                buf = tempptr;
+                buf[i++] = inputed;
+                cnt = i + 128;
+            }
+            else
+                buf[i++] = inputed;
+        }
+        i = 0;
 
-			/* goto out of while loop */
-			break;
-		}
-		if(buf != NULL)
-		{
-			free(buf);
-			buf = NULL;
-		}
-	}
+        /* find 'Groups:' */
+        if(strncmp(buf, "Groups:", 7) == 0)
+        {
+            /* get gid from the line and insert to 'permissions' array */
+            token = strtok(buf, delim); // first string is "Groups"
+            while((token = strtok(NULL, delim)))
+            {
+                tempperm = realloc(permissions, sizeof(int) * perm_num);
+                if(tempperm == NULL)
+                {
+                    SEC_SVR_DBG("%s", "Error on realloc()");
+                    goto error;
+                }
+                permissions = tempperm;
+                errno = 0;
+                permissions[perm_num - 1] = strtoul(token, 0, 10);
+                if (errno != 0)
+                {
+                    SEC_SVR_DBG("cannot change string to integer [%s]", token);
+                    ret = SECURITY_SERVER_ERROR_SERVER_ERROR;
+                    goto error;
+                }
+                perm_num++;
+            }
+            perm_num--;
+
+            /* goto out of while loop */
+            break;
+        }
+        if(buf != NULL)
+        {
+            free(buf);
+            buf = NULL;
+        }
+    }
 out_of_while:
-		
-	/* Each group ID is stored in each line of the file */
-//	while(fgets(permline, sizeof(permline), fp) != NULL)
-//	{
-//		permissions = realloc(permissions, sizeof(int) * perm_num);
-//		if(permissions == NULL)
-//		{
-//			SEC_SVR_DBG("%s", "Error on realloc()");
-//			goto error;
-//		}
-//		permissions[perm_num -1] = strtoul(permline, 0, 10);
-//		perm_num++;
-//	}
-//	perm_num--;
-	/*
-	 * modifying end
-	 */
 
-	/* Go to last cookie from the list */
-	current = c_list;
-	while(current->next != NULL)
-	{
-		current = current->next;
-	}
+    /* Each group ID is stored in each line of the file */
+    //	while(fgets(permline, sizeof(permline), fp) != NULL)
+    //	{
+    //		permissions = realloc(permissions, sizeof(int) * perm_num);
+    //		if(permissions == NULL)
+    //		{
+    //			SEC_SVR_DBG("%s", "Error on realloc()");
+    //			goto error;
+    //		}
+    //		permissions[perm_num -1] = strtoul(permline, 0, 10);
+    //		perm_num++;
+    //	}
+    //	perm_num--;
+    /*
+     * modifying end
+     */
 
-	/* Create a new one and assign values */
-	added = malloc(sizeof(cookie_list));
-	if(added == NULL)
-		goto error;
+    /* Go to last cookie from the list */
+    current = c_list;
+    while(current->next != NULL)
+    {
+        current = current->next;
+    }
 
-	ret = generate_random_cookie(added->cookie, SECURITY_SERVER_COOKIE_LEN);
-	if(ret != SECURITY_SERVER_SUCCESS)
-	{
-		SEC_SVR_DBG("Error on making random cookie: %d", ret);
-		free(added);
-		added = NULL;
-		goto error;
-	}
+    /* Create a new one and assign values */
+    added = malloc(sizeof(cookie_list));
+    if(added == NULL)
+        goto error;
 
-        /* Check SMACK label */
+    ret = generate_random_cookie(added->cookie, SECURITY_SERVER_COOKIE_LEN);
+    if(ret != SECURITY_SERVER_SUCCESS)
+    {
+        SEC_SVR_DBG("Error on making random cookie: %d", ret);
+        free(added);
+        added = NULL;
+        goto error;
+    }
+
+    /* Check SMACK label */
+    if (smack_check())
+    {
         ret = smack_new_label_from_socket(sockfd, &smack_label);
         if (ret != 0)
-	{
-		SEC_SVR_DBG("Error checking peer label: %d", ret);
-		free(added);
-		added = NULL;
-		goto error;
-	}
+        {
+            SEC_SVR_DBG("Error checking peer label: %d", ret);
+            free(added);
+            added = NULL;
+            goto error;
+        }
+    }
 
 	added->path_len = strlen(exe);
 	added->path = calloc(1, strlen(exe));
 	memcpy(added->path, exe, strlen(exe));
 
-	added->permission_len = perm_num;
-	added->pid = pid;
-	added->permissions = permissions;
-	added->smack_label = smack_label;
-	added->prev = current;
-	current->next = added;
-	added->next = NULL;
+    added->permission_len = perm_num;
+    added->pid = pid;
+    added->permissions = permissions;
+    added->smack_label = smack_label;
+    added->prev = current;
+    current->next = added;
+    added->next = NULL;
 
 error:
 	if(exe != NULL)
@@ -537,10 +545,10 @@ error:
 	if(buf != NULL)
 		free(buf);
 
-	if(added == NULL && permissions != NULL)
-		free(permissions);
+    if(added == NULL && permissions != NULL)
+        free(permissions);
 
-	return added;
+    return added;
 }
 
 /* Check stored default cookie, if it's not exist make a new one and store it */

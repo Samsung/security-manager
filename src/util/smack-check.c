@@ -23,3 +23,12 @@ int smack_runtime_check(void)
     return smack_present;
 }
 
+int smack_check(void)
+{
+#ifndef SMACK_ENABLED
+    return 0;
+#else
+    return smack_runtime_check();
+#endif
+
+}

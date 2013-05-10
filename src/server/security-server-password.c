@@ -30,7 +30,6 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <openssl/sha.h>
-#include <unistd.h>
 
 #include "security-server-password.h"
 
@@ -428,7 +427,6 @@ int check_history(const unsigned char *requested_pwd)
 {
 	unsigned char history_pwd[SECURITY_SERVER_HASHED_PWD_LEN];
 	char path[255];
-	unsigned int max_history;
 	int num, history_count, fd, file_count, retval;
 	int retval2 = SECURITY_SERVER_SUCCESS;
 	struct dirent **mydirent;
@@ -572,12 +570,12 @@ int set_password(const unsigned char *requested_new_pwd, const unsigned int atte
 
 int check_retry(const struct timeval cur_try)
 {
-	int retval, interval_sec, interval_usec;
+	int interval_sec, interval_usec;
 	interval_sec = cur_try.tv_sec - prev_try.tv_sec;
 	interval_usec = cur_try.tv_usec - prev_try.tv_usec;
 	prev_try = cur_try;
 	if(interval_sec == 0
-               && interval_usec > SECURITY_SERVER_PASSWORD_RETRY_TIMEOUT_MICROSECOND)
+	        && interval_usec > SECURITY_SERVER_PASSWORD_RETRY_TIMEOUT_MICROSECOND)
 		return SECURITY_SERVER_SUCCESS;
 
 	if(interval_sec > 0)
@@ -1580,3 +1578,4 @@ int process_set_pwd_validity_request(int sockfd)
 error:
     return retval;
 }
+

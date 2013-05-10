@@ -19,6 +19,8 @@ BuildRequires: pkgconfig(libsmack)
 Requires(preun):  systemd
 Requires(post):   systemd
 Requires(postun): systemd
+BuildRequires: pkgconfig(libprivilege-control)
+
 %description
 Security server and utilities
 
