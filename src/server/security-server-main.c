@@ -343,6 +343,9 @@ int process_cookie_request(int sockfd)
 {
 	int retval, client_pid, client_uid;
 	cookie_list *created_cookie = NULL;
+	unsigned char cookie[SECURITY_SERVER_COOKIE_LEN];
+	pid_t cookie_pid;
+	char* cookie_label = NULL;
 
 	/* Authenticate client */
 	retval = authenticate_client_application(sockfd, &client_pid, &client_uid);
@@ -375,34 +378,42 @@ int process_cookie_request(int sockfd)
     */
         //TODO: Remove above code if there will be no crashes without it
         //All process should be treaded the same
-		/* Create a new cookie. or find existing one */
-		pthread_mutex_lock(&cookie_mutex);
-		created_cookie = create_cookie_item(client_pid, sockfd, c_list);
-		pthread_mutex_unlock(&cookie_mutex);
-		if(created_cookie == NULL)
-		{
-			SEC_SVR_ERR("%s","Cannot create a cookie");
-			goto error;
-		}
 
-    //let others know if this cookie belongs to root process
-    if(client_uid == 0)
-        created_cookie->is_roots_process = 1;
-    else
-        created_cookie->is_roots_process = 0;
+	/* Create a new cookie. or find existing one */
+	pthread_mutex_lock(&cookie_mutex);
+	created_cookie = create_cookie_item(client_pid, sockfd, c_list);
+	if(created_cookie == NULL)
+	{
+		pthread_mutex_unlock(&cookie_mutex);
+		SEC_SVR_ERR("%s","Cannot create a cookie");
+		goto error;
+	}
+
+	//let others know if this cookie belongs to root process
+	if(client_uid == 0)
+		created_cookie->is_roots_process = 1;
+	else
+		created_cookie->is_roots_process = 0;
+	memcpy(cookie, created_cookie->cookie, SECURITY_SERVER_COOKIE_LEN);
+	cookie_pid = created_cookie->pid;
+	if (created_cookie->smack_label)
+		cookie_label = strdup(created_cookie->smack_label);
+	else
+		cookie_label = strdup("NULL");
+	pthread_mutex_unlock(&cookie_mutex);
 
 	//}
 	/* send cookie as response */
-	retval = send_cookie(sockfd, created_cookie->cookie);
+	retval = send_cookie(sockfd, cookie);
 	if(retval != SECURITY_SERVER_SUCCESS)
 	{
 		SEC_SVR_ERR("ERROR: Cannot send generic response: %d", retval);
 	}
-        SEC_SVR_DBG("Server: Cookie created for client PID %d LABEL >%s<",
-                    created_cookie->pid,
-                    (created_cookie->smack_label)?(created_cookie->smack_label):"NULL");
+	SEC_SVR_DBG("Server: Cookie created for client PID %d LABEL >%s<",
+				cookie_pid, cookie_label);
 
 	SEC_SVR_DBG("%s", "Server: Cookie has been sent to client");
+	free(cookie_label);
 
 error:
 	return retval;
@@ -739,6 +750,7 @@ int process_pid_request(int sockfd)
 	unsigned char requested_cookie[SECURITY_SERVER_COOKIE_LEN];
     int * privileges = NULL;
 	cookie_list *search_result = NULL;
+	pid_t cookie_pid = 0;
 
 	/* Authenticate client */
 	retval = authenticate_client_middleware(sockfd, &client_pid);
@@ -776,19 +788,21 @@ int process_pid_request(int sockfd)
         goto error;
     }
 
-    /* Search cookie list */
-    pthread_mutex_lock(&cookie_mutex);
-    search_result = search_cookie(c_list, requested_cookie, privileges, retval);
-    pthread_mutex_unlock(&cookie_mutex);
+	/* Search cookie list */
+	pthread_mutex_lock(&cookie_mutex);
+	search_result = search_cookie(c_list, requested_cookie, privileges, retval);
+	if(search_result)
+		cookie_pid = search_result->pid;
+	pthread_mutex_unlock(&cookie_mutex);
 
-    free(privileges);
+	free(privileges);
 
 	if(search_result != NULL)
 	{
 		/* We found */
-		SEC_SVR_DBG("We found the cookie and pid:%d", search_result->pid);
+		SEC_SVR_DBG("We found the cookie and pid:%d", cookie_pid);
 		SEC_SVR_DBG("%s", "Cookie comparison succeeded. Access granted.");
-		retval = send_pid(sockfd, search_result->pid);
+		retval = send_pid(sockfd, cookie_pid);
 
 		if(retval != SECURITY_SERVER_SUCCESS)
 		{
@@ -856,27 +870,26 @@ int process_smack_request(int sockfd)
         goto error;
     }
 
-    /* Search cookie list */
-    pthread_mutex_lock(&cookie_mutex);
-    search_result = search_cookie(c_list, requested_cookie, privileges, retval);
-    pthread_mutex_unlock(&cookie_mutex);
+	/* Search cookie list */
+	pthread_mutex_lock(&cookie_mutex);
+	search_result = search_cookie(c_list, requested_cookie, privileges, retval);
+	if (search_result) {
+		if (search_result->smack_label)
+			label = strdup(search_result->smack_label);
+		else {
+			SEC_SVR_DBG("%s", "No SMACK support on device - returning empty label");
+			label = strdup("");
+		}
+	}
+	pthread_mutex_unlock(&cookie_mutex);
 
-    free(privileges);
+	free(privileges);
 
     if(search_result != NULL)
     {
         /* We found */
         SEC_SVR_DBG("We found the cookie and pid:%d", search_result->pid);
         SEC_SVR_DBG("%s", "Cookie comparison succeeded. Access granted.");
-
-        label = search_result->smack_label;
-
-        if (NULL == label)
-        {
-            SEC_SVR_DBG("%s", "No SMACK support on device - returning empty label");
-            label = "";
-        }
-
         SEC_SVR_DBG("Read label is: %s\n", label);
 
         retval = send_smack(sockfd, label);
@@ -898,6 +911,7 @@ int process_smack_request(int sockfd)
             SEC_SVR_ERR("ERROR: Cannot send SMACK label response: %d", retval);
         }
     }
+    free(label);
 error:
     return retval;
 }
