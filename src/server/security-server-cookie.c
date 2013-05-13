@@ -145,23 +145,8 @@ cookie_list *search_existing_cookie(int pid, const cookie_list *c_list)
 			/* Check the path is different.  */
 			if(strcmp(exe, current->path) != 0)
 			{
-				SEC_SVR_DBG("pid [%d] has been reused by %s. deleting the old cookie.", pid, exe);
-				debug_cmdline = malloc(current->path_len + 1);
-				if(debug_cmdline == NULL)
-				{
-					SEC_SVR_ERR("%s", "out of memory error");
-					free(exe);
-					return NULL;
-				}
-				strncpy(debug_cmdline, current->path, current->path_len);
-				debug_cmdline[current->path_len] = 0;
-				SEC_SVR_DBG("[%s] --> [%s]", exe, debug_cmdline);
-				if(debug_cmdline != NULL)
-				{
-					free(debug_cmdline);
-					debug_cmdline = NULL;
-				}
-				/* Okay. delete current cookie */
+				/* Delete cookie for reused pid. This is an extremely rare situation. */
+				SEC_SVR_DBG("Pid [%d] for exec [%s] has been reused by [%s]. Deleting the old cookie.", pid, current->path, exe);
 				current = delete_cookie_item(current);
 			}
 			else
@@ -518,19 +503,8 @@ out_of_while:
         }
     }
 
-    /* Check SMACK label */
-    if (smack_check())
-    {
-        ret = smack_new_label_from_socket(sockfd, &smack_label);
-        if (ret < 0)
-        {
-            SEC_SVR_DBG("Error checking peer label: %d", ret);
-            free(added);
-            added = NULL;
-            goto error;
-        }
-    }
-
+	added->path = exe;
+	exe = NULL;
     added->permission_len = perm_num;
     added->pid = pid;
     added->permissions = permissions;
