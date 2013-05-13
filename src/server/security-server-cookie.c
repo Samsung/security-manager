@@ -34,21 +34,16 @@
 
 /* Delete useless cookie item *
  * then connect prev and next */
-int free_cookie_item(cookie_list *cookie)
+void free_cookie_item(cookie_list *cookie)
 {
-	if(cookie->path != NULL)
-		free(cookie->path);
-	if(cookie->permissions != NULL)
-		free(cookie->permissions);
-        if(cookie->smack_label != NULL)
-                free(cookie->smack_label);
+	free(cookie->path);
+	free(cookie->permissions);
+	free(cookie->smack_label);
 	if(cookie->prev != NULL)
 		cookie->prev->next = cookie->next;
 	if(cookie->next != NULL)
 		cookie->next->prev = cookie->prev;
 	free(cookie);
-	cookie = NULL;
-	return 0;
 }
 
 /* Cut the link of the current cookie item and connect previous link and next line *
@@ -150,30 +145,9 @@ cookie_list *search_existing_cookie(int pid, const cookie_list *c_list)
 			/* Check the path is different.  */
 			if(strcmp(exe, current->path) != 0)
 			{
-				SEC_SVR_DBG("pid [%d] has been reused by %s. deleting the old cookie.", pid, exe);
-				debug_cmdline = malloc(current->path_len + 1);
-				if(debug_cmdline == NULL)
-				{
-					SEC_SVR_DBG("%s", "out of memory error");
-					free(exe);
-					return NULL;
-				}
-				strncpy(debug_cmdline, current->path, current->path_len);
-				debug_cmdline[current->path_len] = 0;
-				SEC_SVR_DBG("[%s] --> [%s]", exe, debug_cmdline);
-				if(debug_cmdline != NULL)
-				{
-					free(debug_cmdline);
-					debug_cmdline = NULL;
-				}
-				/* Okay. delete current cookie */
+				/* Delete cookie for reused pid. This is an extremely rare situation. */
+				SEC_SVR_DBG("Pid [%d] for exec [%s] has been reused by [%s]. Deleting the old cookie.", pid, current->path, exe);
 				current = delete_cookie_item(current);
-				if(exe != NULL)
-				{
-					free(exe);
-					exe = NULL;
-				}
-				continue;
 			}
 			else
 			{
@@ -525,10 +499,8 @@ out_of_while:
         }
     }
 
-	added->path_len = strlen(exe);
-	added->path = calloc(1, strlen(exe));
-	memcpy(added->path, exe, strlen(exe));
-
+	added->path = exe;
+	exe = NULL;
     added->permission_len = perm_num;
     added->pid = pid;
     added->permissions = permissions;
@@ -622,7 +594,6 @@ cookie_list *create_default_cookie(void)
 		return NULL;
 	}
 
-	first->path_len = 0;
 	first->permission_len = 0;
 	first->pid = 0;
 	first->path = NULL;

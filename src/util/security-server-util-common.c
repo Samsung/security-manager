@@ -37,6 +37,34 @@
 #include "security-server-util.h"
 #include "security-server.h"
 
+/*
+ * @buffer   output buffer
+ * @position target position in output buffer
+ * @source   source data
+ * @len      source data length
+ */
+static void append_to_buffer(unsigned char *buffer, int* position, const void* source, size_t len) {
+	if (len <= 0) {
+		SEC_SVR_DBG("Appending nothing.");
+		return;
+	}
+	memcpy(buffer + *position, source, len);
+	*position += len;
+}
+
+static void append_cookie(unsigned char *buffer, int* position, const cookie_list* cookie) {
+	int i;
+	int path_len = cookie->path ? strlen(cookie->path) : 0;
+
+	append_to_buffer(buffer, position, &path_len, sizeof(int));
+	append_to_buffer(buffer, position, &cookie->permission_len, sizeof(int));
+	append_to_buffer(buffer, position, &cookie->cookie, SECURITY_SERVER_COOKIE_LEN);
+	append_to_buffer(buffer, position, &cookie->pid, sizeof(pid_t));
+	append_to_buffer(buffer, position, &cookie->path, path_len);
+
+	for(i=0;i<cookie->permission_len;++i)
+		append_to_buffer(buffer, position, &cookie->permissions[i], sizeof(int));
+}
 
 /* Get all cookie info response *
  * packet format
@@ -89,10 +117,10 @@
  * |                                                               |
  * |                                                               |
  */
- unsigned char * get_all_cookie_info(cookie_list *list, int *size)
+unsigned char * get_all_cookie_info(cookie_list *list, int *size)
 {
 	cookie_list *current = list;
-	int ptr, total_num, total_size, tempnum, i;
+	int ptr, total_num, total_size, path_len;
 	unsigned char *buf = NULL, *tempptr = NULL;
 	response_header hdr;
 
@@ -109,7 +137,8 @@
 			break;
 
 		total_num++;
-		total_size += sizeof(int) + sizeof(int) + SECURITY_SERVER_COOKIE_LEN + sizeof(int) + current->path_len + (current->permission_len * sizeof(int));
+		path_len = current->path ? strlen(current->path) : 0;
+		total_size += sizeof(int) + sizeof(int) + SECURITY_SERVER_COOKIE_LEN + sizeof(pid_t) + path_len + (current->permission_len * sizeof(int));
 		tempptr = realloc(buf, total_size);
 		if(tempptr == NULL)
 		{
@@ -118,26 +147,7 @@
 		}
 		buf = tempptr;
 
-		tempnum = current->path_len;
-		memcpy(buf+ptr, &tempnum, sizeof(int));
-		ptr += sizeof(int);
-		tempnum = current->permission_len;
-		memcpy(buf+ptr, &tempnum, sizeof(int));
-		ptr += sizeof(int);
-		memcpy(buf+ptr, current->cookie, SECURITY_SERVER_COOKIE_LEN);
-		ptr += SECURITY_SERVER_COOKIE_LEN;
-		tempnum = current->pid;
-		memcpy(buf+ptr, &tempnum, sizeof(int));
-		ptr += sizeof(int);
-		memcpy(buf+ptr, current->path, current->path_len);
-		ptr += current->path_len;
-
-		for(i=0;i<current->permission_len;i++)
-		{
-			tempnum = current->permissions[i];
-			memcpy(buf+ptr, &tempnum, sizeof(int));
-			ptr += sizeof(int);
-		}
+		append_cookie(buf, &ptr, current);
 		current = current->next;
 	}
 
@@ -152,9 +162,11 @@
 	hdr.basic_hdr.msg_id = SECURITY_SERVER_MSG_TYPE_GET_ALL_COOKIES_RESPONSE;
 	hdr.basic_hdr.msg_len =(unsigned short)( total_size - sizeof(hdr));
 	hdr.return_code = SECURITY_SERVER_RETURN_CODE_SUCCESS;
-	memcpy(buf, &hdr, sizeof(hdr));
-	tempnum = total_num;
-	memcpy(buf + sizeof(hdr), &tempnum, sizeof(int));
+
+	// reset buffer position to the beginning of buffer and insert header
+	ptr = 0;
+	append_to_buffer(buf, &ptr, &hdr, sizeof(hdr));
+	append_to_buffer(buf, &ptr, &total_num, sizeof(total_num));
 	*size = total_size;
 	return buf;
 }
@@ -214,9 +226,11 @@ int send_one_cookie_info(const cookie_list *list, int sockfd)
 {
 	unsigned char *buf = NULL;
 	response_header hdr;
-	int total_size, ptr = 0, tempnum, ret, i;
+	int total_size, ptr = 0, ret, path_len;
 
-	total_size = sizeof(hdr) + sizeof(int) + sizeof(int) + SECURITY_SERVER_COOKIE_LEN + sizeof(int) + list->path_len + (list->permission_len * sizeof(int));
+	path_len = list->path ? strlen(list->path) : 0;
+
+	total_size = sizeof(hdr) + sizeof(int) + sizeof(int) + SECURITY_SERVER_COOKIE_LEN + sizeof(pid_t) + path_len + (list->permission_len * sizeof(int));
 	buf = malloc(total_size);
 	if(buf == NULL)
 	{
@@ -226,31 +240,13 @@ int send_one_cookie_info(const cookie_list *list, int sockfd)
 
 	hdr.basic_hdr.version = SECURITY_SERVER_MSG_VERSION;
 	hdr.basic_hdr.msg_id = SECURITY_SERVER_MSG_TYPE_GET_COOKIEINFO_RESPONSE;
-	hdr.basic_hdr.msg_len =sizeof(int) + sizeof(int) + SECURITY_SERVER_COOKIE_LEN + sizeof(int) + list->path_len + (list->permission_len * sizeof(int));
+	hdr.basic_hdr.msg_len =sizeof(int) + sizeof(int) + SECURITY_SERVER_COOKIE_LEN + sizeof(pid_t) + path_len + (list->permission_len * sizeof(int));
 	hdr.return_code = SECURITY_SERVER_RETURN_CODE_SUCCESS;
-	memcpy(buf, &hdr, sizeof(hdr));
-	ptr += sizeof(hdr);
 
-	tempnum = list->path_len;
-	memcpy(buf+ptr, &tempnum, sizeof(int));
-	ptr += sizeof(int);
-	tempnum = list->permission_len;
-	memcpy(buf+ptr, &tempnum, sizeof(int));
-	ptr += sizeof(int);
-	memcpy(buf+ptr, list->cookie, SECURITY_SERVER_COOKIE_LEN);
-	ptr += SECURITY_SERVER_COOKIE_LEN;
-	tempnum = list->pid;
-	memcpy(buf+ptr, &tempnum, sizeof(int));
-	ptr += sizeof(int);
-	memcpy(buf+ptr, list->path, list->path_len);
-	ptr += list->path_len;
-
-	for(i=0;i<list->permission_len;i++)
-	{
-		tempnum = list->permissions[i];
-		memcpy(buf+ptr, &tempnum, sizeof(int));
-		ptr += sizeof(int);
-	}
+	// header
+	append_to_buffer(buf, &ptr, &hdr, sizeof(hdr));
+	// cookie
+	append_cookie(buf, &ptr, list);
 
 	ret = check_socket_poll(sockfd, POLLOUT, SECURITY_SERVER_SOCKET_TIMEOUT_MILISECOND);
 	if(ret == SECURITY_SERVER_ERROR_POLL)

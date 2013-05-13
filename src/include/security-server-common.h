@@ -89,7 +89,6 @@
 typedef struct _cookie_list
 {
 	unsigned char	cookie[SECURITY_SERVER_COOKIE_LEN];	/* 20 bytes random Cookie */
-	int		path_len;				/* Client process cmd line length */
 	int		permission_len;				/* Client process permissions (aka group IDs) */
 	pid_t		pid;					/* Client process's PID */
 	char		*path;					/* Client process's executable path */

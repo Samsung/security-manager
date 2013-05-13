@@ -89,7 +89,7 @@ void print_cookie(cookie_list *list)
 	int i;
 	printf("%s", "cookie:\n");
 	printhex(list->cookie, SECURITY_SERVER_COOKIE_LEN);
-	printf("path_len: %d\n", list->path_len);
+	printf("path_len: %d\n", list->path ? strlen(list->path) : 0);
 	printf("permission_len: %d\n", list->permission_len);
 	printf("PID: %d\n", list->pid);
 	printf("path: %s\n", list->path);
