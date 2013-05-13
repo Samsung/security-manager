@@ -34,6 +34,6 @@
 int util_process_all_cookie(int sockfd, cookie_list* list);
 int util_process_cookie_from_pid(int sockfd, cookie_list* list);
 int util_process_cookie_from_cookie(int sockfd, cookie_list* list);
-
+int util_smack_label_is_valid(const char *smack_label);
 
 #endif

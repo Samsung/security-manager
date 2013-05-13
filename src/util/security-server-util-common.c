@@ -25,6 +25,7 @@
 #include <stdlib.h>
 #include <sys/socket.h>
 #include <sys/types.h>
+#include <sys/smack.h>
 #include <fcntl.h>
 #include <sys/un.h>
 #include <errno.h>
@@ -365,4 +366,32 @@ int util_process_cookie_from_cookie(int sockfd, cookie_list* list)
 	}
 	
 	return ret;
+}
+
+int util_smack_label_is_valid(const char *smack_label){
+	int i;
+
+	if (!smack_label || smack_label[0] == '\0' || smack_label[0] == '-')
+		goto err;
+
+	for (i = 0; smack_label[i]; ++i) {
+		if (i >= SMACK_LABEL_LEN)
+			return 0;
+		switch (smack_label[i]) {
+		case '~':
+		case ' ':
+		case '/':
+		case '"':
+		case '\\':
+		case '\'':
+			goto err;
+		default:
+			break;
+		}
+	}
+
+	return 1;
+err:
+	SEC_SVR_ERR("ERROR: Invalid Smack label: %s", smack_label);
+	return 0;
 }

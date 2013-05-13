@@ -1470,10 +1470,13 @@ int process_app_get_access_request(int sockfd, size_t msg_len)
     char *message_buffer = NULL;
     char *client_label = NULL;
     char *provider_label = NULL;
+    struct smack_accesses *smack = NULL;
     int ret = SECURITY_SERVER_ERROR_SERVER_ERROR;
     int send_message_id = SECURITY_SERVER_MSG_TYPE_GENERIC_RESPONSE;
     int send_error_id = SECURITY_SERVER_RETURN_CODE_SERVER_ERROR;
     int client_pid = 0;
+    static const char * const revoke = "-----";
+    const char *permissions = "rwxat";
 
     message_buffer = malloc(msg_len+1);
     if (!message_buffer)
@@ -1489,6 +1492,7 @@ int process_app_get_access_request(int sockfd, size_t msg_len)
         goto error;
     }
 
+    // Currently we don't use client_pid
     memcpy(&client_pid, message_buffer, sizeof(int));
     client_label = message_buffer + sizeof(int);
 
@@ -1498,25 +1502,29 @@ int process_app_get_access_request(int sockfd, size_t msg_len)
             goto error;
         }
 
-        if (PC_OPERATION_SUCCESS != app_give_access(client_label, provider_label, "rwxat")) {
-            SEC_SVR_DBG("%s", "Error in app_give_access");
+        if (!util_smack_label_is_valid(client_label)) {
+            send_error_id = SECURITY_SERVER_RETURN_CODE_BAD_REQUEST;
             goto error;
         }
+
+        if (smack_accesses_new(&smack))
+            goto error;
+
+        if (smack_accesses_add_modify(smack, client_label,
+                    provider_label, permissions, revoke))
+            goto error;
+
+        if (smack_accesses_apply(smack)){
+            send_message_id = SECURITY_SERVER_RETURN_CODE_ACCESS_DENIED;
+            goto error;
+        }
+
     }
 
     ret = SECURITY_SERVER_SUCCESS;
     send_message_id = SECURITY_SERVER_MSG_TYPE_APP_GIVE_ACCESS_RESPONSE;
     send_error_id = SECURITY_SERVER_RETURN_CODE_SUCCESS;
 
-    if (!netlink_enabled) {
-        SEC_SVR_DBG("Netlink not supported: Garbage collector inactive.");
-        goto error;
-    }
-
-    if (smack_check()) {
-        if (0 != rules_revoker_add(client_pid, client_label, provider_label))
-            SEC_SVR_DBG("%s", "Error in rules_revoker_add.");
-    }
 
 error:
     retval = send_generic_response(sockfd, send_message_id, send_error_id);
@@ -1525,6 +1533,7 @@ error:
 
     free(message_buffer);
     free(provider_label);
+    smack_accesses_free(smack);
     return ret;
 }
 
