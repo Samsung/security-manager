@@ -388,7 +388,6 @@ int util_smack_label_is_valid(const char *smack_label){
 
 	return 1;
 err:
-	// TODO replace it with SEC_SVR_DBG when master is merged
-	SEC_SVR_DBG("ERROR: Invalid Smack label: %s", smack_label);
+	SEC_SVR_ERR("ERROR: Invalid Smack label: %s", smack_label);
 	return 0;
 }
