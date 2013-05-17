@@ -1151,6 +1151,9 @@ int security_server_app_give_access(const char *customer_label, int customer_pid
     int sockfd = -1, retval;
     response_header hdr;
 
+    if (1 != smack_check())
+        return SECURITY_SERVER_SUCCESS;
+
     retval = connect_to_server(&sockfd);
     if(retval != SECURITY_SERVER_SUCCESS)
     {
