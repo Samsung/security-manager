@@ -32,14 +32,16 @@ INCLUDE(FindPkgConfig)
 
 ############################# compiler flags ##################################
 
-SET(CMAKE_C_FLAGS_PROFILING    "-O0 -g -pg")
-SET(CMAKE_CXX_FLAGS_PROFILING  "-O0 -std=c++0x -g -pg")
-SET(CMAKE_C_FLAGS_DEBUG        "-O0 -g")
-SET(CMAKE_CXX_FLAGS_DEBUG      "-O0 -std=c++0x -g")
-SET(CMAKE_C_FLAGS_RELEASE      "-O2 -g")
-SET(CMAKE_CXX_FLAGS_RELEASE    "-O2 -std=c++0x -g")
-SET(CMAKE_C_FLAGS_CCOV         "-O2 -g --coverage")
-SET(CMAKE_CXX_FLAGS_CCOV       "-O2 -std=c++0x -g --coverage")
+SET(CMAKE_C_FLAGS              "-g")
+SET(CMAKE_CXX_FLAGS            "-g -std=c++0x")
+SET(CMAKE_C_FLAGS_PROFILING    "-O0 -pg")
+SET(CMAKE_CXX_FLAGS_PROFILING  "-O0 -pg")
+SET(CMAKE_C_FLAGS_DEBUG        "-O0 -ggdb")
+SET(CMAKE_CXX_FLAGS_DEBUG      "-O0 -ggdb")
+SET(CMAKE_C_FLAGS_RELEASE      "-O2")
+SET(CMAKE_CXX_FLAGS_RELEASE    "-O2")
+SET(CMAKE_C_FLAGS_CCOV         "-O2 --coverage")
+SET(CMAKE_CXX_FLAGS_CCOV       "-O2 --coverage")
 
 # If supported for the target machine, emit position-independent code,suitable
 # for dynamic linking and avoiding any limit on the size of the global offset
@@ -54,10 +56,12 @@ ADD_DEFINITIONS("-Wextra")                      # Generate even more extra warni
 
 STRING(REGEX MATCH "([^.]*)" API_VERSION "${VERSION}")
 ADD_DEFINITIONS("-DAPI_VERSION=\"$(API_VERSION)\"")
-ADD_DEFINITIONS( -DSMACK_ENABLED )
+ADD_DEFINITIONS("-DSMACK_ENABLED")
+ADD_DEFINITIONS("-DDPL_LOGS_ENABLED")           # Enable LOGS in security-server2
 
 SET(TARGET_SECURITY_SERVER "security-server")
 SET(TARGET_SECURITY_CLIENT "security-server-client")
+SET(TARGET_SERVER_COMMON "security-server-commons")
 
 ADD_SUBDIRECTORY(src)
 ADD_SUBDIRECTORY(build)

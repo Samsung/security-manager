@@ -1,6 +1,4 @@
 /*
- *  security-server
- *
  *  Copyright (c) 2000 - 2013 Samsung Electronics Co., Ltd All Rights Reserved
  *
  *  Contact: Bumjin Im <bj.im@samsung.com>
@@ -17,30 +15,25 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License
  */
+/*
+ * @file        server-main2.h
+ * @author      Bartlomiej Grzelewski (b.grzelewski@samsung.com)
+ * @version     1.0
+ * @brief       Implementation of security-server2.
+ */
 
-#ifndef _SMACK_CHECK_H_
-#define _SMACK_CHECK_H_
+#ifndef _SECURITY_SERVER_SERVER2_
+#define _SECURITY_SERVER_SERVER2_
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/*
- * A very simple runtime check for SMACK on the platform
- * Returns 1 if SMACK is present, 0 otherwise
- */
-
-int smack_runtime_check(void);
-
-/*
- * A very simple runtime check for SMACK on the platform
- * Returns 1 if SMACK is present, 0 otherwise. If SMACK_ENABLED is not defined
- * It returns 0.
- */
-int smack_check(void);
+int server2(void);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif // _SMACK_CHECK_H_
+#endif // _SECURITY_SERVER_SERVER2_
+

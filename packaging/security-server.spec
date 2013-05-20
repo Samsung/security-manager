@@ -64,8 +64,8 @@ cp %{SOURCE1001} .
 export LDFLAGS+="-Wl,--rpath=%{_libdir}"
 
 %cmake . -DVERSION=%{version} \
-        -DCMAKE_BUILD_TYPE=%{?build_type:%build_type} \
-        -DSMACK=Off
+        -DCMAKE_BUILD_TYPE=RELEASE \
+        -DCMAKE_VERBOSE_MAKEFILE=OFF
 make %{?jobs:-j%jobs}
 
 
@@ -105,6 +105,7 @@ systemctl daemon-reload
 /usr/lib/systemd/system/multi-user.target.wants/security-server.service
 /usr/lib/systemd/system/security-server.service
 %attr(755,root,root) /usr/bin/security-server
+%{_libdir}/libsecurity-server-commons.so.*
 
 %{_datadir}/license/%{name}
 
@@ -118,5 +119,6 @@ systemctl daemon-reload
 %manifest %{name}.manifest
 %defattr(-,root,root,-)
 %{_libdir}/libsecurity-server-client.so
+%{_libdir}/libsecurity-server-commons.so
 /usr/include/security-server/security-server.h
 %{_libdir}/pkgconfig/*.pc

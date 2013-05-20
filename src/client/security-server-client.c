@@ -1287,46 +1287,6 @@ char *security_server_get_smacklabel_sockfd(int fd)
 }
 
 SECURITY_SERVER_API
-int security_server_app_give_access(const char *customer_label, int customer_pid)
-{
-    int sockfd = -1, retval;
-    response_header hdr;
-
-    if (1 != smack_check())
-        return SECURITY_SERVER_SUCCESS;
-
-    retval = connect_to_server(&sockfd);
-    if (retval != SECURITY_SERVER_SUCCESS)
-    {
-        /* Error on socket */
-        goto out;
-    }
-
-    retval = send_app_give_access(sockfd, customer_label, customer_pid);
-    if (retval != SECURITY_SERVER_SUCCESS)
-    {
-        /* Error on socket */
-        SEC_SVR_ERR("Client: Send failed: %d", retval);
-        goto out;
-    }
-
-    retval = recv_generic_response(sockfd, &hdr);
-
-    retval = return_code_to_error_code(hdr.return_code);
-    if (hdr.basic_hdr.msg_id == SECURITY_SERVER_MSG_TYPE_GENERIC_RESPONSE) {
-        SEC_SVR_ERR("Client: Error has been received. return code:%d", hdr.return_code);
-    } else if (hdr.basic_hdr.msg_id != SECURITY_SERVER_MSG_TYPE_APP_GIVE_ACCESS_RESPONSE) {
-        SEC_SVR_ERR("Client: Wrong response type.");
-        retval = SECURITY_SERVER_ERROR_BAD_RESPONSE;
-    }
-out:
-    if (sockfd > 0)
-        close(sockfd);
-
-    return convert_to_public_error_code(retval);
-}
-
-SECURITY_SERVER_API
 int security_server_check_privilege_by_pid(int pid, const char *object, const char *access_rights)
 {
     //This function check SMACK privilege betwen subject and object.

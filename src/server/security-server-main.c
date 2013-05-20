@@ -39,6 +39,8 @@
 #include <grp.h>
 #include <stdint.h>
 
+#include <server2-main.h>
+
 #include <privilege-control.h>
 #include <security-server-system-observer.h>
 #include <security-server-rules-revoker.h>
@@ -69,7 +71,6 @@ struct security_server_thread_param {
     int thread_status;
 };
 
-int process_app_get_access_request(int sockfd, size_t msg_len);
 static int netlink_enabled = 1; /* prevent memory leaks when netlink is disabled */
 
 
@@ -1561,29 +1562,6 @@ void *security_server_thread(void *param)
             process_set_pwd_validity_request(client_sockfd);
             break;
 
-        case SECURITY_SERVER_MSG_TYPE_APP_GIVE_ACCESS_REQUEST:
-            SEC_SVR_DBG("%s", "Server: app give access request received");
-            authorize_SS_API_caller_socket(client_sockfd, API_DATA_SHARE, API_RULE_REQUIRED);
-            if (client_has_access(client_sockfd, API_DATA_SHARE)) {
-                SEC_SVR_DBG("%s", "Server: app give access request received");
-                if ((size_t)basic_hdr.msg_len >= sizeof(basic_hdr)) {
-                    process_app_get_access_request(client_sockfd,
-                        basic_hdr.msg_len - sizeof(basic_hdr));
-                } else {
-                    SEC_SVR_ERR("ERROR: Invalid message length: %d", basic_hdr.msg_len);
-                }
-            } else {
-                SEC_SVR_DBG("%s", "Server: app give access request received (API DENIED - request will not proceed)");
-                retval = send_generic_response(client_sockfd,
-                    SECURITY_SERVER_MSG_TYPE_GENERIC_RESPONSE,
-                    SECURITY_SERVER_RETURN_CODE_ACCESS_DENIED);
-                if (retval != SECURITY_SERVER_SUCCESS)
-                {
-                    SEC_SVR_ERR("ERROR: Cannot send generic response: %d", retval);
-                }
-            }
-            break;
-
         case SECURITY_SERVER_MSG_TYPE_EXE_PATH_REQUEST:
             SEC_SVR_DBG("Server: get executable path by pid request received");
             process_exe_path_request(client_sockfd);
@@ -1797,77 +1775,6 @@ ssize_t read_wrapper(int sockfd, void *buffer, size_t len)
     return done;
 }
 
-int process_app_get_access_request(int sockfd, size_t msg_len)
-{
-    char *message_buffer = NULL;
-    char *client_label = NULL;
-    char *provider_label = NULL;
-    struct smack_accesses *smack = NULL;
-    int ret = SECURITY_SERVER_ERROR_SERVER_ERROR;
-    int send_message_id = SECURITY_SERVER_MSG_TYPE_GENERIC_RESPONSE;
-    int send_error_id = SECURITY_SERVER_RETURN_CODE_SERVER_ERROR;
-    int client_pid = 0;
-    static const char*const revoke = "-----";
-    const char *permissions = "rwxat";
-
-    message_buffer = malloc(msg_len + 1);
-    if (!message_buffer)
-        return SECURITY_SERVER_ERROR_OUT_OF_MEMORY;
-    message_buffer[msg_len] = 0;
-
-    ssize_t retval = read_wrapper(sockfd, message_buffer, msg_len);
-
-    if (retval < (ssize_t)msg_len) {
-        SEC_SVR_ERR("%s", "Error in read. Message too short");
-        send_error_id = SECURITY_SERVER_RETURN_CODE_BAD_REQUEST;
-        ret = SECURITY_SERVER_ERROR_BAD_REQUEST;
-        goto error;
-    }
-
-    // Currently we don't use client_pid
-    memcpy(&client_pid, message_buffer, sizeof(int));
-    client_label = message_buffer + sizeof(int);
-
-    if (smack_check()) {
-        if (0 != smack_new_label_from_socket(sockfd, &provider_label)) {
-            SEC_SVR_ERR("%s", "Error in smack_new_label_from_socket");
-            goto error;
-        }
-
-        if (!util_smack_label_is_valid(client_label)) {
-            send_error_id = SECURITY_SERVER_RETURN_CODE_BAD_REQUEST;
-            goto error;
-        }
-
-        if (smack_accesses_new(&smack))
-            goto error;
-
-        if (smack_accesses_add_modify(smack, client_label,
-                provider_label, permissions, revoke))
-            goto error;
-
-        if (smack_accesses_apply(smack)) {
-            send_message_id = SECURITY_SERVER_RETURN_CODE_ACCESS_DENIED;
-            goto error;
-        }
-    }
-
-    ret = SECURITY_SERVER_SUCCESS;
-    send_message_id = SECURITY_SERVER_MSG_TYPE_APP_GIVE_ACCESS_RESPONSE;
-    send_error_id = SECURITY_SERVER_RETURN_CODE_SUCCESS;
-
-
-error:
-    retval = send_generic_response(sockfd, send_message_id, send_error_id);
-    if (retval != SECURITY_SERVER_SUCCESS)
-        SEC_SVR_ERR("Server ERROR: Cannot send response: %d", retval);
-
-    free(message_buffer);
-    free(provider_label);
-    smack_accesses_free(smack);
-    return ret;
-}
-
 void *system_observer_main_thread(void *data)
 {
     system_observer_main(data);
@@ -1900,16 +1807,13 @@ int main(int argc, char *argv[])
         SEC_SVR_DBG("SMACK is not available. Observer thread disabled.");
     }
 
-    res = pthread_create(&main_thread, NULL, security_server_main_thread, NULL);
-    if (res == 0)
-    {
-        while (1)
-            sleep(60);
+    if (0 != (res = pthread_create(&main_thread, NULL, security_server_main_thread, NULL))) {
+        SEC_SVR_ERR("Error: Server: Cannot create main security server thread: %s", strerror(res));
+        return -1;
     }
-    else
-    {
-        SECURE_LOGE("Error: Server: Cannot create main security server thread: %d", res);
-    }
+
+    server2();
+
     pthread_exit(NULL);
     return 0;
 }
