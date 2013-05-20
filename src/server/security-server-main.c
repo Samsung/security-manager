@@ -49,7 +49,15 @@
 #include "security-server-comm.h"
 #include "smack-check.h"
 
-const char * const LABEL_SECURITY_SERVER_API_DATA_SHARE = "security-server::api-data-share";
+//definitions of security-server API labels
+#define API_PASSWD_SET "security-server::api-password-set"
+#define API_PASSWD_CHECK "security-server::api-password-check"
+#define API_DATA_SHARE "security-server::api-data-share"
+#define API_MIDDLEWARE "security-server::api-middleware"
+#define API_FREE_ACCESS "*"
+
+//required rule type
+#define API_RULE_REQUIRED "w"
 
 /* Set cookie as a global variable */
 cookie_list *c_list;
@@ -154,6 +162,58 @@ char *read_exe_path_from_proc(pid_t pid)
 	return exe;
 }
 
+/*
+ * Function that checks if API caller have access to specified label.
+ * In positive case (caller has access to the API) returns 1.
+ * In case of no access returns 0, and -1 in case of error.
+ */
+int authorize_SS_API_caller_socket(int sockfd, char * required_API_label, char * required_rule)
+{
+    int retval;
+    char * label = NULL;
+    char * path = NULL;
+    //for getting socket options
+    struct ucred cr;
+    unsigned int len;
+
+    SEC_SVR_DBG("Checking client SMACK access to SS API");
+
+    if (!smack_check()) {
+        SEC_SVR_ERR("No SMACK on device found, API PROTECTION DISABLED!!!");
+        retval = 1;
+        goto end;
+    }
+
+    retval = smack_new_label_from_socket(sockfd, &label);
+    if (retval != 0) {
+        SEC_SVR_ERR("%s", "Error in getting label from socket");
+        retval = -1;
+        goto end;
+    }
+
+    len = sizeof(cr);
+    retval = getsockopt(sockfd, SOL_SOCKET, SO_PEERCRED, &cr, &len);
+    if (retval < 0)
+        SEC_SVR_ERR("Error in getsockopt() and getting binary path");
+    else
+        path = read_exe_path_from_proc(cr.pid);
+
+    retval = smack_have_access(label, required_API_label, required_rule);
+
+    //some log in SMACK format
+    if (retval > 0)
+        SEC_SVR_DBG("SS_SMACK: caller_pid=%d, subject=%s, object=%s, access=%s, result=%d, caller_path=%s", cr.pid, label, required_API_label, required_rule, retval, path);
+    else
+        SEC_SVR_ERR("SS_SMACK: caller_pid=%d, subject=%s, object=%s, access=%s, result=%d, caller_path=%s", cr.pid, label, required_API_label, required_rule, retval, path);
+
+end:
+    if (path != NULL)
+        free(path);
+    if (label != NULL)
+        free(label);
+
+    return retval;
+}
 
 /* Object name is actually name of a Group ID *
  * This function opens /etc/group file and search group ID and
@@ -1364,221 +1424,248 @@ int client_has_access(int sockfd, const char *object) {
 
 void *security_server_thread(void *param)
 {
-	int client_sockfd = -1, client_uid, client_pid;
-	int server_sockfd, retval;
-	basic_header basic_hdr;
-	struct security_server_thread_param *my_param;
+    int client_sockfd = -1, client_uid, client_pid;
+    int server_sockfd, retval;
+    basic_header basic_hdr;
+    struct security_server_thread_param *my_param;
 
-	my_param = (struct security_server_thread_param *) param;
-	client_sockfd = my_param->client_sockfd;
-	server_sockfd = my_param->server_sockfd;
+    my_param = (struct security_server_thread_param *) param;
+    client_sockfd = my_param->client_sockfd;
+    server_sockfd = my_param->server_sockfd;
 
-	/* Receive request header */
-	retval = recv_hdr(client_sockfd, &basic_hdr);
-	if(retval == SECURITY_SERVER_ERROR_TIMEOUT || retval == SECURITY_SERVER_ERROR_RECV_FAILED
-		|| retval == SECURITY_SERVER_ERROR_SOCKET)
-	{
-		SEC_SVR_ERR("Receiving header error [%d]",retval);
-		close(client_sockfd);
-		client_sockfd = -1;
-		goto error;;
-	}
+    /* Receive request header */
+    retval = recv_hdr(client_sockfd, &basic_hdr);
+    if(retval == SECURITY_SERVER_ERROR_TIMEOUT || retval == SECURITY_SERVER_ERROR_RECV_FAILED
+      || retval == SECURITY_SERVER_ERROR_SOCKET)
+    {
+        SEC_SVR_ERR("Receiving header error [%d]",retval);
+        close(client_sockfd);
+        client_sockfd = -1;
+        goto error;;
+    }
 
-	if(retval != SECURITY_SERVER_SUCCESS)
-	{
-		/* Response */
-		SEC_SVR_ERR("Receiving header error [%d]",retval);
-		retval = send_generic_response(client_sockfd,
-				SECURITY_SERVER_MSG_TYPE_GENERIC_RESPONSE,
-				SECURITY_SERVER_RETURN_CODE_BAD_REQUEST);
-		if(retval != SECURITY_SERVER_SUCCESS)
-		{
-			SEC_SVR_ERR("ERROR: Cannot send generic response: %d", retval);
-			goto error;
-		}
-		safe_server_sock_close(client_sockfd);
-		client_sockfd = -1;
-		goto error;
-	}
+    if(retval != SECURITY_SERVER_SUCCESS)
+    {
+        /* Response */
+        SEC_SVR_ERR("Receiving header error [%d]",retval);
+        retval = send_generic_response(client_sockfd,
+          SECURITY_SERVER_MSG_TYPE_GENERIC_RESPONSE,
+          SECURITY_SERVER_RETURN_CODE_BAD_REQUEST);
+        if(retval != SECURITY_SERVER_SUCCESS)
+        {
+            SEC_SVR_ERR("ERROR: Cannot send generic response: %d", retval);
+            goto error;
+        }
+        safe_server_sock_close(client_sockfd);
+        client_sockfd = -1;
+        goto error;
+    }
 
-	/* Act different for request message ID */
-	switch(basic_hdr.msg_id)
-	{
-		case SECURITY_SERVER_MSG_TYPE_COOKIE_REQUEST:
-			SEC_SVR_DBG("%s", "Cookie request received");
-			process_cookie_request(client_sockfd);
-			break;
+    //TODO: Below authorize_SS_API_caller_socket() is used for authorize API caller by SMACK,
+    //      at the moment return value is not checked and each access is allowed.
+    //      If we realy want to restrict access it must be changed in future.
 
-		case SECURITY_SERVER_MSG_TYPE_CHECK_PRIVILEGE_REQUEST:
-			SEC_SVR_DBG("%s", "Privilege check received");
-			process_check_privilege_request(client_sockfd);
-			break;
+    /* Act different for request message ID */
+    switch(basic_hdr.msg_id)
+    {
+    case SECURITY_SERVER_MSG_TYPE_COOKIE_REQUEST:
+        SEC_SVR_DBG("%s", "Cookie request received");
+        authorize_SS_API_caller_socket(client_sockfd, API_FREE_ACCESS, API_RULE_REQUIRED);
+        process_cookie_request(client_sockfd);
+        break;
 
-		case SECURITY_SERVER_MSG_TYPE_CHECK_PRIVILEGE_NEW_REQUEST:
-			SEC_SVR_DBG("%s", "Privilege check (new mode) received");
-			process_check_privilege_new_request(client_sockfd);
-			break;
+    case SECURITY_SERVER_MSG_TYPE_CHECK_PRIVILEGE_REQUEST:
+        SEC_SVR_DBG("%s", "Privilege check received");
+        authorize_SS_API_caller_socket(client_sockfd, API_MIDDLEWARE, API_RULE_REQUIRED);
+        process_check_privilege_request(client_sockfd);
+        break;
 
-		case SECURITY_SERVER_MSG_TYPE_OBJECT_NAME_REQUEST:
-			SEC_SVR_DBG("%s", "Get object name request received");
-			process_object_name_request(client_sockfd);
-			break;
+    case SECURITY_SERVER_MSG_TYPE_CHECK_PRIVILEGE_NEW_REQUEST:
+        SEC_SVR_DBG("%s", "Privilege check (new mode) received");
+        authorize_SS_API_caller_socket(client_sockfd, API_MIDDLEWARE, API_RULE_REQUIRED);
+        process_check_privilege_new_request(client_sockfd);
+        break;
 
-		case SECURITY_SERVER_MSG_TYPE_GID_REQUEST:
-			SEC_SVR_DBG("%s", "Get GID received");
-			process_gid_request(client_sockfd, (int)basic_hdr.msg_len);
-			break;
+    case SECURITY_SERVER_MSG_TYPE_OBJECT_NAME_REQUEST:
+        SEC_SVR_DBG("%s", "Get object name request received");
+        authorize_SS_API_caller_socket(client_sockfd, API_MIDDLEWARE, API_RULE_REQUIRED);
+        process_object_name_request(client_sockfd);
+        break;
 
-		case SECURITY_SERVER_MSG_TYPE_PID_REQUEST:
-			SEC_SVR_DBG("%s", "pid request received");
-			process_pid_request(client_sockfd);
-			break;
+    case SECURITY_SERVER_MSG_TYPE_GID_REQUEST:
+        SEC_SVR_DBG("%s", "Get GID received");
+        authorize_SS_API_caller_socket(client_sockfd, API_MIDDLEWARE, API_RULE_REQUIRED);
+        process_gid_request(client_sockfd, (int)basic_hdr.msg_len);
+        break;
 
-		case SECURITY_SERVER_MSG_TYPE_SMACK_REQUEST:
-			SEC_SVR_DBG("%s", "SMACK label request received");
-			process_smack_request(client_sockfd);
-			break;
+    case SECURITY_SERVER_MSG_TYPE_PID_REQUEST:
+        SEC_SVR_DBG("%s", "pid request received");
+        authorize_SS_API_caller_socket(client_sockfd, API_MIDDLEWARE, API_RULE_REQUIRED);
+        process_pid_request(client_sockfd);
+        break;
 
-        case SECURITY_SERVER_MSG_TYPE_CHECK_PID_PRIVILEGE_REQUEST:
-			SEC_SVR_DBG("%s", "PID privilege check request received");
-            //pass data size to function
-			process_pid_privilege_check(client_sockfd, basic_hdr.msg_len);
-			break;
+    case SECURITY_SERVER_MSG_TYPE_SMACK_REQUEST:
+        SEC_SVR_DBG("%s", "SMACK label request received");
+        authorize_SS_API_caller_socket(client_sockfd, API_MIDDLEWARE, API_RULE_REQUIRED);
+        process_smack_request(client_sockfd);
+        break;
 
-		case SECURITY_SERVER_MSG_TYPE_TOOL_REQUEST:
-			SEC_SVR_DBG("%s", "launch tool request received");
-			process_tool_request(client_sockfd, server_sockfd);
-			break;
+    case SECURITY_SERVER_MSG_TYPE_CHECK_PID_PRIVILEGE_REQUEST:
+        SEC_SVR_DBG("%s", "PID privilege check request received");
+        authorize_SS_API_caller_socket(client_sockfd, API_MIDDLEWARE, API_RULE_REQUIRED);
+        //pass data size to function
+        process_pid_privilege_check(client_sockfd, basic_hdr.msg_len);
+        break;
 
-		case SECURITY_SERVER_MSG_TYPE_VALID_PWD_REQUEST:
-			SEC_SVR_DBG("%s", "Server: validate password request received");
-			process_valid_pwd_request(client_sockfd);
-			break;
+    case SECURITY_SERVER_MSG_TYPE_TOOL_REQUEST:
+        SEC_SVR_DBG("%s", "launch tool request received");
+        authorize_SS_API_caller_socket(client_sockfd, API_MIDDLEWARE, API_RULE_REQUIRED);
+        process_tool_request(client_sockfd, server_sockfd);
+        break;
 
-		case SECURITY_SERVER_MSG_TYPE_SET_PWD_REQUEST:
-			SEC_SVR_DBG("%s", "Server: set password request received");
-			process_set_pwd_request(client_sockfd);
-			break;
+    case SECURITY_SERVER_MSG_TYPE_VALID_PWD_REQUEST:
+        SEC_SVR_DBG("%s", "Server: validate password request received");
+        authorize_SS_API_caller_socket(client_sockfd, API_PASSWD_CHECK, API_RULE_REQUIRED);
+        process_valid_pwd_request(client_sockfd);
+        break;
 
-		case SECURITY_SERVER_MSG_TYPE_RESET_PWD_REQUEST:
-			SEC_SVR_DBG("%s", "Server: reset password request received");
-			process_reset_pwd_request(client_sockfd);
-			break;
+    case SECURITY_SERVER_MSG_TYPE_SET_PWD_REQUEST:
+        SEC_SVR_DBG("%s", "Server: set password request received");
+        authorize_SS_API_caller_socket(client_sockfd, API_PASSWD_SET, API_RULE_REQUIRED);
+        process_set_pwd_request(client_sockfd);
+        break;
 
-		case SECURITY_SERVER_MSG_TYPE_CHK_PWD_REQUEST:
-			SEC_SVR_DBG("%s", "Server: check password request received");
-			process_chk_pwd_request(client_sockfd);
-			break;
+    case SECURITY_SERVER_MSG_TYPE_RESET_PWD_REQUEST:
+        SEC_SVR_DBG("%s", "Server: reset password request received");
+        authorize_SS_API_caller_socket(client_sockfd, API_PASSWD_SET, API_RULE_REQUIRED);
+        process_reset_pwd_request(client_sockfd);
+        break;
 
-		case SECURITY_SERVER_MSG_TYPE_SET_PWD_HISTORY_REQUEST:
-			SEC_SVR_DBG("%s", "Server: set password histroy request received");
-			process_set_pwd_history_request(client_sockfd);
-			break;
+    case SECURITY_SERVER_MSG_TYPE_CHK_PWD_REQUEST:
+        SEC_SVR_DBG("%s", "Server: check password request received");
+        authorize_SS_API_caller_socket(client_sockfd, API_PASSWD_CHECK, API_RULE_REQUIRED);
+        process_chk_pwd_request(client_sockfd);
+        break;
 
-		case SECURITY_SERVER_MSG_TYPE_SET_PWD_MAX_CHALLENGE_REQUEST:
-		    SEC_SVR_DBG("%s", "Server: set password max challenge request received");
-		    process_set_pwd_max_challenge_request(client_sockfd);
-		    break;
+    case SECURITY_SERVER_MSG_TYPE_SET_PWD_HISTORY_REQUEST:
+        SEC_SVR_DBG("%s", "Server: set password histroy request received");
+        authorize_SS_API_caller_socket(client_sockfd, API_PASSWD_SET, API_RULE_REQUIRED);
+        process_set_pwd_history_request(client_sockfd);
+        break;
 
-        case SECURITY_SERVER_MSG_TYPE_SET_PWD_VALIDITY_REQUEST:
-            SEC_SVR_DBG("%s", "Server: set password validity request received");
-            process_set_pwd_validity_request(client_sockfd);
+    case SECURITY_SERVER_MSG_TYPE_SET_PWD_MAX_CHALLENGE_REQUEST:
+        SEC_SVR_DBG("%s", "Server: set password max challenge request received");
+        authorize_SS_API_caller_socket(client_sockfd, API_PASSWD_SET, API_RULE_REQUIRED);
+        process_set_pwd_max_challenge_request(client_sockfd);
+        break;
+
+    case SECURITY_SERVER_MSG_TYPE_SET_PWD_VALIDITY_REQUEST:
+        SEC_SVR_DBG("%s", "Server: set password validity request received");
+        authorize_SS_API_caller_socket(client_sockfd, API_PASSWD_SET, API_RULE_REQUIRED);
+        process_set_pwd_validity_request(client_sockfd);
+        break;
+
+    case SECURITY_SERVER_MSG_TYPE_APP_GIVE_ACCESS_REQUEST:
+        SEC_SVR_DBG("%s", "Server: app give access request received");
+        authorize_SS_API_caller_socket(client_sockfd, API_DATA_SHARE, API_RULE_REQUIRED);
+        if (client_has_access(client_sockfd, API_DATA_SHARE)) {
+            SEC_SVR_DBG("%s", "Server: app give access request received");
+            process_app_get_access_request(client_sockfd,
+              basic_hdr.msg_len - sizeof(basic_hdr));
+        } else {
+            SEC_SVR_DBG("%s", "Server: app give access request received (API DENIED - request will not proceed)");
+            send_generic_response(client_sockfd,
+              SECURITY_SERVER_MSG_TYPE_GENERIC_RESPONSE,
+              SECURITY_SERVER_RETURN_CODE_ACCESS_DENIED);
+        }
+        break;
+        /************************************************************************************************/
+        /* Just for test. This code must be removed on release */
+    case SECURITY_SERVER_MSG_TYPE_GET_ALL_COOKIES_REQUEST:
+        SEC_SVR_DBG("%s", "all cookie info request received -- NEED TO BE DELETED ON RELEASE");
+        retval = authenticate_client_application(client_sockfd, &client_pid, &client_uid);
+        if(retval != SECURITY_SERVER_SUCCESS)
+        {
+            SEC_SVR_ERR("%s", "Client Authentication Failed");
+            retval = send_generic_response(client_sockfd,
+              SECURITY_SERVER_MSG_TYPE_GENERIC_RESPONSE,
+              SECURITY_SERVER_RETURN_CODE_AUTHENTICATION_FAILED);
+            if(retval != SECURITY_SERVER_SUCCESS)
+            {
+                SEC_SVR_ERR("ERROR: Cannot send generic response: %d", retval);
+            }
             break;
+        }
+        retval = util_process_all_cookie(client_sockfd, c_list);
+        if(retval != SECURITY_SERVER_SUCCESS)
+        {
+            SEC_SVR_ERR("ERROR: Cannot send all cookie info: %d", retval);
+        }
+        break;
 
-        case SECURITY_SERVER_MSG_TYPE_APP_GIVE_ACCESS_REQUEST:
+    case SECURITY_SERVER_MSG_TYPE_GET_COOKIEINFO_FROM_PID_REQUEST:
+        SEC_SVR_DBG("%s", "cookie info from pid request received -- NEED TO BE DELETED ON RELEASE");
+        if(retval != SECURITY_SERVER_SUCCESS)
+        {
+            SEC_SVR_ERR("%s", "Client Authentication Failed");
+            retval = send_generic_response(client_sockfd,
+              SECURITY_SERVER_MSG_TYPE_GENERIC_RESPONSE,
+              SECURITY_SERVER_RETURN_CODE_AUTHENTICATION_FAILED);
+            if(retval != SECURITY_SERVER_SUCCESS)
+            {
+                SEC_SVR_ERR("ERROR: Cannot send generic response: %d", retval);
+            }
             SEC_SVR_DBG("%s", "Server: app give access requset received");
             process_app_get_access_request(client_sockfd, basic_hdr.msg_len - sizeof(basic_hdr));
             break;
+        }
+        util_process_cookie_from_pid(client_sockfd, c_list);
+        break;
 
-		case SECURITY_SERVER_MSG_TYPE_EXE_PATH_REQUEST:
-			SEC_SVR_DBG("Server: get executable path by pid request received");
-			process_exe_path_request(client_sockfd);
-			break;
-/************************************************************************************************/
-/* Just for test. This code must be removed on release */
-		case SECURITY_SERVER_MSG_TYPE_GET_ALL_COOKIES_REQUEST:
-			SEC_SVR_DBG("%s", "all cookie info request received -- NEED TO BE DELETED ON RELEASE");
-			retval = authenticate_client_application(client_sockfd, &client_pid, &client_uid);
-			if(retval != SECURITY_SERVER_SUCCESS)
-			{
-				SEC_SVR_ERR("%s", "Client Authentication Failed");
-				retval = send_generic_response(client_sockfd,
-						SECURITY_SERVER_MSG_TYPE_GENERIC_RESPONSE,
-						SECURITY_SERVER_RETURN_CODE_AUTHENTICATION_FAILED);
-				if(retval != SECURITY_SERVER_SUCCESS)
-				{
-					SEC_SVR_ERR("ERROR: Cannot send generic response: %d", retval);
-				}
-				break;
-			}
-			retval = util_process_all_cookie(client_sockfd, c_list);
-			if(retval != SECURITY_SERVER_SUCCESS)
-			{
-				SEC_SVR_ERR("ERROR: Cannot send all cookie info: %d", retval);
-			}
-			break;
-
-		case SECURITY_SERVER_MSG_TYPE_GET_COOKIEINFO_FROM_PID_REQUEST:
-			SEC_SVR_DBG("%s", "cookie info from pid request received -- NEED TO BE DELETED ON RELEASE");
-			if(retval != SECURITY_SERVER_SUCCESS)
-			{
-				SEC_SVR_ERR("%s", "Client Authentication Failed");
-				retval = send_generic_response(client_sockfd,
-						SECURITY_SERVER_MSG_TYPE_GENERIC_RESPONSE,
-						SECURITY_SERVER_RETURN_CODE_AUTHENTICATION_FAILED);
-				if(retval != SECURITY_SERVER_SUCCESS)
-				{
-					SEC_SVR_ERR("ERROR: Cannot send generic response: %d", retval);
-				}
-				break;
-			}
-			util_process_cookie_from_pid(client_sockfd, c_list);
-			break;
-
-		case SECURITY_SERVER_MSG_TYPE_GET_COOKIEINFO_FROM_COOKIE_REQUEST:
-			SEC_SVR_DBG("%s", "cookie info from cookie request received -- NEED TO BE DELETED ON RELEASE");
-			if(retval != SECURITY_SERVER_SUCCESS)
-			{
-				SEC_SVR_ERR("%s", "Client Authentication Failed");
-				retval = send_generic_response(client_sockfd,
-						SECURITY_SERVER_MSG_TYPE_GENERIC_RESPONSE,
-						SECURITY_SERVER_RETURN_CODE_AUTHENTICATION_FAILED);
-				if(retval != SECURITY_SERVER_SUCCESS)
-				{
-					SEC_SVR_ERR("ERROR: Cannot send generic response: %d", retval);
-				}
-				break;
-			}
-			util_process_cookie_from_cookie(client_sockfd, c_list);
-			break;
-/************************************************************************************************/
+    case SECURITY_SERVER_MSG_TYPE_GET_COOKIEINFO_FROM_COOKIE_REQUEST:
+        SEC_SVR_DBG("%s", "cookie info from cookie request received -- NEED TO BE DELETED ON RELEASE");
+        if(retval != SECURITY_SERVER_SUCCESS)
+        {
+            SEC_SVR_ERR("%s", "Client Authentication Failed");
+            retval = send_generic_response(client_sockfd,
+              SECURITY_SERVER_MSG_TYPE_GENERIC_RESPONSE,
+              SECURITY_SERVER_RETURN_CODE_AUTHENTICATION_FAILED);
+            if(retval != SECURITY_SERVER_SUCCESS)
+            {
+                SEC_SVR_ERR("ERROR: Cannot send generic response: %d", retval);
+            }
+            break;
+        }
+        util_process_cookie_from_cookie(client_sockfd, c_list);
+        break;
+        /************************************************************************************************/
 
 
-		default:
-			SEC_SVR_ERR("Unknown msg ID :%d", basic_hdr.msg_id);
-			/* Unknown message ID */
-			retval = send_generic_response(client_sockfd,
-			SECURITY_SERVER_MSG_TYPE_GENERIC_RESPONSE,
-			SECURITY_SERVER_RETURN_CODE_BAD_REQUEST);
-			if(retval != SECURITY_SERVER_SUCCESS)
-			{
-				SEC_SVR_ERR("ERROR: Cannot send generic response: %d", retval);
-			}
-			break;
-	}
+    default:
+        SEC_SVR_ERR("Unknown msg ID :%d", basic_hdr.msg_id);
+        /* Unknown message ID */
+        retval = send_generic_response(client_sockfd,
+          SECURITY_SERVER_MSG_TYPE_GENERIC_RESPONSE,
+          SECURITY_SERVER_RETURN_CODE_BAD_REQUEST);
+        if(retval != SECURITY_SERVER_SUCCESS)
+        {
+            SEC_SVR_ERR("ERROR: Cannot send generic response: %d", retval);
+        }
+        break;
+    }
 
-	if(client_sockfd > 0)
-	{
-		safe_server_sock_close(client_sockfd);
-		client_sockfd = -1;
-	}
+    if(client_sockfd > 0)
+    {
+        safe_server_sock_close(client_sockfd);
+        client_sockfd = -1;
+    }
 
 error:
-	if(client_sockfd > 0)
-		close(client_sockfd);
-	thread_status[my_param->thread_status] = 0;
-	pthread_detach(pthread_self());
-	pthread_exit(NULL);
+    if(client_sockfd > 0)
+        close(client_sockfd);
+    thread_status[my_param->thread_status] = 0;
+    pthread_detach(pthread_self());
+    pthread_exit(NULL);
 }
 
 void *security_server_main_thread(void *data)

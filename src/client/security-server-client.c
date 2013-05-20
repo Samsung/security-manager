@@ -607,6 +607,7 @@ int security_server_check_privilege_by_sockfd(int sockfd,
     if (ret != 0)
         return SECURITY_SERVER_API_ERROR_SERVER_ERROR;
 
+    len = sizeof(cr);
     ret = getsockopt(sockfd, SOL_SOCKET, SO_PEERCRED, &cr, &len);
     if (ret < 0) {
         SEC_SVR_ERR("Error in getsockopt(). Errno: %s", strerror(errno));
