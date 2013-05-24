@@ -1582,6 +1582,12 @@ void *security_server_thread(void *param)
                     SECURITY_SERVER_RETURN_CODE_ACCESS_DENIED);
             }
             break;
+
+        case SECURITY_SERVER_MSG_TYPE_EXE_PATH_REQUEST:
+            SEC_SVR_DBG("Server: get executable path by pid request received");
+            process_exe_path_request(client_sockfd);
+            break;
+
         /************************************************************************************************/
         /* Just for test. This code must be removed on release */
         case SECURITY_SERVER_MSG_TYPE_GET_ALL_COOKIES_REQUEST:
