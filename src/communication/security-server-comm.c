@@ -34,7 +34,6 @@
 #include <sys/stat.h>
 #include <limits.h>
 #include <ctype.h>
-#include <stdint.h>
 
 #include "security-server-common.h"
 #include "security-server-comm.h"
@@ -52,51 +51,6 @@ void printhex(const unsigned char *data, int size)
 			printf("\n");
 	}
 	printf("\n");
-}
-
-char *read_exe_path_from_proc(pid_t pid)
-{
-	char link[32];
-	char *exe = NULL;
-	size_t size = 64;
-	ssize_t cnt = 0;
-
-	// get link to executable
-	snprintf(link, sizeof(link), "/proc/%d/exe", pid);
-
-	for (;;)
-	{
-        exe = malloc(size);
-        if (exe == NULL) {
-            SEC_SVR_ERR("Out of memory");
-            return NULL;
-        }
-
-        // read link target
-        cnt = readlink(link, exe, size);
-
-        // error
-        if (cnt < 0 || (size_t)cnt > size) {
-            SEC_SVR_ERR("Can't locate process binary for pid[%d]", pid);
-            free(exe);
-            return NULL;
-        }
-
-        // read less than requested
-        if ((size_t)cnt < size)
-            break;
-
-        // read exactly the number of bytes requested
-        free(exe);
-        if (size > (SIZE_MAX >> 1)) {
-            SEC_SVR_ERR("Exe path too long (more than %d characters)", size);
-            return NULL;
-        }
-        size <<= 1;
-    }
-	// readlink does not append null byte to buffer.
-	exe[cnt] = '\0';
-	return exe;
 }
 
 /* Return code in packet is positive integer *
@@ -2646,58 +2600,6 @@ int get_client_gid_list(int sockfd, int ** privileges)
     return ret;
 }
 
-/* Authenticate the application is middleware daemon
- * The middleware must run as root and the cmd line must be pre listed */
-int authenticate_developer_shell(int sockfd)
-{
-	int retval = SECURITY_SERVER_ERROR_AUTHENTICATION_FAILED;
-	struct ucred cr;
-	unsigned int cl = sizeof(cr);
-	char *exe = NULL;
-
-	/* get PID of socket peer */
-	if(getsockopt(sockfd, SOL_SOCKET, SO_PEERCRED, &cr, &cl) != 0)
-	{
-		retval = SECURITY_SERVER_ERROR_SOCKET;
-		SEC_SVR_ERR("%s", "Error on getsockopt");
-		goto error;
-	}
-
-	/* All middlewares will run as root */
-	if(cr.uid != SECURITY_SERVER_DEVELOPER_UID)
-	{
-		retval = SECURITY_SERVER_ERROR_AUTHENTICATION_FAILED;
-		SEC_SVR_ERR("Non root process has called API: %d", cr.uid);
-		goto error;
-	}
-
-	/* Read executable path of the PID from proc fs */
-	exe = read_exe_path_from_proc(cr.pid);
-	if(exe  == NULL)
-	{
-		/* It's weired. no file in proc file system, */
-		retval = SECURITY_SERVER_ERROR_FILE_OPERATION;
-		SEC_SVR_ERR("Error on opening /proc/%d/exe", cr.pid);
-		goto error;
-	}
-
-	/* Search exe of the peer that is really debug tool */
-	if(strcmp(exe, SECURITY_SERVER_DEBUG_TOOL_PATH) != 0)
-	{
-		SEC_SVR_ERR("Error: Wrong exe path [%s]", exe);
-		retval = SECURITY_SERVER_ERROR_AUTHENTICATION_FAILED;
-		goto error;
-	}
-	retval = SECURITY_SERVER_SUCCESS;
-	SEC_SVR_DBG("%s", "Client Authenticated");
-
-error:
-	if(exe != NULL)
-		free(exe);
-
-	return retval;
-}
-
 int free_argv(char **argv, int argc)
 {
 	int i;
@@ -2770,4 +2672,3 @@ error:
     free(buff);
     return retval;
 }
-

@@ -37,6 +37,7 @@
 #include <sys/wait.h>
 #include <poll.h>
 #include <grp.h>
+#include <stdint.h>
 
 #include <privilege-control.h>
 #include <security-server-system-observer.h>
@@ -104,6 +105,55 @@ void print_cookie(cookie_list *list)
 	printf("next: %p\n", list->next);
 }
 #endif
+
+char *read_exe_path_from_proc(pid_t pid)
+{
+	char link[32];
+	char *exe = NULL;
+	size_t size = 64;
+	ssize_t cnt = 0;
+
+	// get link to executable
+	snprintf(link, sizeof(link), "/proc/%d/exe", pid);
+
+	for (;;)
+	{
+		exe = malloc(size);
+		if (exe == NULL )
+		{
+			SEC_SVR_ERR("Out of memory");
+			return NULL ;
+		}
+
+		// read link target
+		cnt = readlink(link, exe, size);
+
+		// error
+		if (cnt < 0 || (size_t) cnt > size)
+		{
+			SEC_SVR_ERR("Can't locate process binary for pid[%d]", pid);
+			free(exe);
+			return NULL ;
+		}
+
+		// read less than requested
+		if ((size_t) cnt < size)
+			break;
+
+		// read exactly the number of bytes requested
+		free(exe);
+		if (size > (SIZE_MAX >> 1))
+		{
+			SEC_SVR_ERR("Exe path too long (more than %d characters)", size);
+			return NULL ;
+		}
+		size <<= 1;
+	}
+	// readlink does not append null byte to buffer.
+	exe[cnt] = '\0';
+	return exe;
+}
+
 
 /* Object name is actually name of a Group ID *
  * This function opens /etc/group file and search group ID and
@@ -322,6 +372,58 @@ int execute_debug_tool(int argc, char *const *argv, int server_sockfd, int clien
         return SECURITY_SERVER_ERROR_SERVER_ERROR;
     }
     return SECURITY_SERVER_SUCCESS;
+}
+
+/* Authenticate the application is middleware daemon
+ * The middleware must run as root and the cmd line must be pre listed */
+int authenticate_developer_shell(int sockfd)
+{
+	int retval = SECURITY_SERVER_ERROR_AUTHENTICATION_FAILED;
+	struct ucred cr;
+	unsigned int cl = sizeof(cr);
+	char *exe = NULL;
+
+	/* get PID of socket peer */
+	if(getsockopt(sockfd, SOL_SOCKET, SO_PEERCRED, &cr, &cl) != 0)
+	{
+		retval = SECURITY_SERVER_ERROR_SOCKET;
+		SEC_SVR_ERR("%s", "Error on getsockopt");
+		goto error;
+	}
+
+	/* All middlewares will run as root */
+	if(cr.uid != SECURITY_SERVER_DEVELOPER_UID)
+	{
+		retval = SECURITY_SERVER_ERROR_AUTHENTICATION_FAILED;
+		SEC_SVR_ERR("Non root process has called API: %d", cr.uid);
+		goto error;
+	}
+
+	/* Read executable path of the PID from proc fs */
+	exe = read_exe_path_from_proc(cr.pid);
+	if(exe  == NULL)
+	{
+		/* It's weired. no file in proc file system, */
+		retval = SECURITY_SERVER_ERROR_FILE_OPERATION;
+		SEC_SVR_ERR("Error on opening /proc/%d/exe", cr.pid);
+		goto error;
+	}
+
+	/* Search exe of the peer that is really debug tool */
+	if(strcmp(exe, SECURITY_SERVER_DEBUG_TOOL_PATH) != 0)
+	{
+		SEC_SVR_ERR("Error: Wrong exe path [%s]", exe);
+		retval = SECURITY_SERVER_ERROR_AUTHENTICATION_FAILED;
+		goto error;
+	}
+	retval = SECURITY_SERVER_SUCCESS;
+	SEC_SVR_DBG("%s", "Client Authenticated");
+
+error:
+	if(exe != NULL)
+		free(exe);
+
+	return retval;
 }
 
 int process_cookie_request(int sockfd)
@@ -1096,6 +1198,134 @@ error:
     return retval;
 }
 
+
+/* Send exe path response to client
+ *
+ * Get exe path response packet format
+ *  0                   1                   2                   3
+ *  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+ * |---------------------------------------------------------------|
+ * | version=0x01  |MessageID=0x24 |Message Length = 4+path length |
+ * |---------------------------------------------------------------|
+ * |  return code  |  Path length  |             Path              |
+ * |---------------------------------------------------------------|
+
+*/
+int send_exe_path_response(int sockfd, const char* path)
+{
+	response_header hdr;
+	unsigned char* msg = NULL;
+	unsigned char* ptr = NULL;
+	int ret;
+	size_t path_len = 0;
+	unsigned short msg_len = 0;
+
+	if (!path) {
+		SEC_SVR_ERR("Path is NULL");
+		return SECURITY_SERVER_ERROR_INPUT_PARAM;
+	}
+
+	path_len = strlen(path);
+	msg_len = sizeof(hdr) + sizeof(size_t) + path_len;
+	msg = (unsigned char*)malloc(msg_len*sizeof(unsigned char));
+	if (!msg) {
+		SEC_SVR_ERR("malloc failed");
+		return SECURITY_SERVER_ERROR_OUT_OF_MEMORY;
+	}
+
+	/* Assemble header */
+	hdr.basic_hdr.version = SECURITY_SERVER_MSG_VERSION;
+	hdr.basic_hdr.msg_id = SECURITY_SERVER_MSG_TYPE_EXE_PATH_RESPONSE;
+	hdr.basic_hdr.msg_len = sizeof(size_t) + path_len;
+	hdr.return_code = SECURITY_SERVER_RETURN_CODE_SUCCESS;
+
+	/* Prepare packet */
+	ptr = msg;
+	memcpy(ptr, &hdr, sizeof(hdr));
+	ptr += sizeof(hdr);
+	memcpy(ptr, &path_len, sizeof(size_t));
+	ptr += sizeof(size_t);
+	memcpy(ptr, path, path_len);
+
+	/* Check poll */
+	ret = check_socket_poll(sockfd, POLLOUT, SECURITY_SERVER_SOCKET_TIMEOUT_MILISECOND);
+	if(ret == SECURITY_SERVER_ERROR_POLL)
+	{
+		SEC_SVR_ERR("%s", "poll() error");
+		ret = SECURITY_SERVER_ERROR_SEND_FAILED;
+		goto out;
+	}
+	if(ret == SECURITY_SERVER_ERROR_TIMEOUT)
+	{
+		SEC_SVR_ERR("%s", "poll() timeout");
+		ret = SECURITY_SERVER_ERROR_SEND_FAILED;
+		goto out;
+	}
+
+	/* Send it */
+	ret = TEMP_FAILURE_RETRY(write(sockfd, msg, msg_len));
+	if(ret <  msg_len)
+	{
+		SEC_SVR_ERR("Error on write(): %d", ret);
+		ret = SECURITY_SERVER_ERROR_SEND_FAILED;
+		goto out;
+	}
+	ret = SECURITY_SERVER_SUCCESS;
+
+out:
+	free(msg);
+	return ret;
+}
+
+
+int process_exe_path_request(int sockfd)
+{
+	pid_t pid;
+	int retval;
+	char* exe = NULL;
+
+	// read pid
+	retval = TEMP_FAILURE_RETRY(read(sockfd, &pid, sizeof(pid_t)));
+	if (retval < (ssize_t) sizeof(pid_t))
+	{
+		SEC_SVR_ERR("Server Error: recieve failed: %d", retval);
+		retval = send_generic_response(
+				sockfd,
+				SECURITY_SERVER_MSG_TYPE_EXE_PATH_RESPONSE,
+				SECURITY_SERVER_RETURN_CODE_BAD_REQUEST);
+
+		if (retval != SECURITY_SERVER_SUCCESS)
+			SEC_SVR_ERR("Server ERROR: Cannot send generic response: %d", retval);
+		goto error;
+	}
+
+	SEC_SVR_DBG("Server: Get exe path request for pid %d", pid);
+
+	// get executable path
+	exe = read_exe_path_from_proc(pid);
+	if (!exe)
+	{
+		SEC_SVR_ERR("Server: Failed to read executable path for pid %d", pid);
+		retval = send_generic_response(
+				sockfd,
+				SECURITY_SERVER_MSG_TYPE_EXE_PATH_RESPONSE,
+				SECURITY_SERVER_RETURN_CODE_SERVER_ERROR);
+
+		if (retval != SECURITY_SERVER_SUCCESS)
+			SEC_SVR_ERR("Server ERROR: Cannot send generic response: %d", retval);
+		goto error;
+	}
+
+	// send response
+	retval = send_exe_path_response(sockfd, exe);
+	if (retval != SECURITY_SERVER_SUCCESS)
+		SEC_SVR_ERR("ERROR: Cannot send exe path response: %d", retval);
+
+error:
+	free(exe);
+	return retval;
+}
+
 int client_has_access(int sockfd, const char *object) {
     char *label = NULL;
     int ret = 0;
@@ -1259,6 +1489,11 @@ void *security_server_thread(void *param)
             SEC_SVR_DBG("%s", "Server: app give access requset received");
             process_app_get_access_request(client_sockfd, basic_hdr.msg_len - sizeof(basic_hdr));
             break;
+
+		case SECURITY_SERVER_MSG_TYPE_EXE_PATH_REQUEST:
+			SEC_SVR_DBG("Server: get executable path by pid request received");
+			process_exe_path_request(client_sockfd);
+			break;
 /************************************************************************************************/
 /* Just for test. This code must be removed on release */
 		case SECURITY_SERVER_MSG_TYPE_GET_ALL_COOKIES_REQUEST:
