@@ -36,6 +36,7 @@
 #include <sys/socket.h>
 #include <sys/wait.h>
 #include <poll.h>
+#include <grp.h>
 
 #include <privilege-control.h>
 #include <security-server-system-observer.h>
@@ -204,85 +205,69 @@ error:
 	return ret;
 }
 
-/* Search GID from group name *
- * This function opens /etc/group and search group name by given gid */
+/*
+ * Searches for group ID by given group name
+ */
+
 int search_gid(const char *obj)
 {
-	FILE *fp = NULL;
-	char *linebuf = NULL, *token = NULL, *token2, *tempstr = NULL;
-	int ret = SECURITY_SERVER_ERROR_NO_SUCH_OBJECT, tmp_gid, bufsize;
+        int ret = 0;
+        struct group *grpbuf = NULL;
+        struct group grp;
+        char *buf = NULL;
+	char *bigger_buf = NULL;
+        long int max_buf_size = 0;
 
-	SEC_SVR_DBG("Searching for object %s", obj);
+        /*
+         * The maximum needed size for buf can be found using sysconf(3) with the argument _SC_GETGR_R_SIZE_MAX
+	 * If _SC_GETGR_R_SIZE_MAX is not returned we set max_buf_size to 1024 bytes. Enough to store few groups.
+         */
+        max_buf_size = sysconf(_SC_GETGR_R_SIZE_MAX);
+        if(max_buf_size == -1)
+                max_buf_size = 1024;
 
-	fp = fopen("/etc/group", "r");
-	if(fp == NULL)
-	{
-		/* cannot open /etc/group */
-		SEC_SVR_ERR("%s", "cannot open /etc/group");
-		return SECURITY_SERVER_ERROR_FILE_OPERATION;
-	}
+        buf = malloc((size_t)max_buf_size);
+        if(buf == NULL)
+        {
+                ret = SECURITY_SERVER_ERROR_OUT_OF_MEMORY;
+                SEC_SVR_ERR("Out Of Memory");
+                goto error;
+        }
 
-	linebuf = malloc(128);
-	bufsize = 128;
-	if(linebuf == NULL)
-	{
-		ret = SECURITY_SERVER_ERROR_OUT_OF_MEMORY;
-		SEC_SVR_ERR("%s", "Out Of Memory");
-		goto error;
-	}
+        /*
+         * There can be some corner cases when for example user is assigned to a lot of groups.
+         * In that case if buffer is to small getgrnam_r will return ERANGE error.
+         * Solution could be calling getgrnam_r with bigger buffer until it's enough big.
+         */
+	while((ret = getgrnam_r(obj, &grp, buf, (size_t)max_buf_size, &grpbuf)) == ERANGE) {
+		max_buf_size *= 2;
 
-	bzero(linebuf, bufsize);
-	while(fgets(linebuf, bufsize, fp) != NULL)
-	{
-		while(linebuf[bufsize -2] != 0 )
-		{
-			linebuf[bufsize -1] = (char) fgetc(fp);
-			tempstr = realloc(linebuf, bufsize + 128);
-			if(tempstr == NULL)
-			{
-				ret = SECURITY_SERVER_ERROR_OUT_OF_MEMORY;
-				goto error;
-			}
-			linebuf = tempstr;
-			bzero(linebuf + bufsize, 128);
-			fgets(linebuf + bufsize, 128, fp);
-			bufsize += 128;
-		}
-
-		token = strtok(linebuf, ":");	/* group name */
-		token2 = strtok(NULL, ":");	/* group password */
-		token2 = strtok(NULL, ":");	/* gid */
-		if(token2 == NULL)
-		{
-			SEC_SVR_ERR("/etc/group is not valid. cannot find gid: [%s]", linebuf);
-			ret = SECURITY_SERVER_ERROR_SERVER_ERROR;
-			goto error;
-		}
-		errno = 0;
-		tmp_gid = strtoul(token2, 0, 10);
-		if ( errno != 0 )
-		{
-			SEC_SVR_ERR("cannot change string to integer [%s]", token2);
-			ret = SECURITY_SERVER_ERROR_SERVER_ERROR;
+		bigger_buf = realloc(buf, (size_t)max_buf_size);
+		if(bigger_buf == NULL) {
+			ret = SECURITY_SERVER_ERROR_OUT_OF_MEMORY;
+			SEC_SVR_ERR("Out Of Memory");
 			goto error;
 		}
 
-		if(strcmp(obj, token) == 0)
-		{
-			/* We found it */
-			ret = tmp_gid;
-			SEC_SVR_DBG("GID of %s is found: %d", obj, ret);
-			break;
-		}
-		bzero(linebuf, bufsize);
+		buf = bigger_buf;
 	}
+
+        if(ret != 0)
+        {
+                ret = SECURITY_SERVER_ERROR_SERVER_ERROR;
+                SEC_SVR_ERR("getgrnam_r failed with error %s\n", strerror(errno));
+                goto error;
+        } else if (grpbuf == NULL) {
+                ret =  SECURITY_SERVER_ERROR_NO_SUCH_OBJECT;
+                SEC_SVR_ERR("Cannot find gid for group %s\n", obj);
+                goto error;
+        }
+
+        ret = grpbuf->gr_gid;
 
 error:
-	if(linebuf != NULL)
-		free(linebuf);
-	if(fp != NULL)
-		fclose(fp);
-	return ret;
+	free(buf);
+        return ret;
 }
 
 /* Signal handler for processes */
