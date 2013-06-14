@@ -163,7 +163,7 @@ static int recv_exec_path_response(int sockfd, response_header *hdr, char** path
 	}
 
 	retval = TEMP_FAILURE_RETRY(read(sockfd, &size, sizeof(size_t)));
-	if(retval < (ssize_t)sizeof(size_t) || size == 0)
+	if(retval < (ssize_t)sizeof(size_t) || size == 0 || size > MESSAGE_MAX_LEN)
 	{
 		/* Error on socket */
 		SEC_SVR_ERR("read() failed: %d", retval);

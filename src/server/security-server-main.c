@@ -1570,8 +1570,12 @@ void *security_server_thread(void *param)
         authorize_SS_API_caller_socket(client_sockfd, API_DATA_SHARE, API_RULE_REQUIRED);
         if (client_has_access(client_sockfd, API_DATA_SHARE)) {
             SEC_SVR_DBG("%s", "Server: app give access request received");
-            process_app_get_access_request(client_sockfd,
-              basic_hdr.msg_len - sizeof(basic_hdr));
+            if (basic_hdr.msg_len >= 0 && (size_t)basic_hdr.msg_len >= sizeof(basic_hdr)) {
+                process_app_get_access_request(client_sockfd,
+                  basic_hdr.msg_len - sizeof(basic_hdr));
+            } else {
+                SEC_SVR_ERR("ERROR: Invalid message length: %d", basic_hdr.msg_len);
+            }
         } else {
             SEC_SVR_DBG("%s", "Server: app give access request received (API DENIED - request will not proceed)");
             send_generic_response(client_sockfd,

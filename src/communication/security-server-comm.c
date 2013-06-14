@@ -2072,7 +2072,7 @@ int recv_pid_privilege_request(int sockfd, int datasize, int * pid, char ** obje
     memcpy(*object, buff + sizeof(int), object_size);
 
     //get access_rights
-    access_rights_size = datasize - sizeof(int) - object_size;
+    access_rights_size = datasize - object_size - sizeof(int);
     *access_rights = (char *)malloc(access_rights_size);
     memcpy(*access_rights, buff + sizeof(int) + object_size, access_rights_size);
 
