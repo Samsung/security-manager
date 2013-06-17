@@ -284,9 +284,9 @@ cookie_list *search_cookie_new(const cookie_list *c_list,
 
                 SEC_SVR_DBG("SMACK have access returned %d", ret);
                 if (ret > 0)
-                    SEC_SVR_DBG("SS_SMACK: caller_pid=%d, subject=%s, object=%s, access=%s, result=%d, caller_path=%s", current->pid, current->smack_label, object, access_rights, ret, current->path);
+                    SECURE_LOGD("SS_SMACK: caller_pid=%d, subject=%s, object=%s, access=%s, result=%d, caller_path=%s", current->pid, current->smack_label, object, access_rights, ret, current->path);
                 else
-                    SEC_SVR_ERR("SS_SMACK: caller_pid=%d, subject=%s, object=%s, access=%s, result=%d, caller_path=%s", current->pid, current->smack_label, object, access_rights, ret, current->path);
+                    SECURE_LOGE("SS_SMACK: caller_pid=%d, subject=%s, object=%s, access=%s, result=%d, caller_path=%s", current->pid, current->smack_label, object, access_rights, ret, current->path);
 
                 if (ret == 1)
                 {
