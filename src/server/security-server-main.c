@@ -839,7 +839,7 @@ int process_gid_request(int sockfd, int msg_len)
 	retval = TEMP_FAILURE_RETRY(read(sockfd, object_name, msg_len));
 	if (retval < msg_len )
 	{
-		SEC_SVR_ERR("%s", "Failed to read object name");
+		SECURE_LOGE("%s", "Failed to read object name");
 		retval = send_generic_response(sockfd,
 				SECURITY_SERVER_MSG_TYPE_GID_RESPONSE,
 				SECURITY_SERVER_RETURN_CODE_BAD_REQUEST);
