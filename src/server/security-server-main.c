@@ -791,7 +791,7 @@ int process_object_name_request(int sockfd)
 	}
 
 	/* We found */
-	SEC_SVR_DBG("We found object: %s", object_name);
+	SECURE_LOGD("We found object: %s", object_name);
 	retval = send_object_name(sockfd, object_name);
 	if(retval != SECURITY_SERVER_SUCCESS)
 	{
@@ -856,7 +856,7 @@ int process_gid_request(int sockfd, int msg_len)
 	if (retval == SECURITY_SERVER_ERROR_NO_SUCH_OBJECT)
 	{
 		/* Not exist */
-		SEC_SVR_ERR("The object [%s] is not exist", object_name);
+		SECURE_LOGE("The object [%s] is not exist", object_name);
 		retval = send_generic_response(sockfd,
 				SECURITY_SERVER_MSG_TYPE_GID_RESPONSE,
 				SECURITY_SERVER_RETURN_CODE_NO_SUCH_OBJECT);
@@ -1524,43 +1524,43 @@ void *security_server_thread(void *param)
         break;
 
     case SECURITY_SERVER_MSG_TYPE_VALID_PWD_REQUEST:
-        SEC_SVR_DBG("%s", "Server: validate password request received");
+        SECURE_LOGD("%s", "Server: validate password request received");
         authorize_SS_API_caller_socket(client_sockfd, API_PASSWD_CHECK, API_RULE_REQUIRED);
         process_valid_pwd_request(client_sockfd);
         break;
 
     case SECURITY_SERVER_MSG_TYPE_SET_PWD_REQUEST:
-        SEC_SVR_DBG("%s", "Server: set password request received");
+        SECURE_LOGD("%s", "Server: set password request received");
         authorize_SS_API_caller_socket(client_sockfd, API_PASSWD_SET, API_RULE_REQUIRED);
         process_set_pwd_request(client_sockfd);
         break;
 
     case SECURITY_SERVER_MSG_TYPE_RESET_PWD_REQUEST:
-        SEC_SVR_DBG("%s", "Server: reset password request received");
+        SECURE_LOGD("%s", "Server: reset password request received");
         authorize_SS_API_caller_socket(client_sockfd, API_PASSWD_SET, API_RULE_REQUIRED);
         process_reset_pwd_request(client_sockfd);
         break;
 
     case SECURITY_SERVER_MSG_TYPE_CHK_PWD_REQUEST:
-        SEC_SVR_DBG("%s", "Server: check password request received");
+        SECURE_LOGD("%s", "Server: check password request received");
         authorize_SS_API_caller_socket(client_sockfd, API_PASSWD_CHECK, API_RULE_REQUIRED);
         process_chk_pwd_request(client_sockfd);
         break;
 
     case SECURITY_SERVER_MSG_TYPE_SET_PWD_HISTORY_REQUEST:
-        SEC_SVR_DBG("%s", "Server: set password histroy request received");
+        SECURE_LOGD("%s", "Server: set password histroy request received");
         authorize_SS_API_caller_socket(client_sockfd, API_PASSWD_SET, API_RULE_REQUIRED);
         process_set_pwd_history_request(client_sockfd);
         break;
 
     case SECURITY_SERVER_MSG_TYPE_SET_PWD_MAX_CHALLENGE_REQUEST:
-        SEC_SVR_DBG("%s", "Server: set password max challenge request received");
+        SECURE_LOGD("%s", "Server: set password max challenge request received");
         authorize_SS_API_caller_socket(client_sockfd, API_PASSWD_SET, API_RULE_REQUIRED);
         process_set_pwd_max_challenge_request(client_sockfd);
         break;
 
     case SECURITY_SERVER_MSG_TYPE_SET_PWD_VALIDITY_REQUEST:
-        SEC_SVR_DBG("%s", "Server: set password validity request received");
+        SECURE_LOGD("%s", "Server: set password validity request received");
         authorize_SS_API_caller_socket(client_sockfd, API_PASSWD_SET, API_RULE_REQUIRED);
         process_set_pwd_validity_request(client_sockfd);
         break;
@@ -1677,7 +1677,7 @@ void *security_server_main_thread(void *data)
 
     (void)data;
 
-    SEC_SVR_DBG("%s", "Starting Security Server main thread");
+    SECURE_LOGD("%s", "Starting Security Server main thread");
 
     /* security server must be executed by root */
     if(getuid() != 0)
@@ -1899,7 +1899,7 @@ int main(int argc, char* argv[])
     }
     else
     {
-        SEC_SVR_ERR("Error: Server: Cannot create main security server thread: %d", res);
+        SECURE_LOGE("Error: Server: Cannot create main security server thread: %d", res);
     }
     pthread_exit(NULL);
     return 0;

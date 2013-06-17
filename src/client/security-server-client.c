@@ -264,7 +264,7 @@ int security_server_get_gid(const char *object)
 		goto error;
 	}
 
-	SEC_SVR_DBG("%s", "Client: security_server_get_gid() is called");
+	SECURE_LOGD("%s", "Client: security_server_get_gid() is called");
 	retval = connect_to_server(&sockfd);
 	if(retval != SECURITY_SERVER_SUCCESS)
 	{
@@ -272,7 +272,7 @@ int security_server_get_gid(const char *object)
 		SEC_SVR_ERR("Connection failed: %d", retval);
 		goto error;
 	}
-	SEC_SVR_DBG("%s", "Client: Security server has been connected");
+	SECURE_LOGD("%s", "Client: Security server has been connected");
 
 	/* make request packet and send to server*/
 	retval = send_gid_request(sockfd, object);
@@ -407,7 +407,7 @@ int security_server_request_cookie(char *cookie, size_t max_cookie)
 		goto error;
 	}
 
-	SEC_SVR_DBG("%s", "Client: security_server_request_cookie() is called");
+	SECURE_LOGD("%s", "Client: security_server_request_cookie() is called");
 	retval = connect_to_server(&sockfd);
 	if(retval != SECURITY_SERVER_SUCCESS)
 	{
