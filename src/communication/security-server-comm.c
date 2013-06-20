@@ -2150,7 +2150,12 @@ int recv_generic_response(int sockfd, response_header *hdr)
 
     if (hdr->return_code != SECURITY_SERVER_RETURN_CODE_SUCCESS)
     {
-        SEC_SVR_ERR("Client: return code is not success: %d", hdr->return_code);
+        /* Return codes
+         *   SECURITY_SERVER_MSG_TYPE_CHECK_PRIVILEGE_REQUEST
+         *   SECURITY_SERVER_MSG_TYPE_CHECK_PRIVILEGE_RESPONSE
+         * are not errors but warnings
+         */
+        SEC_SVR_WRN("Client: return code is not success: %d", hdr->return_code);
         return return_code_to_error_code(hdr->return_code);
     }
     return SECURITY_SERVER_SUCCESS;

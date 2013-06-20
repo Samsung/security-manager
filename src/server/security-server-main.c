@@ -202,10 +202,9 @@ int authorize_SS_API_caller_socket(int sockfd, char *required_API_label, char *r
 
     //some log in SMACK format
     if (retval > 0)
-        SEC_SVR_DBG("SS_SMACK: caller_pid=%d, subject=%s, object=%s, access=%s, result=%d, caller_path=%s", cr.pid, label, required_API_label, required_rule, retval, path);
+        SECURE_LOGD("SS_SMACK: caller_pid=%d, subject=%s, object=%s, access=%s, result=%d, caller_path=%s", cr.pid, label, required_API_label, required_rule, retval, path);
     else
-        SEC_SVR_ERR("SS_SMACK: caller_pid=%d, subject=%s, object=%s, access=%s, result=%d, caller_path=%s", cr.pid, label, required_API_label, required_rule, retval, path);
-
+        SECURE_LOGW("SS_SMACK: caller_pid=%d, subject=%s, object=%s, access=%s, result=%d, caller_path=%s", cr.pid, label, required_API_label, required_rule, retval, path);
 end:
     if (path != NULL)
         free(path);
@@ -637,7 +636,7 @@ int process_check_privilege_request(int sockfd)
     else
     {
         /* It's not exist */
-        SEC_SVR_ERR("Could not find the cookie with %d privilege", requested_privilege);
+        SEC_SVR_WRN("Could not find the cookie with %d privilege", requested_privilege);
         retval = send_generic_response(sockfd,
             SECURITY_SERVER_MSG_TYPE_CHECK_PRIVILEGE_RESPONSE,
             SECURITY_SERVER_RETURN_CODE_ACCESS_DENIED);
@@ -709,7 +708,7 @@ int process_check_privilege_new_request(int sockfd)
     else
     {
         /* It's not exist */
-        SEC_SVR_ERR("Could not find the cookie with %s rights", access_rights);
+        SEC_SVR_WRN("Could not find the cookie with %s rights", access_rights);
         retval = send_generic_response(sockfd,
             SECURITY_SERVER_MSG_TYPE_CHECK_PRIVILEGE_NEW_RESPONSE,
             SECURITY_SERVER_RETURN_CODE_ACCESS_DENIED);
@@ -795,7 +794,6 @@ int process_object_name_request(int sockfd)
     {
         SEC_SVR_ERR("ERROR: Cannot send generic response: %d", retval);
     }
-
 error:
     return retval;
 }
@@ -818,7 +816,6 @@ int process_gid_request(int sockfd, int msg_len)
         }
         goto error;
     }
-
     if (msg_len >= SECURITY_SERVER_MAX_OBJ_NAME)
     {
         /* Too big ojbect name */
@@ -1124,7 +1121,7 @@ int process_pid_privilege_check(int sockfd, int datasize)
     if (retval > 0)
         SECURE_LOGD("SS_SMACK: caller_pid=%d, subject=%s, object=%s, access=%s, result=%d, caller_path=%s", pid, subject, object, access_rights, retval, path);
     else
-        SECURE_LOGE("SS_SMACK: caller_pid=%d, subject=%s, object=%s, access=%s, result=%d, caller_path=%s", pid, subject, object, access_rights, retval, path);
+        SECURE_LOGW("SS_SMACK: caller_pid=%d, subject=%s, object=%s, access=%s, result=%d, caller_path=%s", pid, subject, object, access_rights, retval, path);
 
     if (path != NULL)
         free(path);
@@ -1414,7 +1411,7 @@ int client_has_access(int sockfd, const char *object)
     }
 
     if (SECURITY_SERVER_SUCCESS == authenticate_client_application(sockfd, &pid, &uid))
-        SEC_SVR_DBG("SS_SMACK: caller_pid=%d, subject=%s, object=%s, access=rw, result=%d",
+        SECURE_LOGD("SS_SMACK: caller_pid=%d, subject=%s, object=%s, access=rw, result=%d",
             pid, label, object, ret);
 
     free(label);

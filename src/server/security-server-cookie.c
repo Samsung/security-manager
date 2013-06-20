@@ -286,7 +286,7 @@ cookie_list *search_cookie_new(const cookie_list *c_list,
                 if (ret > 0)
                     SECURE_LOGD("SS_SMACK: caller_pid=%d, subject=%s, object=%s, access=%s, result=%d, caller_path=%s", current->pid, current->smack_label, object, access_rights, ret, current->path);
                 else
-                    SECURE_LOGE("SS_SMACK: caller_pid=%d, subject=%s, object=%s, access=%s, result=%d, caller_path=%s", current->pid, current->smack_label, object, access_rights, ret, current->path);
+                    SECURE_LOGW("SS_SMACK: caller_pid=%d, subject=%s, object=%s, access=%s, result=%d, caller_path=%s", current->pid, current->smack_label, object, access_rights, ret, current->path);
 
                 if (ret == 1)
                 {

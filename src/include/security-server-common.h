@@ -23,6 +23,7 @@
 #define SECURITY_SERVER_COMMON_H
 
 #include <sys/types.h>
+#include <dlog.h>
 
 /* Definitions *********************************************************/
 /* Return value. Continuing from return value of the client header file */
@@ -106,15 +107,6 @@ typedef struct _cookie_list
 
 void printhex(const unsigned char *data, int size);
 
-/* Debug */
-#ifdef SECURITY_SERVER_DEBUG_TO_CONSOLE /* debug msg will be printed in console */
-#define SEC_SVR_DBG(FMT, ARG ...) fprintf(stderr, "[DBG:%s:%d] "FMT "\n", \
-    __FILE__, __LINE__, ##ARG)
-#define SEC_SVR_ERR(FMT, ARG ...) fprintf(stderr, "[ERR:%s:%d] "FMT "\n", \
-    __FILE__, __LINE__, ##ARG)
-
-#elif SECURITY_SERVER_DEBUG_DLOG    /* debug msg will be printed by dlog daemon */
-
 /* for SECURE_LOG* purpose */
 #undef _SECURE_
 #ifndef _SECURE_LOG
@@ -129,17 +121,41 @@ void printhex(const unsigned char *data, int size);
 #define SECURE_LOG_(id, prio, tag, fmt, arg ...) \
     (_SECURE_ ? (__dlog_print(id, prio, tag, "%s: %s(%d) > [SECURE_LOG] " fmt, __MODULE__, __func__, __LINE__, ##arg)) : (0))
 
+#ifdef LOG_TAG
+    #undef LOG_TAG
+#endif
+#define LOG_TAG "SECURITY_SERVER"
+
 #define SECURE_LOGD(format, arg ...) SECURE_LOG_(LOG_ID_MAIN, DLOG_DEBUG, LOG_TAG, format, ##arg)
 #define SECURE_LOGI(format, arg ...) SECURE_LOG_(LOG_ID_MAIN, DLOG_INFO, LOG_TAG, format, ##arg)
 #define SECURE_LOGW(format, arg ...) SECURE_LOG_(LOG_ID_MAIN, DLOG_WARN, LOG_TAG, format, ##arg)
 #define SECURE_LOGE(format, arg ...) SECURE_LOG_(LOG_ID_MAIN, DLOG_ERROR, LOG_TAG, format, ##arg)
 /****************************/
-#define LOG_TAG "SECURITY_SERVER"
-#include <dlog.h>
-#define SEC_SVR_DBG SLOGD
+
+/* Debug */
+#ifdef SECURITY_SERVER_DEBUG_TO_CONSOLE /* debug msg will be printed in console */
+#define SEC_SVR_DBG(FMT, ARG ...) fprintf(stderr, "[DBG:%s:%d] "FMT"\n", \
+                __FILE__, __LINE__, ##ARG)
+#define SEC_SVR_WRN(FMT, ARG ...) fprintf(stderr, "[WRN:%s:%d] "FMT"\n", \
+                __FILE__, __LINE__, ##ARG)
+#define SEC_SVR_ERR(FMT, ARG ...) fprintf(stderr, "[ERR:%s:%d] "FMT"\n", \
+                __FILE__, __LINE__, ##ARG)
+
+#else
 #define SEC_SVR_ERR LOGE
+#if SECURITY_SERVER_DEBUG_DLOG        /* debug msg will be printed by dlog daemon */
+#define SEC_SVR_DBG SLOGD
+#define SEC_SVR_WRN LOGW
 #else /* No debug output */
-#define SEC_SVR_DBG(FMT, ARG ...) {}
-#endif
+
+#define SEC_SVR_DBG(FMT, ARG ...) do { } while(0)
+#define SEC_SVR_WRN(FMT, ARG ...) do { } while(0)
+#undef SECURE_LOGD
+#define SECURE_LOGD(FMT, ARG ...) do { } while(0)
+#undef SECURE_LOGW
+#define SECURE_LOGW(FMT, ARG ...) do { } while(0)
+
+#endif // SECURITY_SERVER_DEBUG_DLOG
+#endif // SECURITY_SERVER_DEBUG_TO_CONSOLE
 
 #endif

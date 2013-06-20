@@ -630,7 +630,7 @@ err:
     if (ret > 0)
         SECURE_LOGD("SS_SMACK: caller_pid=%d, subject=%s, object=%s, access=%s, result=%d, caller_path=%s", cr.pid, subject, object, access_rights, ret, path);
     else
-        SECURE_LOGE("SS_SMACK: caller_pid=%d, subject=%s, object=%s, access=%s, result=%d, caller_path=%s", cr.pid, subject, object, access_rights, ret, path);
+        SECURE_LOGW("SS_SMACK: caller_pid=%d, subject=%s, object=%s, access=%s, result=%d, caller_path=%s", cr.pid, subject, object, access_rights, ret, path);
 
     free(path);
     free(subject);
@@ -1386,7 +1386,7 @@ int security_server_check_privilege_by_pid(int pid, const char *object, const ch
         SEC_SVR_DBG("%s","Client: There is privilege match");
         retval = SECURITY_SERVER_SUCCESS;
     } else {
-        SEC_SVR_ERR("%s","Client: There is no privilege match");
+        SEC_SVR_WRN("%s","Client: There is no privilege match");
         retval = SECURITY_SERVER_ERROR_ACCESS_DENIED;
     }
 
