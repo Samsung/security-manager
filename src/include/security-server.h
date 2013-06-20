@@ -64,69 +64,69 @@
  * result codes begin with the start error code and extend into negative direction.
  * @{
 */
-#define SECURITY_SERVER_API_SUCCESS			0
+#define SECURITY_SERVER_API_SUCCESS 0
 /*! \brief   indicating the result of the one specific API is successful */
-#define SECURITY_SERVER_API_ERROR_SOCKET		-1
+#define SECURITY_SERVER_API_ERROR_SOCKET -1
 
 /*! \brief   indicating the socket between client and Security Server has been failed  */
-#define SECURITY_SERVER_API_ERROR_BAD_REQUEST		-2
+#define SECURITY_SERVER_API_ERROR_BAD_REQUEST -2
 
 /*! \brief   indicating the response from Security Server is malformed */
-#define SECURITY_SERVER_API_ERROR_BAD_RESPONSE		-3
+#define SECURITY_SERVER_API_ERROR_BAD_RESPONSE -3
 
 /*! \brief   indicating the transmitting request has been failed */
-#define SECURITY_SERVER_API_ERROR_SEND_FAILED		-4
+#define SECURITY_SERVER_API_ERROR_SEND_FAILED -4
 
 /*! \brief   indicating the receiving response has been failed */
-#define SECURITY_SERVER_API_ERROR_RECV_FAILED		-5
+#define SECURITY_SERVER_API_ERROR_RECV_FAILED -5
 
 /*! \brief   indicating requesting object is not exist */
-#define SECURITY_SERVER_API_ERROR_NO_SUCH_OBJECT	-6
+#define SECURITY_SERVER_API_ERROR_NO_SUCH_OBJECT -6
 
 /*! \brief   indicating the authentication between client and server has been failed */
-#define SECURITY_SERVER_API_ERROR_AUTHENTICATION_FAILED	-7
+#define SECURITY_SERVER_API_ERROR_AUTHENTICATION_FAILED -7
 
 /*! \brief   indicating the API's input parameter is malformed */
-#define SECURITY_SERVER_API_ERROR_INPUT_PARAM		-8
+#define SECURITY_SERVER_API_ERROR_INPUT_PARAM -8
 
 /*! \brief   indicating the output buffer size which is passed as parameter is too small */
-#define SECURITY_SERVER_API_ERROR_BUFFER_TOO_SMALL	-9
+#define SECURITY_SERVER_API_ERROR_BUFFER_TOO_SMALL -9
 
 /*! \brief   indicating system  is running out of memory state */
-#define SECURITY_SERVER_API_ERROR_OUT_OF_MEMORY		-10
+#define SECURITY_SERVER_API_ERROR_OUT_OF_MEMORY -10
 
 /*! \brief   indicating the access has been denied by Security Server */
-#define SECURITY_SERVER_API_ERROR_ACCESS_DENIED		-11
+#define SECURITY_SERVER_API_ERROR_ACCESS_DENIED -11
 
 /*! \brief   indicating Security Server has been failed for some reason */
-#define SECURITY_SERVER_API_ERROR_SERVER_ERROR		-12
+#define SECURITY_SERVER_API_ERROR_SERVER_ERROR -12
 
 /*! \brief   indicating given cookie is not exist in the database  */
-#define SECURITY_SERVER_API_ERROR_NO_SUCH_COOKIE	-13
+#define SECURITY_SERVER_API_ERROR_NO_SUCH_COOKIE -13
 
 /*! \brief   indicating there is no phone password set  */
-#define SECURITY_SERVER_API_ERROR_NO_PASSWORD		-14
+#define SECURITY_SERVER_API_ERROR_NO_PASSWORD -14
 
 /*! \brief   indicating password exists in system  */
-#define SECURITY_SERVER_API_ERROR_PASSWORD_EXIST		-15
+#define SECURITY_SERVER_API_ERROR_PASSWORD_EXIST -15
 
 /*! \brief   indicating password mismatch  */
-#define SECURITY_SERVER_API_ERROR_PASSWORD_MISMATCH	-16
+#define SECURITY_SERVER_API_ERROR_PASSWORD_MISMATCH -16
 
 /*! \brief   indicating password retry timeout is not occurred yet  */
-#define SECURITY_SERVER_API_ERROR_PASSWORD_RETRY_TIMER	-17
+#define SECURITY_SERVER_API_ERROR_PASSWORD_RETRY_TIMER -17
 
 /*! \brief   indicating password retry timeout is not occurred yet  */
-#define SECURITY_SERVER_API_ERROR_PASSWORD_MAX_ATTEMPTS_EXCEEDED	-18
+#define SECURITY_SERVER_API_ERROR_PASSWORD_MAX_ATTEMPTS_EXCEEDED -18
 
 /*! \brief   indicating password retry timeout is not occurred yet  */
-#define SECURITY_SERVER_API_ERROR_PASSWORD_EXPIRED	-19
+#define SECURITY_SERVER_API_ERROR_PASSWORD_EXPIRED -19
 
 /*! \brief   indicating password retry timeout is not occurred yet  */
-#define SECURITY_SERVER_API_ERROR_PASSWORD_REUSED	-20
+#define SECURITY_SERVER_API_ERROR_PASSWORD_REUSED -20
 
 /*! \brief   indicating the error with unknown reason */
-#define SECURITY_SERVER_API_ERROR_UNKNOWN		-255
+#define SECURITY_SERVER_API_ERROR_UNKNOWN -255
 /** @}*/
 
 #ifdef __cplusplus
@@ -183,8 +183,8 @@ extern "C" {
  * retval = security_server_get_gid("telephony_makecall");
  * if(retval < 0)
  * {
- * 	printf("%s", "Error has occurred\n");
- * 	exit(0);
+ *      printf("%s", "Error has occurred\n");
+ *      exit(0);
  * }
  * ...
  * \endcode
@@ -244,8 +244,8 @@ int security_server_get_gid(const char *object);
  * retval = security_server_get_object_name(6005, objectname, sizeof(objectname));
  * if(retval < 0)
  * {
- * 	printf("%s", "Error has occurred\n");
- * 	exit(0);
+ *      printf("%s", "Error has occurred\n");
+ *      exit(0);
  * }
  * ...
  * \endcode
@@ -306,8 +306,8 @@ int security_server_get_object_name(gid_t gid, char *object, size_t max_object_s
  * retval = security_server_request_cookie(cookie, cookie_size);
  * if(retval < 0)
  * {
- * 	printf("%s", "Error has occurred\n");
- * 	exit(0);
+ *      printf("%s", "Error has occurred\n");
+ *      exit(0);
  * }
  * ...
  * \endcode
@@ -366,8 +366,8 @@ int security_server_request_cookie(char *cookie, size_t max_cookie);
  * retval = security_server_request_cookie(cookie, cookie_size);
  * if(retval < 0)
  * {
- * 	printf("%s", "Error has occurred\n");
- * 	exit(0);
+ *      printf("%s", "Error has occurred\n");
+ *      exit(0);
  * }
  * ...
  * \endcode
@@ -430,12 +430,12 @@ int security_server_get_cookie_size(void);
  * retval = security_server_check_privilege(recved_cookie, (gid_t)call_gid);
  * if(retval < 0)
  * {
- * 	if(retval == SECURITY_SERVER_API_ERROR_ACCESS_DENIED)
- * 	{
- * 		printf("%s", "access has been denied\n");
- * 		return;
- * 	}
- * 	printf("%s", "Error has occurred\n");
+ *      if(retval == SECURITY_SERVER_API_ERROR_ACCESS_DENIED)
+ *      {
+ *              printf("%s", "access has been denied\n");
+ *              return;
+ *      }
+ *      printf("%s", "Error has occurred\n");
  * }
  * ...
  *
@@ -506,7 +506,7 @@ int security_server_check_privilege_by_sockfd(int sockfd,
  * peerpid = security_server_get_cookie_pid(recved_cookie);
  * if(peerpid < 0)
  * {
- * 	printf("%s", "Error has occurred\n");
+ *      printf("%s", "Error has occurred\n");
  * }
  * ...
  *
@@ -565,7 +565,7 @@ int security_server_get_cookie_pid(const char *cookie);
  * ret = security_server_is_pwd_valid(&attempt, &max_attempt, &expire_sec);
  * if(is_pwd_set == SECURITY_SERVER_API_ERROR_NO_PASSWORD)
  * {
- * 	printf("%s", "There is no password exists\n");
+ *      printf("%s", "There is no password exists\n");
  * }
  * else if(is_pwd_set == SECURITY_SERVER_SUCCESS && expire_sec > 0 && attempt < max_attempts)
  * {
@@ -580,8 +580,8 @@ int security_server_get_cookie_pid(const char *cookie);
  * \endcode
 */
 int security_server_is_pwd_valid(unsigned int *current_attempts,
-			unsigned int *max_attempts,
-			unsigned int *valid_secs);
+                                 unsigned int *max_attempts,
+                                 unsigned int *valid_secs);
 
 
 
@@ -636,23 +636,23 @@ int security_server_is_pwd_valid(unsigned int *current_attempts,
  * ret = security_server_is_pwd_valid(&attempt, &max_attempt, &expire_sec);
  * if(is_pwd_set == SECURITY_SERVER_API_ERROR_NO_PASSWORD)
  * {
- * 	printf("%s", "There is no password exists\n");
+ *      printf("%s", "There is no password exists\n");
  *	ret = security_server_set_pwd(NULL, "this_is_new_pwd", 20, 365);
- * 	if(ret != SECURITY_SERVER_API_SUCCESS)
- * 	{
- * 		printf("%s", "we have error\n");
- * 		...
- * 	}
+ *      if(ret != SECURITY_SERVER_API_SUCCESS)
+ *      {
+ *              printf("%s", "we have error\n");
+ *              ...
+ *      }
  * }
  * else if(is_pwd_set == SECURITY_SERVER_SUCCESS && expire_sec > 0 && attempt < max_attempts)
  * {
  *	printf("%s", "Password is valid by now\n");
- * 	ret = security_server_set_pwd("this_is_current_pwd", "this_is_new_pwd", 20, 365);
- * 	if(ret != SECURITY_SERVER_API_SUCCESS)
- * 	{
- * 		printf("%s", "we have error\n");
- * 		...
- * 	}
+ *      ret = security_server_set_pwd("this_is_current_pwd", "this_is_new_pwd", 20, 365);
+ *      if(ret != SECURITY_SERVER_API_SUCCESS)
+ *      {
+ *              printf("%s", "we have error\n");
+ *              ...
+ *      }
  * }
  * else
  * {
@@ -663,9 +663,9 @@ int security_server_is_pwd_valid(unsigned int *current_attempts,
  * \endcode
 */
 int security_server_set_pwd(const char *cur_pwd,
-			const char *new_pwd,
-			const unsigned int max_challenge,
-			const unsigned int valid_period_in_days);
+                            const char *new_pwd,
+                            const unsigned int max_challenge,
+                            const unsigned int valid_period_in_days);
 
 
 /**
@@ -775,19 +775,19 @@ int security_server_set_pwd_max_challenge(const unsigned int max_challenge);
  * int ret;
  * unsigned int attempt, max_attempt, expire_sec;
  *
- * 	ret = security_server_set_pwd("this_is_new_pwd", 20, 365);
- * 	if(retval != SECURITY_SERVER_API_SUCCESS)
- * 	{
- * 		printf("%s", "we have error\n");
- * 		...
- * 	}
+ *      ret = security_server_set_pwd("this_is_new_pwd", 20, 365);
+ *      if(retval != SECURITY_SERVER_API_SUCCESS)
+ *      {
+ *              printf("%s", "we have error\n");
+ *              ...
+ *      }
  * ...
  *
  * \endcode
 */
 int security_server_reset_pwd(const char *new_pwd,
-			const unsigned int max_challenge,
-			const unsigned int valid_period_in_days);
+                              const unsigned int max_challenge,
+                              const unsigned int valid_period_in_days);
 
 /**
  * \par Description:
@@ -839,22 +839,22 @@ int security_server_reset_pwd(const char *new_pwd,
  * retval = security_server_chk_pwd("is_this_password", &attmpt, &max_attempt, &expire_sec);
  * if(retval == SECURITY_SERVER_API_ERROR_PASSWORD_MISMATCH)
  * {
- * 	printf("%s", "Oh you typed wrong password\n");
- * 	...
+ *      printf("%s", "Oh you typed wrong password\n");
+ *      ...
  * }
  * else if(retval == SECURITY_SERVER_API_SUCCESS)
  * {
- * 	printf("%s", "You remember your password.\n");
- * 	...
+ *      printf("%s", "You remember your password.\n");
+ *      ...
  * }
  * ...
  *
  * \endcode
 */
 int security_server_chk_pwd(const char *challenge,
-			unsigned int *current_attempt,
-			unsigned int *max_attempt,
-			unsigned int *valid_secs);
+                            unsigned int *current_attempt,
+                            unsigned int *max_attempt,
+                            unsigned int *valid_secs);
 
 
 /**
@@ -963,21 +963,21 @@ int security_server_set_pwd_history(int number_of_history);
  *
  * int main(int argc, char **argv)
  * {
- * 	int my_uid, ret;
- * 	uid = getuid();
- * 	if(uid != DEVELOPER_UID)
- * 	{
- * 		// You must be developer user
- * 		exit(1);
- * 	}
+ *      int my_uid, ret;
+ *      uid = getuid();
+ *      if(uid != DEVELOPER_UID)
+ *      {
+ *              // You must be developer user
+ *              exit(1);
+ *      }
  *
- * 	ret = security_server_launch_debug_tool(argc -1, argv++)
- * 	if(ret != SECURITY_SERVER_SUCCESS)
- * 	{
- * 		// Some error occurred
- * 		exit(1);
- * 	}
- * 	...
+ *      ret = security_server_launch_debug_tool(argc -1, argv++)
+ *      if(ret != SECURITY_SERVER_SUCCESS)
+ *      {
+ *              // Some error occurred
+ *              exit(1);
+ *      }
+ *      ...
  * }
  *
  * \endcode
@@ -996,7 +996,7 @@ int security_server_launch_debug_tool(int argc, const char **argv);
  * \par For free label use free(), label allocated by calloc()
  *      User responsibility is to free resource.
  */
-char * security_server_get_smacklabel_cookie(const char *cookie);
+char *security_server_get_smacklabel_cookie(const char *cookie);
 
 /*
  * This function allows to get process SMACK label by passing socket descriptor.
@@ -1010,14 +1010,28 @@ char * security_server_get_smacklabel_cookie(const char *cookie);
  * \par For free label use free(), label allocated by calloc().
  *      User responsibility is to free resource.
  */
-char * security_server_get_smacklabel_sockfd(int fd);
+char *security_server_get_smacklabel_sockfd(int fd);
 
 /*
  * This function will give permissions "rwxat" from
  * (subject) customer_label to caller process (object).
  * Object label will be extracted from socket.
  * */
-int security_server_app_give_access(const char* customer_label, int customer_pid);
+int security_server_app_give_access(const char *customer_label, int customer_pid);
+
+/*
+ * This function allows middleware to check priviliges of process with specified PID.
+ * Service is able to check proces acces to the specified object label with specified
+ * access rights.
+ *
+ * \param[in] PID number of process to be checked
+ * \param[in] SMACK object label
+ * \param[in] SMACK access rights to be checked
+ *
+ * \return Privilege confirm or error code
+ * SECURITY_SERVER_SUCCESS - on succes
+ */
+int security_server_check_privilege_by_pid(int pid, const char *object, const char *access_rights);
 
 #ifdef __cplusplus
 }

@@ -27,7 +27,7 @@
 void free_cookie_item(cookie_list *cookie);
 cookie_list *delete_cookie_item(cookie_list *cookie);
 cookie_list *search_existing_cookie(int pid, const cookie_list *c_list);
-cookie_list *search_cookie(const cookie_list *c_list, const unsigned char *cookie, int * privileges, int privilegesSize);
+cookie_list *search_cookie(const cookie_list *c_list, const unsigned char *cookie, int *privileges, int privilegesSize);
 cookie_list *search_cookie_new(const cookie_list *c_list,
                                const unsigned char *cookie,
                                const char *object,
@@ -35,7 +35,7 @@ cookie_list *search_cookie_new(const cookie_list *c_list,
 int generate_random_cookie(unsigned char *cookie, int size);
 cookie_list *create_cookie_item(int pid, int sockfd, cookie_list *c_list);
 cookie_list *create_default_cookie(void);
-cookie_list * garbage_collection(cookie_list *cookie);
+cookie_list *garbage_collection(cookie_list *cookie);
 cookie_list *search_cookie_from_pid(cookie_list *c_list, int pid);
 void printhex(const unsigned char *data, int size);
 

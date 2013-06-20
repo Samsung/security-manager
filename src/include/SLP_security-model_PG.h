@@ -2,14 +2,14 @@
  * @defgroup SLP_PG_SECURITY Security and Permissions
  * @ingroup SLP_PG
  * @{
- * 	@brief  <em class="ref">Also see </em>  [ @ref SecurityFW ]
- * 	@defgroup CertificateManager_PG
- * 	@defgroup Security_Server_PG
- * 	@defgroup SecureStorage_PG
- * 	@}
- * 	@defgroup SLP_PG_SECURITY
- * 	@ingroup SLP_PG
- * 	@{
+ *      @brief  <em class="ref">Also see </em>  [ @ref SecurityFW ]
+ *      @defgroup CertificateManager_PG
+ *      @defgroup Security_Server_PG
+ *      @defgroup SecureStorage_PG
+ *      @}
+ *      @defgroup SLP_PG_SECURITY
+ *      @ingroup SLP_PG
+ *      @{
 
 <h1 class="pg">Security Requirements</h1>
 <h2>Privileges </h2>

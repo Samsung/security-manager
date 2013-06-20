@@ -25,5 +25,4 @@ int smack_check(void)
 #else
     return smack_runtime_check();
 #endif
-
 }

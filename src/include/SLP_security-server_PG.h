@@ -48,190 +48,190 @@ Security Server uses a random token named "cookie" to identify a process, the co
 
 <h3 class="pg">security_server_get_gid</h3>
 <table>
-	<tr>
-		<td>
-			API Name:
-		</td>
-		<td>
-			gid_t security_server_get_gid(const char *object)
-		</td>
-	</tr>
-	<tr>
-		<td>
-			Input Parameter:
-		</td>
-		<td>
-			object name as Null terminated string
-		</td>
-	</tr>
-	<tr>
-		<td>
-			Output Parameter:
-		</td>
-		<td>
-			N/A
-		</td>
-	</tr>
-	<tr>
-		<td>
-			Return value:
-		</td>
-		<td>
-			On success, returns the integer gid of requested object.<br>
-			On fail, returns negative integer
-		</td>
-	</tr>
+    <tr>
+        <td>
+            API Name:
+        </td>
+        <td>
+            gid_t security_server_get_gid(const char *object)
+        </td>
+    </tr>
+    <tr>
+        <td>
+            Input Parameter:
+        </td>
+        <td>
+            object name as Null terminated string
+        </td>
+    </tr>
+    <tr>
+        <td>
+            Output Parameter:
+        </td>
+        <td>
+            N/A
+        </td>
+    </tr>
+    <tr>
+        <td>
+            Return value:
+        </td>
+        <td>
+            On success, returns the integer gid of requested object.<br>
+            On fail, returns negative integer
+        </td>
+    </tr>
 </table>
 This API returns the gid from given object name. This API is only allowed to be called from middleware service daemon which is running under root privilege
 
 <h3 class="pg">security_server_get_object_name</h3>
 <table>
-	<tr>
-		<td>
-			API Name:
-		</td>
-		<td>
-			int security_server_get_object_name(gid_t gid, char *object, size_t max_object_size)
-		</td>
-	</tr>
-	<tr>
-		<td>
-			Input Parameter:
-		</td>
-		<td>
-			gid, max_object_size
-		</td>
-	</tr>
-	<tr>
-		<td>
-			Output Parameter:
-		</td>
-		<td>
-			object as null terminated string
-		</td>
-	</tr>
-	<tr>
-		<td>
-			Return value:
-		</td>
-		<td>
-			On success, returns 0<br>
-			On fail, returns negative integer
-		</td>
-	</tr>
+    <tr>
+        <td>
+            API Name:
+        </td>
+        <td>
+            int security_server_get_object_name(gid_t gid, char *object, size_t max_object_size)
+        </td>
+    </tr>
+    <tr>
+        <td>
+            Input Parameter:
+        </td>
+        <td>
+            gid, max_object_size
+        </td>
+    </tr>
+    <tr>
+        <td>
+            Output Parameter:
+        </td>
+        <td>
+            object as null terminated string
+        </td>
+    </tr>
+    <tr>
+        <td>
+            Return value:
+        </td>
+        <td>
+            On success, returns 0<br>
+            On fail, returns negative integer
+        </td>
+    </tr>
 </table>
 This API is opposite with security_server_get_gid(). It converts given gid to object name which buffer size is max_object_size. If object name is bigger then max_object_size then it returns SECURITY_SERVER_API_ERROR_BUFFER_TOO_SMAL error.
 
 <h3 class="pg">security_server_request_cookie</h3>
 <table>
-	<tr>
-		<td>
-			API Name:
-		</td>
-		<td>
-			gid_t security_server_request_cookie(char *cookie, size_t max_cookie)
-		</td>
-	</tr>
-	<tr>
-		<td>
-			Input Parameter:
-		</td>
-		<td>
-			max_cookie
-		</td>
-	</tr>
-	<tr>
-		<td>
-			Output Parameter:
-		</td>
-		<td>
-			cookie
-		</td>
-	</tr>
-	<tr>
-		<td>
-			Return value:
-		</td>
-		<td>
-			On success, returns 0<br>
-			On fail, returns negative integer
-		</td>
-	</tr>
+    <tr>
+        <td>
+            API Name:
+        </td>
+        <td>
+            gid_t security_server_request_cookie(char *cookie, size_t max_cookie)
+        </td>
+    </tr>
+    <tr>
+        <td>
+            Input Parameter:
+        </td>
+        <td>
+            max_cookie
+        </td>
+    </tr>
+    <tr>
+        <td>
+            Output Parameter:
+        </td>
+        <td>
+            cookie
+        </td>
+    </tr>
+    <tr>
+        <td>
+            Return value:
+        </td>
+        <td>
+            On success, returns 0<br>
+            On fail, returns negative integer
+        </td>
+    </tr>
 </table>
 This API requests a cookie to Security Server. max_cookie is the size of buffer cookie to be filled with cookie value, if max_cookie smaller then cookie size, then this API returns SECURITY_SERVER_API_ERROR_BUFFER_TOO_SMAL error.
 
 <h3 class="pg">security_server_get_cookie_size</h3>
 <table>
-	<tr>
-		<td>
-			API Name:
-		</td>
-		<td>
-			int security_server_get_cookie_size(void)
-		</td>
-	</tr>
-	<tr>
-		<td>
-			Input Parameter:
-		</td>
-		<td>
-			N/A
-		</td>
-	</tr>
-	<tr>
-		<td>
-			Output Parameter:
-		</td>
-		<td>
-			N/A
-		</td>
-	</tr>
-	<tr>
-		<td>
-			Return value:
-		</td>
-		<td>
-			size of cookie value
-		</td>
-	</tr>
+    <tr>
+        <td>
+            API Name:
+        </td>
+        <td>
+            int security_server_get_cookie_size(void)
+        </td>
+    </tr>
+    <tr>
+        <td>
+            Input Parameter:
+        </td>
+        <td>
+            N/A
+        </td>
+    </tr>
+    <tr>
+        <td>
+            Output Parameter:
+        </td>
+        <td>
+            N/A
+        </td>
+    </tr>
+    <tr>
+        <td>
+            Return value:
+        </td>
+        <td>
+            size of cookie value
+        </td>
+    </tr>
 </table>
 This API simply returns the size of cookie.
 
 <h3 class="pg">security_server_check_privilege</h3>
 <table>
-	<tr>
-		<td>
-			API Name:
-		</td>
-		<td>
-			int security_server_check_privilege(const char *cookie, gid_t privilege)
-		</td>
-	</tr>
-	<tr>
-		<td>
-			Input Parameter:
-		</td>
-		<td>
-			cookie, privilege
-		</td>
-	</tr>
-	<tr>
-		<td>
-			Output Parameter:
-		</td>
-		<td>
-			N/A
-		</td>
-	</tr>
-	<tr>
-		<td>
-			Return value:
-		</td>
-		<td>
-			On success, returns 0<br>
-			On fail, returns negative integer
-		</td>
-	</tr>
+    <tr>
+        <td>
+            API Name:
+        </td>
+        <td>
+            int security_server_check_privilege(const char *cookie, gid_t privilege)
+        </td>
+    </tr>
+    <tr>
+        <td>
+            Input Parameter:
+        </td>
+        <td>
+            cookie, privilege
+        </td>
+    </tr>
+    <tr>
+        <td>
+            Output Parameter:
+        </td>
+        <td>
+            N/A
+        </td>
+    </tr>
+    <tr>
+        <td>
+            Return value:
+        </td>
+        <td>
+            On success, returns 0<br>
+            On fail, returns negative integer
+        </td>
+    </tr>
 </table>
 This API checks the cookie value has privilege for given gid. This API should be called by middleware server only after application embed cookie into the request message and sent to the middleware server. The middleware server should aware with the privilege parameter because it knows the object which the client application tries to access.
 
@@ -249,63 +249,63 @@ static gid_t g_gid;
 
 int get_gid()
 {
-	int ret;
-	// Get gid of telephony call - example object
-	ret = security_server_get_gid("telephony_call");
-	if(ret < 0)
-	{
-		return -1;
-	}
-	g_gid = ret;
-	return 0;
+    int ret;
+    // Get gid of telephony call - example object
+    ret = security_server_get_gid("telephony_call");
+    if(ret < 0)
+    {
+        return -1;
+    }
+    g_gid = ret;
+    return 0;
 }
 
 int main(int argc, char * argv[])
 {
-	char *cookie = NULL;
-	int ret, cookie_size;
+    char *cookie = NULL;
+    int ret, cookie_size;
 
 
-	...
+    ...
 
 
-		// Initially get gid about the object which is interested in
-		if(get_gid() < 0)
-			exit(-1);
+        // Initially get gid about the object which is interested in
+        if(get_gid() < 0)
+            exit(-1);
 
-	// get cookie size and malloc it if you want
-	cookie_size = security_server_get_cookie_size();
-	cookie = malloc(cookie_size);
+    // get cookie size and malloc it if you want
+    cookie_size = security_server_get_cookie_size();
+    cookie = malloc(cookie_size);
 
-	...
+    ...
 
-	// If a request has been received
-	// First parse the request and get the cookie value
-	// Let's assume that the buffer cookie is filled with received cookie value
-	ret = security_server_check_privilege(cookie, cookie_size);
-	if(ret == SECURITY_SERVER_API_ERROR_ACCESS_DENIED)
-	{
-		// Access denied
-		// Send error message to client application
-	}
-	else if( ret != SECURITY_SERVER_SUCCESS)
-	{
-		// Error occurred
-		// Check error condition 
-	}
-	else
-	{
-		// Access granted
-		// Continue service
-		...
-	}
-
-
-	...
+    // If a request has been received
+    // First parse the request and get the cookie value
+    // Let's assume that the buffer cookie is filled with received cookie value
+    ret = security_server_check_privilege(cookie, cookie_size);
+    if(ret == SECURITY_SERVER_API_ERROR_ACCESS_DENIED)
+    {
+        // Access denied
+        // Send error message to client application
+    }
+    else if( ret != SECURITY_SERVER_SUCCESS)
+    {
+        // Error occurred
+        // Check error condition
+    }
+    else
+    {
+        // Access granted
+        // Continue service
+        ...
+    }
 
 
-	free(cookie);
-	...
+    ...
+
+
+    free(cookie);
+    ...
 }
 @endcode
 
@@ -316,31 +316,31 @@ In client application, what you need is just request a cookie and embed it into 
 @code
 int some_platform_api()
 {
-	char *cookie = NULL;
-	int cookie_size, ret;
+    char *cookie = NULL;
+    int cookie_size, ret;
 
-	...
-
-
-	// malloc the cookie
-	cookie_size = security_server_get_cookie_size();
-	cookie = malloc(cookie_size);
-
-	...
+    ...
 
 
-		// Request cookie from the security server
-		ret = security_server_request_cookie(cookie, cookie_size);
-	if(ret < 0)
-	{
-		// Some error occurred
-		return -1;
-	}
+    // malloc the cookie
+    cookie_size = security_server_get_cookie_size();
+    cookie = malloc(cookie_size);
 
-	// embed cookie into the message and send to the server
+    ...
 
-	...
-	free(cookie);
+
+        // Request cookie from the security server
+        ret = security_server_request_cookie(cookie, cookie_size);
+    if(ret < 0)
+    {
+        // Some error occurred
+        return -1;
+    }
+
+    // embed cookie into the message and send to the server
+
+    ...
+    free(cookie);
 }
 @endcode
 

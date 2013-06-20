@@ -36,11 +36,13 @@ typedef struct tree_info_t {
     char *object;
 } tree_info;
 
-static int tree_cmp(const void *first, const void *second) {
+static int tree_cmp(const void *first, const void *second)
+{
     return (((tree_info*)first)->pid) - (((tree_info*)second)->pid);
 }
 
-static int tree_info_push(tree_info *node) {
+static int tree_info_push(tree_info *node)
+{
     int ret = 0;
     pthread_mutex_lock(&tree_mutex);
 
@@ -56,7 +58,8 @@ end:
 }
 
 
-static int tree_info_add(int pid, const char *subject_param, const char *object_param) {
+static int tree_info_add(int pid, const char *subject_param, const char *object_param)
+{
     tree_info *node = malloc(sizeof(tree_info));
     char *subject = strdup(subject_param);
     char *object = strdup(object_param);
@@ -78,7 +81,8 @@ error:
     return -1;
 }
 
-static tree_info* tree_info_pop_new(int pid) {
+static tree_info *tree_info_pop_new(int pid)
+{
     tree_info search, *node = NULL;
     void *wtf;
     search.pid = pid;
@@ -99,7 +103,8 @@ end:
     return node;
 }
 
-static int rules_revoker_pid(int pid) {
+static int rules_revoker_pid(int pid)
+{
     tree_info *node = NULL;
     int ret = 0;
 
@@ -116,15 +121,18 @@ static int rules_revoker_pid(int pid) {
     return ret;
 }
 
-void rules_revoker_init(void) {
-   pthread_mutex_init(&tree_mutex, NULL);
+void rules_revoker_init(void)
+{
+    pthread_mutex_init(&tree_mutex, NULL);
 }
 
-int rules_revoker_add(int pid, const char *subject, const char *object) {
+int rules_revoker_add(int pid, const char *subject, const char *object)
+{
     return tree_info_add(pid, subject, object);
 }
 
-void rules_revoker_callback(const struct proc_event *event) {
+void rules_revoker_callback(const struct proc_event *event)
+{
     if (PROC_EVENT_EXIT != event->what)
         return;
     rules_revoker_pid(event->event_data.exit.process_pid);

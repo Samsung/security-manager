@@ -24,16 +24,16 @@
 
 /* Only for test */
 /* These msg type MUST BE REMOVED before release **************************/
-#define SECURITY_SERVER_MSG_TYPE_GET_ALL_COOKIES_REQUEST	0x51
-#define SECURITY_SERVER_MSG_TYPE_GET_ALL_COOKIES_RESPONSE	0x52
-#define SECURITY_SERVER_MSG_TYPE_GET_COOKIEINFO_FROM_PID_REQUEST	0x53
-#define SECURITY_SERVER_MSG_TYPE_GET_COOKIEINFO_RESPONSE	0x54
-#define SECURITY_SERVER_MSG_TYPE_GET_COOKIEINFO_FROM_COOKIE_REQUEST	0x55
+#define SECURITY_SERVER_MSG_TYPE_GET_ALL_COOKIES_REQUEST            0x51
+#define SECURITY_SERVER_MSG_TYPE_GET_ALL_COOKIES_RESPONSE           0x52
+#define SECURITY_SERVER_MSG_TYPE_GET_COOKIEINFO_FROM_PID_REQUEST    0x53
+#define SECURITY_SERVER_MSG_TYPE_GET_COOKIEINFO_RESPONSE            0x54
+#define SECURITY_SERVER_MSG_TYPE_GET_COOKIEINFO_FROM_COOKIE_REQUEST 0x55
 /**********************************************************************/
 
-int util_process_all_cookie(int sockfd, cookie_list* list);
-int util_process_cookie_from_pid(int sockfd, cookie_list* list);
-int util_process_cookie_from_cookie(int sockfd, cookie_list* list);
+int util_process_all_cookie(int sockfd, cookie_list *list);
+int util_process_cookie_from_pid(int sockfd, cookie_list *list);
+int util_process_cookie_from_cookie(int sockfd, cookie_list *list);
 int util_smack_label_is_valid(const char *smack_label);
 
 #endif

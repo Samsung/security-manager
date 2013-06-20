@@ -23,12 +23,12 @@
 
 #include <linux/cn_proc.h>
 
-typedef void (*system_observer_callback)(const struct proc_event *);
+typedef void (*system_observer_callback)(const struct proc_event*);
 
 typedef struct system_observer_config_t {
     system_observer_callback event_callback;
 } system_observer_config;
 
-void* system_observer_main(void *data);
+void *system_observer_main(void *data);
 
 #endif // _SECURITY_SERVER_SYSTEM_OBSERVER_H_
