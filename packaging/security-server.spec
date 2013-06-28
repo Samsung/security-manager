@@ -127,7 +127,7 @@ fi
 %postun -n libsecurity-server-client -p /sbin/ldconfig
 
 %files -n security-server
-%manifest %{_datadir}/security-server.manifest
+%manifest %{name}.manifest
 %defattr(-,root,root,-)
 /usr/lib/systemd/system/multi-user.target.wants/security-server.service
 /usr/lib/systemd/system/security-server.service
@@ -137,12 +137,13 @@ fi
 %{_datadir}/license/%{name}
 
 %files -n libsecurity-server-client
-%manifest %{_datadir}/libsecurity-server-client.manifest
+%manifest %{name}.manifest
 %defattr(-,root,root,-)
 %{_libdir}/libsecurity-server-client.so.*
 %{_datadir}/license/libsecurity-server-client
 
 %files -n libsecurity-server-client-devel
+%manifest %{name}.manifest
 %defattr(-,root,root,-)
 %{_libdir}/libsecurity-server-client.so
 /usr/include/security-server/security-server.h
