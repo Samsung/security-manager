@@ -125,6 +125,9 @@
 /*! \brief   indicating password retry timeout is not occurred yet  */
 #define SECURITY_SERVER_API_ERROR_PASSWORD_REUSED -20
 
+/*! \brief   indicating password is empty  */
+#define SECURITY_SERVER_API_ERROR_PASSWORD_EMPTY -21
+
 /*! \brief   indicating the error with unknown reason */
 #define SECURITY_SERVER_API_ERROR_UNKNOWN -255
 /** @}*/
