@@ -37,6 +37,7 @@
 #include <dpl/log/log.h>
 #include <dpl/assert.h>
 
+#include <smack-check.h>
 #include <socket-manager.h>
 
 namespace {
@@ -322,11 +323,15 @@ void SocketManager::CreateDomainSocket(
         ThrowMsg(Exception::InitFailed, "Error in socket: " << strerror(err));
     }
 
-    LogInfo("TODO: Set up smack label: " << desc.smackLabel);
+    if (smack_check()) {
+        LogInfo("Set up smack label: " << desc.smackLabel);
 
-    if (0 != smack_fsetlabel(sockfd, desc.smackLabel.c_str(), SMACK_LABEL_IPIN)) {
-        LogError("Error in smack_fsetlabel");
-        ThrowMsg(Exception::InitFailed, "Error in smack_fsetlabel");
+        if (0 != smack_fsetlabel(sockfd, desc.smackLabel.c_str(), SMACK_LABEL_IPIN)) {
+            LogError("Error in smack_fsetlabel");
+            ThrowMsg(Exception::InitFailed, "Error in smack_fsetlabel");
+        }
+    } else {
+        LogInfo("No smack on platform. Socket won't be securied with smack label!");
     }
 
     int flags;
