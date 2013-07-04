@@ -264,7 +264,7 @@ int security_server_get_gid(const char *object)
         goto error;
     }
 
-    SECURE_LOGD("%s", "Client: security_server_get_gid() is called");
+    SECURE_SLOGD("%s", "Client: security_server_get_gid() is called");
     retval = connect_to_server(&sockfd);
     if (retval != SECURITY_SERVER_SUCCESS)
     {
@@ -272,7 +272,7 @@ int security_server_get_gid(const char *object)
         SEC_SVR_ERR("Connection failed: %d", retval);
         goto error;
     }
-    SECURE_LOGD("%s", "Client: Security server has been connected");
+    SECURE_SLOGD("%s", "Client: Security server has been connected");
 
     /* make request packet and send to server*/
     retval = send_gid_request(sockfd, object);
@@ -407,7 +407,7 @@ int security_server_request_cookie(char *cookie, size_t max_cookie)
         goto error;
     }
 
-    SECURE_LOGD("%s", "Client: security_server_request_cookie() is called");
+    SECURE_SLOGD("%s", "Client: security_server_request_cookie() is called");
     retval = connect_to_server(&sockfd);
     if (retval != SECURITY_SERVER_SUCCESS)
     {
@@ -626,11 +626,11 @@ int security_server_check_privilege_by_sockfd(int sockfd,
 
 err:
 
-    SEC_SVR_DBG("security_server_check_privilege_by_pid returned %d", ret);
+    SECURE_SLOGD("security_server_check_privilege_by_pid returned %d", ret);
     if (ret > 0)
-        SECURE_LOGD("SS_SMACK: caller_pid=%d, subject=%s, object=%s, access=%s, result=%d, caller_path=%s", cr.pid, subject, object, access_rights, ret, path);
+        SECURE_SLOGD("SS_SMACK: caller_pid=%d, subject=%s, object=%s, access=%s, result=%d, caller_path=%s", cr.pid, subject, object, access_rights, ret, path);
     else
-        SECURE_LOGW("SS_SMACK: caller_pid=%d, subject=%s, object=%s, access=%s, result=%d, caller_path=%s", cr.pid, subject, object, access_rights, ret, path);
+        SECURE_SLOGW("SS_SMACK: caller_pid=%d, subject=%s, object=%s, access=%s, result=%d, caller_path=%s", cr.pid, subject, object, access_rights, ret, path);
 
     free(path);
     free(subject);

@@ -203,9 +203,10 @@ int authorize_SS_API_caller_socket(int sockfd, char *required_API_label, char *r
 
     //some log in SMACK format
     if (retval > 0)
-        SECURE_LOGD("SS_SMACK: caller_pid=%d, subject=%s, object=%s, access=%s, result=%d, caller_path=%s", cr.pid, label, required_API_label, required_rule, retval, path);
+        SECURE_SLOGD("SS_SMACK: caller_pid=%d, subject=%s, object=%s, access=%s, result=%d, caller_path=%s", cr.pid, label, required_API_label, required_rule, retval, path);
     else
-        SECURE_LOGW("SS_SMACK: caller_pid=%d, subject=%s, object=%s, access=%s, result=%d, caller_path=%s", cr.pid, label, required_API_label, required_rule, retval, path);
+        SECURE_SLOGW("SS_SMACK: caller_pid=%d, subject=%s, object=%s, access=%s, result=%d, caller_path=%s", cr.pid, label, required_API_label, required_rule, retval, path);
+
 end:
     if (path != NULL)
         free(path);
@@ -556,7 +557,7 @@ int process_cookie_request(int sockfd)
     {
         SEC_SVR_ERR("ERROR: Cannot send generic response: %d", retval);
     }
-    SEC_SVR_DBG("Server: Cookie created for client PID %d LABEL >%s<",
+    SECURE_SLOGD("Server: Cookie created for client PID %d LABEL >%s<",
         cookie_pid, cookie_label);
 
     SEC_SVR_DBG("%s", "Server: Cookie has been sent to client");
@@ -789,7 +790,7 @@ int process_object_name_request(int sockfd)
     }
 
     /* We found */
-    SECURE_LOGD("We found object: %s", object_name);
+    SECURE_SLOGD("We found object: %s", object_name);
     retval = send_object_name(sockfd, object_name);
     if (retval != SECURITY_SERVER_SUCCESS)
     {
@@ -820,7 +821,7 @@ int process_gid_request(int sockfd, int msg_len)
     if (msg_len >= SECURITY_SERVER_MAX_OBJ_NAME)
     {
         /* Too big ojbect name */
-        SEC_SVR_ERR("%s", "Object name is too big");
+        SECURE_SLOGE("%s", "Object name is too big");
         retval = send_generic_response(sockfd,
             SECURITY_SERVER_MSG_TYPE_GID_RESPONSE,
             SECURITY_SERVER_RETURN_CODE_BAD_REQUEST);
@@ -835,7 +836,7 @@ int process_gid_request(int sockfd, int msg_len)
     retval = TEMP_FAILURE_RETRY(read(sockfd, object_name, msg_len));
     if (retval < msg_len)
     {
-        SECURE_LOGE("%s", "Failed to read object name");
+        SECURE_SLOGE("%s", "Failed to read object name");
         retval = send_generic_response(sockfd,
             SECURITY_SERVER_MSG_TYPE_GID_RESPONSE,
             SECURITY_SERVER_RETURN_CODE_BAD_REQUEST);
@@ -852,7 +853,7 @@ int process_gid_request(int sockfd, int msg_len)
     if (retval == SECURITY_SERVER_ERROR_NO_SUCH_OBJECT)
     {
         /* Not exist */
-        SECURE_LOGE("The object [%s] is not exist", object_name);
+        SECURE_SLOGD("The object [%s] is not exist", object_name);
         retval = send_generic_response(sockfd,
             SECURITY_SERVER_MSG_TYPE_GID_RESPONSE,
             SECURITY_SERVER_RETURN_CODE_NO_SUCH_OBJECT);
@@ -1033,7 +1034,7 @@ int process_smack_request(int sockfd)
         /* We found */
         SEC_SVR_DBG("We found the cookie and pid:%d", search_result->pid);
         SEC_SVR_DBG("%s", "Cookie comparison succeeded. Access granted.");
-        SEC_SVR_DBG("Read label is: %s\n", label);
+        SECURE_SLOGD("Read label is: %s\n", label);
 
         retval = send_smack(sockfd, label);
 
@@ -1110,7 +1111,7 @@ int process_pid_privilege_check(int sockfd, int datasize)
             // subject label is set to empty string
             SEC_SVR_ERR("get_smack_label_from_process failed. Subject label has not been read.");
         } else {
-            SEC_SVR_DBG("Subject label of client PID %d is: %s", pid, subject);
+            SECURE_SLOGD("Subject label of client PID %d is: %s", pid, subject);
         }
     } else {
         SEC_SVR_DBG("SMACK is not available. Subject label has not been read.");
@@ -1120,9 +1121,9 @@ int process_pid_privilege_check(int sockfd, int datasize)
     path = read_exe_path_from_proc(pid);
 
     if (retval > 0)
-        SECURE_LOGD("SS_SMACK: caller_pid=%d, subject=%s, object=%s, access=%s, result=%d, caller_path=%s", pid, subject, object, access_rights, retval, path);
+        SECURE_SLOGD("SS_SMACK: caller_pid=%d, subject=%s, object=%s, access=%s, result=%d, caller_path=%s", pid, subject, object, access_rights, retval, path);
     else
-        SECURE_LOGW("SS_SMACK: caller_pid=%d, subject=%s, object=%s, access=%s, result=%d, caller_path=%s", pid, subject, object, access_rights, retval, path);
+        SECURE_SLOGW("SS_SMACK: caller_pid=%d, subject=%s, object=%s, access=%s, result=%d, caller_path=%s", pid, subject, object, access_rights, retval, path);
 
     if (path != NULL)
         free(path);
@@ -1412,7 +1413,7 @@ int client_has_access(int sockfd, const char *object)
     }
 
     if (SECURITY_SERVER_SUCCESS == authenticate_client_application(sockfd, &pid, &uid))
-        SECURE_LOGD("SS_SMACK: caller_pid=%d, subject=%s, object=%s, access=rw, result=%d",
+        SECURE_SLOGD("SS_SMACK: caller_pid=%d, subject=%s, object=%s, access=rw, result=%d",
             pid, label, object, ret);
 
     free(label);
@@ -1484,7 +1485,7 @@ void *security_server_thread(void *param)
             break;
 
         case SECURITY_SERVER_MSG_TYPE_OBJECT_NAME_REQUEST:
-            SEC_SVR_DBG("%s", "Get object name request received");
+            SECURE_SLOGD("%s", "Get object name request received");
             authorize_SS_API_caller_socket(client_sockfd, API_MIDDLEWARE, API_RULE_REQUIRED);
             process_object_name_request(client_sockfd);
             break;
@@ -1521,43 +1522,43 @@ void *security_server_thread(void *param)
             break;
 
         case SECURITY_SERVER_MSG_TYPE_VALID_PWD_REQUEST:
-            SECURE_LOGD("%s", "Server: validate password request received");
+            SECURE_SLOGD("%s", "Server: validate password request received");
             authorize_SS_API_caller_socket(client_sockfd, API_PASSWD_CHECK, API_RULE_REQUIRED);
             process_valid_pwd_request(client_sockfd);
             break;
 
         case SECURITY_SERVER_MSG_TYPE_SET_PWD_REQUEST:
-            SECURE_LOGD("%s", "Server: set password request received");
+            SECURE_SLOGD("%s", "Server: set password request received");
             authorize_SS_API_caller_socket(client_sockfd, API_PASSWD_SET, API_RULE_REQUIRED);
             process_set_pwd_request(client_sockfd);
             break;
 
         case SECURITY_SERVER_MSG_TYPE_RESET_PWD_REQUEST:
-            SECURE_LOGD("%s", "Server: reset password request received");
+            SECURE_SLOGD("%s", "Server: reset password request received");
             authorize_SS_API_caller_socket(client_sockfd, API_PASSWD_SET, API_RULE_REQUIRED);
             process_reset_pwd_request(client_sockfd);
             break;
 
         case SECURITY_SERVER_MSG_TYPE_CHK_PWD_REQUEST:
-            SECURE_LOGD("%s", "Server: check password request received");
+            SECURE_SLOGD("%s", "Server: check password request received");
             authorize_SS_API_caller_socket(client_sockfd, API_PASSWD_CHECK, API_RULE_REQUIRED);
             process_chk_pwd_request(client_sockfd);
             break;
 
         case SECURITY_SERVER_MSG_TYPE_SET_PWD_HISTORY_REQUEST:
-            SECURE_LOGD("%s", "Server: set password histroy request received");
+            SECURE_SLOGD("%s", "Server: set password histroy request received");
             authorize_SS_API_caller_socket(client_sockfd, API_PASSWD_SET, API_RULE_REQUIRED);
             process_set_pwd_history_request(client_sockfd);
             break;
 
         case SECURITY_SERVER_MSG_TYPE_SET_PWD_MAX_CHALLENGE_REQUEST:
-            SECURE_LOGD("%s", "Server: set password max challenge request received");
+            SECURE_SLOGD("%s", "Server: set password max challenge request received");
             authorize_SS_API_caller_socket(client_sockfd, API_PASSWD_SET, API_RULE_REQUIRED);
             process_set_pwd_max_challenge_request(client_sockfd);
             break;
 
         case SECURITY_SERVER_MSG_TYPE_SET_PWD_VALIDITY_REQUEST:
-            SECURE_LOGD("%s", "Server: set password validity request received");
+            SECURE_SLOGD("%s", "Server: set password validity request received");
             authorize_SS_API_caller_socket(client_sockfd, API_PASSWD_SET, API_RULE_REQUIRED);
             process_set_pwd_validity_request(client_sockfd);
             break;
@@ -1663,7 +1664,7 @@ void *security_server_main_thread(void *data)
 
     (void)data;
 
-    SECURE_LOGD("%s", "Starting Security Server main thread");
+    SECURE_SLOGD("%s", "Starting Security Server main thread");
 
     /* security server must be executed by root */
     if (getuid() != 0)

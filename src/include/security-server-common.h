@@ -130,6 +130,10 @@ void printhex(const unsigned char *data, int size);
 #define SECURE_LOGI(format, arg ...) SECURE_LOG_(LOG_ID_MAIN, DLOG_INFO, LOG_TAG, format, ##arg)
 #define SECURE_LOGW(format, arg ...) SECURE_LOG_(LOG_ID_MAIN, DLOG_WARN, LOG_TAG, format, ##arg)
 #define SECURE_LOGE(format, arg ...) SECURE_LOG_(LOG_ID_MAIN, DLOG_ERROR, LOG_TAG, format, ##arg)
+
+#ifndef SECURE_SLOGE
+    #define SECURE_SLOGE(format, arg ...) SECURE_LOG_(LOG_ID_MAIN, DLOG_ERROR, LOG_TAG, format, ##arg)
+#endif // SECURE_SLOGE
 /****************************/
 
 /* Debug */
@@ -142,18 +146,26 @@ void printhex(const unsigned char *data, int size);
                 __FILE__, __LINE__, ##ARG)
 
 #else
-#define SEC_SVR_ERR LOGE
+#ifdef LOG_TAG
+    #undef LOG_TAG
+#endif
+#define LOG_TAG "SECURITY_SERVER"
+#define SEC_SVR_ERR SLOGE
 #if SECURITY_SERVER_DEBUG_DLOG        /* debug msg will be printed by dlog daemon */
 #define SEC_SVR_DBG SLOGD
-#define SEC_SVR_WRN LOGW
+#define SEC_SVR_WRN SLOGW
 #else /* No debug output */
 
 #define SEC_SVR_DBG(FMT, ARG ...) do { } while(0)
 #define SEC_SVR_WRN(FMT, ARG ...) do { } while(0)
-#undef SECURE_LOGD
-#define SECURE_LOGD(FMT, ARG ...) do { } while(0)
-#undef SECURE_LOGW
-#define SECURE_LOGW(FMT, ARG ...) do { } while(0)
+#ifdef SECURE_SLOGD
+    #undef SECURE_SLOGD
+#endif
+#define SECURE_SLOGD(FMT, ARG ...) do { } while(0)
+#ifdef SECURE_SLOGW
+   #undef SECURE_SLOGW
+#endif
+#define SECURE_SLOGW(FMT, ARG ...) do { } while(0)
 
 #endif // SECURITY_SERVER_DEBUG_DLOG
 #endif // SECURITY_SERVER_DEBUG_TO_CONSOLE

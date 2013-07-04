@@ -170,7 +170,7 @@ int create_new_socket(int *sockfd)
     if (retval == -1 && errno != ENOENT) {
         retval = SECURITY_SERVER_ERROR_UNKNOWN;
         localsockfd = -1;
-        SECURE_LOGE("%s", "Unable to remove /tmp/.security_server.sock");
+        SECURE_SLOGE("%s", "Unable to remove /tmp/.security_server.sock");
         goto error;
     }
 
