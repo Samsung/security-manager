@@ -63,5 +63,13 @@ SET(TARGET_SECURITY_SERVER "security-server")
 SET(TARGET_SECURITY_CLIENT "security-server-client")
 SET(TARGET_SERVER_COMMON "security-server-commons")
 
+INSTALL(FILES
+    ${CMAKE_SOURCE_DIR}/packaging/libsecurity-server-client.manifest
+    ${CMAKE_SOURCE_DIR}/packaging/security-server.manifest
+    DESTINATION
+    /usr/share
+)
+
 ADD_SUBDIRECTORY(src)
 ADD_SUBDIRECTORY(build)
+ADD_SUBDIRECTORY(systemd)

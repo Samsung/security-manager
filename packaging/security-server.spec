@@ -5,9 +5,6 @@ Release:    1
 Group:      Security/Service
 License:    Apache-2.0
 Source0:    %{name}-%{version}.tar.gz
-Source2:    libsecurity-server-client.manifest
-Source3:    security-server.service
-Source1001: %{name}.manifest
 BuildRequires: cmake
 BuildRequires: zip
 BuildRequires: pkgconfig(dlog)
@@ -18,6 +15,8 @@ Requires(preun):  systemd
 Requires(post):   systemd
 Requires(postun): systemd
 BuildRequires: pkgconfig(libprivilege-control)
+BuildRequires: pkgconfig(libsystemd-daemon)
+%{?systemd_requires}
 
 %description
 Tizen security server and utilities
@@ -76,6 +75,12 @@ cp LICENSE %{buildroot}/usr/share/license/libsecurity-server-client
 %make_install
 
 mkdir -p %{buildroot}/usr/lib/systemd/system/multi-user.target.wants
+mkdir -p %{buildroot}/usr/lib/systemd/system/sockets.target.wants
+ln -s ../security-server.service %{buildroot}/usr/lib/systemd/system/multi-user.target.wants/security-server.service
+ln -s ../security-server.socket %{buildroot}/usr/lib/systemd/system/sockets.target.wants/security-server.socket
+ln -s ../security-server-data-share.socket %{buildroot}/usr/lib/systemd/system/sockets.target.wants/security-server-data-share.socket
+
+mkdir -p %{buildroot}/usr/lib/systemd/system/multi-user.target.wants
 install -m 0644 %{SOURCE3} %{buildroot}/usr/lib/systemd/system/security-server.service
 ln -s ../security-server.service %{buildroot}/usr/lib/systemd/system/multi-user.target.wants/security-server.service
 
@@ -105,6 +110,12 @@ systemctl daemon-reload
 /usr/lib/systemd/system/security-server.service
 %attr(755,root,root) /usr/bin/security-server
 %{_libdir}/libsecurity-server-commons.so.*
+%attr(-,root,root) /usr/lib/systemd/system/multi-user.target.wants/security-server.service
+%attr(-,root,root) /usr/lib/systemd/system/security-server.service
+%attr(-,root,root) /usr/lib/systemd/system/sockets.target.wants/security-server.socket
+%attr(-,root,root) /usr/lib/systemd/system/security-server.socket
+%attr(-,root,root) /usr/lib/systemd/system/sockets.target.wants/security-server-data-share.socket
+%attr(-,root,root) /usr/lib/systemd/system/security-server-data-share.socket
 
 %{_datadir}/license/%{name}
 

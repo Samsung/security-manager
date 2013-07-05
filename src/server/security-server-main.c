@@ -1576,17 +1576,23 @@ void *security_server_main_thread(void *data)
     initiate_try();
 
     /* Create and bind a Unix domain socket */
-    retval = create_new_socket(&server_sockfd);
-    if (retval != SECURITY_SERVER_SUCCESS)
+    if(SECURITY_SERVER_SUCCESS != get_socket_from_systemd(&server_sockfd))
     {
-        SEC_SVR_ERR("%s", "cannot create socket. exiting...");
-        goto error;
-    }
+        SEC_SVR_ERR("%s", "Error in get_socket_from_systemd");
+        retval = create_new_socket(&server_sockfd);
+        if (retval != SECURITY_SERVER_SUCCESS)
+        {
+            SEC_SVR_ERR("%s", "cannot create socket. exiting...");
+            goto error;
+        }
 
-    if (listen(server_sockfd, 5) < 0)
-    {
-        SEC_SVR_ERR("%s", "listen() failed. exiting...");
-        goto error;
+        if (listen(server_sockfd, 5) < 0)
+        {
+            SEC_SVR_ERR("%s", "listen() failed. exiting...");
+            goto error;
+        }
+    } else {
+        SEC_SVR_ERR("%s", "Socket was passed by systemd");
     }
 
     /* Create a default cookie --> Cookie for root process */

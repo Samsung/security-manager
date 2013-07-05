@@ -27,9 +27,9 @@
 namespace SecurityServer {
 
 char const * const SERVICE_SOCKET_SHARED_MEMORY =
-    "/tmp/security-server-api-data-share";
+    "/tmp/.security-server-api-data-share.sock";
 char const * const SERVICE_SOCKET_ECHO =
-    "/tmp/security-server-api-echo";
+    "/tmp/.security-server-api-echo.sock";
 
 } // namespace SecurityServer
 

@@ -34,6 +34,8 @@
 #include <errno.h>
 #include <time.h>
 
+#include <systemd/sd-daemon.h>
+
 #include <dpl/log/log.h>
 #include <dpl/assert.h>
 
@@ -111,7 +113,7 @@ SocketManager::SocketManager()
 }
 
 SocketManager::~SocketManager() {
-
+    // TODO clean up all services!
 }
 
 void SocketManager::ReadyForAccept(int sock) {
@@ -208,6 +210,13 @@ void SocketManager::ReadyForWrite(int sock) {
 }
 
 void SocketManager::MainLoop() {
+    // remove evironment values passed by systemd
+    // uncomment it after removing old security-server code
+    // sd_listen_fds(1);
+
+    // Daemon is ready to work.
+    sd_notify(0, "READY=1");
+
     m_working = true;
     while(m_working) {
         fd_set readSet = m_readSet;
@@ -311,11 +320,39 @@ void SocketManager::MainLoop() {
     }
 }
 
-void SocketManager::CreateDomainSocket(
-    GenericSocketService *service,
+int SocketManager::GetSocketFromSystemD(
     const GenericSocketService::ServiceDescription &desc)
 {
-    int sockfd = -1;
+    int fd;
+
+    // TODO optimalization - do it once in object constructor
+    //                       and remember all information path->sockfd
+    int n = sd_listen_fds(0);
+
+    LogInfo("sd_listen_fds returns: " << n);
+
+    if (n < 0) {
+        LogError("Error in sd_listend_fds");
+        ThrowMsg(Exception::InitFailed, "Error in sd_listend_fds");
+    }
+
+    for(fd = SD_LISTEN_FDS_START; fd < SD_LISTEN_FDS_START+n; ++fd) {
+        if (0 < sd_is_socket_unix(fd, SOCK_STREAM, 1,
+                                  desc.serviceHandlerPath.c_str(), 0))
+        {
+            LogInfo("Useable socket " << desc.serviceHandlerPath <<
+                " was passed by SystemD");
+            return fd;
+        }
+    }
+    LogInfo("No useable sockets were passed by systemd.");
+    return -1;
+}
+
+int SocketManager::CreateDomainSocketHelp(
+    const GenericSocketService::ServiceDescription &desc)
+{
+    int sockfd;
 
     if (-1 == (sockfd = socket(AF_UNIX, SOCK_STREAM, 0))) {
         int err = errno;
@@ -369,6 +406,17 @@ void SocketManager::CreateDomainSocket(
         LogError("Error in listen: " << strerror(err));
         ThrowMsg(Exception::InitFailed, "Error in listen: " << strerror(err));
     }
+
+    return sockfd;
+}
+
+void SocketManager::CreateDomainSocket(
+    GenericSocketService *service,
+    const GenericSocketService::ServiceDescription &desc)
+{
+    int sockfd = GetSocketFromSystemD(desc);
+    if (-1 == sockfd)
+        sockfd = CreateDomainSocketHelp(desc);
 
     auto &description = CreateDefaultReadSocketDescription(sockfd, false);
 

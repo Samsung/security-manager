@@ -57,6 +57,11 @@ protected:
     void CreateDomainSocket(
         GenericSocketService *service,
         const GenericSocketService::ServiceDescription &desc);
+    int CreateDomainSocketHelp(
+        const GenericSocketService::ServiceDescription &desc);
+    int GetSocketFromSystemD(
+        const GenericSocketService::ServiceDescription &desc);
+
     void ReadyForRead(int sock);
     void ReadyForWrite(int sock);
     void ReadyForAccept(int sock);

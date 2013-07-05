@@ -1,0 +1,8 @@
+[Socket]
+ListenStream=/tmp/.security_server.sock
+SocketMode=0777
+SmackLabelIPIn=*
+SmackLabelIPOut=@
+
+[Install]
+WantedBy=sockets.target

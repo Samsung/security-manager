@@ -35,6 +35,8 @@
 #include <limits.h>
 #include <ctype.h>
 
+#include <systemd/sd-daemon.h>
+
 #include "security-server-common.h"
 #include "security-server-comm.h"
 
@@ -155,6 +157,23 @@ int safe_server_sock_close(int client_sockfd)
     SEC_SVR_DBG("%s", "Server: Closing server socket");
     close(client_sockfd);
     return SECURITY_SERVER_SUCCESS;
+}
+
+/* Get socket from systemd */
+int get_socket_from_systemd(int *sockfd)
+{
+    int n = sd_listen_fds(0);
+    int fd;
+
+    for(fd = SD_LISTEN_FDS_START; fd < SD_LISTEN_FDS_START+n; ++fd) {
+        if (0 < sd_is_socket_unix(fd, SOCK_STREAM, 1,
+                                  SECURITY_SERVER_SOCK_PATH, 0))
+        {
+            *sockfd = fd;
+            return SECURITY_SERVER_SUCCESS;
+        }
+    }
+    return SECURITY_SERVER_ERROR_SOCKET;
 }
 
 /* Create a Unix domain socket and bind */

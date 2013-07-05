@@ -3,6 +3,7 @@ PKG_CHECK_MODULES(SECURITY_SERVER_DEP
     openssl
     libsmack
     libprivilege-control
+    libsystemd-daemon
     REQUIRED
     )
 

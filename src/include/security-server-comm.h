@@ -156,5 +156,6 @@ int send_reset_pwd_request(int sock_fd,
                            const unsigned int max_challenge,
                            const unsigned int valid_period_in_days);
 int send_set_pwd_history_request(int sock_fd, int num);
+int get_socket_from_systemd(int *sockfd);
 
 #endif
