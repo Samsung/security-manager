@@ -137,7 +137,13 @@ void BinaryQueue::AppendUnmanaged(const void* buffer,
     }
 
     // Just add new bucket with selected deleter
-    m_buckets.push_back(new Bucket(buffer, bufferSize, deleter, userParam));
+    Bucket *bucket = new Bucket(buffer, bufferSize, deleter, userParam);
+    try {
+        m_buckets.push_back(bucket);
+    } catch (const std::bad_alloc &) {
+        delete bucket;
+        throw;
+    }
 
     // Increase total queue size
     m_size += bufferSize;

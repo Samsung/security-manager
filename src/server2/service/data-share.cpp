@@ -158,8 +158,8 @@ bool SharedMemoryService::readOne(const ConnectionID &conn, SocketBuffer &buffer
             retCode = SECURITY_SERVER_API_ERROR_ACCESS_DENIED;
             goto end;
         }
+        LogDebug("Access granted. Subject: " << clientLabel << " Provider: " << providerLabel);
     }
-    LogDebug("Access granted. Subject: " << clientLabel << " Provider: " << providerLabel);
     retCode = SECURITY_SERVER_API_SUCCESS;
 end:
     free(providerLabel);
