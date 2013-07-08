@@ -69,8 +69,6 @@ struct security_server_thread_param {
     int thread_status;
 };
 
-static int netlink_enabled = 1; /* prevent memory leaks when netlink is disabled */
-
 
 /************************************************************************************************/
 /* Just for test. This code must be removed on release */

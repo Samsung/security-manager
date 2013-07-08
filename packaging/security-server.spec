@@ -80,20 +80,18 @@ ln -s ../security-server.service %{buildroot}/usr/lib/systemd/system/multi-user.
 ln -s ../security-server.socket %{buildroot}/usr/lib/systemd/system/sockets.target.wants/security-server.socket
 ln -s ../security-server-data-share.socket %{buildroot}/usr/lib/systemd/system/sockets.target.wants/security-server-data-share.socket
 
-mkdir -p %{buildroot}/usr/lib/systemd/system/multi-user.target.wants
-install -m 0644 %{SOURCE3} %{buildroot}/usr/lib/systemd/system/security-server.service
-ln -s ../security-server.service %{buildroot}/usr/lib/systemd/system/multi-user.target.wants/security-server.service
-
-
-%preun
-if [ $1 == 0 ]; then
-    systemctl stop security-server.service
-fi
+%clean
+rm -rf %{buildroot}
 
 %post
 systemctl daemon-reload
-if [ $1 == 1 ]; then
+if [ "$1" = 1 ]; then
     systemctl restart security-server.service
+fi
+
+%preun
+if [ "$1" = 0 ]; then
+    systemctl stop security-server.service
 fi
 
 %postun
@@ -104,10 +102,7 @@ systemctl daemon-reload
 %postun -n libsecurity-server-client -p /sbin/ldconfig
 
 %files -n security-server
-%manifest %{name}.manifest
-%defattr(-,root,root,-)
-/usr/lib/systemd/system/multi-user.target.wants/security-server.service
-/usr/lib/systemd/system/security-server.service
+%manifest %{_datadir}/security-server.manifest
 %attr(755,root,root) /usr/bin/security-server
 %{_libdir}/libsecurity-server-commons.so.*
 %attr(-,root,root) /usr/lib/systemd/system/multi-user.target.wants/security-server.service
