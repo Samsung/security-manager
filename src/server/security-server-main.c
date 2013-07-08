@@ -42,8 +42,6 @@
 #include <server2-main.h>
 
 #include <privilege-control.h>
-#include <security-server-system-observer.h>
-#include <security-server-rules-revoker.h>
 
 #include "security-server-cookie.h"
 #include "security-server-common.h"
@@ -1776,15 +1774,6 @@ ssize_t read_wrapper(int sockfd, void *buffer, size_t len)
     return done;
 }
 
-void *system_observer_main_thread(void *data)
-{
-    system_observer_main(data);
-    SEC_SVR_ERR("%s", "System observer: exit. No garbage collector support.");
-    netlink_enabled = 0;
-    pthread_detach(pthread_self());
-    pthread_exit(NULL);
-}
-
 int main(int argc, char *argv[])
 {
     int res;
@@ -1792,21 +1781,6 @@ int main(int argc, char *argv[])
 
     (void)argc;
     (void)argv;
-
-    // create observer thread only if smack is enabled
-    if (smack_check()) {
-        pthread_t system_observer;
-        system_observer_config so_config;
-        so_config.event_callback = rules_revoker_callback;
-
-        res = pthread_create(&system_observer, NULL, system_observer_main_thread, (void*)&so_config);
-
-        if (res != 0)
-            return -1;
-    }
-    else {
-        SEC_SVR_DBG("SMACK is not available. Observer thread disabled.");
-    }
 
     if (0 != (res = pthread_create(&main_thread, NULL, security_server_main_thread, NULL))) {
         SEC_SVR_ERR("Error: Server: Cannot create main security server thread: %s", strerror(res));
