@@ -958,43 +958,43 @@ error:
  * |                               gid                             |
  * |---------------------------------------------------------------|
  */
-int send_object_name_request(int sock_fd, int gid)
-{
-    basic_header hdr;
-    int retval;
-    unsigned char buf[sizeof(hdr) + sizeof(gid)];
+// int send_object_name_request(int sock_fd, int gid)
+// {
+//     basic_header hdr;
+//     int retval;
+//     unsigned char buf[sizeof(hdr) + sizeof(gid)];
 
-    /* Assemble header */
-    hdr.version = SECURITY_SERVER_MSG_VERSION;
-    hdr.msg_id = SECURITY_SERVER_MSG_TYPE_OBJECT_NAME_REQUEST;
-    hdr.msg_len = sizeof(gid);
+//     /* Assemble header */
+//     hdr.version = SECURITY_SERVER_MSG_VERSION;
+//     hdr.msg_id = SECURITY_SERVER_MSG_TYPE_OBJECT_NAME_REQUEST;
+//     hdr.msg_len = sizeof(gid);
 
-    memcpy(buf, &hdr, sizeof(hdr));
-    memcpy(buf + sizeof(hdr), &gid, sizeof(gid));
+//     memcpy(buf, &hdr, sizeof(hdr));
+//     memcpy(buf + sizeof(hdr), &gid, sizeof(gid));
 
-    /* Check poll */
-    retval = check_socket_poll(sock_fd, POLLOUT, SECURITY_SERVER_SOCKET_TIMEOUT_MILISECOND);
-    if (retval == SECURITY_SERVER_ERROR_POLL)
-    {
-        SEC_SVR_ERR("%s", "poll() error");
-        return SECURITY_SERVER_ERROR_SEND_FAILED;
-    }
-    if (retval == SECURITY_SERVER_ERROR_TIMEOUT)
-    {
-        SEC_SVR_ERR("%s", "poll() timeout");
-        return SECURITY_SERVER_ERROR_SEND_FAILED;
-    }
+//     /* Check poll */
+//     retval = check_socket_poll(sock_fd, POLLOUT, SECURITY_SERVER_SOCKET_TIMEOUT_MILISECOND);
+//     if (retval == SECURITY_SERVER_ERROR_POLL)
+//     {
+//         SEC_SVR_ERR("%s", "poll() error");
+//         return SECURITY_SERVER_ERROR_SEND_FAILED;
+//     }
+//     if (retval == SECURITY_SERVER_ERROR_TIMEOUT)
+//     {
+//         SEC_SVR_ERR("%s", "poll() timeout");
+//         return SECURITY_SERVER_ERROR_SEND_FAILED;
+//     }
 
-    /* Send to server */
-    retval = TEMP_FAILURE_RETRY(write(sock_fd, buf, sizeof(buf)));
-    if (retval < sizeof(buf))
-    {
-        /* Write error */
-        SEC_SVR_ERR("Error on write(): %d", retval);
-        return SECURITY_SERVER_ERROR_SEND_FAILED;
-    }
-    return SECURITY_SERVER_SUCCESS;
-}
+//     /* Send to server */
+//     retval = TEMP_FAILURE_RETRY(write(sock_fd, buf, sizeof(buf)));
+//     if (retval < sizeof(buf))
+//     {
+//         /* Write error */
+//         SEC_SVR_ERR("Error on write(): %d", retval);
+//         return SECURITY_SERVER_ERROR_SEND_FAILED;
+//     }
+//     return SECURITY_SERVER_SUCCESS;
+// }
 
 /* Send privilege check request message to security server *
  *

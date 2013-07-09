@@ -191,66 +191,68 @@ int convert_to_public_error_code(int err_code)
 //     return retval;
 // }
 
-SECURITY_SERVER_API
-int security_server_get_object_name(gid_t gid, char *object, size_t max_object_size)
-{
-    int sockfd = -1, retval;
-    response_header hdr;
 
-    if (object == NULL)
-    {
-        retval = SECURITY_SERVER_ERROR_INPUT_PARAM;
-        goto error;
-    }
 
-    retval = connect_to_server(&sockfd);
-    if (retval != SECURITY_SERVER_SUCCESS)
-    {
-        /* Error on socket */
-        SEC_SVR_ERR("Client: connect to server failed: %d", retval);
-        goto error;
-    }
+// SECURITY_SERVER_API
+// int security_server_get_object_name(gid_t gid, char *object, size_t max_object_size)
+// {
+//     int sockfd = -1, retval;
+//     response_header hdr;
 
-    /* make request packet */
-    retval = send_object_name_request(sockfd, gid);
-    if (retval != SECURITY_SERVER_SUCCESS)
-    {
-        /* Error on socket */
-        SEC_SVR_ERR("Client: cannot send request: %d", retval);
-        goto error;
-    }
+//     if (object == NULL)
+//     {
+//         retval = SECURITY_SERVER_ERROR_INPUT_PARAM;
+//         goto error;
+//     }
 
-    retval = recv_get_object_name(sockfd, &hdr, object, max_object_size);
-    if (retval != SECURITY_SERVER_SUCCESS)
-    {
-        SEC_SVR_ERR("Client: Receive response failed: %d", retval);
-        goto error;
-    }
+//     retval = connect_to_server(&sockfd);
+//     if (retval != SECURITY_SERVER_SUCCESS)
+//     {
+//         /* Error on socket */
+//         SEC_SVR_ERR("Client: connect to server failed: %d", retval);
+//         goto error;
+//     }
 
-    if (hdr.basic_hdr.msg_id != SECURITY_SERVER_MSG_TYPE_OBJECT_NAME_RESPONSE)   /* Wrong response */
-    {
-        if (hdr.basic_hdr.msg_id == SECURITY_SERVER_MSG_TYPE_GENERIC_RESPONSE)
-        {
-            /* There must be some error */
-            SEC_SVR_ERR("Client: There is error on response: return code:%d", hdr.basic_hdr.msg_id);
-            retval = return_code_to_error_code(hdr.return_code);
-        }
-        else
-        {
-            /* Something wrong with response */
-            SEC_SVR_ERR("Client: Some unexpected error happene: return code:%d", hdr.basic_hdr.msg_id);
-            retval = SECURITY_SERVER_ERROR_BAD_RESPONSE;
-        }
-        goto error;
-    }
+//     /* make request packet */
+//     retval = send_object_name_request(sockfd, gid);
+//     if (retval != SECURITY_SERVER_SUCCESS)
+//     {
+//         /* Error on socket */
+//         SEC_SVR_ERR("Client: cannot send request: %d", retval);
+//         goto error;
+//     }
 
-error:
-    if (sockfd > 0)
-        close(sockfd);
+//     retval = recv_get_object_name(sockfd, &hdr, object, max_object_size);
+//     if (retval != SECURITY_SERVER_SUCCESS)
+//     {
+//         SEC_SVR_ERR("Client: Receive response failed: %d", retval);
+//         goto error;
+//     }
 
-    retval = convert_to_public_error_code(retval);
-    return retval;
-}
+//     if (hdr.basic_hdr.msg_id != SECURITY_SERVER_MSG_TYPE_OBJECT_NAME_RESPONSE)   /* Wrong response */
+//     {
+//         if (hdr.basic_hdr.msg_id == SECURITY_SERVER_MSG_TYPE_GENERIC_RESPONSE)
+//         {
+//             /* There must be some error */
+//             SEC_SVR_ERR("Client: There is error on response: return code:%d", hdr.basic_hdr.msg_id);
+//             retval = return_code_to_error_code(hdr.return_code);
+//         }
+//         else
+//         {
+//             /* Something wrong with response */
+//             SEC_SVR_ERR("Client: Some unexpected error happene: return code:%d", hdr.basic_hdr.msg_id);
+//             retval = SECURITY_SERVER_ERROR_BAD_RESPONSE;
+//         }
+//         goto error;
+//     }
+
+// error:
+//     if (sockfd > 0)
+//         close(sockfd);
+
+//     retval = convert_to_public_error_code(retval);
+//     return retval;
+// }
 
 
 

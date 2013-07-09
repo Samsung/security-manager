@@ -36,6 +36,8 @@ char const * const SERVICE_SOCKET_PRIVILEGE_BY_PID =
     "/tmp/.security-server-api-privilege-by-pid";
 char const * const SERVICE_SOCKET_EXEC_PATH =
     "/tmp/.security-server-api-exec-path.sock";
+char const * const SERVICE_SOCKET_GET_OBJECT_NAME =
+    "/tmp/.security-server-api-get-object-name.sock";
 
 } // namespace SecurityServer
 

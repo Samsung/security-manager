@@ -35,6 +35,7 @@
 #include <get-gid.h>
 #include <privilege-by-pid.h>
 #include <exec-path.h>
+#include <get-object-name.h>
 #include <echo.h>
 
 IMPLEMENT_SAFE_SINGLETON(SecurityServer::Log::LogSystem);
@@ -66,6 +67,10 @@ int server2(void) {
         SecurityServer::ExecPathService *execService = new SecurityServer::ExecPathService;
         execService->Create();
         manager.RegisterSocketService(execService);
+
+        SecurityServer::GetObjectNameService *getObjectNameService = new SecurityServer::GetObjectNameService;
+        getObjectNameService->Create();
+        manager.RegisterSocketService(getObjectNameService);
 
         manager.MainLoop();
     }

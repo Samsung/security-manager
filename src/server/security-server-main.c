@@ -619,82 +619,82 @@ error:
     return retval;
 }
 
-int process_object_name_request(int sockfd)
-{
-    int retval, client_pid, requested_privilege;
-    char object_name[SECURITY_SERVER_MAX_OBJ_NAME];
+// int process_object_name_request(int sockfd)
+// {
+//     int retval, client_pid, requested_privilege;
+//     char object_name[SECURITY_SERVER_MAX_OBJ_NAME];
 
-    /* Authenticate client */
-    retval = authenticate_client_middleware(sockfd, &client_pid);
-    if (retval != SECURITY_SERVER_SUCCESS)
-    {
-        SEC_SVR_ERR("%s", "Client Authentication Failed");
-        retval = send_generic_response(sockfd,
-            SECURITY_SERVER_MSG_TYPE_OBJECT_NAME_RESPONSE,
-            SECURITY_SERVER_RETURN_CODE_AUTHENTICATION_FAILED);
-        if (retval != SECURITY_SERVER_SUCCESS)
-        {
-            SEC_SVR_ERR("ERROR: Cannot send generic response: %d", retval);
-        }
-        goto error;
-    }
+//     /* Authenticate client */
+//     retval = authenticate_client_middleware(sockfd, &client_pid);
+//     if (retval != SECURITY_SERVER_SUCCESS)
+//     {
+//         SEC_SVR_ERR("%s", "Client Authentication Failed");
+//         retval = send_generic_response(sockfd,
+//             SECURITY_SERVER_MSG_TYPE_OBJECT_NAME_RESPONSE,
+//             SECURITY_SERVER_RETURN_CODE_AUTHENTICATION_FAILED);
+//         if (retval != SECURITY_SERVER_SUCCESS)
+//         {
+//             SEC_SVR_ERR("ERROR: Cannot send generic response: %d", retval);
+//         }
+//         goto error;
+//     }
 
-    /* Receive GID */
-    retval = TEMP_FAILURE_RETRY(read(sockfd, &requested_privilege, sizeof(requested_privilege)));
-    if (retval < (int)sizeof(requested_privilege))
-    {
-        SEC_SVR_ERR("%s", "Receiving request failed");
-        retval = send_generic_response(sockfd,
-            SECURITY_SERVER_MSG_TYPE_OBJECT_NAME_RESPONSE,
-            SECURITY_SERVER_RETURN_CODE_BAD_REQUEST);
-        if (retval != SECURITY_SERVER_SUCCESS)
-        {
-            SEC_SVR_ERR("ERROR: Cannot send generic response: %d", retval);
-        }
-        goto error;
-    }
+//     /* Receive GID */
+//     retval = TEMP_FAILURE_RETRY(read(sockfd, &requested_privilege, sizeof(requested_privilege)));
+//     if (retval < (int)sizeof(requested_privilege))
+//     {
+//         SEC_SVR_ERR("%s", "Receiving request failed");
+//         retval = send_generic_response(sockfd,
+//             SECURITY_SERVER_MSG_TYPE_OBJECT_NAME_RESPONSE,
+//             SECURITY_SERVER_RETURN_CODE_BAD_REQUEST);
+//         if (retval != SECURITY_SERVER_SUCCESS)
+//         {
+//             SEC_SVR_ERR("ERROR: Cannot send generic response: %d", retval);
+//         }
+//         goto error;
+//     }
 
-    /* Search from /etc/group */
-    retval = search_object_name(requested_privilege,
-        object_name,
-        SECURITY_SERVER_MAX_OBJ_NAME);
-    if (retval == SECURITY_SERVER_ERROR_NO_SUCH_OBJECT)
-    {
-        /* It's not exist */
-        SEC_SVR_ERR("There is no such object for gid [%d]", requested_privilege);
-        retval = send_generic_response(sockfd,
-            SECURITY_SERVER_MSG_TYPE_OBJECT_NAME_RESPONSE,
-            SECURITY_SERVER_RETURN_CODE_NO_SUCH_OBJECT);
-        if (retval != SECURITY_SERVER_SUCCESS)
-        {
-            SEC_SVR_ERR("ERROR: Cannot send generic response: %d", retval);
-        }
-        goto error;
-    }
-    if (retval != SECURITY_SERVER_SUCCESS)
-    {
-        /* Error occurred */
-        SEC_SVR_ERR("Error on searching object name [%d]", retval);
-        retval = send_generic_response(sockfd,
-            SECURITY_SERVER_MSG_TYPE_OBJECT_NAME_RESPONSE,
-            SECURITY_SERVER_RETURN_CODE_SERVER_ERROR);
-        if (retval != SECURITY_SERVER_SUCCESS)
-        {
-            SEC_SVR_ERR("ERROR: Cannot send generic response: %d", retval);
-        }
-        goto error;
-    }
+//     /* Search from /etc/group */
+//     retval = search_object_name(requested_privilege,
+//         object_name,
+//         SECURITY_SERVER_MAX_OBJ_NAME);
+//     if (retval == SECURITY_SERVER_ERROR_NO_SUCH_OBJECT)
+//     {
+//         /* It's not exist */
+//         SEC_SVR_ERR("There is no such object for gid [%d]", requested_privilege);
+//         retval = send_generic_response(sockfd,
+//             SECURITY_SERVER_MSG_TYPE_OBJECT_NAME_RESPONSE,
+//             SECURITY_SERVER_RETURN_CODE_NO_SUCH_OBJECT);
+//         if (retval != SECURITY_SERVER_SUCCESS)
+//         {
+//             SEC_SVR_ERR("ERROR: Cannot send generic response: %d", retval);
+//         }
+//         goto error;
+//     }
+//     if (retval != SECURITY_SERVER_SUCCESS)
+//     {
+//         /* Error occurred */
+//         SEC_SVR_ERR("Error on searching object name [%d]", retval);
+//         retval = send_generic_response(sockfd,
+//             SECURITY_SERVER_MSG_TYPE_OBJECT_NAME_RESPONSE,
+//             SECURITY_SERVER_RETURN_CODE_SERVER_ERROR);
+//         if (retval != SECURITY_SERVER_SUCCESS)
+//         {
+//             SEC_SVR_ERR("ERROR: Cannot send generic response: %d", retval);
+//         }
+//         goto error;
+//     }
 
-    /* We found */
-    SECURE_SLOGD("We found object: %s", object_name);
-    retval = send_object_name(sockfd, object_name);
-    if (retval != SECURITY_SERVER_SUCCESS)
-    {
-        SEC_SVR_ERR("ERROR: Cannot send generic response: %d", retval);
-    }
-error:
-    return retval;
-}
+//     /* We found */
+//     SECURE_SLOGD("We found object: %s", object_name);
+//     retval = send_object_name(sockfd, object_name);
+//     if (retval != SECURITY_SERVER_SUCCESS)
+//     {
+//         SEC_SVR_ERR("ERROR: Cannot send generic response: %d", retval);
+//     }
+// error:
+//     return retval;
+// }
 
 int process_gid_request(int sockfd, int msg_len)
 {
@@ -1254,11 +1254,11 @@ void *security_server_thread(void *param)
             process_check_privilege_new_request(client_sockfd);
             break;
 
-        case SECURITY_SERVER_MSG_TYPE_OBJECT_NAME_REQUEST:
-            SECURE_SLOGD("%s", "Get object name request received");
-            authorize_SS_API_caller_socket(client_sockfd, API_MIDDLEWARE, API_RULE_REQUIRED);
-            process_object_name_request(client_sockfd);
-            break;
+        // case SECURITY_SERVER_MSG_TYPE_OBJECT_NAME_REQUEST:
+        //     SECURE_SLOGD("%s", "Get object name request received");
+        //     authorize_SS_API_caller_socket(client_sockfd, API_MIDDLEWARE, API_RULE_REQUIRED);
+        //     process_object_name_request(client_sockfd);
+        //     break;
 
         case SECURITY_SERVER_MSG_TYPE_GID_REQUEST:
             SEC_SVR_DBG("%s", "Get GID received");
