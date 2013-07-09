@@ -238,91 +238,91 @@ out:
 }
 
 
-SECURITY_SERVER_API
-int security_server_get_gid(const char *object)
-{
-    int sockfd = -1, retval, gid;
-    response_header hdr;
+// SECURITY_SERVER_API
+// int security_server_get_gid(const char *object)
+// {
+//     int sockfd = -1, retval, gid;
+//     response_header hdr;
 
-    if (object == NULL)
-    {
-        SEC_SVR_ERR("%s", "Client: object is null or object is too big");
-        retval = SECURITY_SERVER_API_ERROR_INPUT_PARAM;
-        goto error;
-    }
-    if (strlen(object) > SECURITY_SERVER_MAX_OBJ_NAME)
-    {
-        SEC_SVR_ERR("%s", "object is null or object is too big");
-        retval = SECURITY_SERVER_API_ERROR_INPUT_PARAM;
-        goto error;
-    }
+//     if (object == NULL)
+//     {
+//         SEC_SVR_ERR("%s", "Client: object is null or object is too big");
+//         retval = SECURITY_SERVER_API_ERROR_INPUT_PARAM;
+//         goto error;
+//     }
+//     if (strlen(object) > SECURITY_SERVER_MAX_OBJ_NAME)
+//     {
+//         SEC_SVR_ERR("%s", "object is null or object is too big");
+//         retval = SECURITY_SERVER_API_ERROR_INPUT_PARAM;
+//         goto error;
+//     }
 
-    if (strlen(object) == 0)
-    {
-        SEC_SVR_ERR("Client: object is is empty");
-        retval = SECURITY_SERVER_API_ERROR_INPUT_PARAM;
-        goto error;
-    }
+//     if (strlen(object) == 0)
+//     {
+//         SEC_SVR_ERR("Client: object is is empty");
+//         retval = SECURITY_SERVER_API_ERROR_INPUT_PARAM;
+//         goto error;
+//     }
 
-    SECURE_SLOGD("%s", "Client: security_server_get_gid() is called");
-    retval = connect_to_server(&sockfd);
-    if (retval != SECURITY_SERVER_SUCCESS)
-    {
-        /* Error on socket */
-        SEC_SVR_ERR("Connection failed: %d", retval);
-        goto error;
-    }
-    SECURE_SLOGD("%s", "Client: Security server has been connected");
+//     SECURE_SLOGD("%s", "Client: security_server_get_gid() is called");
+//     retval = connect_to_server(&sockfd);
+//     if (retval != SECURITY_SERVER_SUCCESS)
+//     {
+//         /* Error on socket */
+//         SEC_SVR_ERR("Connection failed: %d", retval);
+//         goto error;
+//     }
+//     SECURE_SLOGD("%s", "Client: Security server has been connected");
 
-    /* make request packet and send to server*/
-    retval = send_gid_request(sockfd, object);
-    SEC_SVR_DBG("%s", "Client: gid request has been sent");
-    if (retval != SECURITY_SERVER_SUCCESS)
-    {
-        /* Error on socket */
-        SEC_SVR_ERR("Send gid request failed: %d", retval);
-        goto error;
-    }
+//     /* make request packet and send to server*/
+//     retval = send_gid_request(sockfd, object);
+//     SEC_SVR_DBG("%s", "Client: gid request has been sent");
+//     if (retval != SECURITY_SERVER_SUCCESS)
+//     {
+//         /* Error on socket */
+//         SEC_SVR_ERR("Send gid request failed: %d", retval);
+//         goto error;
+//     }
 
-    /* Receive response */
-    retval = recv_get_gid_response(sockfd, &hdr, &gid);
-    if (retval != SECURITY_SERVER_SUCCESS)
-    {
-        SEC_SVR_ERR("Client: Receive response failed: %d", retval);
-        goto error;
-    }
-    SEC_SVR_DBG("%s", "Client: get gid response has been received");
+//     /* Receive response */
+//     retval = recv_get_gid_response(sockfd, &hdr, &gid);
+//     if (retval != SECURITY_SERVER_SUCCESS)
+//     {
+//         SEC_SVR_ERR("Client: Receive response failed: %d", retval);
+//         goto error;
+//     }
+//     SEC_SVR_DBG("%s", "Client: get gid response has been received");
 
-    if (hdr.basic_hdr.msg_id != SECURITY_SERVER_MSG_TYPE_GID_RESPONSE)   /* Wrong response */
-    {
-        if (hdr.basic_hdr.msg_id == SECURITY_SERVER_MSG_TYPE_GENERIC_RESPONSE)
-        {
-            /* There must be some error */
-            SEC_SVR_ERR("Client: It'll be an error. return code:%d", hdr.return_code);
-            retval = return_code_to_error_code(hdr.return_code);
-            goto error;
-        }
-        else
-        {
-            /* Something wrong with response */
-            SEC_SVR_ERR("Client: Something wrong with response:%d", hdr.basic_hdr.msg_id);
-            retval = SECURITY_SERVER_ERROR_BAD_RESPONSE;
-            goto error;
-        }
-    }
+//     if (hdr.basic_hdr.msg_id != SECURITY_SERVER_MSG_TYPE_GID_RESPONSE)   /* Wrong response */
+//     {
+//         if (hdr.basic_hdr.msg_id == SECURITY_SERVER_MSG_TYPE_GENERIC_RESPONSE)
+//         {
+//             /* There must be some error */
+//             SEC_SVR_ERR("Client: It'll be an error. return code:%d", hdr.return_code);
+//             retval = return_code_to_error_code(hdr.return_code);
+//             goto error;
+//         }
+//         else
+//         {
+//             /* Something wrong with response */
+//             SEC_SVR_ERR("Client: Something wrong with response:%d", hdr.basic_hdr.msg_id);
+//             retval = SECURITY_SERVER_ERROR_BAD_RESPONSE;
+//             goto error;
+//         }
+//     }
 
-    SEC_SVR_DBG("received gid is %d", gid);
-    retval = gid;
+//     SEC_SVR_DBG("received gid is %d", gid);
+//     retval = gid;
 
-error:
-    if (sockfd > 0)
-        close(sockfd);
-    /* If error happened */
-    if (retval < 0)
-        retval = convert_to_public_error_code(retval);
+// error:
+//     if (sockfd > 0)
+//         close(sockfd);
+//     /* If error happened */
+//     if (retval < 0)
+//         retval = convert_to_public_error_code(retval);
 
-    return retval;
-}
+//     return retval;
+// }
 
 
 

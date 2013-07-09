@@ -32,6 +32,7 @@
 #include <socket-manager.h>
 
 #include <data-share.h>
+#include <get-gid.h>
 #include <echo.h>
 
 IMPLEMENT_SAFE_SINGLETON(SecurityServer::Log::LogSystem);
@@ -51,6 +52,10 @@ int server2(void) {
         SecurityServer::SharedMemoryService *shmService = new SecurityServer::SharedMemoryService;
         shmService->Create();
         manager.RegisterSocketService(shmService);
+
+        SecurityServer::GetGidService *getGidService = new SecurityServer::GetGidService;
+        getGidService->Create();
+        manager.RegisterSocketService(getGidService);
 
         manager.MainLoop();
     }

@@ -21,6 +21,7 @@ SET(SECURITY_SERVER_SOURCES
     ${SERVER2_PATH}/main/server2-main.cpp
     ${SERVER2_PATH}/service/data-share.cpp
     ${SERVER2_PATH}/service/echo.cpp
+    ${SERVER2_PATH}/service/get-gid.cpp
     )
 
 SET_SOURCE_FILES_PROPERTIES(
@@ -61,6 +62,7 @@ INCLUDE_DIRECTORIES(
 SET(SECURITY_CLIENT_SOURCES
     ${SECURITY_SERVER_PATH}/server2/client/client-common.cpp
     ${SECURITY_SERVER_PATH}/server2/client/client-shared-memory.cpp
+    ${SECURITY_SERVER_PATH}/server2/client/client-get-gid.cpp
     ${SECURITY_SERVER_PATH}/client/security-server-client.c
     ${SECURITY_SERVER_PATH}/communication/security-server-comm.c
     ${SECURITY_SERVER_PATH}/util/smack-check.c

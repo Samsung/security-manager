@@ -29,6 +29,7 @@ namespace SecurityServer {
 
 extern char const * const SERVICE_SOCKET_SHARED_MEMORY;
 extern char const * const SERVICE_SOCKET_ECHO;
+extern char const * const SERVICE_SOCKET_GET_GID;
 
 } // namespace SecuritySever
 
