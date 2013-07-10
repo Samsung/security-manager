@@ -30,6 +30,7 @@
 #include <protocols.h>
 #include <data-share.h>
 #include <security-server.h>
+#include <security-server-util.h>
 #include <smack-check.h>
 
 namespace {
@@ -47,33 +48,6 @@ namespace {
 // (uses only one socket labeled with smack)
 // you may ignore this ID (just pass 0)
 const int SERVICE_SOCKET_ID = 0;
-
-int util_smack_label_is_valid(const char *smack_label){
-	int i;
-
-	if (!smack_label || smack_label[0] == '\0' || smack_label[0] == '-')
-		goto err;
-
-	for (i = 0; smack_label[i]; ++i) {
-		if (i >= SMACK_LABEL_LEN)
-			return 0;
-		switch (smack_label[i]) {
-		case '~':
-		case ' ':
-		case '/':
-		case '"':
-		case '\\':
-		case '\'':
-			goto err;
-		default:
-			break;
-		}
-	}
-
-	return 1;
-err:
-	return 0;
-}
 
 } // namespace anonymous
 

@@ -22,6 +22,10 @@
 #ifndef SECURITY_SERVER_COMMON_H
 #define SECURITY_SERVER_COMMON_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <sys/types.h>
 #include <dlog.h>
 
@@ -169,5 +173,9 @@ void printhex(const unsigned char *data, int size);
 
 #endif // SECURITY_SERVER_DEBUG_DLOG
 #endif // SECURITY_SERVER_DEBUG_TO_CONSOLE
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

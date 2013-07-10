@@ -22,6 +22,12 @@
 #ifndef SECURITY_SERVER_UTIL_H
 #define SECURITY_SERVER_UTIL_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#include "security-server-common.h"
+
 /* Only for test */
 /* These msg type MUST BE REMOVED before release **************************/
 #define SECURITY_SERVER_MSG_TYPE_GET_ALL_COOKIES_REQUEST            0x51
@@ -36,4 +42,11 @@ int util_process_cookie_from_pid(int sockfd, cookie_list *list);
 int util_process_cookie_from_cookie(int sockfd, cookie_list *list);
 int util_smack_label_is_valid(const char *smack_label);
 
+char *read_exe_path_from_proc(pid_t pid);
+int authorize_SS_API_caller_socket(int sockfd, char *required_API_label, char *required_rule);
+
+#ifdef __cplusplus
+}
 #endif
+
+#endif /*SECURITY_SERVER_UTIL_H*/

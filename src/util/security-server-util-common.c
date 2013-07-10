@@ -30,6 +30,7 @@
 #include <sys/un.h>
 #include <errno.h>
 #include <unistd.h>
+#include <stdint.h>
 
 #include "security-server-common.h"
 #include "security-server-cookie.h"
@@ -393,4 +394,105 @@ int util_smack_label_is_valid(const char *smack_label)
 err:
     SEC_SVR_ERR("ERROR: Invalid Smack label: %s", smack_label);
     return 0;
+}
+
+char *read_exe_path_from_proc(pid_t pid)
+{
+    char link[32];
+    char *exe = NULL;
+    size_t size = 64;
+    ssize_t cnt = 0;
+
+    // get link to executable
+    snprintf(link, sizeof(link), "/proc/%d/exe", pid);
+
+    for (;;)
+    {
+        exe = malloc(size);
+        if (exe == NULL)
+        {
+            SEC_SVR_ERR("Out of memory");
+            return NULL;
+        }
+
+        // read link target
+        cnt = readlink(link, exe, size);
+
+        // error
+        if (cnt < 0 || (size_t) cnt > size)
+        {
+            SEC_SVR_ERR("Can't locate process binary for pid[%d]", pid);
+            free(exe);
+            return NULL;
+        }
+
+        // read less than requested
+        if ((size_t) cnt < size)
+            break;
+
+        // read exactly the number of bytes requested
+        free(exe);
+        if (size > (SIZE_MAX >> 1))
+        {
+            SEC_SVR_ERR("Exe path too long (more than %d characters)", size);
+            return NULL;
+        }
+        size <<= 1;
+    }
+    // readlink does not append null byte to buffer.
+    exe[cnt] = '\0';
+    return exe;
+}
+
+/*
+ * Function that checks if API caller have access to specified label.
+ * In positive case (caller has access to the API) returns 1.
+ * In case of no access returns 0, and -1 in case of error.
+ */
+int authorize_SS_API_caller_socket(int sockfd, char *required_API_label, char *required_rule)
+{
+    int retval;
+    char *label = NULL;
+    char *path = NULL;
+    //for getting socket options
+    struct ucred cr;
+    unsigned int len;
+
+    SEC_SVR_DBG("Checking client SMACK access to SS API");
+
+    if (!smack_check()) {
+        SEC_SVR_ERR("No SMACK on device found, API PROTECTION DISABLED!!!");
+        retval = 1;
+        goto end;
+    }
+
+    retval = smack_new_label_from_socket(sockfd, &label);
+    if (retval != 0) {
+        SEC_SVR_ERR("%s", "Error in getting label from socket");
+        retval = -1;
+        goto end;
+    }
+
+    len = sizeof(cr);
+    retval = getsockopt(sockfd, SOL_SOCKET, SO_PEERCRED, &cr, &len);
+    if (retval < 0)
+        SEC_SVR_ERR("Error in getsockopt() and getting binary path");
+    else
+        path = read_exe_path_from_proc(cr.pid);
+
+    retval = smack_have_access(label, required_API_label, required_rule);
+
+    //some log in SMACK format
+    if (retval > 0)
+        SECURE_SLOGD("SS_SMACK: caller_pid=%d, subject=%s, object=%s, access=%s, result=%d, caller_path=%s", cr.pid, label, required_API_label, required_rule, retval, path);
+    else
+        SECURE_SLOGW("SS_SMACK: caller_pid=%d, subject=%s, object=%s, access=%s, result=%d, caller_path=%s", cr.pid, label, required_API_label, required_rule, retval, path);
+
+end:
+    if (path != NULL)
+        free(path);
+    if (label != NULL)
+        free(label);
+
+    return retval;
 }
