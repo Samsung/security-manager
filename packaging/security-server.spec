@@ -79,6 +79,7 @@ mkdir -p %{buildroot}/usr/lib/systemd/system/sockets.target.wants
 ln -s ../security-server.service %{buildroot}/usr/lib/systemd/system/multi-user.target.wants/security-server.service
 ln -s ../security-server.socket %{buildroot}/usr/lib/systemd/system/sockets.target.wants/security-server.socket
 ln -s ../security-server-data-share.socket %{buildroot}/usr/lib/systemd/system/sockets.target.wants/security-server-data-share.socket
+ln -s ../security-server-get-gid.socket %{buildroot}/usr/lib/systemd/system/sockets.target.wants/security-server-get-gid.socket
 
 %clean
 rm -rf %{buildroot}
@@ -111,6 +112,8 @@ systemctl daemon-reload
 %attr(-,root,root) /usr/lib/systemd/system/security-server.socket
 %attr(-,root,root) /usr/lib/systemd/system/sockets.target.wants/security-server-data-share.socket
 %attr(-,root,root) /usr/lib/systemd/system/security-server-data-share.socket
+%attr(-,root,root) /usr/lib/systemd/system/sockets.target.wants/security-server-get-gid.socket
+%attr(-,root,root) /usr/lib/systemd/system/security-server-get-gid.socket
 
 %{_datadir}/license/%{name}
 

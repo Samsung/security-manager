@@ -31,6 +31,6 @@ char const * const SERVICE_SOCKET_SHARED_MEMORY =
 char const * const SERVICE_SOCKET_ECHO =
     "/tmp/security-server-api-echo.sock";
 char const * const SERVICE_SOCKET_GET_GID =
-    "/tmp/security-server-api-get-gid.sock";
+    "/tmp/.security-server-api-get-gid.sock";
 } // namespace SecurityServer
 
