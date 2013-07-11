@@ -32,6 +32,8 @@
 #include <unistd.h>
 #include <stdint.h>
 
+#include <smack-check.h>
+
 #include "security-server-common.h"
 #include "security-server-cookie.h"
 #include "security-server-comm.h"
