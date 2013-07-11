@@ -64,10 +64,9 @@ cp %{SOURCE1001} .
 export LDFLAGS+="-Wl,--rpath=%{_libdir}"
 
 %cmake . -DVERSION=%{version} \
-        -DCMAKE_BUILD_TYPE=RELEASE \
+        -DCMAKE_BUILD_TYPE=%{?build_type:%build_type}%{!?build_type:RELEASE} \
         -DCMAKE_VERBOSE_MAKEFILE=OFF
 make %{?jobs:-j%jobs}
-
 
 %install
 rm -rf %{buildroot}
