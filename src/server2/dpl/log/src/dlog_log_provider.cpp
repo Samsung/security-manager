@@ -61,7 +61,7 @@ void DLOGLogProvider::Debug(const char *message,
                             int line,
                             const char *function)
 {
-    LOG(LOG_DEBUG, m_tag.get(), "%s",
+    SLOG(LOG_DEBUG, m_tag.get(), "%s",
         FormatMessage(message, filename, line, function).c_str());
 }
 
@@ -70,7 +70,7 @@ void DLOGLogProvider::Info(const char *message,
                            int line,
                            const char *function)
 {
-    LOG(LOG_INFO, m_tag.get(), "%s",
+    SLOG(LOG_INFO, m_tag.get(), "%s",
         FormatMessage(message, filename, line, function).c_str());
 }
 
@@ -79,7 +79,7 @@ void DLOGLogProvider::Warning(const char *message,
                               int line,
                               const char *function)
 {
-    LOG(LOG_WARN, m_tag.get(), "%s",
+    SLOG(LOG_WARN, m_tag.get(), "%s",
         FormatMessage(message, filename, line, function).c_str());
 }
 
@@ -88,7 +88,7 @@ void DLOGLogProvider::Error(const char *message,
                             int line,
                             const char *function)
 {
-    LOG(LOG_ERROR, m_tag.get(), "%s",
+    SLOG(LOG_ERROR, m_tag.get(), "%s",
         FormatMessage(message, filename, line, function).c_str());
 }
 
@@ -97,7 +97,7 @@ void DLOGLogProvider::Pedantic(const char *message,
                                int line,
                                const char *function)
 {
-    LOG(LOG_DEBUG, "SecurityServer", "%s", FormatMessage(message,
+    SLOG(LOG_DEBUG, "SecurityServer", "%s", FormatMessage(message,
                                               filename,
                                               line,
                                               function).c_str());
