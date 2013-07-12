@@ -32,5 +32,7 @@ char const * const SERVICE_SOCKET_ECHO =
     "/tmp/security-server-api-echo.sock";
 char const * const SERVICE_SOCKET_GET_GID =
     "/tmp/.security-server-api-get-gid.sock";
+char const * const SERVICE_SOCKET_PRIVILEGE_BY_PID =
+    "/tmp/.security-server-api-privilege-by-pid";
 } // namespace SecurityServer
 

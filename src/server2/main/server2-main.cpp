@@ -33,6 +33,7 @@
 
 #include <data-share.h>
 #include <get-gid.h>
+#include <privilege-by-pid.h>
 #include <echo.h>
 
 IMPLEMENT_SAFE_SINGLETON(SecurityServer::Log::LogSystem);
@@ -56,6 +57,10 @@ int server2(void) {
         SecurityServer::GetGidService *getGidService = new SecurityServer::GetGidService;
         getGidService->Create();
         manager.RegisterSocketService(getGidService);
+
+        SecurityServer::PrivilegeByPidService *privByPidService = new SecurityServer::PrivilegeByPidService;
+        privByPidService->Create();
+        manager.RegisterSocketService(privByPidService);
 
         manager.MainLoop();
     }

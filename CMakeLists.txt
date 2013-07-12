@@ -58,6 +58,7 @@ STRING(REGEX MATCH "([^.]*)" API_VERSION "${VERSION}")
 ADD_DEFINITIONS("-DAPI_VERSION=\"$(API_VERSION)\"")
 ADD_DEFINITIONS("-DSMACK_ENABLED")
 ADD_DEFINITIONS("-DDPL_LOGS_ENABLED")           # Enable LOGS in security-server2
+#ADD_DEFINITIONS("-DUSE_SEC_SRV1_FOR_CHECK_PRIVILEGE_BY_PID") #use old security-server 1.0 for check-privilege-by-pid API
 
 SET(TARGET_SECURITY_SERVER "security-server")
 SET(TARGET_SECURITY_CLIENT "security-server-client")

@@ -1162,6 +1162,7 @@ int send_smack_request(int sock_fd, const char *cookie)
     return SECURITY_SERVER_SUCCESS;
 }
 
+#ifdef USE_SEC_SRV1_FOR_CHECK_PRIVILEGE_BY_PID
 //VERSION:      0x01
 //MSG_ID:       0x1f (SECURITY_SERVER_MSG_TYPE_CHECK_PID_PRIVILEGE_REQUEST)
 //DATA_SIZE:    strlen(object) + 1 + strlen(access_rights) + 1
@@ -1253,6 +1254,7 @@ error:
 
     return retval;
 }
+#endif
 
 /* Send PID check request message to security server *
  *
@@ -2043,6 +2045,7 @@ int recv_smack_request(int sockfd, unsigned char *requested_cookie)
     return SECURITY_SERVER_SUCCESS;
 }
 
+#ifdef USE_SEC_SRV1_FOR_CHECK_PRIVILEGE_BY_PID
 int recv_pid_privilege_request(int sockfd, int datasize, int *pid, char **object, char **access_rights)
 {
     int retval;
@@ -2097,6 +2100,7 @@ error:
 
     return retval;
 }
+#endif
 
 /* Receive pid request packet body */
 /* Table argv and content will be freed by function caller */
@@ -2334,6 +2338,7 @@ int recv_smack_response(int sockfd, response_header *hdr, char *label)
     return SECURITY_SERVER_SUCCESS;
 }
 
+#ifdef USE_SEC_SRV1_FOR_CHECK_PRIVILEGE_BY_PID
 int recv_pid_privilege_response(int sockfd, response_header *hdr)
 {
     int retval;
@@ -2345,7 +2350,7 @@ int recv_pid_privilege_response(int sockfd, response_header *hdr)
 
     return SECURITY_SERVER_SUCCESS;
 }
-
+#endif
 int recv_pid_response(int sockfd, response_header *hdr, int *pid)
 {
     int retval;
@@ -2363,6 +2368,7 @@ int recv_pid_response(int sockfd, response_header *hdr, int *pid)
     }
     return SECURITY_SERVER_SUCCESS;
 }
+
 
 int recv_pwd_response(int sockfd, response_header *hdr,
                       unsigned int *current_attempts,

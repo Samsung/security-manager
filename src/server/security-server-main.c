@@ -955,7 +955,7 @@ int process_smack_request(int sockfd)
 error:
     return retval;
 }
-
+#ifdef USE_SEC_SRV1_FOR_CHECK_PRIVILEGE_BY_PID
 int process_pid_privilege_check(int sockfd, int datasize)
 {
     //In this function we parsing received PID privilege check request
@@ -1046,6 +1046,7 @@ error:
 
     return retval;
 }
+#endif
 
 int process_tool_request(int client_sockfd, int server_sockfd)
 {
@@ -1404,12 +1405,14 @@ void *security_server_thread(void *param)
             process_smack_request(client_sockfd);
             break;
 
+#ifdef USE_SEC_SRV1_FOR_CHECK_PRIVILEGE_BY_PID
         case SECURITY_SERVER_MSG_TYPE_CHECK_PID_PRIVILEGE_REQUEST:
             SEC_SVR_DBG("%s", "PID privilege check request received");
             authorize_SS_API_caller_socket(client_sockfd, API_MIDDLEWARE, API_RULE_REQUIRED);
             //pass data size to function
             process_pid_privilege_check(client_sockfd, basic_hdr.msg_len);
             break;
+#endif
 
         case SECURITY_SERVER_MSG_TYPE_TOOL_REQUEST:
             SEC_SVR_DBG("%s", "launch tool request received");

@@ -22,6 +22,7 @@ SET(SECURITY_SERVER_SOURCES
     ${SERVER2_PATH}/service/data-share.cpp
     ${SERVER2_PATH}/service/echo.cpp
     ${SERVER2_PATH}/service/get-gid.cpp
+    ${SERVER2_PATH}/service/privilege-by-pid.cpp
     )
 
 SET_SOURCE_FILES_PROPERTIES(
@@ -63,6 +64,7 @@ SET(SECURITY_CLIENT_SOURCES
     ${SECURITY_SERVER_PATH}/server2/client/client-common.cpp
     ${SECURITY_SERVER_PATH}/server2/client/client-shared-memory.cpp
     ${SECURITY_SERVER_PATH}/server2/client/client-get-gid.cpp
+    ${SECURITY_SERVER_PATH}/server2/client/client-privilege-by-pid.cpp
     ${SECURITY_SERVER_PATH}/client/security-server-client.c
     ${SECURITY_SERVER_PATH}/communication/security-server-comm.c
     ${SECURITY_SERVER_PATH}/util/smack-check.c

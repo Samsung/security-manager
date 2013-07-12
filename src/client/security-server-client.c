@@ -1286,6 +1286,7 @@ char *security_server_get_smacklabel_sockfd(int fd)
     return label;
 }
 
+#ifdef USE_SEC_SRV1_FOR_CHECK_PRIVILEGE_BY_PID
 SECURITY_SERVER_API
 int security_server_check_privilege_by_pid(int pid, const char *object, const char *access_rights)
 {
@@ -1357,3 +1358,4 @@ error:
     retval = convert_to_public_error_code(retval);
     return retval;
 }
+#endif

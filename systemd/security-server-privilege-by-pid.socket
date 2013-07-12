@@ -1,0 +1,10 @@
+[Socket]
+ListenStream=/tmp/.security-server-api-privilege-by-pid
+SocketMode=0777
+SmackLabelIPIn=*
+SmackLabelIPOut=@
+
+Service=security-server.service
+
+[Install]
+WantedBy=sockets.target
