@@ -8,6 +8,7 @@ Sockets=security-server.socket
 Sockets=security-server-data-share.socket
 Sockets=security-server-get-gid.socket
 Sockets=security-server-privilege-by-pid.socket
+Sockets=security-server-exec-path.socket
 
 [Install]
 WantedBy=multi-user.target

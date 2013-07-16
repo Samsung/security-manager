@@ -105,139 +105,6 @@ int convert_to_public_error_code(int err_code)
     return err_code;
 }
 
-static int send_exec_path_request(int sock_fd, pid_t pid)
-{
-    basic_header hdr;
-    int retval;
-    unsigned char buf[sizeof(hdr) + sizeof(pid)];
-
-    /* Assemble header */
-    hdr.version = SECURITY_SERVER_MSG_VERSION;
-    hdr.msg_id = SECURITY_SERVER_MSG_TYPE_EXE_PATH_REQUEST;
-    hdr.msg_len = sizeof(pid);
-
-    memcpy(buf, &hdr, sizeof(hdr));
-    memcpy(buf + sizeof(hdr), &pid, sizeof(pid));
-
-    /* Check poll */
-    retval = check_socket_poll(sock_fd, POLLOUT, SECURITY_SERVER_SOCKET_TIMEOUT_MILISECOND);
-    if (retval == SECURITY_SERVER_ERROR_POLL)
-    {
-        SEC_SVR_ERR("%s", "poll() error");
-        return SECURITY_SERVER_ERROR_SEND_FAILED;
-    }
-    if (retval == SECURITY_SERVER_ERROR_TIMEOUT)
-    {
-        SEC_SVR_ERR("%s", "poll() timeout");
-        return SECURITY_SERVER_ERROR_SEND_FAILED;
-    }
-
-    /* Send to server */
-    retval = TEMP_FAILURE_RETRY(write(sock_fd, buf, sizeof(buf)));
-    if (retval < (ssize_t)sizeof(buf))
-    {
-        /* Write error */
-        SEC_SVR_ERR("Error on write(): %d", retval);
-        return SECURITY_SERVER_ERROR_SEND_FAILED;
-    }
-    return SECURITY_SERVER_SUCCESS;
-}
-
-static int recv_exec_path_response(int sockfd, response_header *hdr, char **path)
-{
-    size_t size = 0;
-    char *buf = NULL;
-    int retval;
-
-    if (*path)
-    {
-        SEC_SVR_ERR("path should be NULL");
-        return SECURITY_SERVER_ERROR_INPUT_PARAM;
-    }
-
-    retval = recv_generic_response(sockfd, hdr);
-    if (retval != SECURITY_SERVER_SUCCESS)
-    {
-        SEC_SVR_ERR("Failed to get response: %d", retval);
-        return return_code_to_error_code(hdr->return_code);
-    }
-
-    retval = TEMP_FAILURE_RETRY(read(sockfd, &size, sizeof(size_t)));
-    if (retval < (ssize_t)sizeof(size_t) || size == 0 || size > MESSAGE_MAX_LEN)
-    {
-        /* Error on socket */
-        SEC_SVR_ERR("read() failed: %d", retval);
-        return SECURITY_SERVER_ERROR_RECV_FAILED;
-    }
-    buf = (char*)malloc((size + 1) * sizeof(char));
-    if (!buf)
-    {
-        SEC_SVR_ERR("malloc() failed. Size requested: %d", size * sizeof(char));
-        return SECURITY_SERVER_ERROR_OUT_OF_MEMORY;
-    }
-
-    retval = TEMP_FAILURE_RETRY(read(sockfd, buf, size));
-    if (retval < (ssize_t)size)
-    {
-        /* Error on socket */
-        SEC_SVR_ERR("read() failed: %d", retval);
-        free(buf);
-        return SECURITY_SERVER_ERROR_RECV_FAILED;
-    }
-    // terminate string
-    buf[size] = '\0';
-
-    *path = buf;
-    return SECURITY_SERVER_SUCCESS;
-}
-
-static int get_exec_path(pid_t pid, char **exe)
-{
-    int sockfd = -1;
-    int ret = 0;
-    char *path = NULL;
-    response_header hdr;
-    if (SECURITY_SERVER_SUCCESS != connect_to_server(&sockfd))
-        goto out;
-
-    ret = send_exec_path_request(sockfd, pid);
-    if (ret != SECURITY_SERVER_SUCCESS)
-    {
-        /* Error on socket */
-        SEC_SVR_ERR("Client: Send failed: %d", ret);
-        goto out;
-    }
-
-    ret = recv_exec_path_response(sockfd, &hdr, &path);
-    if (ret != SECURITY_SERVER_SUCCESS)
-    {
-        SEC_SVR_ERR("Client: Recv failed: %d", ret);
-        goto out;
-    }
-
-    ret = return_code_to_error_code(hdr.return_code);
-    if (hdr.basic_hdr.msg_id == SECURITY_SERVER_MSG_TYPE_GENERIC_RESPONSE)
-        SEC_SVR_ERR("Client: Error has been received. return code:%d", hdr.return_code);
-    else if (hdr.basic_hdr.msg_id != SECURITY_SERVER_MSG_TYPE_EXE_PATH_RESPONSE)
-    {
-        SEC_SVR_ERR("Client: Wrong response type.");
-        ret = SECURITY_SERVER_ERROR_BAD_RESPONSE;
-    }
-
-out:
-    if (sockfd != -1)
-        close(sockfd);
-
-    if (ret == SECURITY_SERVER_SUCCESS)
-    {
-        *exe = path;
-        path = NULL;
-    }
-    free(path);
-    return ret;
-}
-
-
 // SECURITY_SERVER_API
 // int security_server_get_gid(const char *object)
 // {
@@ -323,9 +190,6 @@ out:
 
 //     return retval;
 // }
-
-
-
 
 SECURITY_SERVER_API
 int security_server_get_object_name(gid_t gid, char *object, size_t max_object_size)
@@ -584,73 +448,10 @@ error:
 }
 
 SECURITY_SERVER_API
-int security_server_check_privilege_by_sockfd(int sockfd,
-                                              const char *object,
-                                              const char *access_rights)
-{
-    char *subject;
-    int ret;
-    char *path = NULL;
-
-    //for get socket options
-    struct ucred cr;
-    unsigned int len = sizeof(cr);
-
-    //SMACK runtime check
-    if (!smack_runtime_check())
-    {
-        SEC_SVR_DBG("%s","No SMACK support on device");
-        return SECURITY_SERVER_API_SUCCESS;
-    }
-
-    ret = smack_new_label_from_socket(sockfd, &subject);
-    if (ret != 0)
-        return SECURITY_SERVER_API_ERROR_SERVER_ERROR;
-
-    len = sizeof(cr);
-    ret = getsockopt(sockfd, SOL_SOCKET, SO_PEERCRED, &cr, &len);
-    if (ret < 0) {
-        SEC_SVR_ERR("Error in getsockopt(). Errno: %s", strerror(errno));
-        ret = 0;
-        goto err;
-    }
-    ret = get_exec_path(cr.pid, &path);
-    if (SECURITY_SERVER_SUCCESS != ret)
-        SEC_SVR_ERR("Failed to read executable path for process %d", cr.pid);
-
-    ret = security_server_check_privilege_by_pid(cr.pid, object, access_rights);
-    if (ret == SECURITY_SERVER_RETURN_CODE_SUCCESS)
-        ret = 1;
-    else
-        ret = 0;
-
-err:
-
-    SECURE_SLOGD("security_server_check_privilege_by_pid returned %d", ret);
-    if (ret > 0)
-        SECURE_SLOGD("SS_SMACK: caller_pid=%d, subject=%s, object=%s, access=%s, result=%d, caller_path=%s", cr.pid, subject, object, access_rights, ret, path);
-    else
-        SECURE_SLOGW("SS_SMACK: caller_pid=%d, subject=%s, object=%s, access=%s, result=%d, caller_path=%s", cr.pid, subject, object, access_rights, ret, path);
-
-    free(path);
-    free(subject);
-    if (ret == 1)
-    {
-        return SECURITY_SERVER_API_SUCCESS;
-    }
-    else
-    {
-        return SECURITY_SERVER_API_ERROR_ACCESS_DENIED;
-    }
-}
-
-
-SECURITY_SERVER_API
 int security_server_get_cookie_size(void)
 {
     return SECURITY_SERVER_COOKIE_LEN;
 }
-
 
 
 SECURITY_SERVER_API
@@ -1264,27 +1065,6 @@ error:
     return NULL;
 }
 
-SECURITY_SERVER_API
-char *security_server_get_smacklabel_sockfd(int fd)
-{
-    char *label = NULL;
-
-    if (!smack_check())
-    {
-        SEC_SVR_DBG("%s","No SMACK support on device");
-        label = (char*) malloc(1);
-        if (label) label[0] = '\0';
-        return label;
-    }
-
-    if (smack_new_label_from_socket(fd, &label) != 0)
-    {
-        SEC_SVR_ERR("Client ERROR: Unable to get socket SMACK label");
-        return NULL;
-    }
-
-    return label;
-}
 
 #ifdef USE_SEC_SRV1_FOR_CHECK_PRIVILEGE_BY_PID
 SECURITY_SERVER_API
