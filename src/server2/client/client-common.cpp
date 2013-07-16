@@ -194,6 +194,12 @@ int sendToServer(char const * const interface, const RawBuffer &send, SocketBuff
             LogError("Error in read: " << strerror(err));
             return SECURITY_SERVER_API_ERROR_SOCKET;
         }
+
+        if (0 == temp) {
+            LogError("Read return 0/Connection closed by server(?)");
+            return SECURITY_SERVER_API_ERROR_SOCKET;
+        }
+
         RawBuffer raw(buffer, buffer+temp);
         recv.Push(raw);
     } while(!recv.Ready());
