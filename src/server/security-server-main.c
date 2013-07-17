@@ -1368,14 +1368,21 @@ int main(int argc, char *argv[])
     (void)argc;
     (void)argv;
 
+    sigset_t mask;
+    sigemptyset(&mask);
+    sigaddset(&mask, SIGTERM);
+    sigaddset(&mask, SIGPIPE);
+    if (-1 == pthread_sigmask(SIG_BLOCK, &mask, NULL)) {
+        SEC_SVR_ERR("Error in pthread_sigmask");
+    }
+
     if (0 != (res = pthread_create(&main_thread, NULL, security_server_main_thread, NULL))) {
         SEC_SVR_ERR("Error: Server: Cannot create main security server thread: %s", strerror(res));
         return -1;
     }
 
     server2();
-
-    pthread_exit(NULL);
+    exit(0);
     return 0;
 }
 

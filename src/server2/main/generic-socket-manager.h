@@ -93,6 +93,8 @@ struct GenericSocketService {
     virtual void Event(const ReadEvent &event) = 0;
     virtual void Event(const CloseEvent &event) = 0;
     virtual void Event(const ErrorEvent &event) = 0;
+
+    GenericSocketService() : m_serviceManager(NULL) {}
     virtual ~GenericSocketService(){}
 protected:
     GenericSocketManager *m_serviceManager;

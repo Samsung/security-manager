@@ -48,6 +48,7 @@ public:
     SocketManager();
     virtual ~SocketManager();
     virtual void MainLoop();
+    virtual void MainLoopStop();
 
     virtual void RegisterSocketService(GenericSocketService *service);
     virtual void Close(ConnectionID connectionID);
