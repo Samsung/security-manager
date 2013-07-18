@@ -26,6 +26,7 @@
 #include <errno.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <time.h>
 #include <sys/time.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -156,7 +157,7 @@ int load_password(unsigned char *cur_pwd, unsigned int *max_attempt, unsigned in
         }
 
         retval = TEMP_FAILURE_RETRY(read(fd, max_attempt, sizeof(unsigned int)));
-        if (retval < sizeof(unsigned int))
+        if (retval < (int)sizeof(unsigned int))
         {
             SECURE_SLOGD("%s", "Server: Current password corrupted. resetting to previous one. 1");
             close(fd);
@@ -166,7 +167,7 @@ int load_password(unsigned char *cur_pwd, unsigned int *max_attempt, unsigned in
         }
 
         retval = TEMP_FAILURE_RETRY(read(fd, expire_time, sizeof(unsigned int)));
-        if (retval < sizeof(unsigned int))
+        if (retval < (int)sizeof(unsigned int))
         {
             SECURE_SLOGD("%s", "Server: Current password corrupted. resetting to previous one. 2");
             close(fd);
@@ -179,7 +180,7 @@ int load_password(unsigned char *cur_pwd, unsigned int *max_attempt, unsigned in
         /* Check expiration time. */
         if (*expire_time == 0) /* No valid period */
             *expire_time = 0xffffffff;
-        else if (*expire_time <= time(NULL)) /* expired */
+        else if (*expire_time <= (unsigned int)time(NULL)) /* expired */
             *expire_time = 0;
         else        /* valid yet */
             *expire_time -= time(NULL);
@@ -221,7 +222,7 @@ int get_current_attempt(int increase)
             attempt = increase;
             retval = TEMP_FAILURE_RETRY(write(fd, &attempt, sizeof(int)));
             close(fd);
-            if (retval < sizeof(int))
+            if (retval < (int)sizeof(int))
             {
                 SEC_SVR_ERR("%s", "Server ERROR: Cannot write attempt");
                 return SECURITY_SERVER_ERROR_FILE_OPERATION;
@@ -233,7 +234,7 @@ int get_current_attempt(int increase)
     }
     retval = TEMP_FAILURE_RETRY(read(fd, &attempt, sizeof(int)));
     close(fd);
-    if (retval < sizeof(int))
+    if (retval < (int)sizeof(int))
     {
         SEC_SVR_ERR("%s", "Server ERROR: Cannot read attempt");
         return SECURITY_SERVER_ERROR_FILE_OPERATION;
@@ -258,7 +259,7 @@ int get_current_attempt(int increase)
         attempt += increase;
         retval = TEMP_FAILURE_RETRY(write(fd, &attempt, sizeof(int)));
         close(fd);
-        if (retval < sizeof(int))
+        if (retval < (int)sizeof(int))
         {
             SEC_SVR_ERR("%s", "Server ERROR: Cannot write attempt");
             return SECURITY_SERVER_ERROR_FILE_OPERATION;
@@ -292,7 +293,7 @@ int reset_attempt(void)
     }
     retval = TEMP_FAILURE_RETRY(write(fd, &attempt, sizeof(int)));
     close(fd);
-    if (retval < sizeof(int))
+    if (retval < (int)sizeof(int))
     {
         SEC_SVR_ERR("%s", "Server ERROR: Cannot write attempt");
         return SECURITY_SERVER_ERROR_FILE_OPERATION;
@@ -306,13 +307,19 @@ int check_password(const unsigned char *cur_pwd, const unsigned char *requested_
                    const unsigned int max_attempts, const unsigned int expire_time,
                    int *current_attempt)
 {
+/* The following variable is needed only when SECURITY_SERVER_DEBUG_DLOG flag is set     */
+/* If its definition is not surrounded by preprocessor conditionals then it will         */
+/* cause compilation warning "unused variable". Please see the SECURE_SLOGD redefinition */
+/* in "security_server_common.h" header */
+#if SECURITY_SERVER_DEBUG_DLOG
     unsigned int current_time = time(NULL);
+#endif
 
     if (max_attempts != 0)
     {
         *current_attempt = get_current_attempt(1);
 
-        if (*current_attempt > max_attempts)
+        if ((unsigned int)*current_attempt > max_attempts)
         {
             SEC_SVR_DBG("Server: Max attempt exceeded: %d, %d", *current_attempt, max_attempts);
             return SECURITY_SERVER_ERROR_PASSWORD_MAX_ATTEMPTS_EXCEEDED;
@@ -376,7 +383,7 @@ int set_history(int num)
     }
     retval = TEMP_FAILURE_RETRY(write(fd, &num, sizeof(int)));
     close(fd);
-    if (retval < sizeof(int))
+    if (retval < (int)sizeof(int))
     {
         SEC_SVR_ERR("%s", "Server ERROR: Cannot write history");
         return SECURITY_SERVER_ERROR_FILE_OPERATION;
@@ -410,7 +417,7 @@ int get_history_num(void)
     }
     retval = TEMP_FAILURE_RETRY(read(fd, &history, sizeof(history)));
     close(fd);
-    if (retval < sizeof(history))
+    if (retval < (int)sizeof(history))
     {
         SEC_SVR_DBG("%s", "History file corrupted. Creating new one");
         unlink(path);
@@ -548,14 +555,14 @@ int set_password(const unsigned char *requested_new_pwd, const unsigned int atte
         return SECURITY_SERVER_ERROR_FILE_OPERATION;
     }
     retval = TEMP_FAILURE_RETRY(write(fd, &attempts, sizeof(unsigned int)));
-    if (retval < sizeof(unsigned int))
+    if (retval < (int)sizeof(unsigned int))
     {
         SECURE_SLOGE("%s", "Cannot write password");
         close(fd);
         return SECURITY_SERVER_ERROR_FILE_OPERATION;
     }
     retval = TEMP_FAILURE_RETRY(write(fd, &expire_time, sizeof(unsigned int)));
-    if (retval < sizeof(unsigned int))
+    if (retval < (int)sizeof(unsigned int))
     {
         SECURE_SLOGE("%s", "Cannot write password");
         close(fd);
@@ -720,7 +727,7 @@ int process_set_pwd_request(int sockfd)
 
     /* Receive size of pwds */
     retval = TEMP_FAILURE_RETRY(read(sockfd, &cur_pwd_len, sizeof(char)));
-    if (retval < sizeof(char) || cur_pwd_len > SECURITY_SERVER_MAX_PASSWORD_LEN)
+    if (retval < (int)sizeof(char) || cur_pwd_len > SECURITY_SERVER_MAX_PASSWORD_LEN)
     {
         SECURE_SLOGE("Server Error: current password length recieve failed: %d, %d", retval, cur_pwd_len);
         retval = send_generic_response(sockfd,
@@ -733,7 +740,7 @@ int process_set_pwd_request(int sockfd)
         goto error;
     }
     retval = TEMP_FAILURE_RETRY(read(sockfd, &new_pwd_len, sizeof(char)));
-    if (retval < sizeof(char) || new_pwd_len > SECURITY_SERVER_MAX_PASSWORD_LEN || new_pwd_len < 0)
+    if (retval < (int)sizeof(char) || new_pwd_len > SECURITY_SERVER_MAX_PASSWORD_LEN)
     {
         SECURE_SLOGE("Server Error: new password length recieve failed: %d, %d", retval, new_pwd_len);
         retval = send_generic_response(sockfd,
@@ -764,7 +771,7 @@ int process_set_pwd_request(int sockfd)
             }
             goto error;
         }
-        requested_cur_pwd[cur_pwd_len] = 0;
+        requested_cur_pwd[(int)cur_pwd_len] = 0;
     }
     else /* Check first password set attempt but password is already set */
     {
@@ -796,11 +803,11 @@ int process_set_pwd_request(int sockfd)
         }
         goto error;
     }
-    requested_new_pwd[new_pwd_len] = 0;
+    requested_new_pwd[(int)new_pwd_len] = 0;
 
     /* Receive max attempt */
     retval = TEMP_FAILURE_RETRY(read(sockfd, &received_attempts, sizeof(unsigned int)));
-    if (retval < sizeof(unsigned int))
+    if (retval < (int)sizeof(unsigned int))
     {
         SEC_SVR_ERR("Sever Error:  Max attempt receive failed: %d", retval);
         retval = send_generic_response(sockfd,
@@ -815,7 +822,7 @@ int process_set_pwd_request(int sockfd)
 
     /* Receive valid period  */
     retval = TEMP_FAILURE_RETRY(read(sockfd, &valid_days, sizeof(unsigned int)));
-    if (retval < sizeof(unsigned int))
+    if (retval < (int)sizeof(unsigned int))
     {
         SEC_SVR_ERR("Sever Error:  Max attempt receive failed: %d", retval);
         retval = send_generic_response(sockfd,
@@ -999,7 +1006,7 @@ int process_reset_pwd_request(int sockfd)
 
     /* Receive size of pwd */
     retval = TEMP_FAILURE_RETRY(read(sockfd, &new_pwd_len, sizeof(char)));
-    if (retval < sizeof(char) || new_pwd_len < 0 || new_pwd_len > SECURITY_SERVER_MAX_PASSWORD_LEN)
+    if (retval < (int)sizeof(char) || new_pwd_len > SECURITY_SERVER_MAX_PASSWORD_LEN)
     {
         SECURE_SLOGE("Server Error: new password length recieve failed: %d, %d", retval, new_pwd_len);
         retval = send_generic_response(sockfd,
@@ -1026,11 +1033,11 @@ int process_reset_pwd_request(int sockfd)
         }
         goto error;
     }
-    requested_new_pwd[new_pwd_len] = 0;
+    requested_new_pwd[(int)new_pwd_len] = 0;
 
     /* Receive max attempt */
     retval = TEMP_FAILURE_RETRY(read(sockfd, &received_attempts, sizeof(unsigned int)));
-    if (retval < sizeof(unsigned int))
+    if (retval < (int)sizeof(unsigned int))
     {
         SEC_SVR_ERR("Sever Error:  Max attempt receive failed: %d", retval);
         retval = send_generic_response(sockfd,
@@ -1045,7 +1052,7 @@ int process_reset_pwd_request(int sockfd)
 
     /* Receive valid period  */
     retval = TEMP_FAILURE_RETRY(read(sockfd, &valid_days, sizeof(unsigned int)));
-    if (retval < sizeof(unsigned int))
+    if (retval < (int)sizeof(unsigned int))
     {
         SEC_SVR_ERR("Sever Error:  Max attempt receive failed: %d", retval);
         retval = send_generic_response(sockfd,
@@ -1146,7 +1153,7 @@ int process_chk_pwd_request(int sockfd)
 
     /* Receive size of challenge */
     retval = TEMP_FAILURE_RETRY(read(sockfd, &challenge_len, sizeof(char)));
-    if (retval < sizeof(char) || challenge_len > SECURITY_SERVER_MAX_PASSWORD_LEN)
+    if (retval < (int)sizeof(char) || challenge_len > SECURITY_SERVER_MAX_PASSWORD_LEN)
     {
         SEC_SVR_ERR("Server ERROR: challenge length recieve failed: %d", retval);
         retval = send_generic_response(sockfd,
@@ -1174,7 +1181,7 @@ int process_chk_pwd_request(int sockfd)
             }
             goto error;
         }
-        requested_challenge[challenge_len] = 0;
+        requested_challenge[(int)challenge_len] = 0;
     }
     else
     {
@@ -1304,7 +1311,7 @@ int process_set_pwd_history_request(int sockfd)
 
     /* Receive size of pwds */
     retval = TEMP_FAILURE_RETRY(read(sockfd, &history_num, sizeof(char)));
-    if (retval < sizeof(char) || history_num > SECURITY_SERVER_MAX_PASSWORD_HISTORY || history_num < 0)
+    if (retval < (int)sizeof(char) || history_num > SECURITY_SERVER_MAX_PASSWORD_HISTORY)
     {
         SEC_SVR_ERR("Server Error: History number recieve failed: %d, %d", retval, history_num);
         retval = send_generic_response(sockfd,
@@ -1352,7 +1359,7 @@ int process_set_pwd_max_challenge_request(int sockfd)
     // this value (max challenge) for current password
 
     retval = TEMP_FAILURE_RETRY(read(sockfd, &max_challenge, sizeof(unsigned int)));
-    if (retval < sizeof(unsigned int))
+    if(retval < (int)sizeof(unsigned int))
     {
         SEC_SVR_ERR("Server Error: recieve failed: %d", retval);
         retval = send_generic_response(sockfd,
@@ -1432,7 +1439,7 @@ int process_set_pwd_validity_request(int sockfd)
     // this value (validity) for current password
 
     retval = TEMP_FAILURE_RETRY(read(sockfd, &validity, sizeof(unsigned int)));
-    if (retval < sizeof(unsigned int))
+    if(retval < (int)sizeof(unsigned int))
     {
         SEC_SVR_ERR("Server Error: recieve failed: %d", retval);
         retval = send_generic_response(sockfd,

@@ -112,6 +112,7 @@ void print_cookie(cookie_list *list)
 #endif
 
 
+#if 0
 /* Object name is actually name of a Group ID *
  * This function opens /etc/group file and search group ID and
  * returns the string */
@@ -152,7 +153,11 @@ int search_object_name(int gid, char *obj, int obj_size)
             }
             linebuf = tempstr;
             bzero(linebuf + bufsize, 128);
-            fgets(linebuf + bufsize, 128, fp);
+            if((fgets(linebuf + bufsize, 128, fp) == NULL) && !feof(fp))
+            {
+                ret = SECURITY_SERVER_ERROR_FILE_OPERATION;
+                goto error;
+            }
             bufsize += 128;
         }
 
@@ -211,6 +216,7 @@ error:
         fclose(fp);
     return ret;
 }
+#endif
 
 /*
  * Searches for group ID by given group name

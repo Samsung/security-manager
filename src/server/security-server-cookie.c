@@ -30,7 +30,10 @@
 
 #include <security-server-cookie.h>
 #include <security-server-comm.h>
+#include <security-server-util.h>
 #include <smack-check.h>
+
+#include <privilege-control.h>
 
 /* Delete useless cookie item *
  * then connect prev and next */
@@ -121,7 +124,7 @@ cookie_list *garbage_collection(cookie_list *cookie)
 cookie_list *search_existing_cookie(int pid, const cookie_list *c_list)
 {
     cookie_list *current = (cookie_list*)c_list, *cookie = NULL;
-    char *exe = NULL, *debug_cmdline = NULL;
+    char *exe = NULL;
 
     /* Search from the list */
     while (current != NULL)

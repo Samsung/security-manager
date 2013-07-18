@@ -155,4 +155,11 @@ int send_reset_pwd_request(int sock_fd,
 int send_set_pwd_history_request(int sock_fd, int num);
 int get_socket_from_systemd(int *sockfd);
 
+int send_pwd_response(const int sockfd,
+                      const unsigned char msg_id,
+                      const unsigned char return_code,
+                      const unsigned int current_attempts,
+                      const unsigned int max_attempts,
+                      const unsigned int expire_time);
+
 #endif
