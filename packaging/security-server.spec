@@ -82,6 +82,7 @@ ln -s ../security-server-data-share.socket %{buildroot}/usr/lib/systemd/system/s
 ln -s ../security-server-get-gid.socket %{buildroot}/usr/lib/systemd/system/sockets.target.wants/security-server-get-gid.socket
 ln -s ../security-server-privilege-by-pid.socket %{buildroot}/usr/lib/systemd/system/sockets.target.wants/security-server-privilege-by-pid.socket
 ln -s ../security-server-exec-path.socket %{buildroot}/usr/lib/systemd/system/sockets.target.wants/security-server-exec-path.socket
+ln -s ../security-server-get-object-name.socket %{buildroot}/usr/lib/systemd/system/sockets.target.wants/security-server-get-object-name.socket
 
 %clean
 rm -rf %{buildroot}
@@ -120,6 +121,8 @@ systemctl daemon-reload
 %attr(-,root,root) /usr/lib/systemd/system/security-server-privilege-by-pid.socket
 %attr(-,root,root) /usr/lib/systemd/system/sockets.target.wants/security-server-exec-path.socket
 %attr(-,root,root) /usr/lib/systemd/system/security-server-exec-path.socket
+%attr(-,root,root) /usr/lib/systemd/system/sockets.target.wants/security-server-get-object-name.socket
+%attr(-,root,root) /usr/lib/systemd/system/security-server-get-object-name.socket
 
 %{_datadir}/license/%{name}
 

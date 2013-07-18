@@ -122,8 +122,8 @@ bool GetObjectNameService::readOne(const ConnectionID &conn, SocketBuffer &buffe
     LogDebug("Iteration begin");
     gid_t gid;
     int retCode = SECURITY_SERVER_API_ERROR_SERVER_ERROR;
+
     if (!buffer.Ready()) {
-        LogDebug("Got part of message. Service is waiting for the rest.");
         return false;
     }
 
@@ -153,8 +153,6 @@ void GetObjectNameService::read(const ReadEvent &event) {
     LogDebug("Read event for counter: " << event.connectionID.counter);
     auto &buffer = m_socketBufferMap[event.connectionID.counter];
     buffer.Push(event.rawBuffer);
-
-    LogDebug("Pushed to buffer ptr: " << (void*)&buffer);
 
     // We can get several requests in one package.
     // Extract and process them all

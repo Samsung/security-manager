@@ -88,7 +88,6 @@ bool SharedMemoryService::readOne(const ConnectionID &conn, SocketBuffer &buffer
     struct smack_accesses *smack = NULL;
 
     if (!buffer.Ready()) {
-        LogDebug("Got part of message. Service is waiting for the rest.");
         return false;
     }
 
@@ -151,7 +150,6 @@ void SharedMemoryService::read(const ReadEvent &event) {
     auto &buffer = m_socketBufferMap[event.connectionID.counter];
     buffer.Push(event.rawBuffer);
 
-    LogDebug("Pushed to buffer ptr: " << (void*)&buffer);
     // We can get several requests in one package.
     // Extract and process them all
     while(readOne(event.connectionID, buffer));

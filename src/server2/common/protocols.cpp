@@ -33,7 +33,7 @@ char const * const SERVICE_SOCKET_ECHO =
 char const * const SERVICE_SOCKET_GET_GID =
     "/tmp/.security-server-api-get-gid.sock";
 char const * const SERVICE_SOCKET_PRIVILEGE_BY_PID =
-    "/tmp/.security-server-api-privilege-by-pid";
+    "/tmp/.security-server-api-privilege-by-pid.sock";
 char const * const SERVICE_SOCKET_EXEC_PATH =
     "/tmp/.security-server-api-exec-path.sock";
 char const * const SERVICE_SOCKET_GET_OBJECT_NAME =

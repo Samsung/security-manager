@@ -84,7 +84,6 @@ void PrivilegeByPidService::write(const WriteEvent &event) {
 bool PrivilegeByPidService::readOne(const ConnectionID &conn, SocketBuffer &buffer) {
     LogDebug("Iteration begin");
 
-
     int retval;
     int pid;
     std::string object;
@@ -95,7 +94,6 @@ bool PrivilegeByPidService::readOne(const ConnectionID &conn, SocketBuffer &buff
 
 
     if (!buffer.Ready()) {
-        LogDebug("Got part of message. Service is waiting for the rest.");
         return false;
     }
 
@@ -154,7 +152,6 @@ void PrivilegeByPidService::read(const ReadEvent &event) {
     auto &buffer = m_socketBufferMap[event.connectionID.counter];
     buffer.Push(event.rawBuffer);
 
-    LogDebug("Pushed to buffer ptr: " << (void*)&buffer);
     // We can get several requests in one package.
     // Extract and process them all
     while(readOne(event.connectionID, buffer));
