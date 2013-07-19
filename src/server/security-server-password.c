@@ -591,21 +591,6 @@ int process_valid_pwd_request(int sockfd)
     unsigned char cur_pwd[SECURITY_SERVER_HASHED_PWD_LEN];
     unsigned int max_attempt, expire_time;
 
-/*
-    if(retval != SECURITY_SERVER_SUCCESS)
-    {
-        SEC_SVR_DBG("%s", "Client Authentication Failed");
-        retval = send_generic_response(client_sockfd,
-                SECURITY_SERVER_MSG_TYPE_TOOL_RESPONSE,
-                SECURITY_SERVER_RETURN_CODE_AUTHENTICATION_FAILED);
-        if(retval != SECURITY_SERVER_SUCCESS)
-        {
-            SEC_SVR_DBG("ERROR: Cannot send generic response: %d", retval);
-        }
-        goto error;
-    }
-*/
-
     /* Check retry timer */
     gettimeofday(&cur_try, NULL);
     retval = check_retry(cur_try);
@@ -702,20 +687,6 @@ int process_set_pwd_request(int sockfd)
     /* Authenticate client that peer is setting app goes here*/
     /* Check SMACK 'rw' rule for the set password */
     retval = SECURITY_SERVER_SUCCESS;
-/*
-    if(retval != SECURITY_SERVER_SUCCESS)
-    {
-        SEC_SVR_DBG("%s", "Client Authentication Failed");
-        retval = send_generic_response(client_sockfd,
-                SECURITY_SERVER_MSG_TYPE_TOOL_RESPONSE,
-                SECURITY_SERVER_RETURN_CODE_AUTHENTICATION_FAILED);
-        if(retval != SECURITY_SERVER_SUCCESS)
-        {
-            SEC_SVR_DBG("ERROR: Cannot send generic response: %d", retval);
-        }
-        goto error;
-    }
-*/
 
     /* Check retry timer */
     gettimeofday(&cur_try, NULL);
@@ -995,20 +966,6 @@ int process_reset_pwd_request(int sockfd)
     SHA256_CTX context;
 
     /* Authenticate client that peer is setting app goes here*/
-/*
-    if(retval != SECURITY_SERVER_SUCCESS)
-    {
-        SEC_SVR_DBG("%s", "Client Authentication Failed");
-        retval = send_generic_response(client_sockfd,
-                SECURITY_SERVER_MSG_TYPE_TOOL_RESPONSE,
-                SECURITY_SERVER_RETURN_CODE_AUTHENTICATION_FAILED);
-        if(retval != SECURITY_SERVER_SUCCESS)
-        {
-            SEC_SVR_DBG("ERROR: Cannot send generic response: %d", retval);
-        }
-        goto error;
-    }
-*/
 
     /* Check retry timer */
     gettimeofday(&cur_try, NULL);
@@ -1155,20 +1112,7 @@ int process_chk_pwd_request(int sockfd)
     /* Authenticate client that peer is proper app goes here*/
     /* Check SMACK rule for the 'r' for password */
     retval = SECURITY_SERVER_SUCCESS;
-/*
-    if(retval != SECURITY_SERVER_SUCCESS)
-    {
-        SEC_SVR_DBG("%s", "Client Authentication Failed");
-        retval = send_generic_response(sockfd,
-                SECURITY_SERVER_MSG_TYPE_TOOL_RESPONSE,
-                SECURITY_SERVER_RETURN_CODE_AUTHENTICATION_FAILED);
-        if(retval != SECURITY_SERVER_SUCCESS)
-        {
-            SEC_SVR_DBG("ERROR: Cannot send generic response: %d", retval);
-        }
-        goto error;
-    }
-*/
+
     /* Check retry timer */
     gettimeofday(&cur_try, NULL);
     retval = check_retry(cur_try);
@@ -1341,20 +1285,6 @@ int process_set_pwd_history_request(int sockfd)
     struct timeval cur_try;
 
     /* Authenticate client that peer is setting app goes here*/
-/*
-    f(retval != SECURITY_SERVER_SUCCESS)
-    {
-        SEC_SVR_DBG("%s", "Client Authentication Failed");
-        retval = send_generic_response(client_sockfd,
-                SECURITY_SERVER_MSG_TYPE_TOOL_RESPONSE,
-                SECURITY_SERVER_RETURN_CODE_AUTHENTICATION_FAILED);
-        if(retval != SECURITY_SERVER_SUCCESS)
-        {
-            SEC_SVR_DBG("ERROR: Cannot send generic response: %d", retval);
-        }
-        goto error;
-    }
-*/
 
     /* Check retry timer */
     gettimeofday(&cur_try, NULL);

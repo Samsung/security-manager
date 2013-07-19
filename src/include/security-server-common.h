@@ -70,8 +70,6 @@ extern "C" {
 #define SECURITY_SERVER_ACCEPT_TIMEOUT_MILISECOND          10000
 #define SECURITY_SERVER_SOCKET_TIMEOUT_MILISECOND          3000
 #define SECURITY_SERVER_DEVELOPER_UID                      5100
-#define SECURITY_SERVER_DEBUG_TOOL_PATH                    "/usr/bin/debug-util"
-#define SECURITY_SERVER_KILL_APP_PATH                      "/usr/bin/kill_app"
 #define SECURITY_SERVER_DATA_DIRECTORY_PATH                "/opt/data/security-server"
 #define SECURITY_SERVER_ATTEMPT_FILE_NAME                  "attempts"
 #define SECURITY_SERVER_HISTORY_FILE_NAME                  "history"

@@ -1309,123 +1309,6 @@ int send_pid_request(int sock_fd, const char *cookie)
 }
 
 
-/* Send debug tool launch request message to security server *
- *
- * Message format
- *  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
- * |---------------------------------------------------------------|
- * | version=0x01  |MessageID=0x0b |       Message Length          |
- * |---------------------------------------------------------------|
- * |                        total # of args                        |
- * |---------------------------------------------------------------|
- * |                        1st argv length                        |
- * |---------------------------------------------------------------|
- * |                                                               |
- * |                            1st argv                           |
- * |                                                               |
- * |---------------------------------------------------------------|
- * |                        2nd argv length                        |
- * |---------------------------------------------------------------|
- * |                                                               |
- * |                            2nd argv                           |
- * |                                                               |
- * |---------------------------------------------------------------|
- * |                                ...                            |
- * |---------------------------------------------------------------|
- * |                        nth argv length                        |
- * |---------------------------------------------------------------|
- * |                                                               |
- * |                            nth argv                           |
- * |                                                               |
- * |---------------------------------------------------------------|
- */
-int send_launch_tool_request(int sock_fd, int argc, const char **argv)
-{
-    basic_header hdr;
-    int retval, total_length = 0, ptr, i, tempnum;
-    unsigned char *buf = NULL;
-
-    for (i = 0; i < argc; i++)
-    {
-        if (argv[i] == NULL)
-        {
-            SEC_SVR_ERR("Error: %dth argv is NULL", i);
-            return SECURITY_SERVER_ERROR_INPUT_PARAM;
-        }
-        total_length += strlen(argv[i]);
-    }
-
-    if (total_length < 1)
-    {
-        SEC_SVR_ERR("Error: There is a problem in argv. [%d]", total_length);
-        return SECURITY_SERVER_ERROR_INPUT_PARAM;
-    }
-    total_length += sizeof(hdr) + sizeof(int) + (argc * sizeof(int));
-
-    if (total_length > 0xffff)
-    {
-        SEC_SVR_ERR("Buffer overflow. too big payload. [%d]", total_length);
-        return SECURITY_SERVER_ERROR_INPUT_PARAM;
-    }
-
-    buf = malloc(total_length);
-    if (buf == NULL)
-    {
-        SEC_SVR_ERR("%s", "Error: failed to malloc()");
-        return SECURITY_SERVER_ERROR_OUT_OF_MEMORY;
-    }
-
-    /* Assemble header */
-    hdr.version = SECURITY_SERVER_MSG_VERSION;
-    hdr.msg_id = SECURITY_SERVER_MSG_TYPE_TOOL_REQUEST;
-    hdr.msg_len = (unsigned short)total_length;
-    memcpy(buf, &hdr, sizeof(hdr));
-    ptr = sizeof(hdr);
-    memcpy(buf + ptr, &argc, sizeof(int));
-    ptr += sizeof(hdr);
-
-    /* Assemple each argv length and value */
-    for (i = 0; i < argc; i++)
-    {
-        tempnum = strlen(argv[i]);
-        memcpy(buf + ptr, &tempnum, sizeof(int));
-        ptr += sizeof(int);
-        memcpy(buf + ptr, argv[i], tempnum);
-        ptr += tempnum;
-    }
-
-    /* Check poll */
-    retval = check_socket_poll(sock_fd, POLLOUT, SECURITY_SERVER_SOCKET_TIMEOUT_MILISECOND);
-    if (retval == SECURITY_SERVER_ERROR_POLL)
-    {
-        SEC_SVR_ERR("%s", "poll() error");
-        retval = SECURITY_SERVER_ERROR_SEND_FAILED;
-        goto error;
-    }
-    if (retval == SECURITY_SERVER_ERROR_TIMEOUT)
-    {
-        SEC_SVR_ERR("%s", "poll() timeout");
-        retval = SECURITY_SERVER_ERROR_SEND_FAILED;
-        goto error;
-    }
-
-    /* Send to server */
-    retval = TEMP_FAILURE_RETRY(write(sock_fd, buf, total_length));
-    if (retval < sizeof(buf))
-    {
-        /* Write error */
-        SEC_SVR_ERR("Error on write(): %d", retval);
-        retval = SECURITY_SERVER_ERROR_SEND_FAILED;
-        goto error;
-    }
-    retval = SECURITY_SERVER_SUCCESS;
-
-error:
-    if (buf != NULL)
-        free(buf);
-    return retval;
-}
-
 /* Send validate password request message to security server *
  *
  * Message format
@@ -2102,49 +1985,6 @@ error:
 }
 #endif
 
-/* Receive pid request packet body */
-/* Table argv and content will be freed by function caller */
-int recv_launch_tool_request(int sockfd, int argc, char *argv[])
-{
-    int retval, i, argv_len;
-
-    argv[0] = malloc(strlen(SECURITY_SERVER_DEBUG_TOOL_PATH) + 1);
-    strncpy(argv[0], SECURITY_SERVER_DEBUG_TOOL_PATH, (strlen(SECURITY_SERVER_DEBUG_TOOL_PATH) + 1));
-
-    for (i = 1; i < argc; i++)
-    {
-        retval = TEMP_FAILURE_RETRY(read(sockfd, &argv_len, sizeof(int)));
-        if (retval < sizeof(int))
-        {
-            SEC_SVR_ERR("Error: argv length recieve failed: %d", retval);
-            return SECURITY_SERVER_ERROR_RECV_FAILED;
-        }
-
-        if (argv_len <= 0 || argv_len >= INT_MAX)
-        {
-            SEC_SVR_ERR("Error: argv length out of boundaries");
-            return SECURITY_SERVER_ERROR_RECV_FAILED;
-        }
-
-        argv[i] = malloc(argv_len + 1);
-        if (argv[i] == NULL)
-        {
-            SEC_SVR_ERR("Error: malloc() failed: %d", retval);
-            return SECURITY_SERVER_ERROR_OUT_OF_MEMORY;
-        }
-
-        memset(argv[i], 0x00, argv_len + 1);
-        retval = TEMP_FAILURE_RETRY(read(sockfd, argv[i], argv_len));
-        if (retval < argv_len)
-        {
-            SEC_SVR_ERR("Error: argv recieve failed: %d", retval);
-            return SECURITY_SERVER_ERROR_RECV_FAILED;
-        }
-    }
-
-    return SECURITY_SERVER_SUCCESS;
-}
-
 int recv_generic_response(int sockfd, response_header *hdr)
 {
     int retval;
@@ -2618,22 +2458,5 @@ int get_client_gid_list(int sockfd, int **privileges)
     }
 
     return ret;
-}
-
-int free_argv(char **argv, int argc)
-{
-    int i;
-    if (argv == NULL)
-    {
-        SEC_SVR_ERR("%s", "Cannot free NULL pointer");
-        return SECURITY_SERVER_ERROR_INPUT_PARAM;
-    }
-    for (i = 0; i < argc; i++)
-    {
-        if (argv[i] != NULL)
-            free(argv[i]);
-    }
-    free(argv);
-    return SECURITY_SERVER_SUCCESS;
 }
 
