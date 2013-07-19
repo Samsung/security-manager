@@ -35,7 +35,7 @@ const char *OLD_STYLE_LOGS_ENV_NAME = "DPL_USE_OLD_STYLE_LOGS";
 const char *OLD_STYLE_PEDANTIC_LOGS_ENV_NAME =
     "DPL_USE_OLD_STYLE_PEDANTIC_LOGS";
 const char *OLD_STYLE_LOGS_MASK_ENV_NAME = "DPL_USE_OLD_STYLE_LOGS_MASK";
-const char *SecurityServer_LOG_OFF = "DPL_LOG_OFF";
+const char *SECURITY_SERVER_LOG_OFF = "DPL_LOG_OFF";
 } // namespace anonymous
 
 bool LogSystem::IsLoggingEnabled() const
@@ -46,7 +46,7 @@ bool LogSystem::IsLoggingEnabled() const
 LogSystem::LogSystem() :
     m_dlogProvider(NULL),
     m_oldStyleProvider(NULL),
-    m_isLoggingEnabled(!getenv(SecurityServer_LOG_OFF))
+    m_isLoggingEnabled(!getenv(SECURITY_SERVER_LOG_OFF))
 {
     bool oldStyleLogs = false;
     bool oldStyleDebugLogs = true;
@@ -218,6 +218,58 @@ void LogSystem::Pedantic(const char *message,
          ++iterator)
     {
         (*iterator)->Pedantic(message, filename, line, function);
+    }
+}
+
+void LogSystem::SecureInfo(const char *message,
+                         const char *filename,
+                         int line,
+                         const char *function)
+{
+    for (AbstractLogProviderPtrList::iterator iterator = m_providers.begin();
+         iterator != m_providers.end();
+         ++iterator)
+    {
+        (*iterator)->SecureInfo(message, filename, line, function);
+    }
+}
+
+void LogSystem::SecureDebug(const char *message,
+                         const char *filename,
+                         int line,
+                         const char *function)
+{
+    for (AbstractLogProviderPtrList::iterator iterator = m_providers.begin();
+         iterator != m_providers.end();
+         ++iterator)
+    {
+        (*iterator)->SecureDebug(message, filename, line, function);
+    }
+}
+
+void LogSystem::SecureError(const char *message,
+                         const char *filename,
+                         int line,
+                         const char *function)
+{
+    for (AbstractLogProviderPtrList::iterator iterator = m_providers.begin();
+         iterator != m_providers.end();
+         ++iterator)
+    {
+        (*iterator)->SecureError(message, filename, line, function);
+    }
+}
+
+void LogSystem::SecureWarning(const char *message,
+                         const char *filename,
+                         int line,
+                         const char *function)
+{
+    for (AbstractLogProviderPtrList::iterator iterator = m_providers.begin();
+         iterator != m_providers.end();
+         ++iterator)
+    {
+        (*iterator)->SecureWarning(message, filename, line, function);
     }
 }
 }

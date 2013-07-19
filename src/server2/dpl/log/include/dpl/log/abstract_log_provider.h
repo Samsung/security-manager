@@ -49,6 +49,22 @@ class AbstractLogProvider
                           const char *fileName,
                           int line,
                           const char *function) = 0;
+    virtual void SecureDebug(const char *message,
+                       const char *fileName,
+                       int line,
+                       const char *function) = 0;
+    virtual void SecureInfo(const char *message,
+                      const char *fileName,
+                      int line,
+                      const char *function) = 0;
+    virtual void SecureWarning(const char *message,
+                         const char *fileName,
+                         int line,
+                         const char *function) = 0;
+    virtual void SecureError(const char *message,
+                       const char *fileName,
+                       int line,
+                       const char *function) = 0;
 
   protected:
     static const char *LocateSourceFileName(const char *filename);

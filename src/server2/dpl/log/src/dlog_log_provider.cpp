@@ -102,5 +102,42 @@ void DLOGLogProvider::Pedantic(const char *message,
                                               line,
                                               function).c_str());
 }
+
+void DLOGLogProvider::SecureDebug(const char *message,
+                            const char *filename,
+                            int line,
+                            const char *function)
+{
+    SECURE_SLOG(LOG_DEBUG, m_tag.get(), "%s",
+        FormatMessage(message, filename, line, function).c_str());
+}
+
+void DLOGLogProvider::SecureInfo(const char *message,
+                           const char *filename,
+                           int line,
+                           const char *function)
+{
+    SECURE_SLOG(LOG_INFO, m_tag.get(), "%s",
+        FormatMessage(message, filename, line, function).c_str());
+}
+
+void DLOGLogProvider::SecureWarning(const char *message,
+                              const char *filename,
+                              int line,
+                              const char *function)
+{
+    SECURE_SLOG(LOG_WARN, m_tag.get(), "%s",
+        FormatMessage(message, filename, line, function).c_str());
+}
+
+void DLOGLogProvider::SecureError(const char *message,
+                            const char *filename,
+                            int line,
+                            const char *function)
+{
+    SECURE_SLOG(LOG_ERROR, m_tag.get(), "%s",
+        FormatMessage(message, filename, line, function).c_str());
+}
+
 }
 } // namespace SecurityServer

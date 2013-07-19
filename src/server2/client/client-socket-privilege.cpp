@@ -110,7 +110,7 @@ int security_server_check_privilege_by_sockfd(int sockfd,
 
     ret = security_server_check_privilege_by_pid(cr.pid, object, access_rights);
 
-    SECURE_LOGD("security_server_check_privilege_by_pid returned %d", ret);
+    LogSecureDebug("security_server_check_privilege_by_pid returned " << ret);
 
 exit:
     //Getting path for logs
@@ -118,11 +118,15 @@ exit:
         //If this is only for logs, do we want to log it as error?
         LogError("Failed to read executable path for process " << cr.pid);
     if (ret == SECURITY_SERVER_API_SUCCESS)
-        SECURE_LOGD("SS_SMACK: caller_pid=%d, subject=%s, object=%s, access=%s, result=%d, caller_path=%s",
-                cr.pid, subject_p.get() ? subject_p.get() : "NULL", object, access_rights, ret, path.c_str());
+        LogSecureDebug("SS_SMACK: caller_pid=" << cr.pid << ", subject=" <<
+            (subject_p.get() ? subject_p.get() : "NULL") << ", object=" <<
+            object << ", access=" << access_rights << ", result=" <<
+            ret << ", caller_path=" << path.c_str());
     else
-        SECURE_LOGW("SS_SMACK: caller_pid=%d, subject=%s, object=%s, access=%s, result=%d, caller_path=%s",
-                cr.pid, subject_p.get() ? subject_p.get() : "NULL", object, access_rights, ret, path.c_str());
+        LogSecureWarning("SS_SMACK: caller_pid=" << cr.pid << ", subject=" <<
+            (subject_p.get() ? subject_p.get() : "NULL") << ", object=" <<
+            object << ", access=" << access_rights << ", result=" <<
+            ret << ", caller_path=" << path.c_str());
 
     return ret;
 }
