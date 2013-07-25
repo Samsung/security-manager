@@ -35,6 +35,7 @@ Tizen Security server client libraries
 Summary:    Security server (client-devel)
 Group:      Security/Development
 Requires:   libsecurity-server-client = %{version}-%{release}
+Requires:   libprivilege-control-devel
 
 %description -n libsecurity-server-client-devel
 Development files needed for using the security client
@@ -83,6 +84,7 @@ ln -s ../security-server-get-gid.socket %{buildroot}/usr/lib/systemd/system/sock
 ln -s ../security-server-privilege-by-pid.socket %{buildroot}/usr/lib/systemd/system/sockets.target.wants/security-server-privilege-by-pid.socket
 ln -s ../security-server-exec-path.socket %{buildroot}/usr/lib/systemd/system/sockets.target.wants/security-server-exec-path.socket
 ln -s ../security-server-get-object-name.socket %{buildroot}/usr/lib/systemd/system/sockets.target.wants/security-server-get-object-name.socket
+ln -s ../security-server-app-permissions.socket %{buildroot}/usr/lib/systemd/system/sockets.target.wants/security-server-app-permissions.socket
 
 %clean
 rm -rf %{buildroot}
@@ -123,6 +125,8 @@ systemctl daemon-reload
 %attr(-,root,root) /usr/lib/systemd/system/security-server-exec-path.socket
 %attr(-,root,root) /usr/lib/systemd/system/sockets.target.wants/security-server-get-object-name.socket
 %attr(-,root,root) /usr/lib/systemd/system/security-server-get-object-name.socket
+%attr(-,root,root) /usr/lib/systemd/system/sockets.target.wants/security-server-app-permissions.socket
+%attr(-,root,root) /usr/lib/systemd/system/security-server-app-permissions.socket
 
 %{_datadir}/license/%{name}
 

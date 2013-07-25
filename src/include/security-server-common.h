@@ -89,6 +89,8 @@ extern "C" {
 
 
 /* Data types *****************************************************************/
+
+
 /* Cookie List data type */
 typedef struct _cookie_list
 {

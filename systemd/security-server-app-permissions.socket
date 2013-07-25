@@ -1,0 +1,10 @@
+[Socket]
+ListenStream=/tmp/.security-server-api-app-permissions.sock
+SocketMode=0777
+SmackLabelIPIn=security-server::api-app-permissions
+SmackLabelIPOut=@
+
+Service=security-server.service
+
+[Install]
+WantedBy=sockets.target

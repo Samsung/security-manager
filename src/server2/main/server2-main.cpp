@@ -36,6 +36,7 @@
 #include <privilege-by-pid.h>
 #include <exec-path.h>
 #include <get-object-name.h>
+#include <app-permissions.h>
 #include <echo.h>
 
 IMPLEMENT_SAFE_SINGLETON(SecurityServer::Log::LogSystem);
@@ -71,6 +72,10 @@ int server2(void) {
         SecurityServer::GetObjectNameService *getObjectNameService = new SecurityServer::GetObjectNameService;
         getObjectNameService->Create();
         manager.RegisterSocketService(getObjectNameService);
+
+        SecurityServer::AppPermissionsService *appEnablePermissionsService = new SecurityServer::AppPermissionsService;
+        appEnablePermissionsService->Create();
+        manager.RegisterSocketService(appEnablePermissionsService);
 
         manager.MainLoop();
     }

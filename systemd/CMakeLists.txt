@@ -6,6 +6,7 @@ INSTALL(FILES
     ${CMAKE_SOURCE_DIR}/systemd/security-server-privilege-by-pid.socket
     ${CMAKE_SOURCE_DIR}/systemd/security-server-exec-path.socket
     ${CMAKE_SOURCE_DIR}/systemd/security-server-get-object-name.socket
+    ${CMAKE_SOURCE_DIR}/systemd/security-server-app-permissions.socket
     DESTINATION
     /usr/lib/systemd/system
 )

@@ -23,6 +23,7 @@
 #define SECURITY_SERVER_H
 
 #include <sys/types.h>
+#include <privilege-control.h>
 
 /**
  * @file    security-server.h
@@ -131,6 +132,7 @@
 /*! \brief   indicating the error with unknown reason */
 #define SECURITY_SERVER_API_ERROR_UNKNOWN -255
 /** @}*/
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -963,6 +965,30 @@ int security_server_app_give_access(const char *customer_label, int customer_pid
  * SECURITY_SERVER_SUCCESS - on succes
  */
 int security_server_check_privilege_by_pid(int pid, const char *object, const char *access_rights);
+
+/*
+ * This function allows middleware to enable permissions for specified app_id.
+ *
+ * \param[in] Application ID
+ * \param[in] Application type definet in enum at the beginning of this file
+ * \param[in] Permissions list
+ * \param[in] Persistent
+ *
+ * \return SECURITY_SERVER_SUCCESS on success or error code on fail
+ */
+int security_server_app_enable_permissions(const char *app_id, app_type_t app_type, const char **perm_list, int persistent);
+
+/*
+ * This function allows middleware to disable permissions for specified app_id.
+ *
+ * \param[in] Application ID
+ * \param[in] Application type definet in enum at the beginning of this file
+ * \param[in] Permissions list
+ *
+ * \return SECURITY_SERVER_SUCCESS on success or error code on fail
+ */
+int security_server_app_disable_permissions(const char *app_id, app_type_t app_type, const char **perm_list);
+
 
 #ifdef __cplusplus
 }

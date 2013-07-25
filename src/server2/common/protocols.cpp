@@ -38,6 +38,8 @@ char const * const SERVICE_SOCKET_EXEC_PATH =
     "/tmp/.security-server-api-exec-path.sock";
 char const * const SERVICE_SOCKET_GET_OBJECT_NAME =
     "/tmp/.security-server-api-get-object-name.sock";
+char const * const SERVICE_SOCKET_APP_PERMISSIONS =
+    "/tmp/.security-server-api-app-permissions.sock";
 
 } // namespace SecurityServer
 
