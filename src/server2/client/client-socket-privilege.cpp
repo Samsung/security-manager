@@ -95,7 +95,7 @@ int security_server_check_privilege_by_sockfd(int sockfd,
         return SECURITY_SERVER_API_ERROR_INPUT_PARAM;
 
     ret = smack_new_label_from_socket(sockfd, &subject);
-    if (ret == 0) {
+    if (ret >= 0) {
         subjectPtr.reset(subject);
         subject = NULL;
     } else {
@@ -149,7 +149,7 @@ char *security_server_get_smacklabel_sockfd(int fd)
         return label;
     }
 
-    if (smack_new_label_from_socket(fd, &label) != 0)
+    if (smack_new_label_from_socket(fd, &label) < 0)
     {
         LogError("Client ERROR: Unable to get socket SMACK label");
         return NULL;

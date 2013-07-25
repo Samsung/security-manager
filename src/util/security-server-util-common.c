@@ -469,7 +469,7 @@ int authorize_SS_API_caller_socket(int sockfd, char *required_API_label, char *r
     }
 
     retval = smack_new_label_from_socket(sockfd, &label);
-    if (retval != 0) {
+    if (retval < 0) {
         SEC_SVR_ERR("%s", "Error in getting label from socket");
         retval = -1;
         goto end;
