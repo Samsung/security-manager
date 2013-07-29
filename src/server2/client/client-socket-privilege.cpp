@@ -75,14 +75,14 @@ int security_server_check_privilege_by_sockfd(int sockfd,
                                               const char *object,
                                               const char *access_rights)
 {
-    char *subject;
+    char *subject = NULL;
     int ret;
     std::string path;
-    std::unique_ptr<char> subject_p;
+    std::unique_ptr<char, void (*)(void*)throw ()> subjectPtr(NULL, std::free);
 
     //for get socket options
     struct ucred cr;
-    unsigned int len = sizeof(struct ucred);
+    size_t len = sizeof(struct ucred);
 
     //SMACK runtime check
     if (!smack_runtime_check())
@@ -91,40 +91,45 @@ int security_server_check_privilege_by_sockfd(int sockfd,
         return SECURITY_SERVER_API_SUCCESS;
     }
 
+    if (sockfd < 0 || !object || !access_rights)
+        return SECURITY_SERVER_API_ERROR_INPUT_PARAM;
+
     ret = smack_new_label_from_socket(sockfd, &subject);
     if (ret == 0) {
-        //after allocation we move ownership to smart pointer to let it do the cleanup
-        subject_p.reset(subject);
-
+        subjectPtr.reset(subject);
+        subject = NULL;
     } else {
-        ret = SECURITY_SERVER_API_ERROR_SERVER_ERROR;
-        goto exit;
+        LogError("Failed to get new label from socket. Object="
+            << object << ", access=" << access_rights
+            << ", error=" << strerror(errno));
+        return SECURITY_SERVER_API_ERROR_SOCKET;
     }
 
     ret = getsockopt(sockfd, SOL_SOCKET, SO_PEERCRED, &cr, &len);
     if (ret < 0) {
-        LogError("Error in getsockopt(). Errno: " << strerror(errno));
-        ret = SECURITY_SERVER_API_ERROR_ACCESS_DENIED;
-        goto exit;
+        LogError("Error in getsockopt(). Errno: "
+            << strerror(errno) <<  ", subject="
+            << (subjectPtr.get() ? subjectPtr.get() : "NULL")
+            << ", object=" << object << ", access=" << access_rights
+            << ", error=" << strerror(errno));
+        return SECURITY_SERVER_API_ERROR_SOCKET;
     }
 
     ret = security_server_check_privilege_by_pid(cr.pid, object, access_rights);
 
-    LogSecureDebug("security_server_check_privilege_by_pid returned " << ret);
-
-exit:
     //Getting path for logs
-    if (SECURITY_SERVER_API_SUCCESS != get_exec_path(cr.pid, path))
-        //If this is only for logs, do we want to log it as error?
+    if (SECURITY_SERVER_API_SUCCESS != get_exec_path(cr.pid, path)) {
         LogError("Failed to read executable path for process " << cr.pid);
+    }
+
     if (ret == SECURITY_SERVER_API_SUCCESS)
         LogSecureDebug("SS_SMACK: caller_pid=" << cr.pid << ", subject=" <<
-            (subject_p.get() ? subject_p.get() : "NULL") << ", object=" <<
+            (subjectPtr.get() ? subjectPtr.get() : "NULL") << ", object=" <<
             object << ", access=" << access_rights << ", result=" <<
             ret << ", caller_path=" << path.c_str());
     else
         LogSecureWarning("SS_SMACK: caller_pid=" << cr.pid << ", subject=" <<
-            (subject_p.get() ? subject_p.get() : "NULL") << ", object=" <<
+            (subjectPtr.get() ? subjectPtr.get() : "NULL") << ", object=" <<
             object << ", access=" << access_rights << ", result=" <<
             ret << ", caller_path=" << path.c_str());
 
