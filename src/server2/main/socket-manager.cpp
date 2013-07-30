@@ -121,6 +121,7 @@ void SocketManager::ReadyForAccept(int sock) {
     unsigned int clientLen = sizeof(clientAddr);
     LogInfo("Accept on sock: " << sock);
     int client = accept4(sock, (struct sockaddr*) &clientAddr, &clientLen, SOCK_NONBLOCK);
+    LogInfo("Socket opended: " << client);
     if (-1 == client) {
         int err = errno;
         LogDebug("Error in accept: " << strerror(err));
@@ -519,7 +520,15 @@ void SocketManager::ProcessQueue() {
 }
 
 void SocketManager::CloseSocket(int sock) {
+    LogInfo("Closing socket: " << sock);
     auto &desc = m_socketDescriptionVector[sock];
+
+    if (!(desc.isOpen)) {
+        // This may happend when some information was waiting for write to the
+        // socket and in the same time socket was closed by the client.
+        LogError("Socket " << sock << " is not open. Nothing to do!");
+        return;
+    }
 
     GenericSocketService::CloseEvent event;
     event.connectionID.sock = sock;
@@ -531,7 +540,11 @@ void SocketManager::CloseSocket(int sock) {
     desc.interfaceID = -1;
     desc.rawBuffer.clear();
 
-    service->Event(event);
+    if (service)
+        service->Event(event);
+    else
+        LogError("Critical! Service is NULL! This should never happend!");
+
     TEMP_FAILURE_RETRY(close(sock));
     FD_CLR(sock, &m_readSet);
     FD_CLR(sock, &m_writeSet);
