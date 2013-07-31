@@ -41,15 +41,23 @@ IMPLEMENT_SAFE_SINGLETON(SecurityServer::Log::LogSystem);
 
 namespace {
 
+const int POLL_TIMEOUT = 1000;
+
 void securityClientEnableLogSystem(void) {
     SecurityServer::Singleton<SecurityServer::Log::LogSystem>::Instance().SetTag("SECURITY_SERVER_CLIENT");
 }
 
 int waitForSocket(int sock, int event, int timeout) {
+    int retval;
     pollfd desc[1];
     desc[0].fd = sock;
     desc[0].events = event;
-    int retval = poll(desc, 1, timeout);
+
+    while((-1 == (retval = poll(desc, 1, timeout))) && (errno == EINTR)) {
+        timeout >>= 1;
+        errno = 0;
+    }
+
     if (0 == retval) {
         LogDebug("Poll timeout");
     } else if (-1 == retval) {
@@ -107,7 +115,7 @@ public:
 
         int retval = TEMP_FAILURE_RETRY(connect(m_sock, (struct sockaddr*)&clientAddr, SUN_LEN(&clientAddr)));
         if ((retval == -1) && (errno == EINPROGRESS)) {
-            if (0 >= waitForSocket(m_sock, POLLIN, 1000)) {
+            if (0 >= waitForSocket(m_sock, POLLIN, POLL_TIMEOUT)) {
                 LogError("Error in waitForSocket.");
                 return SECURITY_SERVER_API_ERROR_SOCKET;
             }
@@ -170,7 +178,7 @@ int sendToServer(char const * const interface, const RawBuffer &send, SocketBuff
     }
 
     while ((send.size() - done) > 0) {
-        if (0 >= waitForSocket(sock.Get(), POLLOUT, 1000)) {
+        if (0 >= waitForSocket(sock.Get(), POLLOUT, POLL_TIMEOUT)) {
             LogError("Error in poll(POLLOUT)");
             return SECURITY_SERVER_API_ERROR_SOCKET;
         }
@@ -184,7 +192,7 @@ int sendToServer(char const * const interface, const RawBuffer &send, SocketBuff
     }
 
     do {
-        if (0 >= waitForSocket(sock.Get(), POLLIN, 1000)) {
+        if (0 >= waitForSocket(sock.Get(), POLLIN, POLL_TIMEOUT)) {
             LogError("Error in poll(POLLIN)");
             return SECURITY_SERVER_API_ERROR_SOCKET;
         }
