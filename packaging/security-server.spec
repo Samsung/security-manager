@@ -85,6 +85,8 @@ ln -s ../security-server-privilege-by-pid.socket %{buildroot}/usr/lib/systemd/sy
 ln -s ../security-server-exec-path.socket %{buildroot}/usr/lib/systemd/system/sockets.target.wants/security-server-exec-path.socket
 ln -s ../security-server-get-object-name.socket %{buildroot}/usr/lib/systemd/system/sockets.target.wants/security-server-get-object-name.socket
 ln -s ../security-server-app-permissions.socket %{buildroot}/usr/lib/systemd/system/sockets.target.wants/security-server-app-permissions.socket
+ln -s ../security-server-cookie-get.socket %{buildroot}/usr/lib/systemd/system/sockets.target.wants/security-server-cookie-get.socket
+ln -s ../security-server-cookie-check.socket %{buildroot}/usr/lib/systemd/system/sockets.target.wants/security-server-cookie-check.socket
 
 %clean
 rm -rf %{buildroot}
@@ -127,6 +129,11 @@ systemctl daemon-reload
 %attr(-,root,root) /usr/lib/systemd/system/security-server-get-object-name.socket
 %attr(-,root,root) /usr/lib/systemd/system/sockets.target.wants/security-server-app-permissions.socket
 %attr(-,root,root) /usr/lib/systemd/system/security-server-app-permissions.socket
+%attr(-,root,root) /usr/lib/systemd/system/sockets.target.wants/security-server-cookie-get.socket
+%attr(-,root,root) /usr/lib/systemd/system/security-server-cookie-get.socket
+%attr(-,root,root) /usr/lib/systemd/system/sockets.target.wants/security-server-cookie-check.socket
+%attr(-,root,root) /usr/lib/systemd/system/security-server-cookie-check.socket
+
 
 %{_datadir}/license/%{name}
 

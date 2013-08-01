@@ -39,16 +39,10 @@ typedef struct
 #define SECURITY_SERVER_MIDDLEWARE_USER "app"
 
 /* Message Types */
-#define SECURITY_SERVER_MSG_TYPE_COOKIE_REQUEST                 0x01
-#define SECURITY_SERVER_MSG_TYPE_COOKIE_RESPONSE                0x02
-#define SECURITY_SERVER_MSG_TYPE_CHECK_PRIVILEGE_REQUEST        0x03
-#define SECURITY_SERVER_MSG_TYPE_CHECK_PRIVILEGE_RESPONSE       0x04
 // #define SECURITY_SERVER_MSG_TYPE_OBJECT_NAME_REQUEST            0x05
 // #define SECURITY_SERVER_MSG_TYPE_OBJECT_NAME_RESPONSE           0x06
 #define SECURITY_SERVER_MSG_TYPE_GID_REQUEST                    0x07
 #define SECURITY_SERVER_MSG_TYPE_GID_RESPONSE                   0x08
-#define SECURITY_SERVER_MSG_TYPE_PID_REQUEST                    0x09
-#define SECURITY_SERVER_MSG_TYPE_PID_RESPONSE                   0x0a
 #define SECURITY_SERVER_MSG_TYPE_VALID_PWD_REQUEST              0x0d
 #define SECURITY_SERVER_MSG_TYPE_VALID_PWD_RESPONSE             0x0e
 #define SECURITY_SERVER_MSG_TYPE_SET_PWD_REQUEST                0x0f
@@ -59,14 +53,10 @@ typedef struct
 #define SECURITY_SERVER_MSG_TYPE_CHK_PWD_RESPONSE               0x14
 #define SECURITY_SERVER_MSG_TYPE_SET_PWD_HISTORY_REQUEST        0x15
 #define SECURITY_SERVER_MSG_TYPE_SET_PWD_HISTORY_RESPONSE       0x16
-#define SECURITY_SERVER_MSG_TYPE_CHECK_PRIVILEGE_NEW_REQUEST    0x17
-#define SECURITY_SERVER_MSG_TYPE_CHECK_PRIVILEGE_NEW_RESPONSE   0x18
 #define SECURITY_SERVER_MSG_TYPE_SET_PWD_MAX_CHALLENGE_REQUEST  0x19
 #define SECURITY_SERVER_MSG_TYPE_SET_PWD_MAX_CHALLENGE_RESPONSE 0x1a
 #define SECURITY_SERVER_MSG_TYPE_SET_PWD_VALIDITY_REQUEST       0x1b
 #define SECURITY_SERVER_MSG_TYPE_SET_PWD_VALIDITY_RESPONSE      0x1c
-#define SECURITY_SERVER_MSG_TYPE_SMACK_REQUEST                  0x1d
-#define SECURITY_SERVER_MSG_TYPE_SMACK_RESPONSE                 0x1e
 #ifdef  USE_SEC_SRV1_FOR_CHECK_PRIVILEGE_BY_PID
 #define SECURITY_SERVER_MSG_TYPE_CHECK_PID_PRIVILEGE_REQUEST    0x21
 #define SECURITY_SERVER_MSG_TYPE_CHECK_PID_PRIVILEGE_RESPONSE   0x22
@@ -99,37 +89,14 @@ int authenticate_client_application(int sockfd, int *pid, int *uid);
 int authenticate_client_middleware(int sockfd, int *pid);
 int get_client_gid_list(int sockfd, int **privileges);
 int send_generic_response (int sockfd, unsigned char msgid, unsigned char return_code);
-int send_cookie(int sockfd, unsigned char *cookie);
 int send_object_name(int sockfd, char *obj);
 int send_gid(int sockfd, int gid);
-int send_cookie_request(int sock_fd);
 int send_gid_request(int sock_fd, const char *object);
 int send_object_name_request(int sock_fd, int gid);
-int send_privilege_check_request(int sock_fd, const char *cookie, int gid);
-int send_privilege_check_new_request(int sock_fd,
-                                     const char *cookie,
-                                     const char *object,
-                                     const char *access_rights);
 int recv_get_gid_response(int sockfd, response_header *hdr, int *gid);
 int recv_get_object_name(int sockfd, response_header *hdr, char *object, int max_object_size);
-int recv_cookie(int sockfd, response_header *hdr, char *cookie);
-int recv_privilege_check_response(int sockfd, response_header *hdr);
-int recv_privilege_check_new_response(int sockfd, response_header *hdr);
-int recv_hdr(int client_sockfd, basic_header *basic_hdr);
-int recv_check_privilege_request(int sockfd, unsigned char *requested_cookie, int *requested_privilege);
-int recv_check_privilege_new_request(int sockfd,
-                                     unsigned char *requested_cookie,
-                                     char *object_label,
-                                     char *access_rights);
-int send_pid_request(int sock_fd, const char *cookie);
-int recv_pid_request(int sockfd, unsigned char *requested_cookie);
-int send_pid(int sockfd, int pid);
-int recv_pid_response(int sockfd, response_header *hdr, int *pid);
 
-int send_smack_request(int sockfd, const char *cookie);
-int recv_smack_request(int sockfd, unsigned char *requested_cookie);
-int send_smack(int sockfd, char *label);
-int recv_smack_response(int sockfd, response_header *hdr, char *label);
+int recv_hdr(int client_sockfd, basic_header *basic_hdr);
 
 #ifdef USE_SEC_SRV1_FOR_CHECK_PRIVILEGE_BY_PID
 int send_pid_privilege_request(int sockfd, int pid, const char *object, const char *access_rights);

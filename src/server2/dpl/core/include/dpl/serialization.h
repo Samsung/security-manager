@@ -61,6 +61,16 @@ struct Serialization {
         object->Serialize(stream);
     }
 
+    // char
+    static void Serialize(IStream& stream, const char value)
+    {
+        stream.Write(sizeof(value), &value);
+    }
+    static void Serialize(IStream& stream, const char* const value)
+    {
+        stream.Write(sizeof(*value), value);
+    }
+
     // unsigned int
     static void Serialize(IStream& stream, const unsigned value)
     {
@@ -190,6 +200,17 @@ struct Deserialization {
     static void Deserialize(IStream& stream, T*& object)
     {
         object = new T(stream);
+    }
+
+    // char
+    static void Deserialize(IStream& stream, char& value)
+    {
+        stream.Read(sizeof(value), &value);
+    }
+    static void Deserialize(IStream& stream, char*& value)
+    {
+        value = new char;
+        stream.Read(sizeof(*value), value);
     }
 
     // unsigned int

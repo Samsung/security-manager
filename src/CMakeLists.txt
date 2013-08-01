@@ -12,7 +12,6 @@ SET(SERVER2_PATH ${PROJECT_SOURCE_DIR}/src/server2)
 
 SET(SECURITY_SERVER_SOURCES
     ${SECURITY_SERVER_PATH}/communication/security-server-comm.c
-    ${SECURITY_SERVER_PATH}/server/security-server-cookie.c
     ${SECURITY_SERVER_PATH}/server/security-server-main.c
     ${SECURITY_SERVER_PATH}/server/security-server-password.c
     ${SECURITY_SERVER_PATH}/util/security-server-util-common.c
@@ -23,6 +22,8 @@ SET(SECURITY_SERVER_SOURCES
     ${SERVER2_PATH}/service/echo.cpp
     ${SERVER2_PATH}/service/get-gid.cpp
     ${SERVER2_PATH}/service/app-permissions.cpp
+    ${SERVER2_PATH}/service/cookie.cpp
+    ${SERVER2_PATH}/service/cookie-jar.cpp
     ${SERVER2_PATH}/service/privilege-by-pid.cpp
     ${SERVER2_PATH}/service/exec-path.cpp
     ${SERVER2_PATH}/service/get-object-name.cpp
@@ -68,6 +69,7 @@ SET(SECURITY_CLIENT_SOURCES
     ${SECURITY_SERVER_PATH}/server2/client/client-shared-memory.cpp
     ${SECURITY_SERVER_PATH}/server2/client/client-get-gid.cpp
     ${SECURITY_SERVER_PATH}/server2/client/client-app-permissions.cpp
+    ${SECURITY_SERVER_PATH}/server2/client/client-cookie.cpp
     ${SECURITY_SERVER_PATH}/server2/client/client-privilege-by-pid.cpp
     ${SECURITY_SERVER_PATH}/server2/client/client-socket-privilege.cpp
     ${SECURITY_SERVER_PATH}/server2/client/client-get-object-name.cpp

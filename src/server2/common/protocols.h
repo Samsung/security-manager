@@ -25,6 +25,8 @@
 #ifndef _SECURITY_SERVER_PROTOCOLS_
 #define _SECURITY_SERVER_PROTOCOLS_
 
+#include <cstddef>
+
 namespace SecurityServer {
 
 extern char const * const SERVICE_SOCKET_SHARED_MEMORY;
@@ -34,8 +36,22 @@ extern char const * const SERVICE_SOCKET_PRIVILEGE_BY_PID;
 extern char const * const SERVICE_SOCKET_EXEC_PATH;
 extern char const * const SERVICE_SOCKET_GET_OBJECT_NAME;
 extern char const * const SERVICE_SOCKET_APP_PERMISSIONS;
+extern char const * const SERVICE_SOCKET_COOKIE_GET;
+extern char const * const SERVICE_SOCKET_COOKIE_CHECK;
 
-enum class AppPermissionsAction { ENABLE, DISABLE};
+enum class AppPermissionsAction { ENABLE, DISABLE };
+
+enum class CookieGet
+{
+    COOKIE_SIZE,
+    COOKIE,
+    PID,
+    SMACKLABEL,
+    PRIVILEGE_GID,
+    PRIVILEGE
+};
+
+extern const size_t COOKIE_SIZE;
 
 } // namespace SecuritySever
 

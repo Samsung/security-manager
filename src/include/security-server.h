@@ -314,7 +314,7 @@ int security_server_get_object_name(gid_t gid, char *object, size_t max_object_s
  * ...
  * \endcode
 */
-int security_server_request_cookie(char *cookie, size_t max_cookie);
+int security_server_request_cookie(char *cookie, size_t bufferSize);
 
 
 

@@ -16,30 +16,36 @@
  *  limitations under the License
  */
 /*
- * @file        app-permissions.h
+ * @file        cookie.h
  * @author      Pawel Polawski (p.polawski@partner.samsung.com)
  * @version     1.0
- * @brief       This function contain header for implementation of security_server_app_enable_permissions
- *              and SS_app_disable_permissions on server side
+ * @brief       This function contain header for implementation of cookie get API
  */
 
-#ifndef _SECURITY_SERVER_APP_PERMISSIONS_
-#define _SECURITY_SERVER_APP_PERMISSIONS_
+#ifndef _SECURITY_SERVER_COOKIE_GET_
+#define _SECURITY_SERVER_COOKIE_GET_
 
 #include <service-thread.h>
 #include <generic-socket-manager.h>
 #include <dpl/serialization.h>
 #include <socket-buffer.h>
 #include <security-server-common.h>
+#include <cookie-jar.h>
 
 namespace SecurityServer {
 
-class AppPermissionsService  :
+class CookieService  :
     public SecurityServer::GenericSocketService
-  , public SecurityServer::ServiceThread<AppPermissionsService>
+  , public SecurityServer::ServiceThread<CookieService>
 {
 public:
-    typedef std::map<int, SocketBuffer> SocketBufferMap;
+    struct SocketInfo
+    {
+        int interfaceID;
+        SocketBuffer buffer;
+    };
+
+    typedef std::map<int, SocketInfo> SocketInfoMap;
 
     ServiceDescriptionVector GetServiceDescription();
 
@@ -56,9 +62,18 @@ public:
     void error(const ErrorEvent &event);
 
 private:
-    bool readOne(const ConnectionID &conn, SocketBuffer &buffer);
+    bool readOne(const ConnectionID &conn, SocketBuffer &buffer, int interfaceID);
 
-    SocketBufferMap m_socketBufferMap;
+    bool cookieRequest(SocketBuffer &send, int socket);
+
+    bool pidByCookieRequest(SocketBuffer &buffer, SocketBuffer &send);
+    bool smackLabelByCookieRequest(SocketBuffer &buffer, SocketBuffer &send);
+    bool privilegeByCookieGidRequest(SocketBuffer &buffer, SocketBuffer &send);
+    bool privilegeByCookieRequest(SocketBuffer &buffer, SocketBuffer &send);
+
+    CookieJar m_cookieJar;
+
+    SocketInfoMap m_socketInfoMap;
 };
 
 } // namespace SecurityServer
