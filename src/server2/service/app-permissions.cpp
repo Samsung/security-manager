@@ -32,6 +32,25 @@
 #include <security-server-common.h>
 #include <app-permissions.h>
 
+namespace {
+
+int privilegeToSecurityServerError(int error) {
+    switch (error) {
+    case PC_OPERATION_SUCCESS:  return SECURITY_SERVER_API_SUCCESS;
+    case PC_ERR_FILE_OPERATION: return SECURITY_SERVER_API_ERROR_UNKNOWN;
+    case PC_ERR_MEM_OPERATION:  return SECURITY_SERVER_API_ERROR_OUT_OF_MEMORY;
+    case PC_ERR_NOT_PERMITTED:  return SECURITY_SERVER_API_ERROR_ACCESS_DENIED;
+    case PC_ERR_INVALID_PARAM:  return SECURITY_SERVER_API_ERROR_INPUT_PARAM;
+    case PC_ERR_INVALID_OPERATION:
+    case PC_ERR_DB_OPERATION:
+    default:
+        ;
+    }
+    return SECURITY_SERVER_API_ERROR_UNKNOWN;
+}
+
+} // namespace anonymous
+
 namespace SecurityServer {
 
 GenericSocketService::ServiceDescriptionVector AppPermissionsService::GetServiceDescription() {
@@ -82,13 +101,11 @@ bool AppPermissionsService::readOne(const ConnectionID &conn, SocketBuffer &buff
 {
     LogDebug("Iteration begin");
     SocketBuffer send, recv;
-    Serialization serialization;
-    Deserialization deserialization;
     std::vector<std::string> permissions_list;
     std::string app_id;
     int persistent;
-    int i;
-    int ret = SECURITY_SERVER_API_ERROR_SERVER_ERROR;
+    size_t iter;
+    int result = SECURITY_SERVER_API_ERROR_SERVER_ERROR;
     app_type_t app_type;
     AppPermissionsAction appPermAction;
 
@@ -101,16 +118,17 @@ bool AppPermissionsService::readOne(const ConnectionID &conn, SocketBuffer &buff
 
     //receive data from buffer and check MSG_ID
     Try {
-        deserialization.Deserialize(buffer, i);                 //receive MSG_ID
-        appPermAction = (AppPermissionsAction)i;
+        int temp;
+        Deserialization::Deserialize(buffer, temp);                 //receive MSG_ID
+        appPermAction = (AppPermissionsAction)temp;
 
         if (appPermAction == AppPermissionsAction::ENABLE)      //persistent is only in APP_ENABLE frame
-            deserialization.Deserialize(buffer, persistent);
+            Deserialization::Deserialize(buffer, persistent);
 
-        deserialization.Deserialize(buffer, i);
-        app_type = (app_type_t)i;
-        deserialization.Deserialize(buffer, app_id);
-        deserialization.Deserialize(buffer, permissions_list);
+        Deserialization::Deserialize(buffer, temp);
+        app_type = (app_type_t)temp;
+        Deserialization::Deserialize(buffer, app_id);
+        Deserialization::Deserialize(buffer, permissions_list);
     } Catch (SocketBuffer::Exception::Base) {
         LogDebug("Broken protocol. Closing socket.");
         m_serviceManager->Close(conn);
@@ -132,26 +150,26 @@ bool AppPermissionsService::readOne(const ConnectionID &conn, SocketBuffer &buff
     LogDebug("app_id: " << app_id);
 
     //left one free pointer for the NULL at the end
-    for (i = 0; i < (int)permissions_list.size(); i++) {
-        LogDebug("perm_list[" << i << "]: " << permissions_list[i]);
-        perm_list[i] = (permissions_list[i]).c_str();
+    for (iter = 0; iter < permissions_list.size(); ++iter) {
+        LogDebug("perm_list[" << iter << "]: " << permissions_list[iter]);
+        perm_list[iter] = (permissions_list[iter]).c_str();
     }
     //put the NULL at the end
-    perm_list[i] = NULL;
+    perm_list[iter] = NULL;
 
     //use received data
     if (appPermAction == AppPermissionsAction::ENABLE) {
         LogDebug("Calling app_enable_permiossions()");
-        ret = perm_app_enable_permissions(app_id.c_str(), app_type, perm_list.get(), persistent);
-        LogDebug("app_enable_permissions() returned: " << ret);
+        result = perm_app_enable_permissions(app_id.c_str(), app_type, perm_list.get(), persistent);
+        LogDebug("app_enable_permissions() returned: " << result);
     } else {
         LogDebug("Calling app_disable_permiossions()");
-        ret = perm_app_disable_permissions(app_id.c_str(), app_type, perm_list.get());
-        LogDebug("app_disable_permissions() returned: " << ret);
+        result = perm_app_disable_permissions(app_id.c_str(), app_type, perm_list.get());
+        LogDebug("app_disable_permissions() returned: " << result);
     }
 
     //send response
-    serialization.Serialize(send, ret);
+    Serialization::Serialize(send, privilegeToSecurityServerError(result));
     m_serviceManager->Write(conn, send.Pop());
     return true;
 }

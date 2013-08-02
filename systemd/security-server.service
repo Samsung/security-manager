@@ -10,6 +10,7 @@ Sockets=security-server-get-gid.socket
 Sockets=security-server-privilege-by-pid.socket
 Sockets=security-server-exec-path.socket
 Sockets=security-server-get-object-name.socket
+Sockets=security-server-app-permissions.socket
 
 [Install]
 WantedBy=multi-user.target

@@ -43,11 +43,7 @@ int security_server_app_enable_permissions(const char *app_id, app_type_t app_ty
 {
     using namespace SecurityServer;
     SocketBuffer send, recv;
-    Serialization serialization;
-    Deserialization deserialization;
     std::vector<std::string> permissions_list;
-    int i;
-    int ret;
 
     LogDebug("security_server_app_enable_permissions() called");
 
@@ -66,31 +62,28 @@ int security_server_app_enable_permissions(const char *app_id, app_type_t app_ty
         LogDebug("app_id: " << app_id);
 
         //put all strings in STL vector
-        for (i = 0; perm_list[i] != NULL; i++) {
+        for (int i = 0; perm_list[i] != NULL; i++) {
             LogDebug("perm_list[" << i << "]: " << perm_list[i]);
             permissions_list.push_back(std::string(perm_list[i]));
         }
 
         //put data into buffer
-        serialization.Serialize(send, (int)AppPermissionsAction::ENABLE);   //works as a MSG_ID
-        serialization.Serialize(send, persistent);
-        serialization.Serialize(send, (int)app_type);
-        serialization.Serialize(send, std::string(app_id));
-        serialization.Serialize(send, permissions_list);
+        Serialization::Serialize(send, (int)AppPermissionsAction::ENABLE);   //works as a MSG_ID
+        Serialization::Serialize(send, persistent);
+        Serialization::Serialize(send, (int)app_type);
+        Serialization::Serialize(send, std::string(app_id));
+        Serialization::Serialize(send, permissions_list);
 
         //send buffer to server
-        ret = sendToServer(SERVICE_SOCKET_APP_PERMISSIONS, send.Pop(), recv);
-        if (ret != SECURITY_SERVER_API_SUCCESS) {
-            LogDebug("Unable to send");
-            return ret;
+        int result = sendToServer(SERVICE_SOCKET_APP_PERMISSIONS, send.Pop(), recv);
+        if (result != SECURITY_SERVER_API_SUCCESS) {
+            LogDebug("Error in sendToServer. Error code: " << result);
+            return result;
         }
 
         //receive response from server
-        deserialization.Deserialize(recv, ret);
-        if (ret != SECURITY_SERVER_API_SUCCESS) {
-            LogDebug("Received error from server");
-            return ret;
-        }
+        Deserialization::Deserialize(recv, result);
+        return result;
 
     } catch (SocketBuffer::Exception::Base &e) {
         LogDebug("SecurityServer::SocketBuffer::Exception " << e.DumpToString());
@@ -109,11 +102,7 @@ int security_server_app_disable_permissions(const char *app_id, app_type_t app_t
 {
     using namespace SecurityServer;
     SocketBuffer send, recv;
-    Serialization serialization;
-    Deserialization deserialization;
     std::vector<std::string> permissions_list;
-    int i;
-    int ret;
 
     LogDebug("security_server_app_disable_permissions() called");
 
@@ -131,30 +120,27 @@ int security_server_app_disable_permissions(const char *app_id, app_type_t app_t
         LogDebug("app_id: " << app_id);
 
         //put all strings in STL vector
-        for (i = 0; perm_list[i] != NULL; i++) {
+        for (int i = 0; perm_list[i] != NULL; i++) {
             LogDebug("perm_list[" << i << "]: " << perm_list[i]);
             permissions_list.push_back(std::string(perm_list[i]));
         }
 
         //put data into buffer
-        serialization.Serialize(send, (int)AppPermissionsAction::DISABLE);   //works as a MSG_ID
-        serialization.Serialize(send, (int)app_type);
-        serialization.Serialize(send, std::string(app_id));
-        serialization.Serialize(send, permissions_list);
+        Serialization::Serialize(send, (int)AppPermissionsAction::DISABLE);   //works as a MSG_ID
+        Serialization::Serialize(send, (int)app_type);
+        Serialization::Serialize(send, std::string(app_id));
+        Serialization::Serialize(send, permissions_list);
 
         //send buffer to server
-        ret = sendToServer(SERVICE_SOCKET_APP_PERMISSIONS, send.Pop(), recv);
-        if (ret != SECURITY_SERVER_API_SUCCESS) {
-            LogDebug("Unable to send");
-            return ret;
+        int result = sendToServer(SERVICE_SOCKET_APP_PERMISSIONS, send.Pop(), recv);
+        if (result != SECURITY_SERVER_API_SUCCESS) {
+            LogDebug("Error in sendToServer. Error code: " << result);
+            return result;
         }
 
         //receive response from server
-        deserialization.Deserialize(recv, ret);
-        if (ret != SECURITY_SERVER_API_SUCCESS) {
-            LogDebug("Received error from server");
-            return ret;
-        }
+        Deserialization::Deserialize(recv, result);
+        return result;
 
     } catch (SocketBuffer::Exception::Base &e) {
         LogDebug("SecurityServer::SocketBuffer::Exception " << e.DumpToString());
