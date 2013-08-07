@@ -25,6 +25,8 @@
 #include <sstream>
 #include <dlog.h>
 
+#define UNUSED __attribute__((unused))
+
 namespace SecurityServer {
 namespace Log {
 std::string DLOGLogProvider::FormatMessage(const char *message,
@@ -103,37 +105,37 @@ void DLOGLogProvider::Pedantic(const char *message,
                                               function).c_str());
 }
 
-void DLOGLogProvider::SecureDebug(const char *message,
-                            const char *filename,
-                            int line,
-                            const char *function)
+void DLOGLogProvider::SecureDebug(const char *message UNUSED,
+                            const char *filename UNUSED,
+                            int line UNUSED,
+                            const char *function UNUSED)
 {
     SECURE_SLOG(LOG_DEBUG, m_tag.get(), "%s",
         FormatMessage(message, filename, line, function).c_str());
 }
 
-void DLOGLogProvider::SecureInfo(const char *message,
-                           const char *filename,
-                           int line,
-                           const char *function)
+void DLOGLogProvider::SecureInfo(const char *message UNUSED,
+                           const char *filename UNUSED,
+                           int line UNUSED,
+                           const char *function UNUSED)
 {
     SECURE_SLOG(LOG_INFO, m_tag.get(), "%s",
         FormatMessage(message, filename, line, function).c_str());
 }
 
-void DLOGLogProvider::SecureWarning(const char *message,
-                              const char *filename,
-                              int line,
-                              const char *function)
+void DLOGLogProvider::SecureWarning(const char *message UNUSED,
+                              const char *filename UNUSED,
+                              int line UNUSED,
+                              const char *function UNUSED)
 {
     SECURE_SLOG(LOG_WARN, m_tag.get(), "%s",
         FormatMessage(message, filename, line, function).c_str());
 }
 
-void DLOGLogProvider::SecureError(const char *message,
-                            const char *filename,
-                            int line,
-                            const char *function)
+void DLOGLogProvider::SecureError(const char *message UNUSED,
+                            const char *filename UNUSED,
+                            int line UNUSED,
+                            const char *function UNUSED)
 {
     SECURE_SLOG(LOG_ERROR, m_tag.get(), "%s",
         FormatMessage(message, filename, line, function).c_str());
