@@ -590,7 +590,7 @@ int security_server_set_pwd(const char *cur_pwd,
     int sockfd = -1, retval;
     response_header hdr;
 
-    if (new_pwd == NULL || strlen(new_pwd) > SECURITY_SERVER_MAX_PASSWORD_LEN)
+    if (new_pwd == NULL || strlen(new_pwd) > SECURITY_SERVER_MAX_PASSWORD_LEN || strlen(new_pwd) == 0)
     {
         retval = SECURITY_SERVER_ERROR_INPUT_PARAM;
         goto error;
@@ -749,7 +749,7 @@ int security_server_reset_pwd(const char *new_pwd,
     int sockfd = -1, retval;
     response_header hdr;
 
-    if (new_pwd == NULL || strlen(new_pwd) > SECURITY_SERVER_MAX_PASSWORD_LEN)
+    if (new_pwd == NULL || strlen(new_pwd) > SECURITY_SERVER_MAX_PASSWORD_LEN || strlen(new_pwd) == 0)
     {
         retval = SECURITY_SERVER_ERROR_INPUT_PARAM;
         goto error;
@@ -813,7 +813,8 @@ int security_server_chk_pwd(const char *challenge,
     response_header hdr;
 
     if (challenge == NULL || strlen(challenge) > SECURITY_SERVER_MAX_PASSWORD_LEN
-        || current_attempt == NULL || max_attempts == NULL || valid_secs == NULL)
+        || strlen(challenge) == 0  || current_attempt == NULL
+        || max_attempts == NULL || valid_secs == NULL)
     {
         retval = SECURITY_SERVER_ERROR_INPUT_PARAM;
         goto error;

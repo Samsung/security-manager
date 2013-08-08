@@ -763,6 +763,18 @@ int process_set_pwd_request(int sockfd)
         }
         goto error;
     }
+    else if (new_pwd_len <= 0)
+    {
+        SECURE_SLOGE("Error: Password length too short: %d", new_pwd_len);
+        retval = send_generic_response(sockfd,
+            SECURITY_SERVER_MSG_TYPE_CHK_PWD_RESPONSE,
+            SECURITY_SERVER_RETURN_CODE_BAD_REQUEST);
+        if (retval != SECURITY_SERVER_SUCCESS)
+        {
+            SEC_SVR_ERR("Server ERROR: Cannot send generic response: %d", retval);
+        }
+        goto error;
+    }
 
     /* Receive current password */
     if (cur_pwd_len > 0)
@@ -1022,6 +1034,18 @@ int process_reset_pwd_request(int sockfd)
         SECURE_SLOGE("Server Error: new password length recieve failed: %d, %d", retval, new_pwd_len);
         retval = send_generic_response(sockfd,
             SECURITY_SERVER_MSG_TYPE_RESET_PWD_RESPONSE,
+            SECURITY_SERVER_RETURN_CODE_BAD_REQUEST);
+        if (retval != SECURITY_SERVER_SUCCESS)
+        {
+            SEC_SVR_ERR("Server ERROR: Cannot send generic response: %d", retval);
+        }
+        goto error;
+    }
+    else if (new_pwd_len <= 0)
+    {
+        SECURE_SLOGE("Error: Password length too short: %d", new_pwd_len);
+        retval = send_generic_response(sockfd,
+            SECURITY_SERVER_MSG_TYPE_CHK_PWD_RESPONSE,
             SECURITY_SERVER_RETURN_CODE_BAD_REQUEST);
         if (retval != SECURITY_SERVER_SUCCESS)
         {
