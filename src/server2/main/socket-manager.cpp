@@ -119,9 +119,8 @@ SocketManager::~SocketManager() {
 void SocketManager::ReadyForAccept(int sock) {
     struct sockaddr_un clientAddr;
     unsigned int clientLen = sizeof(clientAddr);
-    LogInfo("Accept on sock: " << sock);
     int client = accept4(sock, (struct sockaddr*) &clientAddr, &clientLen, SOCK_NONBLOCK);
-    LogInfo("Socket opended: " << client);
+//    LogInfo("Accept on sock: " << sock << " Socket opended: " << client);
     if (-1 == client) {
         int err = errno;
         LogDebug("Error in accept: " << strerror(err));
@@ -257,8 +256,8 @@ void SocketManager::MainLoop() {
             ptrTimeout->tv_sec =
               currentTime < pqTimeout.time ? pqTimeout.time - currentTime : 0;
             ptrTimeout->tv_usec = 0;
-            LogDebug("Set up timeout: " << (int)ptrTimeout->tv_sec
-                << " seconds. Socket: " << pqTimeout.sock);
+//            LogDebug("Set up timeout: " << (int)ptrTimeout->tv_sec
+//                << " seconds. Socket: " << pqTimeout.sock);
         }
 
         int ret = select(m_maxDesc+1, &readSet, &writeSet, NULL, ptrTimeout);
@@ -430,7 +429,6 @@ void SocketManager::CreateDomainSocket(
 }
 
 void SocketManager::RegisterSocketService(GenericSocketService *service) {
-    LogDebug("Pointer to service " << (void*) service);
     service->SetSocketManager(this);
     auto serviceVector = service->GetServiceDescription();
     Try {
@@ -520,7 +518,7 @@ void SocketManager::ProcessQueue() {
 }
 
 void SocketManager::CloseSocket(int sock) {
-    LogInfo("Closing socket: " << sock);
+//    LogInfo("Closing socket: " << sock);
     auto &desc = m_socketDescriptionVector[sock];
 
     if (!(desc.isOpen)) {

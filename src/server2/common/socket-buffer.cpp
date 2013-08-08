@@ -29,7 +29,6 @@
 namespace SecurityServer {
 
 void SocketBuffer::Push(const RawBuffer &data) {
-    LogDebug("Push data: " << data.size());
     m_buffer.AppendCopy(&data[0], data.size());
 }
 
@@ -44,7 +43,6 @@ RawBuffer SocketBuffer::Pop() {
 
 bool SocketBuffer::Ready() {
     CountBytesLeft();
-    LogInfo("m_buffer.Size() == " << m_buffer.Size());
     if (m_bytesLeft == 0)
         return false;
     if (m_bytesLeft > m_buffer.Size())
