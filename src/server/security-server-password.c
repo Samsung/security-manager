@@ -38,7 +38,18 @@ struct timeval prev_try;
 
 void initiate_try()
 {
+    long int temp_usec;
+
     gettimeofday(&prev_try, NULL);
+
+    temp_usec = prev_try.tv_usec - SECURITY_SERVER_PASSWORD_RETRY_TIMEOUT_MICROSECOND;
+    if (temp_usec >= 0)
+        prev_try.tv_usec = temp_usec;
+    else
+    {
+        prev_try.tv_sec = prev_try.tv_sec - 1;
+        prev_try.tv_usec = 1000000 + temp_usec;
+    }
 }
 
 int validate_pwd_file(char *filename)
