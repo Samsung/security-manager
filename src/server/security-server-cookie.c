@@ -341,14 +341,15 @@ error:
 /* Create a cookie item from PID */
 cookie_list *create_cookie_item(int pid, int sockfd, cookie_list *c_list)
 {
-    int ret, tempint;
+    int ret;
     cookie_list *added = NULL, *current = NULL;
     char path[24], *exe = NULL;
-    char *buf = NULL, inputed, *tempptr = NULL;
     char delim[] = ": ", *token = NULL;
-    int *permissions = NULL, perm_num = 1, cnt, i, *tempperm = NULL;
+    int *permissions = NULL, perm_num = 1, *tempperm = NULL;
     char *smack_label = NULL;
     FILE *fp = NULL;
+    size_t line_len = 0;
+    char* line = NULL;
 
     current = search_existing_cookie(pid, c_list);
     if (current != NULL)
@@ -376,53 +377,19 @@ cookie_list *create_cookie_item(int pid, int sockfd, cookie_list *c_list)
     fp = fopen(path, "r");
 
     /* Find the line which starts with 'Groups:' */
-    i = 0;
-
     while (1)
     {
-        buf = (char*)malloc(sizeof(char) * 128);
-        if (buf == NULL)
-        {
-            SEC_SVR_ERR("%s", "Error on malloc()");
-            goto error;
-        }
-        memset(buf, 0x00, 128);
-        cnt = 128;
-
         /* get one line from /proc/[PID]/status */
-        while (1)
-        {
-            tempint = fgetc(fp);
-            inputed = (char)tempint;
-            if (tempint == EOF)
-                goto out_of_while;
-            else if (inputed == '\n')
-            {
-                buf[i] = '\0';
-                break;
-            }
-            else if ((i == cnt) && (inputed != '\n'))
-            {
-                tempptr = (char*)realloc(buf, sizeof(char) * (i + 128));
-                if (tempptr == NULL)
-                {
-                    SEC_SVR_ERR("%s", "Error on realloc()");
-                    goto error;
-                }
-                buf = tempptr;
-                buf[i++] = inputed;
-                cnt = i + 128;
-            }
-            else
-                buf[i++] = inputed;
-        }
-        i = 0;
+        free(line);
+        line = NULL;
+        if(-1 == getline(&line,&line_len,fp))
+            goto out_of_while;
 
         /* find 'Groups:' */
-        if (strncmp(buf, "Groups:", 7) == 0)
+        if (strncmp(line, "Groups:", 7) == 0)
         {
             /* get gid from the line and insert to 'permissions' array */
-            token = strtok(buf, delim); // first string is "Groups"
+            token = strtok(line, delim); // first string is "Groups"
             while ((token = strtok(NULL, delim)))
             {
                 tempperm = realloc(permissions, sizeof(int) * perm_num);
@@ -446,11 +413,6 @@ cookie_list *create_cookie_item(int pid, int sockfd, cookie_list *c_list)
 
             /* goto out of while loop */
             break;
-        }
-        if (buf != NULL)
-        {
-            free(buf);
-            buf = NULL;
         }
     }
 out_of_while:
@@ -511,21 +473,18 @@ out_of_while:
     added->permission_len = perm_num;
     added->pid = pid;
     added->permissions = permissions;
+    permissions = NULL;
     added->smack_label = smack_label;
     added->prev = current;
     current->next = added;
     added->next = NULL;
 
 error:
-    if (exe != NULL)
-        free(exe);
+	free(line);
+    free(exe);
     if (fp != NULL)
         fclose(fp);
-    if (buf != NULL)
-        free(buf);
-
-    if (added == NULL && permissions != NULL)
-        free(permissions);
+    free(permissions);
 
     return added;
 }
