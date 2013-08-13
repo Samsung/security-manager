@@ -111,113 +111,6 @@ void print_cookie(cookie_list *list)
 }
 #endif
 
-
-#if 0
-/* Object name is actually name of a Group ID *
- * This function opens /etc/group file and search group ID and
- * returns the string */
-int search_object_name(int gid, char *obj, int obj_size)
-{
-    FILE *fp = NULL;
-    char *linebuf = NULL, *token = NULL, *token2, *tempstr = NULL;
-    int ret = 0, tmp_gid, bufsize;
-    fp = fopen("/etc/group", "r");
-    if (fp == NULL)
-    {
-        /* cannot open /etc/group */
-        SEC_SVR_ERR("%s", "Cannot open /etc/group");
-        return SECURITY_SERVER_ERROR_FILE_OPERATION;
-    }
-
-    linebuf = malloc(128);
-    bufsize = 128;
-    if (linebuf == NULL)
-    {
-        ret = SECURITY_SERVER_ERROR_OUT_OF_MEMORY;
-        SEC_SVR_ERR("%s", "cannot malloc()");
-        goto error;
-    }
-
-    bzero(linebuf, bufsize);
-    ret = SECURITY_SERVER_ERROR_NO_SUCH_OBJECT;
-    while (fgets(linebuf, bufsize, fp) != NULL)
-    {
-        while (linebuf[bufsize - 2] != 0)
-        {
-            linebuf[bufsize - 1] = (char) fgetc(fp);
-            tempstr = realloc(linebuf, bufsize + 128);
-            if (tempstr == NULL)
-            {
-                ret = SECURITY_SERVER_ERROR_OUT_OF_MEMORY;
-                goto error;
-            }
-            linebuf = tempstr;
-            bzero(linebuf + bufsize, 128);
-            if((fgets(linebuf + bufsize, 128, fp) == NULL) && !feof(fp))
-            {
-                ret = SECURITY_SERVER_ERROR_FILE_OPERATION;
-                goto error;
-            }
-            bufsize += 128;
-        }
-
-        token = strtok(linebuf, ":");   /* group name */
-        if (token == NULL)
-        {
-            SEC_SVR_ERR("/etc/group is not valid. cannot find gid: [%s]", linebuf);
-            ret = SECURITY_SERVER_ERROR_SERVER_ERROR;
-            goto error;
-        }
-        token2 = strtok(NULL, ":"); /* group password */
-        if (token2 == NULL)
-        {
-            SEC_SVR_ERR("/etc/group is not valid. cannot find gid: [%s]", linebuf);
-            ret = SECURITY_SERVER_ERROR_SERVER_ERROR;
-            goto error;
-        }
-        token2 = strtok(NULL, ":"); /* gid */
-        if (token2 == NULL)
-        {
-            SEC_SVR_ERR("/etc/group is not valid. cannot find gid: [%s]", linebuf);
-            ret = SECURITY_SERVER_ERROR_SERVER_ERROR;
-            goto error;
-        }
-
-        errno = 0;
-        tmp_gid = strtoul(token2, 0, 10);
-        if (errno != 0)
-        {
-            SEC_SVR_ERR("cannot change string to integer [%s]", token2);
-            ret = SECURITY_SERVER_ERROR_SERVER_ERROR;
-            goto error;
-        }
-
-        if (tmp_gid == gid)
-        {
-            /* We found it */
-            if ((int)strlen(token) > obj_size)
-            {
-                ret = SECURITY_SERVER_ERROR_BUFFER_TOO_SMALL;
-                SEC_SVR_ERR("buffer is too small. %d --> %d", obj_size, strlen(token));
-                goto error;
-            }
-            strncpy(obj, token, strlen(token));
-            obj[strlen(token)] = 0;
-            ret = SECURITY_SERVER_SUCCESS;
-            break;
-        }
-        bzero(linebuf, bufsize);
-    }
-
-error:
-    if (linebuf != NULL)
-        free(linebuf);
-    if (fp != NULL)
-        fclose(fp);
-    return ret;
-}
-#endif
-
 /*
  * Searches for group ID by given group name
  */
@@ -969,7 +862,6 @@ error:
 }
 #endif
 
-
 int client_has_access(int sockfd, const char *object)
 {
     char *label = NULL;
@@ -989,7 +881,7 @@ int client_has_access(int sockfd, const char *object)
         }
         //now we have PID in sockopt.pid
 
-        if (smack_new_label_from_socket(sockfd, &label)) {
+        if (smack_new_label_from_socket(sockfd, &label) < 0) {
             SEC_SVR_ERR("%s", "Error on smack_new_label_from_socket");
             label = NULL;
         }
