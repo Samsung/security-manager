@@ -454,6 +454,7 @@ char *read_exe_path_from_proc(pid_t pid)
 int authorize_SS_API_caller_socket(int sockfd, char *required_API_label, char *required_rule)
 {
     int retval;
+    int checkval;
     char *label = NULL;
     char *path = NULL;
     //for getting socket options
@@ -475,20 +476,37 @@ int authorize_SS_API_caller_socket(int sockfd, char *required_API_label, char *r
         goto end;
     }
 
-    len = sizeof(cr);
-    retval = getsockopt(sockfd, SOL_SOCKET, SO_PEERCRED, &cr, &len);
-    if (retval < 0)
-        SEC_SVR_ERR("Error in getsockopt() and getting binary path");
-    else
-        path = read_exe_path_from_proc(cr.pid);
-
     retval = smack_have_access(label, required_API_label, required_rule);
 
-    //some log in SMACK format
-    if (retval > 0)
-        SECURE_SLOGD("SS_SMACK: caller_pid=%d, subject=%s, object=%s, access=%s, result=%d, caller_path=%s", cr.pid, label, required_API_label, required_rule, retval, path);
-    else
-        SECURE_SLOGW("SS_SMACK: caller_pid=%d, subject=%s, object=%s, access=%s, result=%d, caller_path=%s", cr.pid, label, required_API_label, required_rule, retval, path);
+    len = sizeof(cr);
+    checkval = getsockopt(sockfd, SOL_SOCKET, SO_PEERCRED, &cr, &len);
+
+    if (checkval < 0) {
+        SEC_SVR_ERR("Error in getsockopt(): client pid is unknown.");
+        if (retval) {
+            SEC_SVR_DBG("SS_SMACK: subject=%s, object=%s, access=%s, result=%d", label, required_API_label, required_rule, retval);
+        } else {
+            SEC_SVR_ERR("SS_SMACK: subject=%s, object=%s, access=%s, result=%d", label, required_API_label, required_rule, retval);
+        }
+    } else {
+        path = read_exe_path_from_proc(cr.pid);
+
+        if (retval == 0) {
+            retval = smack_pid_have_access(cr.pid, required_API_label, required_rule);
+        }
+
+        const char *cap_info = "";
+        if (retval == 0)
+            cap_info = ", no CAP_MAC_OVERRIDE";
+
+        if (retval > 0) {
+            SEC_SVR_DBG("SS_SMACK: caller_pid=%d, subject=%s, object=%s, access=%s, result=%d, caller_path=%s",
+                        cr.pid, label, required_API_label, required_rule, retval, path);
+        } else {
+            SEC_SVR_ERR("SS_SMACK: caller_pid=%d, subject=%s, object=%s, access=%s, result=%d, caller_path=%s%s",
+                        cr.pid, label, required_API_label, required_rule, retval, path, cap_info);
+        }
+    }
 
 end:
     if (path != NULL)

@@ -88,7 +88,7 @@ bool PrivilegeByPidService::readOne(const ConnectionID &conn, SocketBuffer &buff
     int pid;
     std::string object;
     std::string access_rights;
-
+    char subject[SMACK_LABEL_LEN + 1] = {0};
 
     int retCode = SECURITY_SERVER_API_ERROR_SERVER_ERROR;
 
@@ -109,8 +109,6 @@ bool PrivilegeByPidService::readOne(const ConnectionID &conn, SocketBuffer &buff
     }
 
     if (smack_check()) {
-        char subject[SMACK_LABEL_LEN + 1];
-        subject[0]='\0';
         retval = smack_pid_have_access(pid, object.c_str(), access_rights.c_str());
         LogDebug("smack_pid_have_access returned " << retval);
 
@@ -128,9 +126,21 @@ bool PrivilegeByPidService::readOne(const ConnectionID &conn, SocketBuffer &buff
     char *path = read_exe_path_from_proc(pid);
 
     if (retval > 0)
-        SECURE_SLOGD("SS_SMACK: caller_pid=%d, subject=%s, object=%s, access=%s, result=%d, caller_path=%s", pid, subject, object, access_rights, retval, path);
+        LogDebug("SS_SMACK: "
+                << "caller_pid=" << pid
+                << ", subject=" << subject
+                << ", object=" << object
+                << ", access=" << access_rights
+                << ", result=" << retval
+                << ", caller_path=" << path);
     else
-        SECURE_SLOGW("SS_SMACK: caller_pid=%d, subject=%s, object=%s, access=%s, result=%d, caller_path=%s", pid, subject, object, access_rights, retval, path);
+        LogError("SS_SMACK: "
+                << "caller_pid=" << pid
+                << ", subject=" << subject
+                << ", object=" << object
+                << ", access=" << access_rights
+                << ", result=" << retval
+                << ", caller_path=" << path);
 
     if (path != NULL)
         free(path);
