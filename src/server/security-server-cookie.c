@@ -516,7 +516,7 @@ out_of_while:
     if (smack_check())
     {
         ret = smack_new_label_from_socket(sockfd, &smack_label);
-        if (ret != 0)
+        if (ret < 0)
         {
             SEC_SVR_DBG("Error checking peer label: %d", ret);
             free(added);
