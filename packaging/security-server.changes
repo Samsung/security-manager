@@ -1,3 +1,7 @@
+* Fri Aug 23 2013 Rusty Lynch <rusty.lynch@intel.com> submit/tizen/20130716.223318@0e96d3e
+- Cleanup spec and remove defunct system V startup scripts
+- smack API has changed; smack_new_label_from socket returns the label length.
+
 * Fri Jul 12 2013 Patrick McCarty <patrick.mccarty@linux.intel.com> b7787d6
 - Fix the manifest installation
 

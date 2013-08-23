@@ -71,11 +71,6 @@ INSTALL(FILES
     DESTINATION /usr/include/security-server
     )
 
-INSTALL(FILES
-    ${SECURITY_SERVER_PATH}/security-serverd
-    DESTINATION /etc/rc.d/init.d
-    )
-
 ################################################################################
 
 #CONFIGURE_FILE(security-server.pc.in security-server.pc @ONLY)
