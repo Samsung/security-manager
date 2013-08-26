@@ -24,6 +24,7 @@
 
 #include <sys/smack.h>
 #include <grp.h>
+#include <unistd.h>
 
 #include <dpl/log/log.h>
 #include <dpl/serialization.h>
