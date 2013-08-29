@@ -32,6 +32,7 @@
 #include <client-common.h>
 #include <protocols.h>
 #include <smack-check.h>
+#include <signal.h>
 
 #include <security-server.h>
 #include <security-server-common.h>
@@ -45,6 +46,22 @@ int security_server_check_privilege_by_pid(
     try {
         if (1 != smack_check())
             return SECURITY_SERVER_API_SUCCESS;
+
+        // Checking whether a process with pid exists
+        if ((pid < 0) || ((kill(pid, 0) == -1) && (errno == ESRCH))) {
+            LogDebug("pid is invalid, process: " << pid << " does not exist");
+            return SECURITY_SERVER_API_ERROR_INPUT_PARAM;
+        }
+
+        if (NULL == object || 0 == strlen(object)) {
+            LogDebug("object param is NULL or empty");
+            return SECURITY_SERVER_API_ERROR_INPUT_PARAM;
+        }
+
+        if (NULL == access_rights || 0 == strlen(access_rights)) {
+            LogDebug("access_right param is NULL or empty");
+            return SECURITY_SERVER_API_ERROR_INPUT_PARAM;
+        }
 
         SocketBuffer send, recv;
         Serialization::Serialize(send, pid);
