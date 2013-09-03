@@ -41,7 +41,9 @@ enum class CompareType
     PID,
     PATH,
     SMACKLABEL,
-    PERMISSIONS
+    PERMISSIONS,
+    UID,
+    GID
 };
 
 
@@ -49,6 +51,8 @@ struct Cookie
 {
     std::vector<char> cookieId;     //ID key
     pid_t pid;                      //owner PID
+    uid_t uid;                      //owner UID
+    gid_t gid;                      //owner GID
     std::string binaryPath;         //path to owner binary
     std::string smackLabel;         //owner SMACK label
     std::vector<int> permissions;   //owner GIDs

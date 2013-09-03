@@ -38,17 +38,19 @@ extern char const * const SERVICE_SOCKET_GET_OBJECT_NAME;
 extern char const * const SERVICE_SOCKET_APP_PERMISSIONS;
 extern char const * const SERVICE_SOCKET_COOKIE_GET;
 extern char const * const SERVICE_SOCKET_COOKIE_CHECK;
+extern char const * const SERVICE_SOCKET_COOKIE_CHECK_TMP;
 
 enum class AppPermissionsAction { ENABLE, DISABLE };
 
-enum class CookieGet
+enum class CookieCall
 {
-    COOKIE_SIZE,
-    COOKIE,
-    PID,
-    SMACKLABEL,
-    PRIVILEGE_GID,
-    PRIVILEGE
+    GET_COOKIE,
+    CHECK_PID,
+    CHECK_SMACKLABEL,
+    CHECK_PRIVILEGE_GID,
+    CHECK_PRIVILEGE,
+    CHECK_GID,
+    CHECK_UID
 };
 
 extern const size_t COOKIE_SIZE;

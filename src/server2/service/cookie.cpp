@@ -36,6 +36,7 @@
 //interfaces ID
 const int INTERFACE_GET = 0;
 const int INTERFACE_CHECK = 1;
+const int INTERFACE_CHECK_TMP = 3;
 
 namespace SecurityServer {
 
@@ -50,9 +51,15 @@ GenericSocketService::ServiceDescriptionVector CookieService::GetServiceDescript
         INTERFACE_CHECK,
         SERVICE_SOCKET_COOKIE_CHECK
     };
+    ServiceDescription sd3 = {
+        "security-server::api-cookie-check",
+        INTERFACE_CHECK_TMP,
+        SERVICE_SOCKET_COOKIE_CHECK_TMP
+    };
     ServiceDescriptionVector v;
     v.push_back(sd1);
     v.push_back(sd2);
+    v.push_back(sd3);
     return v;
 }
 
@@ -116,7 +123,7 @@ bool CookieService::readOne(const ConnectionID &conn, SocketBuffer &buffer, int 
     //use received data
     if (interfaceID == INTERFACE_GET) {
         switch(msgType) {
-        case CookieGet::COOKIE:
+        case CookieCall::GET_COOKIE:
             LogDebug("Entering get-cookie server side handler");
             retval = cookieRequest(send, conn.sock);
             break;
@@ -128,24 +135,42 @@ bool CookieService::readOne(const ConnectionID &conn, SocketBuffer &buffer, int 
         };
     } else if (interfaceID == INTERFACE_CHECK) {
         switch(msgType) {
-        case CookieGet::PID:
+        case CookieCall::CHECK_PID:
             LogDebug("Entering pid-by-cookie server side handler");
             retval = pidByCookieRequest(buffer, send);
             break;
 
-        case CookieGet::SMACKLABEL:
+        case CookieCall::CHECK_SMACKLABEL:
             LogDebug("Entering smacklabel-by-cookie server side handler");
             retval = smackLabelByCookieRequest(buffer, send);
             break;
 
-        case CookieGet::PRIVILEGE_GID:
+        case CookieCall::CHECK_PRIVILEGE_GID:
             LogDebug("Entering check-privilege-by-cookie-gid server side handler");
             retval = privilegeByCookieGidRequest(buffer, send);
             break;
 
-        case CookieGet::PRIVILEGE:
+        case CookieCall::CHECK_PRIVILEGE:
             LogDebug("Entering check-privilege-by-cookie side handler");
             retval = privilegeByCookieRequest(buffer, send);
+            break;
+
+        default:
+            LogDebug("Error, unknown function called by client");
+            retval = false;
+            break;
+        };
+    } else if (interfaceID == INTERFACE_CHECK_TMP) {
+        //TODO: Merge this interface with INTERFACE_CHECK after INTERFACE_CHECK will be secured by smack 
+        switch(msgType) {
+        case CookieCall::CHECK_UID:
+            LogDebug("Entering get-uid-by-cookie side handler");
+            retval = uidByCookieRequest(buffer, send);
+            break;
+
+        case CookieCall::CHECK_GID:
+            LogDebug("Entering get-gid-by-cookie side handler");
+            retval = gidByCookieRequest(buffer, send);
             break;
 
         default:
@@ -208,7 +233,7 @@ bool CookieService::pidByCookieRequest(SocketBuffer &buffer, SocketBuffer &send)
 
     if (searchResult != NULL) {
         Serialization::Serialize(send, (int)SECURITY_SERVER_API_SUCCESS);
-        Serialization::Serialize(send, searchResult->pid);
+        Serialization::Serialize(send, (int)searchResult->pid);
     } else {
         Serialization::Serialize(send, (int)SECURITY_SERVER_API_ERROR_NO_SUCH_COOKIE);
     }
@@ -301,6 +326,58 @@ bool CookieService::privilegeByCookieRequest(SocketBuffer &buffer, SocketBuffer 
             Serialization::Serialize(send, (int)SECURITY_SERVER_API_SUCCESS);
         else
             Serialization::Serialize(send, (int)SECURITY_SERVER_API_ERROR_ACCESS_DENIED);
+    } else {
+        Serialization::Serialize(send, (int)SECURITY_SERVER_API_ERROR_NO_SUCH_COOKIE);
+    }
+
+    return true;
+}
+
+bool CookieService::uidByCookieRequest(SocketBuffer &buffer, SocketBuffer &send)
+{
+    std::vector<char> cookieKey;
+
+    Try {
+        Deserialization::Deserialize(buffer, cookieKey);
+    } Catch (SocketBuffer::Exception::Base) {
+        LogDebug("Broken protocol. Closing socket.");
+        return false;
+    }
+
+    Cookie searchPattern;
+    searchPattern.cookieId = cookieKey;
+
+    const Cookie *searchResult = m_cookieJar.SearchCookie(searchPattern, CompareType::COOKIE_ID);
+
+    if (searchResult != NULL) {
+        Serialization::Serialize(send, (int)SECURITY_SERVER_API_SUCCESS);
+        Serialization::Serialize(send, (int)searchResult->uid);
+    } else {
+        Serialization::Serialize(send, (int)SECURITY_SERVER_API_ERROR_NO_SUCH_COOKIE);
+    }
+
+    return true;
+}
+
+bool CookieService::gidByCookieRequest(SocketBuffer &buffer, SocketBuffer &send)
+{
+    std::vector<char> cookieKey;
+
+    Try {
+        Deserialization::Deserialize(buffer, cookieKey);
+    } Catch (SocketBuffer::Exception::Base) {
+        LogDebug("Broken protocol. Closing socket.");
+        return false;
+    }
+
+    Cookie searchPattern;
+    searchPattern.cookieId = cookieKey;
+
+    const Cookie *searchResult = m_cookieJar.SearchCookie(searchPattern, CompareType::COOKIE_ID);
+
+    if (searchResult != NULL) {
+        Serialization::Serialize(send, (int)SECURITY_SERVER_API_SUCCESS);
+        Serialization::Serialize(send, (int)searchResult->gid);
     } else {
         Serialization::Serialize(send, (int)SECURITY_SERVER_API_ERROR_NO_SUCH_COOKIE);
     }

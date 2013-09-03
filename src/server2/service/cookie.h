@@ -71,6 +71,9 @@ private:
     bool privilegeByCookieGidRequest(SocketBuffer &buffer, SocketBuffer &send);
     bool privilegeByCookieRequest(SocketBuffer &buffer, SocketBuffer &send);
 
+    bool uidByCookieRequest(SocketBuffer &buffer, SocketBuffer &send);
+    bool gidByCookieRequest(SocketBuffer &buffer, SocketBuffer &send);
+
     CookieJar m_cookieJar;
 
     SocketInfoMap m_socketInfoMap;

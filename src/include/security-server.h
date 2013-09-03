@@ -986,6 +986,26 @@ int security_server_app_enable_permissions(const char *app_id, app_type_t app_ty
  */
 int security_server_app_disable_permissions(const char *app_id, app_type_t app_type, const char **perm_list);
 
+/*
+ * This function allows middleware to get UID assigned to cookie
+ *
+ * \param[in] Cookie
+ * \param[out] Handler to store UID
+ *
+ * \return SECURITY_SERVER_SUCCESS on success or error code on fail
+ */
+int security_server_get_uid_by_cookie(const char *cookie, uid_t *uid);
+
+/*
+ * This function allows middleware to get GID assigned to cookie
+ *
+ * \param[in] Cookie
+ * \param[out] Handler to store GID
+ *
+ * \return SECURITY_SERVER_SUCCESS on success or error code on fail
+ */
+int security_server_get_gid_by_cookie(const char *cookie, gid_t *gid);
+
 
 #ifdef __cplusplus
 }

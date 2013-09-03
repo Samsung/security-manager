@@ -63,7 +63,7 @@ int security_server_request_cookie(char *cookie, size_t bufferSize)
         }
 
         //put data into buffer
-        Serialization::Serialize(send, (int)CookieGet::COOKIE);
+        Serialization::Serialize(send, (int)CookieCall::GET_COOKIE);
 
         //send buffer to server
         int retval = sendToServer(SERVICE_SOCKET_COOKIE_GET, send.Pop(), recv);
@@ -115,7 +115,7 @@ int security_server_get_cookie_pid(const char *cookie)
 
     try {
         //put data into buffer
-        Serialization::Serialize(send, (int)CookieGet::PID);
+        Serialization::Serialize(send, (int)CookieCall::CHECK_PID);
         Serialization::Serialize(send, key);
 
         //send buffer to server
@@ -162,7 +162,7 @@ char * security_server_get_smacklabel_cookie(const char *cookie)
 
     try {
         //put data into buffer
-        Serialization::Serialize(send, (int)CookieGet::SMACKLABEL);
+        Serialization::Serialize(send, (int)CookieCall::CHECK_SMACKLABEL);
         Serialization::Serialize(send, key);
 
         //send buffer to server
@@ -209,7 +209,7 @@ int security_server_check_privilege(const char *cookie, gid_t privilege)
 
     try {
         //put data into buffer
-        Serialization::Serialize(send, (int)CookieGet::PRIVILEGE_GID);
+        Serialization::Serialize(send, (int)CookieCall::CHECK_PRIVILEGE_GID);
         Serialization::Serialize(send, key);
         Serialization::Serialize(send, (int)privilege);
 
@@ -255,7 +255,7 @@ int security_server_check_privilege_by_cookie(const char *cookie, const char *ob
 
     try {
         //put data into buffer
-        Serialization::Serialize(send, (int)CookieGet::PRIVILEGE);
+        Serialization::Serialize(send, (int)CookieCall::CHECK_PRIVILEGE);
         Serialization::Serialize(send, key);
         Serialization::Serialize(send, obj);
         Serialization::Serialize(send, access);
@@ -281,3 +281,100 @@ int security_server_check_privilege_by_cookie(const char *cookie, const char *ob
 
     return SECURITY_SERVER_API_ERROR_UNKNOWN;
 }
+
+SECURITY_SERVER_API
+int security_server_get_uid_by_cookie(const char *cookie, uid_t *uid)
+{
+    using namespace SecurityServer;
+    SocketBuffer send, recv;
+    int retval = SECURITY_SERVER_API_ERROR_UNKNOWN;
+
+    LogDebug("security_server_get_uid_by_cookie() called");
+
+    if ((cookie == NULL) || (uid == NULL))
+        return SECURITY_SERVER_API_ERROR_INPUT_PARAM;
+
+    //preprae cookie to send
+    std::vector<char> key(cookie, cookie + COOKIE_SIZE);
+
+    try {
+        //put data into buffer
+        Serialization::Serialize(send, (int)CookieCall::CHECK_UID);
+        Serialization::Serialize(send, key);
+
+        //send buffer to server
+        retval = sendToServer(SERVICE_SOCKET_COOKIE_CHECK, send.Pop(), recv);
+        if (retval != SECURITY_SERVER_API_SUCCESS) {
+            LogDebug("Error in sendToServer. Error code: " << retval);
+            return retval;
+        }
+
+        //receive response from server
+        Deserialization::Deserialize(recv, retval);
+        if (retval == SECURITY_SERVER_API_SUCCESS) {
+            int tmp;
+            Deserialization::Deserialize(recv, tmp);
+            *uid = static_cast<uid_t>(tmp);
+        }
+
+        return retval;
+
+    } catch (SocketBuffer::Exception::Base &e) {
+        LogDebug("SecurityServer::SocketBuffer::Exception " << e.DumpToString());
+    } catch (std::exception &e) {
+        LogDebug("STD exception " << e.what());
+    } catch (...) {
+        LogDebug("Unknown exception occured");
+    }
+
+    return SECURITY_SERVER_API_ERROR_UNKNOWN;
+}
+
+SECURITY_SERVER_API
+int security_server_get_gid_by_cookie(const char *cookie, gid_t *gid)
+{
+    using namespace SecurityServer;
+    SocketBuffer send, recv;
+    int retval = SECURITY_SERVER_API_ERROR_UNKNOWN;
+
+    LogDebug("security_server_get_uid_by_cookie() called");
+
+    if ((cookie == NULL) || (gid == NULL))
+        return SECURITY_SERVER_API_ERROR_INPUT_PARAM;
+
+    //preprae cookie to send
+    std::vector<char> key(cookie, cookie + COOKIE_SIZE);
+
+    try {
+        //put data into buffer
+        Serialization::Serialize(send, (int)CookieCall::CHECK_GID);
+        Serialization::Serialize(send, key);
+
+        //send buffer to server
+        retval = sendToServer(SERVICE_SOCKET_COOKIE_CHECK, send.Pop(), recv);
+        if (retval != SECURITY_SERVER_API_SUCCESS) {
+            LogDebug("Error in sendToServer. Error code: " << retval);
+            return retval;
+        }
+
+        //receive response from server
+        Deserialization::Deserialize(recv, retval);
+        if (retval == SECURITY_SERVER_API_SUCCESS) {
+            int tmp;
+            Deserialization::Deserialize(recv, tmp);
+            *gid = static_cast<gid_t>(tmp);
+        }
+
+        return retval;
+
+    } catch (SocketBuffer::Exception::Base &e) {
+        LogDebug("SecurityServer::SocketBuffer::Exception " << e.DumpToString());
+    } catch (std::exception &e) {
+        LogDebug("STD exception " << e.what());
+    } catch (...) {
+        LogDebug("Unknown exception occured");
+    }
+
+    return SECURITY_SERVER_API_ERROR_UNKNOWN;
+}
+

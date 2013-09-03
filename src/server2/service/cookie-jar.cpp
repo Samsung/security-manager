@@ -108,30 +108,35 @@ const Cookie * CookieJar::GenerateCookie(int pid)
 
 
     //get GID list
-    const int LINE_LEN = 128;
     const int NAME_SIZE = 64;
-    char line[LINE_LEN]; //for storing parsed lines
     char filename[NAME_SIZE];
 
     snprintf(filename, NAME_SIZE, "/proc/%d/status", pid);
     std::ifstream status(filename, std::ifstream::binary);
+    std::string line;
 
-    while (status.getline(line, LINE_LEN)) {  //read line from file
-        if (strncmp(line, "Groups:", 7) == 0)
-            break;
-    }
-
-    char delim[] = ": ";    //separators for strtok: ' ' and ':'
-    char *token = strtok(line, delim);  //1st string is "Group:"
-    while ((token = strtok(NULL, delim))) {
-        int gid = atoi(token);
-        newCookie.permissions.push_back(gid);
+    while (std::getline(status, line)) {  //read line from file
+        const char *tmp = line.c_str();
+        if (strncmp(line.c_str(), "Uid:", 4) == 0)
+            newCookie.uid = atoi(&tmp[5]);
+        else if (strncmp(line.c_str(), "Gid:", 4) == 0)
+            newCookie.gid = atoi(&tmp[5]);
+        else if (strncmp(line.c_str(), "Groups:", 7) == 0) {
+            char delim[] = ": ";    //separators for strtok: ' ' and ':'
+            char *token = strtok(const_cast<char *>(tmp), delim);  //1st string is "Group:"
+            while ((token = strtok(NULL, delim))) {
+                int gid = atoi(token);
+                newCookie.permissions.push_back(gid);
+            }
+        }
     }
 
     //DEBUG ONLY
     //print info about cookie
     LogDebug("Cookie created");
     LogDebug("PID: " << newCookie.pid);
+    LogDebug("UID: " << newCookie.uid);
+    LogDebug("GID: " << newCookie.gid);
     LogDebug("PATH: " << newCookie.binaryPath);
     LogDebug("LABEL: " << newCookie.smackLabel);
     for (size_t k = 0; k < newCookie.permissions.size(); k++)
@@ -206,6 +211,12 @@ bool CookieJar::CompareCookies(const Cookie &c1, const Cookie &c2, CompareType c
                 if (c1.permissions[i] == c2.permissions[k])
                     return true;
         return false;
+
+    case CompareType::UID:
+        return (c1.uid == c2.uid);
+
+    case CompareType::GID:
+        return (c1.gid == c2.gid);
 
     default:
         LogDebug("Wrong function parameters");

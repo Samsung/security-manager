@@ -9,6 +9,7 @@ INSTALL(FILES
     ${CMAKE_SOURCE_DIR}/systemd/security-server-app-permissions.socket
     ${CMAKE_SOURCE_DIR}/systemd/security-server-cookie-get.socket
     ${CMAKE_SOURCE_DIR}/systemd/security-server-cookie-check.socket
+    ${CMAKE_SOURCE_DIR}/systemd/security-server-cookie-check-tmp.socket
     DESTINATION
     /usr/lib/systemd/system
 )

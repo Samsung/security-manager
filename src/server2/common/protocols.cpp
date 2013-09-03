@@ -45,6 +45,10 @@ char const * const SERVICE_SOCKET_COOKIE_GET =
     "/tmp/.security-server-api-cookie-get.sock";
 char const * const SERVICE_SOCKET_COOKIE_CHECK =
     "/tmp/.security-server-api-cookie-check.sock";
+//TODO: Merge bellow socket with the one above. This should be done
+//after security-server-api-cookie-check.sock will be protected by smack and has proper label
+char const * const SERVICE_SOCKET_COOKIE_CHECK_TMP =
+    "/tmp/.security-server-api-cookie-check-tmp.sock";
 
 const size_t COOKIE_SIZE = 20;
 
