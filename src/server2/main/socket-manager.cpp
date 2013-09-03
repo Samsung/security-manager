@@ -159,6 +159,7 @@ SocketManager::SocketManager()
 
     // add support for TERM signal (passed from systemd)
     auto *signalService = new SignalService;
+    signalService->SetSocketManager(this);
     int filefd = signalService->GetDescriptor();
     if (-1 == filefd) {
         LogError("Error in SignalService.GetDescriptor()");
