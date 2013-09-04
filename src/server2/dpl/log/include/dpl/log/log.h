@@ -172,36 +172,46 @@ typedef Singleton<LogSystem> LogSystemSingleton;
 //
 //
 
-#ifdef DPL_LOGS_ENABLED
-    #define DPL_MACRO_FOR_LOGGING(message, function)                           \
-    do                                                                     \
-    {                                                                      \
-        if (SecurityServer::Log::LogSystemSingleton::Instance().IsLoggingEnabled())   \
-        {                                                                  \
-            std::ostringstream platformLog;                                \
-            platformLog << message;                                        \
-            SecurityServer::Log::LogSystemSingleton::Instance().function(             \
-                platformLog.str().c_str(),                                 \
-                __FILE__, __LINE__, __FUNCTION__);                         \
-        }                                                                  \
-    } while (0)
-#else
 /* avoid warnings about unused variables */
-    #define DPL_MACRO_FOR_LOGGING(message, function)                           \
+#define DPL_MACRO_DUMMY_LOGGING(message, function)                         \
     do {                                                                   \
-        SecurityServer::Log::NullStream ns;                                           \
+        SecurityServer::Log::NullStream ns;                                \
         ns << message;                                                     \
     } while (0)
-#endif
 
-#define  LogDebug(message) DPL_MACRO_FOR_LOGGING(message, Debug)
-#define  LogInfo(message) DPL_MACRO_FOR_LOGGING(message, Info)
-#define  LogWarning(message) DPL_MACRO_FOR_LOGGING(message, Warning)
+#define DPL_MACRO_FOR_LOGGING(message, function)                           \
+do                                                                         \
+{                                                                          \
+    if (SecurityServer::Log::LogSystemSingleton::Instance().IsLoggingEnabled())   \
+    {                                                                      \
+        std::ostringstream platformLog;                                    \
+        platformLog << message;                                            \
+        SecurityServer::Log::LogSystemSingleton::Instance().function(      \
+            platformLog.str().c_str(),                                     \
+            __FILE__, __LINE__, __FUNCTION__);                             \
+    }                                                                      \
+} while (0)
+
+/* Errors must be always logged. */
 #define  LogError(message) DPL_MACRO_FOR_LOGGING(message, Error)
-#define  LogPedantic(message) DPL_MACRO_FOR_LOGGING(message, Pedantic)
-#define  LogSecureDebug(message) DPL_MACRO_FOR_LOGGING(message, SecureDebug)
-#define  LogSecureInfo(message) DPL_MACRO_FOR_LOGGING(message, SecureInfo)
-#define  LogSecureWarning(message) DPL_MACRO_FOR_LOGGING(message, SecureWarning)
 #define  LogSecureError(message) DPL_MACRO_FOR_LOGGING(message, SecureError)
+
+#ifdef BUILD_TYPE_DEBUG
+    #define LogDebug(message) DPL_MACRO_FOR_LOGGING(message, Debug)
+    #define LogInfo(message) DPL_MACRO_FOR_LOGGING(message, Info)
+    #define LogWarning(message) DPL_MACRO_FOR_LOGGING(message, Warning)
+    #define LogPedantic(message) DPL_MACRO_FOR_LOGGING(message, Pedantic)
+    #define LogSecureDebug(message) DPL_MACRO_FOR_LOGGING(message, SecureDebug)
+    #define LogSecureInfo(message) DPL_MACRO_FOR_LOGGING(message, SecureInfo)
+    #define LogSecureWarning(message) DPL_MACRO_FOR_LOGGING(message, SecureWarning)
+#else
+    #define LogDebug(message) DPL_MACRO_DUMMY_LOGGING(message, Debug)
+    #define LogInfo(message) DPL_MACRO_DUMMY_LOGGING(message, Info)
+    #define LogWarning(message) DPL_MACRO_DUMMY_LOGGING(message, Warning)
+    #define LogPedantic(message) DPL_MACRO_DUMMY_LOGGING(message, Pedantic)
+    #define LogSecureDebug(message) DPL_MACRO_DUMMY_LOGGING(message, SecureDebug)
+    #define LogSecureInfo(message) DPL_MACRO_DUMMY_LOGGING(message, SecureInfo)
+    #define LogSecureWarning(message) DPL_MACRO_DUMMY_LOGGING(message, SecureWarning)
+#endif // BUILD_TYPE_DEBUG
 
 #endif // SECURITYSERVER_LOG_H

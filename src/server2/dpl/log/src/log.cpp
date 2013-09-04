@@ -31,10 +31,12 @@ namespace SecurityServer {
 namespace Log {
 namespace // anonymous
 {
+#ifdef BUILD_TYPE_DEBUG
 const char *OLD_STYLE_LOGS_ENV_NAME = "DPL_USE_OLD_STYLE_LOGS";
 const char *OLD_STYLE_PEDANTIC_LOGS_ENV_NAME =
     "DPL_USE_OLD_STYLE_PEDANTIC_LOGS";
 const char *OLD_STYLE_LOGS_MASK_ENV_NAME = "DPL_USE_OLD_STYLE_LOGS_MASK";
+#endif // BUILD_TYPE_DEBUG
 const char *SECURITY_SERVER_LOG_OFF = "DPL_LOG_OFF";
 } // namespace anonymous
 
@@ -48,6 +50,7 @@ LogSystem::LogSystem() :
     m_oldStyleProvider(NULL),
     m_isLoggingEnabled(!getenv(SECURITY_SERVER_LOG_OFF))
 {
+#ifdef BUILD_TYPE_DEBUG
     bool oldStyleLogs = false;
     bool oldStyleDebugLogs = true;
     bool oldStyleInfoLogs = true;
@@ -120,6 +123,10 @@ LogSystem::LogSystem() :
         m_dlogProvider = new DLOGLogProvider();
         AddProvider(m_dlogProvider);
     }
+#else // BUILD_TYPE_DEBUG
+    m_dlogProvider = new DLOGLogProvider();
+    AddProvider(m_dlogProvider);
+#endif // BUILD_TYPE_DEBUG
 }
 
 LogSystem::~LogSystem()
