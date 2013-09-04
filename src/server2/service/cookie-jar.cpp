@@ -34,6 +34,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/types.h>
+#include <sys/smack.h>
 #include <fstream>
 #include <linux/limits.h>
 

@@ -31,6 +31,7 @@
 #include <cookie.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/smack.h>
 
 //interfaces ID
 const int INTERFACE_GET = 0;
