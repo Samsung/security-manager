@@ -318,99 +318,6 @@ error:
     return retval;
 }
 
-#ifdef USE_SEC_SRV1_FOR_CHECK_PRIVILEGE_BY_PID
-int process_pid_privilege_check(int sockfd, int datasize)
-{
-    //In this function we parsing received PID privilege check request
-    int retval;
-    int client_pid;
-    int pid;
-    char *object = NULL;
-    char *access_rights = NULL;
-    unsigned char return_code;
-    char *path = NULL;
-    char subject[SMACK_LABEL_LEN + 1];
-    subject[0] = '\0';
-
-    //authenticate client
-    retval = authenticate_client_middleware(sockfd, &client_pid);
-
-    if (retval != SECURITY_SERVER_SUCCESS) {
-        SEC_SVR_ERR("%s", "Client Authentication Failed");
-        retval = send_generic_response(sockfd,
-            SECURITY_SERVER_MSG_TYPE_CHECK_PID_PRIVILEGE_RESPONSE,
-            SECURITY_SERVER_RETURN_CODE_AUTHENTICATION_FAILED);
-
-        if (retval != SECURITY_SERVER_SUCCESS)
-            SEC_SVR_ERR("ERROR: Cannot send generic response: %d", retval);
-
-        goto error;
-    }
-
-    //receive request
-    retval = recv_pid_privilege_request(sockfd, datasize, &pid, &object, &access_rights);
-
-    if (retval == SECURITY_SERVER_ERROR_RECV_FAILED) {
-        SEC_SVR_ERR("%s", "Receiving request failed");
-        retval = send_generic_response(sockfd,
-            SECURITY_SERVER_MSG_TYPE_CHECK_PID_PRIVILEGE_RESPONSE,
-            SECURITY_SERVER_RETURN_CODE_BAD_REQUEST);
-
-        if (retval != SECURITY_SERVER_SUCCESS)
-            SEC_SVR_ERR("ERROR: Cannot send generic response: %d", retval);
-
-        goto error;
-    }
-
-    if (smack_check()) {
-        retval = smack_pid_have_access(pid, object, access_rights);
-        SEC_SVR_DBG("smack_pid_have_access returned %d", retval);
-
-        if (get_smack_label_from_process(pid, subject) != PC_OPERATION_SUCCESS) {
-            // subject label is set to empty string
-            SEC_SVR_ERR("get_smack_label_from_process failed. Subject label has not been read.");
-        } else {
-            SECURE_SLOGD("Subject label of client PID %d is: %s", pid, subject);
-        }
-    } else {
-        SEC_SVR_DBG("SMACK is not available. Subject label has not been read.");
-        retval = 1;
-    }
-
-    path = read_exe_path_from_proc(pid);
-
-    if (retval > 0)
-        SECURE_SLOGD("SS_SMACK: caller_pid=%d, subject=%s, object=%s, access=%s, result=%d, caller_path=%s", pid, subject, object, access_rights, retval, path);
-    else
-        SECURE_SLOGW("SS_SMACK: caller_pid=%d, subject=%s, object=%s, access=%s, result=%d, caller_path=%s", pid, subject, object, access_rights, retval, path);
-
-    if (path != NULL)
-        free(path);
-
-    if (retval == 1)   //there is permission
-        return_code = SECURITY_SERVER_RETURN_CODE_SUCCESS;
-    else                //there is no permission
-        return_code = SECURITY_SERVER_RETURN_CODE_ACCESS_DENIED;
-
-    //send response
-    retval = send_generic_response(sockfd,
-        SECURITY_SERVER_MSG_TYPE_CHECK_PID_PRIVILEGE_RESPONSE,
-        return_code);
-
-    if (retval != SECURITY_SERVER_SUCCESS)
-        SEC_SVR_ERR("ERROR: Cannot send generic response: %d", retval);
-
-error:
-
-    if (object != NULL)
-        free(object);
-    if (access_rights != NULL)
-        free(access_rights);
-
-    return retval;
-}
-#endif
-
 int client_has_access(int sockfd, const char *object)
 {
     char *label = NULL;
@@ -505,15 +412,6 @@ void *security_server_thread(void *param)
             authorize_SS_API_caller_socket(client_sockfd, API_MIDDLEWARE, API_RULE_REQUIRED);
             process_gid_request(client_sockfd, (int)basic_hdr.msg_len);
             break;
-
-#ifdef USE_SEC_SRV1_FOR_CHECK_PRIVILEGE_BY_PID
-        case SECURITY_SERVER_MSG_TYPE_CHECK_PID_PRIVILEGE_REQUEST:
-            SEC_SVR_DBG("%s", "PID privilege check request received");
-            authorize_SS_API_caller_socket(client_sockfd, API_MIDDLEWARE, API_RULE_REQUIRED);
-            //pass data size to function
-            process_pid_privilege_check(client_sockfd, basic_hdr.msg_len);
-            break;
-#endif
 
         case SECURITY_SERVER_MSG_TYPE_VALID_PWD_REQUEST:
             SECURE_SLOGD("%s", "Server: validate password request received");

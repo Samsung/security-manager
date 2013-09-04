@@ -793,100 +793,6 @@ error:
 //     return SECURITY_SERVER_SUCCESS;
 // }
 
-#ifdef USE_SEC_SRV1_FOR_CHECK_PRIVILEGE_BY_PID
-//VERSION:      0x01
-//MSG_ID:       0x1f (SECURITY_SERVER_MSG_TYPE_CHECK_PID_PRIVILEGE_REQUEST)
-//DATA_SIZE:    strlen(object) + 1 + strlen(access_rights) + 1
-int send_pid_privilege_request(int sockfd, int pid, const char *object, const char *access_rights)
-{
-    //header structure
-    basic_header hdr;
-    int retval;
-    int message_size;
-    //buffer for data
-    char *buff = NULL;
-    int offset = 0;
-
-    if (pid < 0) {
-        SEC_SVR_ERR("%s", "Error input param");
-        retval = SECURITY_SERVER_ERROR_INPUT_PARAM;
-        goto error;
-    }
-
-    if (object == NULL) {
-        SEC_SVR_ERR("%s", "Error input param");
-        retval = SECURITY_SERVER_ERROR_INPUT_PARAM;
-        goto error;
-    }
-
-    //allocate buffer
-    //+1 for the '\0' at string end
-
-    message_size = sizeof(int) + strlen(object) + 1 + strlen(access_rights) + 1;
-    buff = (char*)malloc(message_size + sizeof(hdr));
-    if (buff == NULL) {
-        SEC_SVR_ERR("%s", "malloc() error");
-        retval = SECURITY_SERVER_ERROR_OUT_OF_MEMORY;
-        goto error;
-    }
-
-    //clear buffer
-    bzero(buff, message_size + sizeof(hdr));
-
-    //create header
-    hdr.version = SECURITY_SERVER_MSG_VERSION;
-    //MSG_ID
-    hdr.msg_id = SECURITY_SERVER_MSG_TYPE_CHECK_PID_PRIVILEGE_REQUEST;
-    //set message size without header (data size)
-    hdr.msg_len = message_size;
-
-    //copy message fields to buffer
-    offset = 0;
-    memcpy(&buff[offset], &hdr, sizeof(hdr));
-    offset += sizeof(hdr);
-    //add PID
-    memcpy(&buff[offset], &pid, sizeof(pid));
-    offset += sizeof(pid);
-    //add *object with NULL at the end
-    memcpy(&buff[offset], object, strlen(object));
-    offset += strlen(object);
-    buff[offset] = 0;
-    offset += 1;
-    //add *access_rights with NULL at the end
-    memcpy(&buff[offset], access_rights, strlen(access_rights));
-    offset += strlen(access_rights);
-    buff[offset] = 0;
-
-    //check pool
-    retval = check_socket_poll(sockfd, POLLOUT, SECURITY_SERVER_SOCKET_TIMEOUT_MILISECOND);
-    if (retval == SECURITY_SERVER_ERROR_POLL) {
-        SEC_SVR_ERR("%s", "poll() error");
-        retval = SECURITY_SERVER_ERROR_SEND_FAILED;
-        goto error;
-    }
-    if (retval == SECURITY_SERVER_ERROR_TIMEOUT) {
-        SEC_SVR_ERR("%s", "poll() timeout");
-        retval = SECURITY_SERVER_ERROR_SEND_FAILED;
-        goto error;
-    }
-
-    //send message
-    retval = TEMP_FAILURE_RETRY(write(sockfd, buff, message_size + sizeof(hdr)));
-    if (retval < message_size) {
-        //error on write
-        SEC_SVR_ERR("Error on write(): %d", retval);
-        retval = SECURITY_SERVER_ERROR_SEND_FAILED;
-        goto error;
-    }
-    retval = SECURITY_SERVER_SUCCESS;
-error:
-    if (buff != NULL)
-        free(buff);
-
-    return retval;
-}
-#endif
-
 /* Send validate password request message to security server *
  *
  * Message format
@@ -1410,63 +1316,6 @@ int recv_hdr(int client_sockfd, basic_header *basic_hdr)
     return retval;
 }
 
-#ifdef USE_SEC_SRV1_FOR_CHECK_PRIVILEGE_BY_PID
-int recv_pid_privilege_request(int sockfd, int datasize, int *pid, char **object, char **access_rights)
-{
-    int retval;
-    char *buff = NULL;
-    int object_size = 0;
-    int access_rights_size = 0;
-
-    buff = (char*)malloc(datasize);
-    if (buff == NULL)
-        return SECURITY_SERVER_ERROR_OUT_OF_MEMORY;
-
-    //receive all data to buffer
-    retval = TEMP_FAILURE_RETRY(read(sockfd, buff, datasize));
-    if (retval < datasize) {
-        SEC_SVR_ERR("Received data size is too small: %d / %d", retval, datasize);
-        retval = SECURITY_SERVER_ERROR_RECV_FAILED;
-        goto error;
-    }
-
-    //getPID
-    memcpy(pid, buff, sizeof(int));
-
-    //get object
-    while (buff[sizeof(int) + object_size] != '\0') {
-        object_size++;
-
-        if (object_size > datasize) {
-            SEC_SVR_ERR("%s", "Wrong object_size");
-            retval = SECURITY_SERVER_ERROR_UNKNOWN;
-            goto error;
-        }
-    }
-    object_size++; //for '\0' at end
-
-    *object = (char*)malloc(object_size);
-    memcpy(*object, buff + sizeof(int), object_size);
-
-    //get access_rights
-    access_rights_size = datasize - object_size - sizeof(int);
-    *access_rights = (char*)malloc(access_rights_size);
-    memcpy(*access_rights, buff + sizeof(int) + object_size, access_rights_size);
-
-    SEC_SVR_DBG("%s %d", "Received PID:", *pid);
-    SEC_SVR_DBG("%s %s", "Received object:", *object);
-    SEC_SVR_DBG("%s %s", "Received privileges:", *access_rights);
-
-    retval = SECURITY_SERVER_SUCCESS;
-
-error:
-    if (buff != NULL)
-        free(buff);
-
-    return retval;
-}
-#endif
-
 int recv_generic_response(int sockfd, response_header *hdr)
 {
     int retval;
@@ -1595,20 +1444,6 @@ int recv_get_object_name(int sockfd, response_header *hdr, char *object, int max
         free(local_obj_name);
     return SECURITY_SERVER_SUCCESS;
 }
-
-#ifdef USE_SEC_SRV1_FOR_CHECK_PRIVILEGE_BY_PID
-int recv_pid_privilege_response(int sockfd, response_header *hdr)
-{
-    int retval;
-
-    retval = recv_generic_response(sockfd, hdr);
-
-    if (retval != SECURITY_SERVER_SUCCESS)
-        return return_code_to_error_code(hdr->return_code);
-
-    return SECURITY_SERVER_SUCCESS;
-}
-#endif
 
 int recv_pwd_response(int sockfd, response_header *hdr,
                       unsigned int *current_attempts,

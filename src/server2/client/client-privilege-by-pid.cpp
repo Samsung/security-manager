@@ -36,7 +36,6 @@
 #include <security-server.h>
 #include <security-server-common.h>
 
-#ifndef USE_SEC_SRV1_FOR_CHECK_PRIVILEGE_BY_PID
 SECURITY_SERVER_API
 int security_server_check_privilege_by_pid(
         int pid,
@@ -73,5 +72,4 @@ int security_server_check_privilege_by_pid(
     }
     return SECURITY_SERVER_API_ERROR_UNKNOWN;
 }
-#endif
 

@@ -57,10 +57,6 @@ typedef struct
 #define SECURITY_SERVER_MSG_TYPE_SET_PWD_MAX_CHALLENGE_RESPONSE 0x1a
 #define SECURITY_SERVER_MSG_TYPE_SET_PWD_VALIDITY_REQUEST       0x1b
 #define SECURITY_SERVER_MSG_TYPE_SET_PWD_VALIDITY_RESPONSE      0x1c
-#ifdef  USE_SEC_SRV1_FOR_CHECK_PRIVILEGE_BY_PID
-#define SECURITY_SERVER_MSG_TYPE_CHECK_PID_PRIVILEGE_REQUEST    0x21
-#define SECURITY_SERVER_MSG_TYPE_CHECK_PID_PRIVILEGE_RESPONSE   0x22
-#endif
 #define SECURITY_SERVER_MSG_TYPE_GENERIC_RESPONSE               0xff
 
 /* Return code */
@@ -97,12 +93,6 @@ int recv_get_gid_response(int sockfd, response_header *hdr, int *gid);
 int recv_get_object_name(int sockfd, response_header *hdr, char *object, int max_object_size);
 
 int recv_hdr(int client_sockfd, basic_header *basic_hdr);
-
-#ifdef USE_SEC_SRV1_FOR_CHECK_PRIVILEGE_BY_PID
-int send_pid_privilege_request(int sockfd, int pid, const char *object, const char *access_rights);
-int recv_pid_privilege_request(int sockfd, int datasize, int *pid, char **object, char **access_rights);
-int recv_pid_privilege_response(int sockfdi, response_header *hdr);
-#endif
 
 int recv_generic_response(int sockfd, response_header *hdr);
 int recv_pwd_response(int sockfd, response_header *hdr, unsigned int *current_attempts,
