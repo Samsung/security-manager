@@ -47,10 +47,9 @@ int security_server_check_privilege_by_pid(
             return SECURITY_SERVER_API_SUCCESS;
 
         SocketBuffer send, recv;
-        Serialization ser;
-        ser.Serialize(send, pid);
-        ser.Serialize(send, std::string(object));
-        ser.Serialize(send, std::string(access_rights));
+        Serialization::Serialize(send, pid);
+        Serialization::Serialize(send, std::string(object));
+        Serialization::Serialize(send, std::string(access_rights));
 
         int result = sendToServer(
           SERVICE_SOCKET_PRIVILEGE_BY_PID,
@@ -60,8 +59,7 @@ int security_server_check_privilege_by_pid(
         if (result != SECURITY_SERVER_API_SUCCESS)
             return result;
 
-        Deserialization des;
-        des.Deserialize(recv, result);
+        Deserialization::Deserialize(recv, result);
         return result;
     } catch (SocketBuffer::Exception::Base &e) {
         LogDebug("SecurityServer::SocketBuffer::Exception " << e.DumpToString());

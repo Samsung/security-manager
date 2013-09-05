@@ -43,8 +43,7 @@ static int get_exec_path(pid_t pid, std::string &exe)
 
     try{
         SocketBuffer send, recv;
-        Serialization ser;
-        ser.Serialize(send, pid);
+        Serialization::Serialize(send, pid);
 
         int result = sendToServer(
                 SERVICE_SOCKET_EXEC_PATH,
@@ -53,12 +52,11 @@ static int get_exec_path(pid_t pid, std::string &exe)
         if(result != SECURITY_SERVER_API_SUCCESS)
             return result;
 
-        Deserialization des;
-        des.Deserialize(recv, result);
+        Deserialization::Deserialize(recv, result);
         if(result != SECURITY_SERVER_API_SUCCESS)
             return result;
 
-        des.Deserialize(recv, exe);
+        Deserialization::Deserialize(recv, exe);
         return result;
     } catch (SocketBuffer::Exception::Base &e) {
         LogDebug("SecurityServer::SocketBuffer::Exception " << e.DumpToString());

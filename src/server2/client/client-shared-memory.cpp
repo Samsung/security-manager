@@ -49,9 +49,8 @@ int security_server_app_give_access(const char *customer_label, int customer_pid
         }
 
         SocketBuffer send, recv;
-        Serialization ser;
-        ser.Serialize(send, std::string(customer_label));
-        ser.Serialize(send, customer_pid);
+        Serialization::Serialize(send, std::string(customer_label));
+        Serialization::Serialize(send, customer_pid);
 
         int result = sendToServer(
           SERVICE_SOCKET_SHARED_MEMORY,
@@ -61,8 +60,7 @@ int security_server_app_give_access(const char *customer_label, int customer_pid
         if (result != SECURITY_SERVER_API_SUCCESS)
             return result;
 
-        Deserialization des;
-        des.Deserialize(recv, result);
+        Deserialization::Deserialize(recv, result);
         return result;
     } catch (SocketBuffer::Exception::Base &e) {
         LogDebug("SecurityServer::SocketBuffer::Exception " << e.DumpToString());

@@ -45,8 +45,7 @@ int security_server_get_object_name(gid_t gid, char *pObjectName, size_t maxObje
         }
 
         SocketBuffer send, recv;
-        Serialization ser;
-        ser.Serialize(send, gid);
+        Serialization::Serialize(send, gid);
 
         int result = sendToServer(
           SERVICE_SOCKET_GET_OBJECT_NAME,
@@ -57,11 +56,10 @@ int security_server_get_object_name(gid_t gid, char *pObjectName, size_t maxObje
         if (result != SECURITY_SERVER_API_SUCCESS)
             return result;
 
-        Deserialization des;
-        des.Deserialize(recv, result);
+        Deserialization::Deserialize(recv, result);
 
         std::string retObjectName;
-        des.Deserialize(recv, retObjectName);
+        Deserialization::Deserialize(recv, retObjectName);
 
         if(retObjectName.size() > maxObjectSize){
             LogError("Objects name is too big. Need more space in pObjectName buffer.");

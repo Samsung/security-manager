@@ -127,8 +127,7 @@ bool GetGidService::readOne(const ConnectionID &conn, SocketBuffer &buffer) {
 
     // Get objects name:
     Try {
-        SecurityServer::Deserialization des;
-        des.Deserialize(buffer, objectName);
+        Deserialization::Deserialize(buffer, objectName);
      } Catch (SocketBuffer::Exception::Base) {
         LogDebug("Broken protocol. Closing socket.");
         m_serviceManager->Close(conn);
@@ -139,10 +138,9 @@ bool GetGidService::readOne(const ConnectionID &conn, SocketBuffer &buffer) {
     retCode = setGid(objectName);
 
     // Send the result
-    SecurityServer::Serialization ser;
     SocketBuffer sendBuffer;
-    ser.Serialize(sendBuffer, retCode);
-    ser.Serialize(sendBuffer, m_gid);
+    Serialization::Serialize(sendBuffer, retCode);
+    Serialization::Serialize(sendBuffer, m_gid);
     m_serviceManager->Write(conn, sendBuffer.Pop());
     return true;
 }

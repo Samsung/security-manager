@@ -91,15 +91,13 @@ bool ExecPathService::processOne(const ConnectionID &conn, SocketBuffer &buffer)
     }
 
     Try {
-        SecurityServer::Deserialization des;
-        des.Deserialize(buffer, pid);
+        Deserialization::Deserialize(buffer, pid);
      } Catch (SocketBuffer::Exception::Base) {
         LogDebug("Broken protocol. Closing socket.");
         m_serviceManager->Close(conn);
         return false;
     }
 
-    SecurityServer::Serialization ser;
     SocketBuffer sendBuffer;
     int retVal;
 
@@ -114,14 +112,14 @@ bool ExecPathService::processOne(const ConnectionID &conn, SocketBuffer &buffer)
     {
          LogError("Server: Failed to read executable path for pid " << pid);
          retVal = SECURITY_SERVER_API_ERROR_SERVER_ERROR;
-         ser.Serialize(sendBuffer, retVal);
+         Serialization::Serialize(sendBuffer, retVal);
          m_serviceManager->Write(conn, sendBuffer.Pop());
          return true;
     }
 
     retVal = SECURITY_SERVER_API_SUCCESS;
-    ser.Serialize(sendBuffer, retVal);
-    ser.Serialize(sendBuffer, exec_path);
+    Serialization::Serialize(sendBuffer, retVal);
+    Serialization::Serialize(sendBuffer, exec_path);
     m_serviceManager->Write(conn, sendBuffer.Pop());
     return true;
 }

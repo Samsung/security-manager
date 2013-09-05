@@ -98,10 +98,9 @@ bool PrivilegeByPidService::readOne(const ConnectionID &conn, SocketBuffer &buff
     }
 
     Try {
-        SecurityServer::Deserialization des;
-        des.Deserialize(buffer, pid);
-        des.Deserialize(buffer, object);
-        des.Deserialize(buffer, access_rights);
+        Deserialization::Deserialize(buffer, pid);
+        Deserialization::Deserialize(buffer, object);
+        Deserialization::Deserialize(buffer, access_rights);
     } Catch (SocketBuffer::Exception::Base) {
         LogDebug("Broken protocol. Closing socket.");
         m_serviceManager->Close(conn);
@@ -150,9 +149,8 @@ bool PrivilegeByPidService::readOne(const ConnectionID &conn, SocketBuffer &buff
     else                //there is no permission
         retCode = SECURITY_SERVER_API_ERROR_ACCESS_DENIED;
 
-    SecurityServer::Serialization ser;
     SocketBuffer sendBuffer;
-    ser.Serialize(sendBuffer, retCode);
+    Serialization::Serialize(sendBuffer, retCode);
     m_serviceManager->Write(conn, sendBuffer.Pop());
     return true;
 }

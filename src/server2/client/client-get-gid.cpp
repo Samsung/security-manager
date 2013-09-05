@@ -50,8 +50,7 @@ int security_server_get_gid(const char *objectName) {
         }
 
         SocketBuffer send, recv;
-        Serialization ser;
-        ser.Serialize(send, std::string(objectName));
+        Serialization::Serialize(send, std::string(objectName));
 
         int retCode = sendToServer(
           SERVICE_SOCKET_GET_GID,
@@ -61,8 +60,7 @@ int security_server_get_gid(const char *objectName) {
         if (retCode != SECURITY_SERVER_API_SUCCESS)
             return retCode;
 
-        Deserialization des;
-        des.Deserialize(recv, retCode);
+        Deserialization::Deserialize(recv, retCode);
 
         // Return if errors
         if (retCode < 0)
@@ -70,7 +68,7 @@ int security_server_get_gid(const char *objectName) {
 
         // No errors, return gid
         gid_t gid;
-        des.Deserialize(recv, gid);
+        Deserialization::Deserialize(recv, gid);
         return gid;
     } catch (SocketBuffer::Exception::Base &e) {
         LogDebug("SecurityServer::SocketBuffer::Exception " << e.DumpToString());

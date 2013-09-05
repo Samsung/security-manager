@@ -37,10 +37,13 @@
 #include <sys/smack.h>
 #include <fstream>
 #include <linux/limits.h>
+#include <signal.h>
+#include <errno.h>
 
 namespace SecurityServer {
 
 CookieJar::CookieJar(void)
+  : m_position(0)
 {
     LogDebug("Created CookieJar for handling cookies");
 }
@@ -222,6 +225,29 @@ bool CookieJar::CompareCookies(const Cookie &c1, const Cookie &c2, CompareType c
         LogDebug("Wrong function parameters");
         return false;
     };
+}
+
+void CookieJar::GarbageCollector(size_t howMany)
+{
+    if ((howMany == 0) || (howMany > m_cookieList.size())) {
+        howMany = m_cookieList.size();
+    }
+
+    for (size_t i = 0; i < howMany; ++i) {
+
+        if (m_position >= m_cookieList.size()) {
+            m_position = 0;
+        }
+
+        if (kill(m_cookieList[m_position].pid, 0) && (errno == ESRCH)) {
+            LogDebug("Cookie deleted " << " PID:" << m_cookieList[m_position].pid);
+            if (m_position != (m_cookieList.size()-1))
+                m_cookieList[m_position] = *m_cookieList.rbegin();
+            m_cookieList.pop_back();
+        } else {
+            ++m_position;
+        }
+    }
 }
 
 } // namespace SecurityServer

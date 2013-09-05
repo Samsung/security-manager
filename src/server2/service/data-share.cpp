@@ -92,9 +92,8 @@ bool SharedMemoryService::readOne(const ConnectionID &conn, SocketBuffer &buffer
     }
 
     Try {
-        SecurityServer::Deserialization des;
-        des.Deserialize(buffer, clientLabel);
-        des.Deserialize(buffer, clientPid);
+        Deserialization::Deserialize(buffer, clientLabel);
+        Deserialization::Deserialize(buffer, clientPid);
      } Catch (SocketBuffer::Exception::Base) {
         LogDebug("Broken protocol. Closing socket.");
         m_serviceManager->Close(conn);
@@ -138,9 +137,8 @@ end:
     free(providerLabel);
     smack_accesses_free(smack);
 
-    SecurityServer::Serialization ser;
     SocketBuffer sendBuffer;
-    ser.Serialize(sendBuffer, retCode);
+    Serialization::Serialize(sendBuffer, retCode);
     m_serviceManager->Write(conn, sendBuffer.Pop());
     return true;
 }

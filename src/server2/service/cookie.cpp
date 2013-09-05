@@ -103,6 +103,7 @@ bool CookieService::readOne(const ConnectionID &conn, SocketBuffer &buffer, int 
     LogDebug("Iteration begin");
     SocketBuffer send, recv;
     int msgType;
+    bool removeGarbage = false;
 
     //waiting for all data
     if (!buffer.Ready()) {
@@ -126,6 +127,7 @@ bool CookieService::readOne(const ConnectionID &conn, SocketBuffer &buffer, int 
         case CookieCall::GET_COOKIE:
             LogDebug("Entering get-cookie server side handler");
             retval = cookieRequest(send, conn.sock);
+            removeGarbage = true;
             break;
 
         default:
@@ -183,15 +185,19 @@ bool CookieService::readOne(const ConnectionID &conn, SocketBuffer &buffer, int 
         retval = false;
     }
 
-    if (retval == false) {  //something goes wrong with communication
-        LogDebug("Closing socket because of error");
-        m_serviceManager->Close(conn);
-        return retval;
-    } else {
+    if (retval) {
         //send response
         m_serviceManager->Write(conn, send.Pop());
-        return retval;
+    } else {
+        LogDebug("Closing socket because of error");
+        m_serviceManager->Close(conn);
     }
+
+    // Each time you add one cookie check 2 others.
+    if (removeGarbage)
+        m_cookieJar.GarbageCollector(2);
+
+    return retval;
 }
 
 bool CookieService::cookieRequest(SocketBuffer &send, int socket)

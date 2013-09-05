@@ -63,7 +63,7 @@ class CookieJar
 {
 public:
     CookieJar(void);
-    ~CookieJar(void);
+    virtual ~CookieJar(void);
 
     const Cookie * GenerateCookie(int pid);
     void DeleteCookie(const Cookie &pattern, CompareType criterion);
@@ -71,7 +71,12 @@ public:
     const Cookie * SearchCookie(const Cookie &pattern, CompareType criterion) const;
     bool CompareCookies(const Cookie &c1, const Cookie &c2, CompareType criterion) const;
 
+    // howMany - number of cookies that will be checked.
+    // Set howMay to 0 to check all cookies.
+    void GarbageCollector(size_t howMany);
+
 private:
+    size_t m_position;
     std::vector<Cookie> m_cookieList;
 };
 
