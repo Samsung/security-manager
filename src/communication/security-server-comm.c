@@ -150,11 +150,12 @@ int check_socket_poll(int sockfd, int event, int timeout)
 int safe_server_sock_close(int client_sockfd)
 {
     struct pollfd poll_fd[1];
-    int retval;
-    retval = SECURITY_SERVER_ERROR_POLL;
     poll_fd[0].fd = client_sockfd;
     poll_fd[0].events = POLLRDHUP;
-    retval = poll(poll_fd, 1, SECURITY_SERVER_SOCKET_TIMEOUT_MILISECOND);
+    if (0 > poll(poll_fd, 1, SECURITY_SERVER_SOCKET_TIMEOUT_MILISECOND)) {
+        SECURE_SLOGE("%s", "Unable to poll from socket");
+        return SECURITY_SERVER_ERROR_SOCKET;
+    }
     SEC_SVR_DBG("%s", "Server: Closing server socket");
     close(client_sockfd);
     return SECURITY_SERVER_SUCCESS;

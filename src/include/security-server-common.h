@@ -142,11 +142,11 @@ void printhex(const unsigned char *data, int size);
 
 /* Debug */
 #ifdef SECURITY_SERVER_DEBUG_TO_CONSOLE /* debug msg will be printed in console */
-#define SEC_SVR_DBG(FMT, ARG ...) fprintf(stderr, "[DBG:%s:%d] "FMT"\n", \
+#define SEC_SVR_DBG(FMT, ARG ...) fprintf(stderr, "[DBG:%s:%d] " FMT "\n", \
                 __FILE__, __LINE__, ##ARG)
-#define SEC_SVR_WRN(FMT, ARG ...) fprintf(stderr, "[WRN:%s:%d] "FMT"\n", \
+#define SEC_SVR_WRN(FMT, ARG ...) fprintf(stderr, "[WRN:%s:%d] " FMT "\n", \
                 __FILE__, __LINE__, ##ARG)
-#define SEC_SVR_ERR(FMT, ARG ...) fprintf(stderr, "[ERR:%s:%d] "FMT"\n", \
+#define SEC_SVR_ERR(FMT, ARG ...) fprintf(stderr, "[ERR:%s:%d] " FMT "\n", \
                 __FILE__, __LINE__, ##ARG)
 
 #else

@@ -22,6 +22,7 @@
  * @brief       Implementation of api-get-gid service.
  */
 
+#include <unistd.h>
 #include <sys/smack.h>
 #include <grp.h>
 #include <unistd.h>
