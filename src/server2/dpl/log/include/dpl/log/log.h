@@ -25,8 +25,6 @@
 #include <dpl/singleton.h>
 #include <dpl/noncopyable.h>
 #include <dpl/log/abstract_log_provider.h>
-#include <dpl/log/dlog_log_provider.h>
-#include <dpl/log/old_style_log_provider.h>
 #include <sstream>
 #include <list>
 
@@ -44,9 +42,6 @@ class LogSystem :
   private:
     typedef std::list<AbstractLogProvider *> AbstractLogProviderPtrList;
     AbstractLogProviderPtrList m_providers;
-
-    DLOGLogProvider *m_dlogProvider;
-    OldStyleLogProvider *m_oldStyleProvider;
 
     bool m_isLoggingEnabled;
 

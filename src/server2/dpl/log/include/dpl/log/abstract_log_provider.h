@@ -29,6 +29,8 @@ class AbstractLogProvider
   public:
     virtual ~AbstractLogProvider() {}
 
+    virtual void SetTag(const char *tag);
+
     virtual void Debug(const char *message,
                        const char *fileName,
                        int line,

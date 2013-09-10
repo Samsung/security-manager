@@ -24,6 +24,8 @@
 
 #include <dpl/log/log.h>
 #include <dpl/singleton_impl.h>
+#include <dpl/log/dlog_log_provider.h>
+#include <dpl/log/old_style_log_provider.h>
 
 IMPLEMENT_SINGLETON(SecurityServer::Log::LogSystem)
 
@@ -46,8 +48,6 @@ bool LogSystem::IsLoggingEnabled() const
 }
 
 LogSystem::LogSystem() :
-    m_dlogProvider(NULL),
-    m_oldStyleProvider(NULL),
     m_isLoggingEnabled(!getenv(SECURITY_SERVER_LOG_OFF))
 {
 #ifdef BUILD_TYPE_DEBUG
@@ -112,20 +112,17 @@ LogSystem::LogSystem() :
     // Setup default DLOG and old style logging
     if (oldStyleLogs) {
         // Old style
-        m_oldStyleProvider = new OldStyleLogProvider(oldStyleDebugLogs,
-                                                     oldStyleInfoLogs,
-                                                     oldStyleWarningLogs,
-                                                     oldStyleErrorLogs,
-                                                     oldStylePedanticLogs);
-        AddProvider(m_oldStyleProvider);
+        AddProvider(new OldStyleLogProvider(oldStyleDebugLogs,
+                                            oldStyleInfoLogs,
+                                            oldStyleWarningLogs,
+                                            oldStyleErrorLogs,
+                                            oldStylePedanticLogs));
     } else {
         // DLOG
-        m_dlogProvider = new DLOGLogProvider();
-        AddProvider(m_dlogProvider);
+        AddProvider(new DLOGLogProvider());
     }
 #else // BUILD_TYPE_DEBUG
-    m_dlogProvider = new DLOGLogProvider();
-    AddProvider(m_dlogProvider);
+    AddProvider(new DLOGLogProvider());
 #endif // BUILD_TYPE_DEBUG
 }
 
@@ -140,16 +137,15 @@ LogSystem::~LogSystem()
     }
 
     m_providers.clear();
-
-    // And even default providers
-    m_dlogProvider = NULL;
-    m_oldStyleProvider = NULL;
 }
 
 void LogSystem::SetTag(const char* tag)
 {
-    if (m_dlogProvider != NULL) {
-        m_dlogProvider->SetTag(tag);
+    for (AbstractLogProviderPtrList::iterator iterator = m_providers.begin();
+         iterator != m_providers.end();
+         ++iterator)
+    {
+        (*iterator)->SetTag(tag);
     }
 }
 

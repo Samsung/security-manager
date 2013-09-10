@@ -23,8 +23,13 @@
 #include <dpl/log/abstract_log_provider.h>
 #include <cstring>
 
+#define UNUSED __attribute__((unused))
+
 namespace SecurityServer {
 namespace Log {
+
+void AbstractLogProvider::SetTag(const char *tag UNUSED) {}
+
 const char *AbstractLogProvider::LocateSourceFileName(const char *filename)
 {
     const char *ptr = strrchr(filename, '/');
