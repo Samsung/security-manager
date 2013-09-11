@@ -828,7 +828,7 @@ int send_valid_pwd_request(int sock_fd)
 
     /* Send to server */
     retval = TEMP_FAILURE_RETRY(write(sock_fd, &hdr, sizeof(hdr)));
-    if (retval < (int)sizeof(hdr))
+    if (retval < (int)(sizeof(hdr)))
     {
         /* Write error */
         SEC_SVR_ERR("Error on write(): %d", retval);
@@ -925,7 +925,7 @@ int send_set_pwd_request(int sock_fd,
 
     /* Send to server */
     retval = TEMP_FAILURE_RETRY(write(sock_fd, buf, total_length));
-    if (retval < (int)sizeof(buf))
+    if (retval < (int)(sizeof(buf)))
     {
         /* Write error */
         SEC_SVR_ERR("Error on write(): %d", retval);
@@ -990,7 +990,7 @@ int send_set_pwd_validity_request(int sock_fd, const unsigned int valid_period_i
 
     /* Send to server */
     retval = TEMP_FAILURE_RETRY(write(sock_fd, buf, total_length));
-    if (retval < (int)sizeof(buf))
+    if (retval < (int)(sizeof(buf)))
     {
         /* Write error */
         SEC_SVR_ERR("Error on write(): %d", retval);
@@ -1510,7 +1510,7 @@ int authenticate_client_application(int sockfd, int *pid, int *uid)
     /* get PID of socket peer */
     if (getsockopt(sockfd, SOL_SOCKET, SO_PEERCRED, &cr, &cl) != 0)
     {
-        SEC_SVR_DBG("%s", "getsockopt failed");
+        SEC_SVR_ERR("%s", "getsockopt failed");
         return SECURITY_SERVER_ERROR_SOCKET;
     }
     *pid = cr.pid;

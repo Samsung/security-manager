@@ -191,7 +191,7 @@ int load_password(unsigned char *cur_pwd, unsigned int *max_attempt, unsigned in
         /* Check expiration time. */
         if (*expire_time == 0) /* No valid period */
             *expire_time = 0xffffffff;
-        else if (*expire_time <= (unsigned int)time(NULL)) /* expired */
+        else if ((time_t)*expire_time <= time(NULL)) /* expired */
             *expire_time = 0;
         else        /* valid yet */
             *expire_time -= time(NULL);
@@ -1394,7 +1394,7 @@ int process_set_pwd_max_challenge_request(int sockfd)
     // this value (max challenge) for current password
 
     retval = TEMP_FAILURE_RETRY(read(sockfd, &max_challenge, sizeof(unsigned int)));
-    if(retval < (int)sizeof(unsigned int))
+    if (retval < (int)sizeof(unsigned int))
     {
         SEC_SVR_ERR("Server Error: recieve failed: %d", retval);
         retval = send_generic_response(sockfd,
@@ -1474,7 +1474,7 @@ int process_set_pwd_validity_request(int sockfd)
     // this value (validity) for current password
 
     retval = TEMP_FAILURE_RETRY(read(sockfd, &validity, sizeof(unsigned int)));
-    if(retval < (int)sizeof(unsigned int))
+    if (retval < (int)sizeof(unsigned int))
     {
         SEC_SVR_ERR("Server Error: recieve failed: %d", retval);
         retval = send_generic_response(sockfd,
