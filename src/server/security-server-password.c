@@ -318,11 +318,7 @@ int check_password(const unsigned char *cur_pwd, const unsigned char *requested_
                    const unsigned int max_attempts, const unsigned int expire_time,
                    int *current_attempt)
 {
-/* The following variable is needed only when SECURITY_SERVER_DEBUG_DLOG flag is set     */
-/* If its definition is not surrounded by preprocessor conditionals then it will         */
-/* cause compilation warning "unused variable". Please see the SECURE_SLOGD redefinition */
-/* in "security_server_common.h" header */
-#if SECURITY_SERVER_DEBUG_DLOG
+#ifdef BUILD_TYPE_DEBUG
     unsigned int current_time = time(NULL);
 #endif
 

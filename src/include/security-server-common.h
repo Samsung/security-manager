@@ -126,7 +126,7 @@ void printhex(const unsigned char *data, int size);
 #endif
 #define LOG_TAG "SECURITY_SERVER"
 #define SEC_SVR_ERR SLOGE
-#if SECURITY_SERVER_DEBUG_DLOG        /* debug msg will be printed by dlog daemon */
+#ifdef BUILD_TYPE_DEBUG        /* debug msg will be printed by dlog daemon */
 #define SEC_SVR_DBG SLOGD
 #define SEC_SVR_WRN SLOGW
 #else /* No debug output */
@@ -142,7 +142,7 @@ void printhex(const unsigned char *data, int size);
 #endif
 #define SECURE_SLOGW(FMT, ARG ...) do { } while(0)
 
-#endif // SECURITY_SERVER_DEBUG_DLOG
+#endif // BUILD_TYPE_DEBUG
 #endif // SECURITY_SERVER_DEBUG_TO_CONSOLE
 
 #ifdef __cplusplus
