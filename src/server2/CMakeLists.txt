@@ -21,11 +21,14 @@ SET(COMMON_SOURCES
     ${COMMON_PATH}/dpl/core/src/singleton.cpp
     )
 
+INCLUDE_DIRECTORIES(SYSTEM
+    ${COMMON_DEP_INCLUDE_DIRS}
+    )
+
 INCLUDE_DIRECTORIES(
     ${COMMON_PATH}/common
     ${COMMON_PATH}/dpl/core/include
     ${COMMON_PATH}/dpl/log/include
-    ${COMMON_DEP_INCLUDE_DIRS}
     )
 
 ADD_LIBRARY(${TARGET_SERVER_COMMON} SHARED ${COMMON_SOURCES})
