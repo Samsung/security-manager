@@ -31,6 +31,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <openssl/sha.h>
+#include <limits.h>
 
 #include "security-server-password.h"
 
@@ -946,7 +947,24 @@ int process_set_pwd_request(int sockfd)
     if (valid_days == 0)
         expire_time = 0;
     else
-        expire_time = time(NULL) + (valid_days * 86400);
+    {
+        time_t t = time(NULL );
+        unsigned int valid_days_max = (UINT_MAX - t) / 86400;
+        if (valid_days > valid_days_max)
+        {
+            SECURE_SLOGE("%s",
+                    "Server: Max password validity exceeded (%d>%d)", valid_days, valid_days_max);
+            retval = send_generic_response(sockfd,
+                    SECURITY_SERVER_MSG_TYPE_SET_PWD_RESPONSE,
+                    SECURITY_SERVER_RETURN_CODE_BAD_REQUEST);
+            if (retval != SECURITY_SERVER_SUCCESS)
+            {
+                SEC_SVR_ERR("Server ERROR: Cannot send generic response: %d", retval);
+            }
+            goto error;
+        }
+        expire_time = t + (valid_days * 86400);
+    }
 
     /* set new password */
     retval = set_password(hashed_new_pw, received_attempts, expire_time);
