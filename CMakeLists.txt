@@ -43,10 +43,6 @@ SET(CMAKE_CXX_FLAGS_CCOV       "-g -std=c++0x -O2 --coverage")
 # (BJ: our ARM too?)
 ADD_DEFINITIONS("-fPIC")
 
-# Set the default ELF image symbol visibility to hidden - all symbols will be
-# marked with this unless overridden within the code.
-#ADD_DEFINITIONS("-fvisibility=hidden")
-
 # Set compiler warning flags
 ADD_DEFINITIONS("-Werror")                      # Make all warnings into errors.
 ADD_DEFINITIONS("-Wall")                        # Generate all warnings
