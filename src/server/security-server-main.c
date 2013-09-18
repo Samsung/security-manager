@@ -61,7 +61,7 @@ struct security_server_thread_param {
 
 int process_app_get_access_request(int sockfd, size_t msg_len);
 static int netlink_enabled = 1; /* prevent memory leaks when netlink is disabled */
-
+static system_observer_config so_config;
 
 /************************************************************************************************/
 /* Just for test. This code must be removed on release */
@@ -1547,7 +1547,6 @@ int main(int argc, char* argv[])
     // create observer thread only if smack is enabled
     if (smack_check()) {
         pthread_t system_observer;
-        system_observer_config so_config;
         so_config.event_callback = rules_revoker_callback;
 
         res = pthread_create(&system_observer, NULL, system_observer_main_thread, (void*)&so_config);
