@@ -123,7 +123,7 @@ bool CookieService::readOne(const ConnectionID &conn, SocketBuffer &buffer, int 
 
     //use received data
     if (interfaceID == INTERFACE_GET) {
-        switch(msgType) {
+        switch(static_cast<CookieCall>(msgType)) {
         case CookieCall::GET_COOKIE:
             LogDebug("Entering get-cookie server side handler");
             retval = cookieRequest(send, conn.sock);
