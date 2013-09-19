@@ -29,7 +29,7 @@
 #include <dpl/log/log.h>
 #include <dpl/exception.h>
 
-#include <socket-buffer.h>
+#include <message-buffer.h>
 #include <client-common.h>
 #include <protocols.h>
 
@@ -42,7 +42,7 @@ SECURITY_SERVER_API
 int security_server_app_enable_permissions(const char *app_id, app_type_t app_type, const char **perm_list, int persistent)
 {
     using namespace SecurityServer;
-    SocketBuffer send, recv;
+    MessageBuffer send, recv;
     std::vector<std::string> permissions_list;
 
     LogDebug("security_server_app_enable_permissions() called");
@@ -85,8 +85,8 @@ int security_server_app_enable_permissions(const char *app_id, app_type_t app_ty
         Deserialization::Deserialize(recv, result);
         return result;
 
-    } catch (SocketBuffer::Exception::Base &e) {
-        LogDebug("SecurityServer::SocketBuffer::Exception " << e.DumpToString());
+    } catch (MessageBuffer::Exception::Base &e) {
+        LogDebug("SecurityServer::MessageBuffer::Exception " << e.DumpToString());
     } catch (std::exception &e) {
         LogDebug("STD exception " << e.what());
     } catch (...) {
@@ -101,7 +101,7 @@ SECURITY_SERVER_API
 int security_server_app_disable_permissions(const char *app_id, app_type_t app_type, const char **perm_list)
 {
     using namespace SecurityServer;
-    SocketBuffer send, recv;
+    MessageBuffer send, recv;
     std::vector<std::string> permissions_list;
 
     LogDebug("security_server_app_disable_permissions() called");
@@ -142,8 +142,8 @@ int security_server_app_disable_permissions(const char *app_id, app_type_t app_t
         Deserialization::Deserialize(recv, result);
         return result;
 
-    } catch (SocketBuffer::Exception::Base &e) {
-        LogDebug("SecurityServer::SocketBuffer::Exception " << e.DumpToString());
+    } catch (MessageBuffer::Exception::Base &e) {
+        LogDebug("SecurityServer::MessageBuffer::Exception " << e.DumpToString());
     } catch (std::exception &e) {
         LogDebug("STD exception " << e.what());
     } catch (...) {

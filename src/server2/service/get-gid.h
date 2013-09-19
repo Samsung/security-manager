@@ -29,7 +29,7 @@
 #include <generic-socket-manager.h>
 
 #include <dpl/serialization.h>
-#include <socket-buffer.h>
+#include <message-buffer.h>
 
 #include <security-server-common.h>
 
@@ -40,7 +40,7 @@ class GetGidService  :
   , public SecurityServer::ServiceThread<GetGidService>
 {
 public:
-    typedef std::map<int, SocketBuffer> SocketBufferMap;
+    typedef std::map<int, MessageBuffer> MessageBufferMap;
 
     ServiceDescriptionVector GetServiceDescription();
 
@@ -57,9 +57,9 @@ public:
     void error(const ErrorEvent &event);
 private:
     gid_t m_gid;
-    bool readOne(const ConnectionID &conn, SocketBuffer &buffer);
+    bool readOne(const ConnectionID &conn, MessageBuffer &buffer);
     int  setGid(std::string& objectName);
-    SocketBufferMap m_socketBufferMap;
+    MessageBufferMap m_messageBufferMap;
 };
 
 } // namespace SecurityServer

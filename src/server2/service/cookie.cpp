@@ -98,10 +98,10 @@ void CookieService::error(const ErrorEvent &event) {
     m_serviceManager->Close(event.connectionID);
 }
 
-bool CookieService::readOne(const ConnectionID &conn, SocketBuffer &buffer, int interfaceID)
+bool CookieService::readOne(const ConnectionID &conn, MessageBuffer &buffer, int interfaceID)
 {
     LogDebug("Iteration begin");
-    SocketBuffer send, recv;
+    MessageBuffer send, recv;
     int msgType;
     bool removeGarbage = false;
 
@@ -113,7 +113,7 @@ bool CookieService::readOne(const ConnectionID &conn, SocketBuffer &buffer, int 
     //receive data from buffer and check MSG_ID
     Try {
         Deserialization::Deserialize(buffer, msgType);  //receive MSG_ID
-    } Catch (SocketBuffer::Exception::Base) {
+    } Catch (MessageBuffer::Exception::Base) {
         LogDebug("Broken protocol. Closing socket.");
         m_serviceManager->Close(conn);
         return false;
@@ -200,7 +200,7 @@ bool CookieService::readOne(const ConnectionID &conn, SocketBuffer &buffer, int 
     return retval;
 }
 
-bool CookieService::cookieRequest(SocketBuffer &send, int socket)
+bool CookieService::cookieRequest(MessageBuffer &send, int socket)
 {
     struct ucred cr;
     unsigned len = sizeof(cr);
@@ -221,13 +221,13 @@ bool CookieService::cookieRequest(SocketBuffer &send, int socket)
     return true;
 }
 
-bool CookieService::pidByCookieRequest(SocketBuffer &buffer, SocketBuffer &send)
+bool CookieService::pidByCookieRequest(MessageBuffer &buffer, MessageBuffer &send)
 {
     std::vector<char> cookieKey;
 
     Try {
         Deserialization::Deserialize(buffer, cookieKey);
-    } Catch (SocketBuffer::Exception::Base) {
+    } Catch (MessageBuffer::Exception::Base) {
         LogDebug("Broken protocol. Closing socket.");
         return false;
     }
@@ -247,13 +247,13 @@ bool CookieService::pidByCookieRequest(SocketBuffer &buffer, SocketBuffer &send)
     return true;
 }
 
-bool CookieService::smackLabelByCookieRequest(SocketBuffer &buffer, SocketBuffer &send)
+bool CookieService::smackLabelByCookieRequest(MessageBuffer &buffer, MessageBuffer &send)
 {
     std::vector<char> cookieKey;
 
     Try {
         Deserialization::Deserialize(buffer, cookieKey);
-    } Catch (SocketBuffer::Exception::Base) {
+    } Catch (MessageBuffer::Exception::Base) {
         LogDebug("Broken protocol. Closing socket.");
         return false;
     }
@@ -273,7 +273,7 @@ bool CookieService::smackLabelByCookieRequest(SocketBuffer &buffer, SocketBuffer
     return true;
 }
 
-bool CookieService::privilegeByCookieGidRequest(SocketBuffer &buffer, SocketBuffer &send)
+bool CookieService::privilegeByCookieGidRequest(MessageBuffer &buffer, MessageBuffer &send)
 {
     std::vector<char> cookieKey;
     int gid;
@@ -281,7 +281,7 @@ bool CookieService::privilegeByCookieGidRequest(SocketBuffer &buffer, SocketBuff
     Try {
         Deserialization::Deserialize(buffer, cookieKey);
         Deserialization::Deserialize(buffer, gid);
-    } Catch (SocketBuffer::Exception::Base) {
+    } Catch (MessageBuffer::Exception::Base) {
         LogDebug("Broken protocol. Closing socket.");
         return false;
     }
@@ -304,7 +304,7 @@ bool CookieService::privilegeByCookieGidRequest(SocketBuffer &buffer, SocketBuff
     return true;
 }
 
-bool CookieService::privilegeByCookieRequest(SocketBuffer &buffer, SocketBuffer &send)
+bool CookieService::privilegeByCookieRequest(MessageBuffer &buffer, MessageBuffer &send)
 {
     std::vector<char> cookieKey;
     std::string subject;
@@ -315,7 +315,7 @@ bool CookieService::privilegeByCookieRequest(SocketBuffer &buffer, SocketBuffer 
         Deserialization::Deserialize(buffer, cookieKey);
         Deserialization::Deserialize(buffer, object);
         Deserialization::Deserialize(buffer, access);
-    } Catch (SocketBuffer::Exception::Base) {
+    } Catch (MessageBuffer::Exception::Base) {
         LogDebug("Broken protocol. Closing socket.");
         return false;
     }
@@ -339,13 +339,13 @@ bool CookieService::privilegeByCookieRequest(SocketBuffer &buffer, SocketBuffer 
     return true;
 }
 
-bool CookieService::uidByCookieRequest(SocketBuffer &buffer, SocketBuffer &send)
+bool CookieService::uidByCookieRequest(MessageBuffer &buffer, MessageBuffer &send)
 {
     std::vector<char> cookieKey;
 
     Try {
         Deserialization::Deserialize(buffer, cookieKey);
-    } Catch (SocketBuffer::Exception::Base) {
+    } Catch (MessageBuffer::Exception::Base) {
         LogDebug("Broken protocol. Closing socket.");
         return false;
     }
@@ -365,13 +365,13 @@ bool CookieService::uidByCookieRequest(SocketBuffer &buffer, SocketBuffer &send)
     return true;
 }
 
-bool CookieService::gidByCookieRequest(SocketBuffer &buffer, SocketBuffer &send)
+bool CookieService::gidByCookieRequest(MessageBuffer &buffer, MessageBuffer &send)
 {
     std::vector<char> cookieKey;
 
     Try {
         Deserialization::Deserialize(buffer, cookieKey);
-    } Catch (SocketBuffer::Exception::Base) {
+    } Catch (MessageBuffer::Exception::Base) {
         LogDebug("Broken protocol. Closing socket.");
         return false;
     }

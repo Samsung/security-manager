@@ -34,7 +34,7 @@
 #include <dpl/singleton.h>
 #include <dpl/singleton_safe_impl.h>
 
-#include <socket-buffer.h>
+#include <message-buffer.h>
 
 #include <security-server.h>
 
@@ -167,7 +167,7 @@ private:
 namespace SecurityServer {
 
 
-int sendToServer(char const * const interface, const RawBuffer &send, SocketBuffer &recv) {
+int sendToServer(char const * const interface, const RawBuffer &send, MessageBuffer &recv) {
     int ret;
     SockRAII sock;
     ssize_t done = 0;

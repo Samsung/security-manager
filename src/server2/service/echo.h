@@ -30,7 +30,7 @@
 
 #include <dpl/serialization.h>
 
-#include <socket-buffer.h>
+#include <message-buffer.h>
 
 namespace SecurityServer {
 

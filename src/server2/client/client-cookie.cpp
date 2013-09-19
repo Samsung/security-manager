@@ -28,7 +28,7 @@
 #include <dpl/log/log.h>
 #include <dpl/exception.h>
 
-#include <socket-buffer.h>
+#include <message-buffer.h>
 #include <client-common.h>
 #include <protocols.h>
 
@@ -46,7 +46,7 @@ SECURITY_SERVER_API
 int security_server_request_cookie(char *cookie, size_t bufferSize)
 {
     using namespace SecurityServer;
-    SocketBuffer send, recv;
+    MessageBuffer send, recv;
     std::vector<char> receivedCookie;
 
     LogDebug("security_server_request_cookie() called");
@@ -86,8 +86,8 @@ int security_server_request_cookie(char *cookie, size_t bufferSize)
         memcpy(cookie, &receivedCookie[0], receivedCookie.size());
         return retval;
 
-    } catch (SocketBuffer::Exception::Base &e) {
-        LogDebug("SecurityServer::SocketBuffer::Exception " << e.DumpToString());
+    } catch (MessageBuffer::Exception::Base &e) {
+        LogDebug("SecurityServer::MessageBuffer::Exception " << e.DumpToString());
     } catch (std::exception &e) {
         LogDebug("STD exception " << e.what());
     } catch (...) {
@@ -101,7 +101,7 @@ SECURITY_SERVER_API
 int security_server_get_cookie_pid(const char *cookie)
 {
     using namespace SecurityServer;
-    SocketBuffer send, recv;
+    MessageBuffer send, recv;
     int pid;
     int retval = SECURITY_SERVER_API_ERROR_UNKNOWN;
 
@@ -133,8 +133,8 @@ int security_server_get_cookie_pid(const char *cookie)
         Deserialization::Deserialize(recv, pid);
         return pid;
 
-    } catch (SocketBuffer::Exception::Base &e) {
-        LogDebug("SecurityServer::SocketBuffer::Exception " << e.DumpToString());
+    } catch (MessageBuffer::Exception::Base &e) {
+        LogDebug("SecurityServer::MessageBuffer::Exception " << e.DumpToString());
     } catch (std::exception &e) {
         LogDebug("STD exception " << e.what());
     } catch (...) {
@@ -148,7 +148,7 @@ SECURITY_SERVER_API
 char * security_server_get_smacklabel_cookie(const char *cookie)
 {
     using namespace SecurityServer;
-    SocketBuffer send, recv;
+    MessageBuffer send, recv;
     int retval = SECURITY_SERVER_API_ERROR_UNKNOWN;
     std::string label;
 
@@ -181,8 +181,8 @@ char * security_server_get_smacklabel_cookie(const char *cookie)
 
         return strdup(label.c_str());
 
-    } catch (SocketBuffer::Exception::Base &e) {
-        LogDebug("SecurityServer::SocketBuffer::Exception " << e.DumpToString());
+    } catch (MessageBuffer::Exception::Base &e) {
+        LogDebug("SecurityServer::MessageBuffer::Exception " << e.DumpToString());
     } catch (std::exception &e) {
         LogDebug("STD exception " << e.what());
     } catch (...) {
@@ -196,7 +196,7 @@ SECURITY_SERVER_API
 int security_server_check_privilege(const char *cookie, gid_t privilege)
 {
     using namespace SecurityServer;
-    SocketBuffer send, recv;
+    MessageBuffer send, recv;
     int retval = SECURITY_SERVER_API_ERROR_UNKNOWN;
 
     LogDebug("security_server_check_privilege() called");
@@ -224,8 +224,8 @@ int security_server_check_privilege(const char *cookie, gid_t privilege)
         Deserialization::Deserialize(recv, retval);
         return retval;
 
-    } catch (SocketBuffer::Exception::Base &e) {
-        LogDebug("SecurityServer::SocketBuffer::Exception " << e.DumpToString());
+    } catch (MessageBuffer::Exception::Base &e) {
+        LogDebug("SecurityServer::MessageBuffer::Exception " << e.DumpToString());
     } catch (std::exception &e) {
         LogDebug("STD exception " << e.what());
     } catch (...) {
@@ -239,7 +239,7 @@ SECURITY_SERVER_API
 int security_server_check_privilege_by_cookie(const char *cookie, const char *object, const char *access_rights)
 {
     using namespace SecurityServer;
-    SocketBuffer send, recv;
+    MessageBuffer send, recv;
     int retval = SECURITY_SERVER_API_ERROR_UNKNOWN;
 
     LogDebug("security_server_check_privilege_by_cookie() called");
@@ -271,8 +271,8 @@ int security_server_check_privilege_by_cookie(const char *cookie, const char *ob
         Deserialization::Deserialize(recv, retval);
         return retval;
 
-    } catch (SocketBuffer::Exception::Base &e) {
-        LogDebug("SecurityServer::SocketBuffer::Exception " << e.DumpToString());
+    } catch (MessageBuffer::Exception::Base &e) {
+        LogDebug("SecurityServer::MessageBuffer::Exception " << e.DumpToString());
     } catch (std::exception &e) {
         LogDebug("STD exception " << e.what());
     } catch (...) {
@@ -286,7 +286,7 @@ SECURITY_SERVER_API
 int security_server_get_uid_by_cookie(const char *cookie, uid_t *uid)
 {
     using namespace SecurityServer;
-    SocketBuffer send, recv;
+    MessageBuffer send, recv;
     int retval = SECURITY_SERVER_API_ERROR_UNKNOWN;
 
     LogDebug("security_server_get_uid_by_cookie() called");
@@ -319,8 +319,8 @@ int security_server_get_uid_by_cookie(const char *cookie, uid_t *uid)
 
         return retval;
 
-    } catch (SocketBuffer::Exception::Base &e) {
-        LogDebug("SecurityServer::SocketBuffer::Exception " << e.DumpToString());
+    } catch (MessageBuffer::Exception::Base &e) {
+        LogDebug("SecurityServer::MessageBuffer::Exception " << e.DumpToString());
     } catch (std::exception &e) {
         LogDebug("STD exception " << e.what());
     } catch (...) {
@@ -334,7 +334,7 @@ SECURITY_SERVER_API
 int security_server_get_gid_by_cookie(const char *cookie, gid_t *gid)
 {
     using namespace SecurityServer;
-    SocketBuffer send, recv;
+    MessageBuffer send, recv;
     int retval = SECURITY_SERVER_API_ERROR_UNKNOWN;
 
     LogDebug("security_server_get_uid_by_cookie() called");
@@ -367,8 +367,8 @@ int security_server_get_gid_by_cookie(const char *cookie, gid_t *gid)
 
         return retval;
 
-    } catch (SocketBuffer::Exception::Base &e) {
-        LogDebug("SecurityServer::SocketBuffer::Exception " << e.DumpToString());
+    } catch (MessageBuffer::Exception::Base &e) {
+        LogDebug("SecurityServer::MessageBuffer::Exception " << e.DumpToString());
     } catch (std::exception &e) {
         LogDebug("STD exception " << e.what());
     } catch (...) {

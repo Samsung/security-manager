@@ -79,7 +79,7 @@ void AppPermissionsService::write(const WriteEvent &event) {
 
 void AppPermissionsService::read(const ReadEvent &event) {
     LogDebug("Read event for counter: " << event.connectionID.counter);
-    auto &buffer = m_socketBufferMap[event.connectionID.counter];
+    auto &buffer = m_messageBufferMap[event.connectionID.counter];
     buffer.Push(event.rawBuffer);
 
     // We can get several requests in one package.
@@ -89,7 +89,7 @@ void AppPermissionsService::read(const ReadEvent &event) {
 
 void AppPermissionsService::close(const CloseEvent &event) {
     LogDebug("CloseEvent. ConnectionID: " << event.connectionID.sock);
-    m_socketBufferMap.erase(event.connectionID.counter);
+    m_messageBufferMap.erase(event.connectionID.counter);
 }
 
 void AppPermissionsService::error(const ErrorEvent &event) {
@@ -97,10 +97,10 @@ void AppPermissionsService::error(const ErrorEvent &event) {
     m_serviceManager->Close(event.connectionID);
 }
 
-bool AppPermissionsService::readOne(const ConnectionID &conn, SocketBuffer &buffer)
+bool AppPermissionsService::readOne(const ConnectionID &conn, MessageBuffer &buffer)
 {
     LogDebug("Iteration begin");
-    SocketBuffer send, recv;
+    MessageBuffer send, recv;
     std::vector<std::string> permissions_list;
     std::string app_id;
     int persistent;
@@ -129,7 +129,7 @@ bool AppPermissionsService::readOne(const ConnectionID &conn, SocketBuffer &buff
         app_type = (app_type_t)temp;
         Deserialization::Deserialize(buffer, app_id);
         Deserialization::Deserialize(buffer, permissions_list);
-    } Catch (SocketBuffer::Exception::Base) {
+    } Catch (MessageBuffer::Exception::Base) {
         LogDebug("Broken protocol. Closing socket.");
         m_serviceManager->Close(conn);
         return false;

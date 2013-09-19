@@ -28,7 +28,7 @@
 #include <service-thread.h>
 #include <generic-socket-manager.h>
 #include <dpl/serialization.h>
-#include <socket-buffer.h>
+#include <message-buffer.h>
 #include <security-server-common.h>
 #include <cookie-jar.h>
 
@@ -42,7 +42,7 @@ public:
     struct SocketInfo
     {
         int interfaceID;
-        SocketBuffer buffer;
+        MessageBuffer buffer;
     };
 
     typedef std::map<int, SocketInfo> SocketInfoMap;
@@ -62,17 +62,17 @@ public:
     void error(const ErrorEvent &event);
 
 private:
-    bool readOne(const ConnectionID &conn, SocketBuffer &buffer, int interfaceID);
+    bool readOne(const ConnectionID &conn, MessageBuffer &buffer, int interfaceID);
 
-    bool cookieRequest(SocketBuffer &send, int socket);
+    bool cookieRequest(MessageBuffer &send, int socket);
 
-    bool pidByCookieRequest(SocketBuffer &buffer, SocketBuffer &send);
-    bool smackLabelByCookieRequest(SocketBuffer &buffer, SocketBuffer &send);
-    bool privilegeByCookieGidRequest(SocketBuffer &buffer, SocketBuffer &send);
-    bool privilegeByCookieRequest(SocketBuffer &buffer, SocketBuffer &send);
+    bool pidByCookieRequest(MessageBuffer &buffer, MessageBuffer &send);
+    bool smackLabelByCookieRequest(MessageBuffer &buffer, MessageBuffer &send);
+    bool privilegeByCookieGidRequest(MessageBuffer &buffer, MessageBuffer &send);
+    bool privilegeByCookieRequest(MessageBuffer &buffer, MessageBuffer &send);
 
-    bool uidByCookieRequest(SocketBuffer &buffer, SocketBuffer &send);
-    bool gidByCookieRequest(SocketBuffer &buffer, SocketBuffer &send);
+    bool uidByCookieRequest(MessageBuffer &buffer, MessageBuffer &send);
+    bool gidByCookieRequest(MessageBuffer &buffer, MessageBuffer &send);
 
     CookieJar m_cookieJar;
 

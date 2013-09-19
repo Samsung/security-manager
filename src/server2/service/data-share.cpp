@@ -77,7 +77,7 @@ void SharedMemoryService::write(const WriteEvent &event) {
         m_serviceManager->Close(event.connectionID);
 }
 
-bool SharedMemoryService::readOne(const ConnectionID &conn, SocketBuffer &buffer) {
+bool SharedMemoryService::readOne(const ConnectionID &conn, MessageBuffer &buffer) {
     LogDebug("Iteration begin");
     static const char * const revoke = "-----";
     static const char * const permissions = "rwxat";
@@ -94,7 +94,7 @@ bool SharedMemoryService::readOne(const ConnectionID &conn, SocketBuffer &buffer
     Try {
         Deserialization::Deserialize(buffer, clientLabel);
         Deserialization::Deserialize(buffer, clientPid);
-     } Catch (SocketBuffer::Exception::Base) {
+     } Catch (MessageBuffer::Exception::Base) {
         LogDebug("Broken protocol. Closing socket.");
         m_serviceManager->Close(conn);
         return false;
@@ -137,7 +137,7 @@ end:
     free(providerLabel);
     smack_accesses_free(smack);
 
-    SocketBuffer sendBuffer;
+    MessageBuffer sendBuffer;
     Serialization::Serialize(sendBuffer, retCode);
     m_serviceManager->Write(conn, sendBuffer.Pop());
     return true;
@@ -145,7 +145,7 @@ end:
 
 void SharedMemoryService::read(const ReadEvent &event) {
     LogDebug("Read event for counter: " << event.connectionID.counter);
-    auto &buffer = m_socketBufferMap[event.connectionID.counter];
+    auto &buffer = m_messageBufferMap[event.connectionID.counter];
     buffer.Push(event.rawBuffer);
 
     // We can get several requests in one package.
@@ -155,7 +155,7 @@ void SharedMemoryService::read(const ReadEvent &event) {
 
 void SharedMemoryService::close(const CloseEvent &event) {
     LogDebug("CloseEvent. ConnectionID: " << event.connectionID.sock);
-    m_socketBufferMap.erase(event.connectionID.counter);
+    m_messageBufferMap.erase(event.connectionID.counter);
 }
 
 void SharedMemoryService::error(const ErrorEvent &event) {

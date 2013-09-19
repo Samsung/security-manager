@@ -28,7 +28,7 @@
 #include <service-thread.h>
 #include <generic-socket-manager.h>
 
-#include <socket-buffer.h>
+#include <message-buffer.h>
 
 namespace SecurityServer {
 
@@ -37,7 +37,7 @@ class SharedMemoryService
   , public SecurityServer::ServiceThread<SharedMemoryService>
 {
 public:
-    typedef std::map<int, SocketBuffer> SocketBufferMap;
+    typedef std::map<int, MessageBuffer> MessageBufferMap;
 
     ServiceDescriptionVector GetServiceDescription();
 
@@ -53,9 +53,9 @@ public:
     void close(const CloseEvent &event);
     void error(const ErrorEvent &event);
 private:
-    bool readOne(const ConnectionID &conn, SocketBuffer &buffer);
+    bool readOne(const ConnectionID &conn, MessageBuffer &buffer);
 
-    SocketBufferMap m_socketBufferMap;
+    MessageBufferMap m_messageBufferMap;
 };
 
 } // namespace SecurityServer

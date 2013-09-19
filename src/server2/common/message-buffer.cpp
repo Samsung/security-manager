@@ -16,23 +16,23 @@
  *  limitations under the License
  */
 /*
- * @file        socket-buffer.cpp
+ * @file        message-buffer.cpp
  * @author      Bartlomiej Grzelewski (b.grzelewski@samsung.com)
  * @version     1.0
- * @brief       Implementation of SocketBuffer.
+ * @brief       Implementation of MessageBuffer.
  */
 
-#include <socket-buffer.h>
+#include <message-buffer.h>
 
 #include <dpl/log/log.h>
 
 namespace SecurityServer {
 
-void SocketBuffer::Push(const RawBuffer &data) {
+void MessageBuffer::Push(const RawBuffer &data) {
     m_buffer.AppendCopy(&data[0], data.size());
 }
 
-RawBuffer SocketBuffer::Pop() {
+RawBuffer MessageBuffer::Pop() {
     size_t size = m_buffer.Size();
     RawBuffer buffer;
     buffer.resize(size + sizeof(size_t));
@@ -41,7 +41,7 @@ RawBuffer SocketBuffer::Pop() {
     return buffer;
 }
 
-bool SocketBuffer::Ready() {
+bool MessageBuffer::Ready() {
     CountBytesLeft();
     if (m_bytesLeft == 0)
         return false;
@@ -50,7 +50,7 @@ bool SocketBuffer::Ready() {
     return true;
 }
 
-void SocketBuffer::Read(size_t num, void *bytes) {
+void MessageBuffer::Read(size_t num, void *bytes) {
     CountBytesLeft();
     if (num > m_bytesLeft) {
         LogDebug("Protocol broken. OutOfData. Asked for: " << num << " Ready: " << m_bytesLeft << " Buffer.size(): " << m_buffer.Size());
@@ -61,7 +61,7 @@ void SocketBuffer::Read(size_t num, void *bytes) {
     m_bytesLeft -= num;
 }
 
-void SocketBuffer::Write(size_t num, const void *bytes) {
+void MessageBuffer::Write(size_t num, const void *bytes) {
     m_buffer.AppendCopy(bytes, num);
 }
 

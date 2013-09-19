@@ -29,7 +29,7 @@
 #include <service-thread.h>
 #include <generic-socket-manager.h>
 #include <dpl/serialization.h>
-#include <socket-buffer.h>
+#include <message-buffer.h>
 #include <security-server-common.h>
 
 namespace SecurityServer {
@@ -39,7 +39,7 @@ class AppPermissionsService  :
   , public SecurityServer::ServiceThread<AppPermissionsService>
 {
 public:
-    typedef std::map<int, SocketBuffer> SocketBufferMap;
+    typedef std::map<int, MessageBuffer> MessageBufferMap;
 
     ServiceDescriptionVector GetServiceDescription();
 
@@ -56,9 +56,9 @@ public:
     void error(const ErrorEvent &event);
 
 private:
-    bool readOne(const ConnectionID &conn, SocketBuffer &buffer);
+    bool readOne(const ConnectionID &conn, MessageBuffer &buffer);
 
-    SocketBufferMap m_socketBufferMap;
+    MessageBufferMap m_messageBufferMap;
 };
 
 } // namespace SecurityServer

@@ -29,7 +29,7 @@
 #include <dpl/log/log.h>
 #include <dpl/exception.h>
 
-#include <socket-buffer.h>
+#include <message-buffer.h>
 #include <client-common.h>
 #include <protocols.h>
 #include <smack-check.h>
@@ -42,7 +42,7 @@ static int get_exec_path(pid_t pid, std::string &exe)
     using namespace SecurityServer;
 
     try{
-        SocketBuffer send, recv;
+        MessageBuffer send, recv;
         Serialization::Serialize(send, pid);
 
         int result = sendToServer(
@@ -58,8 +58,8 @@ static int get_exec_path(pid_t pid, std::string &exe)
 
         Deserialization::Deserialize(recv, exe);
         return result;
-    } catch (SocketBuffer::Exception::Base &e) {
-        LogDebug("SecurityServer::SocketBuffer::Exception " << e.DumpToString());
+    } catch (MessageBuffer::Exception::Base &e) {
+        LogDebug("SecurityServer::MessageBuffer::Exception " << e.DumpToString());
     } catch (std::exception &e) {
         LogDebug("STD exception " << e.what());
     } catch (...) {

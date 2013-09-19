@@ -28,13 +28,13 @@
 
 #include <vector>
 
-#include <socket-buffer.h>
+#include <message-buffer.h>
 
 namespace SecurityServer {
 
 typedef std::vector<unsigned char> RawBuffer;
 
-int sendToServer(char const * const interface, const RawBuffer &send, SocketBuffer &recv);
+int sendToServer(char const * const interface, const RawBuffer &send, MessageBuffer &recv);
 
 } // namespace SecuritySever
 

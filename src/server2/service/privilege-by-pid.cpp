@@ -81,7 +81,7 @@ void PrivilegeByPidService::write(const WriteEvent &event) {
         m_serviceManager->Close(event.connectionID);
 }
 
-bool PrivilegeByPidService::readOne(const ConnectionID &conn, SocketBuffer &buffer) {
+bool PrivilegeByPidService::readOne(const ConnectionID &conn, MessageBuffer &buffer) {
     LogDebug("Iteration begin");
 
     int retval;
@@ -101,7 +101,7 @@ bool PrivilegeByPidService::readOne(const ConnectionID &conn, SocketBuffer &buff
         Deserialization::Deserialize(buffer, pid);
         Deserialization::Deserialize(buffer, object);
         Deserialization::Deserialize(buffer, access_rights);
-    } Catch (SocketBuffer::Exception::Base) {
+    } Catch (MessageBuffer::Exception::Base) {
         LogDebug("Broken protocol. Closing socket.");
         m_serviceManager->Close(conn);
         return false;
@@ -149,7 +149,7 @@ bool PrivilegeByPidService::readOne(const ConnectionID &conn, SocketBuffer &buff
     else                //there is no permission
         retCode = SECURITY_SERVER_API_ERROR_ACCESS_DENIED;
 
-    SocketBuffer sendBuffer;
+    MessageBuffer sendBuffer;
     Serialization::Serialize(sendBuffer, retCode);
     m_serviceManager->Write(conn, sendBuffer.Pop());
     return true;
@@ -157,7 +157,7 @@ bool PrivilegeByPidService::readOne(const ConnectionID &conn, SocketBuffer &buff
 
 void PrivilegeByPidService::read(const ReadEvent &event) {
     LogDebug("Read event for counter: " << event.connectionID.counter);
-    auto &buffer = m_socketBufferMap[event.connectionID.counter];
+    auto &buffer = m_messageBufferMap[event.connectionID.counter];
     buffer.Push(event.rawBuffer);
 
     // We can get several requests in one package.
@@ -167,7 +167,7 @@ void PrivilegeByPidService::read(const ReadEvent &event) {
 
 void PrivilegeByPidService::close(const CloseEvent &event) {
     LogDebug("CloseEvent. ConnectionID: " << event.connectionID.sock);
-    m_socketBufferMap.erase(event.connectionID.counter);
+    m_messageBufferMap.erase(event.connectionID.counter);
 }
 
 void PrivilegeByPidService::error(const ErrorEvent &event) {

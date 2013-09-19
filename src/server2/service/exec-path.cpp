@@ -80,7 +80,7 @@ void ExecPathService::write(const WriteEvent &event) {
         m_serviceManager->Close(event.connectionID);
 }
 
-bool ExecPathService::processOne(const ConnectionID &conn, SocketBuffer &buffer) {
+bool ExecPathService::processOne(const ConnectionID &conn, MessageBuffer &buffer) {
     LogDebug("Processing message");
 
     int pid = 0;
@@ -92,13 +92,13 @@ bool ExecPathService::processOne(const ConnectionID &conn, SocketBuffer &buffer)
 
     Try {
         Deserialization::Deserialize(buffer, pid);
-     } Catch (SocketBuffer::Exception::Base) {
+     } Catch (MessageBuffer::Exception::Base) {
         LogDebug("Broken protocol. Closing socket.");
         m_serviceManager->Close(conn);
         return false;
     }
 
-    SocketBuffer sendBuffer;
+    MessageBuffer sendBuffer;
     int retVal;
 
     // get executable path
@@ -126,7 +126,7 @@ bool ExecPathService::processOne(const ConnectionID &conn, SocketBuffer &buffer)
 
 void ExecPathService::read(const ReadEvent &event) {
     LogDebug("Read event for counter: " << event.connectionID.counter);
-    auto &buffer = m_socketBufferMap[event.connectionID.counter];
+    auto &buffer = m_messageBufferMap[event.connectionID.counter];
     buffer.Push(event.rawBuffer);
 
     // We can get several requests in one package.
@@ -136,7 +136,7 @@ void ExecPathService::read(const ReadEvent &event) {
 
 void ExecPathService::close(const CloseEvent &event) {
     LogDebug("CloseEvent. ConnectionID: " << event.connectionID.sock);
-    m_socketBufferMap.erase(event.connectionID.counter);
+    m_messageBufferMap.erase(event.connectionID.counter);
 }
 
 void ExecPathService::error(const ErrorEvent &event) {

@@ -19,7 +19,7 @@
  * @file        secket-buffer.h
  * @author      Bartlomiej Grzelewski (b.grzelewski@samsung.com)
  * @version     1.0
- * @brief       Implementatin of SocketBuffer.
+ * @brief       Implementatin of MessageBuffer.
  */
 
 #ifndef _SECURITY_SERVER_SOCKET_BUFFER_
@@ -35,7 +35,7 @@ namespace SecurityServer {
 
 typedef std::vector<unsigned char> RawBuffer;
 
-class SocketBuffer : public SecurityServer::IStream {
+class MessageBuffer : public SecurityServer::IStream {
 public:
     class Exception
     {
@@ -44,7 +44,7 @@ public:
         DECLARE_EXCEPTION_TYPE(Base, OutOfData)
     };
 
-    SocketBuffer()
+    MessageBuffer()
       : m_bytesLeft(0)
     {}
 

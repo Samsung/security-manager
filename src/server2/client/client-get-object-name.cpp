@@ -27,7 +27,7 @@
 #include <dpl/log/log.h>
 #include <dpl/exception.h>
 
-#include <socket-buffer.h>
+#include <message-buffer.h>
 #include <client-common.h>
 #include <protocols.h>
 
@@ -44,7 +44,7 @@ int security_server_get_object_name(gid_t gid, char *pObjectName, size_t maxObje
             return SECURITY_SERVER_API_ERROR_INPUT_PARAM;
         }
 
-        SocketBuffer send, recv;
+        MessageBuffer send, recv;
         Serialization::Serialize(send, gid);
 
         int result = sendToServer(
@@ -70,8 +70,8 @@ int security_server_get_object_name(gid_t gid, char *pObjectName, size_t maxObje
 
         return result;
 
-    } catch (SocketBuffer::Exception::Base &e) {
-        LogDebug("SecurityServer::SocketBuffer::Exception " << e.DumpToString());
+    } catch (MessageBuffer::Exception::Base &e) {
+        LogDebug("SecurityServer::MessageBuffer::Exception " << e.DumpToString());
     } catch (std::exception &e) {
         LogDebug("STD exception " << e.what());
     } catch (...) {

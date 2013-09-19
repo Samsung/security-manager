@@ -116,7 +116,7 @@ int GetGidService::setGid(std::string& obj)
 }
 
 
-bool GetGidService::readOne(const ConnectionID &conn, SocketBuffer &buffer) {
+bool GetGidService::readOne(const ConnectionID &conn, MessageBuffer &buffer) {
     LogDebug("Iteration begin");
     std::string objectName;
     int retCode = SECURITY_SERVER_API_ERROR_SERVER_ERROR;
@@ -128,7 +128,7 @@ bool GetGidService::readOne(const ConnectionID &conn, SocketBuffer &buffer) {
     // Get objects name:
     Try {
         Deserialization::Deserialize(buffer, objectName);
-     } Catch (SocketBuffer::Exception::Base) {
+     } Catch (MessageBuffer::Exception::Base) {
         LogDebug("Broken protocol. Closing socket.");
         m_serviceManager->Close(conn);
         return false;
@@ -138,7 +138,7 @@ bool GetGidService::readOne(const ConnectionID &conn, SocketBuffer &buffer) {
     retCode = setGid(objectName);
 
     // Send the result
-    SocketBuffer sendBuffer;
+    MessageBuffer sendBuffer;
     Serialization::Serialize(sendBuffer, retCode);
     Serialization::Serialize(sendBuffer, m_gid);
     m_serviceManager->Write(conn, sendBuffer.Pop());
@@ -147,7 +147,7 @@ bool GetGidService::readOne(const ConnectionID &conn, SocketBuffer &buffer) {
 
 void GetGidService::read(const ReadEvent &event) {
     LogDebug("Read event for counter: " << event.connectionID.counter);
-    auto &buffer = m_socketBufferMap[event.connectionID.counter];
+    auto &buffer = m_messageBufferMap[event.connectionID.counter];
     buffer.Push(event.rawBuffer);
 
     // We can get several requests in one package.
@@ -157,7 +157,7 @@ void GetGidService::read(const ReadEvent &event) {
 
 void GetGidService::close(const CloseEvent &event) {
     LogDebug("CloseEvent. ConnectionID: " << event.connectionID.sock);
-    m_socketBufferMap.erase(event.connectionID.counter);
+    m_messageBufferMap.erase(event.connectionID.counter);
 }
 
 void GetGidService::error(const ErrorEvent &event) {
