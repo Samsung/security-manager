@@ -65,7 +65,7 @@ export LDFLAGS+="-Wl,--rpath=%{_libdir}"
 
 %cmake . -DVERSION=%{version} \
         -DCMAKE_BUILD_TYPE=%{?build_type:%build_type}%{!?build_type:RELEASE} \
-        -DCMAKE_VERBOSE_MAKEFILE=OFF
+        -DCMAKE_VERBOSE_MAKEFILE=ON
 make %{?jobs:-j%jobs}
 
 %install
