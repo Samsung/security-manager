@@ -93,11 +93,6 @@ void CookieService::close(const CloseEvent &event) {
     m_socketInfoMap.erase(event.connectionID.counter);
 }
 
-void CookieService::error(const ErrorEvent &event) {
-    LogDebug("ErrorEvent. ConnectionID: " << event.connectionID.sock);
-    m_serviceManager->Close(event.connectionID);
-}
-
 bool CookieService::readOne(const ConnectionID &conn, MessageBuffer &buffer, int interfaceID)
 {
     LogDebug("Iteration begin");

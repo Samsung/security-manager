@@ -79,10 +79,6 @@ struct GenericSocketService {
         ConnectionID connectionID;
     };
 
-    struct ErrorEvent : public GenericEvent {
-        ConnectionID connectionID;
-    };
-
     virtual void SetSocketManager(GenericSocketManager *manager) {
         m_serviceManager = manager;
     }
@@ -92,7 +88,6 @@ struct GenericSocketService {
     virtual void Event(const WriteEvent &event) = 0;
     virtual void Event(const ReadEvent &event) = 0;
     virtual void Event(const CloseEvent &event) = 0;
-    virtual void Event(const ErrorEvent &event) = 0;
 
     GenericSocketService() : m_serviceManager(NULL) {}
     virtual ~GenericSocketService(){}

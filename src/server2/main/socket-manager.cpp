@@ -62,7 +62,6 @@ struct DummyService : public GenericSocketService {
     void Event(const WriteEvent &event) { (void)event; }
     void Event(const ReadEvent &event) { (void)event; }
     void Event(const CloseEvent &event) { (void)event; }
-    void Event(const ErrorEvent &event) { (void)event; }
 };
 
 struct SignalService : public GenericSocketService {
@@ -83,7 +82,6 @@ struct SignalService : public GenericSocketService {
     void Event(const AcceptEvent &event) { (void)event; } // not supported
     void Event(const WriteEvent &event) { (void)event; }  // not supported
     void Event(const CloseEvent &event) { (void)event; }  // not supported
-    void Event(const ErrorEvent &event) { (void)event; }  // not supported
 
     void Event(const ReadEvent &event) {
         LogDebug("Get signal information");

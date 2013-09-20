@@ -158,10 +158,5 @@ void SharedMemoryService::close(const CloseEvent &event) {
     m_messageBufferMap.erase(event.connectionID.counter);
 }
 
-void SharedMemoryService::error(const ErrorEvent &event) {
-    LogDebug("ErrorEvent. ConnectionID: " << event.connectionID.sock);
-    m_serviceManager->Close(event.connectionID);
-}
-
 } // namespace SecurityServer
 

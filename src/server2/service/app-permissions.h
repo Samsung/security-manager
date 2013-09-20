@@ -47,13 +47,11 @@ public:
     DECLARE_THREAD_EVENT(WriteEvent, write)
     DECLARE_THREAD_EVENT(ReadEvent, read)
     DECLARE_THREAD_EVENT(CloseEvent, close)
-    DECLARE_THREAD_EVENT(ErrorEvent, error)
 
     void accept(const AcceptEvent &event);
     void write(const WriteEvent &event);
     void read(const ReadEvent &event);
     void close(const CloseEvent &event);
-    void error(const ErrorEvent &event);
 
 private:
     bool readOne(const ConnectionID &conn, MessageBuffer &buffer);

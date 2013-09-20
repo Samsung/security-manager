@@ -80,10 +80,5 @@ void EchoService::close(const CloseEvent &event) {
     LogDebug("CloseEvent. ConnectionID: " << event.connectionID.sock);
 }
 
-void EchoService::error(const ErrorEvent &event) {
-    LogDebug("ErrorEvent. ConnectionID: " << event.connectionID.sock);
-    m_serviceManager->Close(event.connectionID);
-}
-
 } // namespace SecurityServer
 
