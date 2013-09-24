@@ -30,6 +30,10 @@
 
 #include <message-buffer.h>
 
+#ifndef SECURITY_SERVER_API
+#define SECURITY_SERVER_API __attribute__((visibility("default")))
+#endif
+
 extern "C" {
     struct msghdr;
 }

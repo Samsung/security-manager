@@ -51,8 +51,15 @@ char const * const SERVICE_SOCKET_COOKIE_CHECK_TMP =
     "/tmp/.security-server-api-cookie-check-tmp.sock";
 char const * const SERVICE_SOCKET_OPEN_FOR =
     "/tmp/.security-server-api-open-for.sock";
+char const * const SERVICE_SOCKET_PASSWD_CHECK =
+    "/tmp/.security-server-api-passwd-check.sock";
+char const * const SERVICE_SOCKET_PASSWD_SET =
+    "/tmp/.security-server-api-passwd-set.sock";
 
 const size_t COOKIE_SIZE = 20;
+
+const size_t MAX_PASSWORD_LEN = 32;
+const unsigned int MAX_PASSWORD_HISTORY = 50;
 
 } // namespace SecurityServer
 

@@ -46,12 +46,6 @@ extern "C" {
 #define SECURITY_SERVER_ERROR_SERVER_ERROR                   -12
 #define SECURITY_SERVER_ERROR_NO_SUCH_COOKIE                 -13
 #define SECURITY_SERVER_ERROR_NO_PASSWORD                    -14
-#define SECURITY_SERVER_ERROR_PASSWORD_EXIST                 -15
-#define SECURITY_SERVER_ERROR_PASSWORD_MISMATCH              -16
-#define SECURITY_SERVER_ERROR_PASSWORD_RETRY_TIMER           -17
-#define SECURITY_SERVER_ERROR_PASSWORD_MAX_ATTEMPTS_EXCEEDED -18
-#define SECURITY_SERVER_ERROR_PASSWORD_EXPIRED               -19
-#define SECURITY_SERVER_ERROR_PASSWORD_REUSED                -20
 #define SECURITY_SERVER_ERROR_SOCKET_BIND                    -21
 #define SECURITY_SERVER_ERROR_FILE_OPERATION                 -22
 #define SECURITY_SERVER_ERROR_TIMEOUT                        -23
@@ -70,14 +64,6 @@ extern "C" {
 #define SECURITY_SERVER_ACCEPT_TIMEOUT_MILISECOND          10000
 #define SECURITY_SERVER_SOCKET_TIMEOUT_MILISECOND          3000
 #define SECURITY_SERVER_DEVELOPER_UID                      5100
-#define SECURITY_SERVER_DATA_DIRECTORY_PATH                "/opt/data/security-server"
-#define SECURITY_SERVER_ATTEMPT_FILE_NAME                  "attempts"
-#define SECURITY_SERVER_HISTORY_FILE_NAME                  "history"
-#define SECURITY_SERVER_MAX_PASSWORD_LEN                   32
-#define SECURITY_SERVER_HASHED_PWD_LEN                     32 /* SHA256 */
-#define SECURITY_SERVER_PASSWORD_RETRY_TIMEOUT_SECOND      1         /* Deprecated. Will be removed. */
-#define SECURITY_SERVER_PASSWORD_RETRY_TIMEOUT_MICROSECOND 500000    /* = 500 milliseconds */
-#define SECURITY_SERVER_MAX_PASSWORD_HISTORY               50
 #define SECURITY_SERVER_NUM_THREADS                        10
 #define MESSAGE_MAX_LEN                                    1048576
 

@@ -71,6 +71,16 @@ struct Serialization {
         stream.Write(sizeof(*value), value);
     }
 
+    // unsigned char
+    static void Serialize(IStream& stream, const unsigned char value)
+    {
+        stream.Write(sizeof(value), &value);
+    }
+    static void Serialize(IStream& stream, const unsigned char* const value)
+    {
+        stream.Write(sizeof(*value), value);
+    }
+
     // unsigned int
     static void Serialize(IStream& stream, const unsigned value)
     {
@@ -97,6 +107,16 @@ struct Serialization {
         stream.Write(sizeof(value), &value);
     }
     static void Serialize(IStream& stream, const bool* const value)
+    {
+        stream.Write(sizeof(*value), value);
+    }
+
+    // time_t
+    static void Serialize(IStream& stream, const time_t value)
+    {
+        stream.Write(sizeof(value), &value);
+    }
+    static void Serialize(IStream& stream, const time_t* const value)
     {
         stream.Write(sizeof(*value), value);
     }
@@ -213,6 +233,17 @@ struct Deserialization {
         stream.Read(sizeof(*value), value);
     }
 
+    // unsigned char
+    static void Deserialize(IStream& stream, unsigned char& value)
+    {
+        stream.Read(sizeof(value), &value);
+    }
+    static void Deserialize(IStream& stream, unsigned char*& value)
+    {
+        value = new unsigned char;
+        stream.Read(sizeof(*value), value);
+    }
+
     // unsigned int
     static void Deserialize(IStream& stream, unsigned& value)
     {
@@ -243,6 +274,17 @@ struct Deserialization {
     static void Deserialize(IStream& stream, bool*& value)
     {
         value = new bool;
+        stream.Read(sizeof(*value), value);
+    }
+
+    // time_t
+    static void Deserialize(IStream& stream, time_t& value)
+    {
+        stream.Read(sizeof(value), &value);
+    }
+    static void Deserialize(IStream& stream, time_t*& value)
+    {
+        value = new time_t;
         stream.Read(sizeof(*value), value);
     }
 

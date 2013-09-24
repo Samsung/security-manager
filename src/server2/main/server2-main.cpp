@@ -38,6 +38,7 @@
 #include <app-permissions.h>
 #include <cookie.h>
 #include <open-for.h>
+#include <password.h>
 #include <echo.h>
 
 IMPLEMENT_SAFE_SINGLETON(SecurityServer::Log::LogSystem);
@@ -82,6 +83,10 @@ int server2(void) {
         SecurityServer::AppPermissionsService *appEnablePermissionsService = new SecurityServer::AppPermissionsService;
         appEnablePermissionsService->Create();
         manager.RegisterSocketService(appEnablePermissionsService);
+
+        SecurityServer::PasswordService *pwdService = new SecurityServer::PasswordService;
+        pwdService->Create();
+        manager.RegisterSocketService(pwdService);
 
         manager.MainLoop();
     }

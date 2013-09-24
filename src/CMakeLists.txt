@@ -13,7 +13,6 @@ SET(SERVER2_PATH ${PROJECT_SOURCE_DIR}/src/server2)
 SET(SECURITY_SERVER_SOURCES
     ${SECURITY_SERVER_PATH}/communication/security-server-comm.c
     ${SECURITY_SERVER_PATH}/server/security-server-main.c
-    ${SECURITY_SERVER_PATH}/server/security-server-password.c
     ${SECURITY_SERVER_PATH}/util/security-server-util-common.c
     ${SECURITY_SERVER_PATH}/util/smack-check.c
     ${SERVER2_PATH}/main/generic-socket-manager.cpp
@@ -29,6 +28,10 @@ SET(SECURITY_SERVER_SOURCES
     ${SERVER2_PATH}/service/get-object-name.cpp
     ${SERVER2_PATH}/service/open-for.cpp
     ${SERVER2_PATH}/service/open-for-manager.cpp
+    ${SERVER2_PATH}/service/password.cpp
+    ${SERVER2_PATH}/service/password-file.cpp
+    ${SERVER2_PATH}/service/password-manager.cpp
+    ${SERVER2_PATH}/service/password-file-buffer.cpp
     )
 
 SET_SOURCE_FILES_PROPERTIES(
@@ -78,7 +81,7 @@ SET(SECURITY_CLIENT_SOURCES
     ${SECURITY_SERVER_PATH}/server2/client/client-socket-privilege.cpp
     ${SECURITY_SERVER_PATH}/server2/client/client-get-object-name.cpp
     ${SECURITY_SERVER_PATH}/server2/client/client-open-for.cpp
-    ${SECURITY_SERVER_PATH}/client/security-server-client.c
+    ${SECURITY_SERVER_PATH}/server2/client/client-password.cpp
     ${SECURITY_SERVER_PATH}/communication/security-server-comm.c
     ${SECURITY_SERVER_PATH}/util/smack-check.c
     )

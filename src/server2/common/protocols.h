@@ -40,6 +40,8 @@ extern char const * const SERVICE_SOCKET_COOKIE_GET;
 extern char const * const SERVICE_SOCKET_COOKIE_CHECK;
 extern char const * const SERVICE_SOCKET_COOKIE_CHECK_TMP;
 extern char const * const SERVICE_SOCKET_OPEN_FOR;
+extern char const * const SERVICE_SOCKET_PASSWD_CHECK;
+extern char const * const SERVICE_SOCKET_PASSWD_SET;
 
 enum class AppPermissionsAction { ENABLE, DISABLE };
 
@@ -61,6 +63,20 @@ enum class PrivilegeCheckHdrs
 };
 
 extern const size_t COOKIE_SIZE;
+
+enum class PasswordHdrs
+{
+    HDR_IS_PWD_VALID,
+    HDR_CHK_PWD,
+    HDR_SET_PWD,
+    HDR_SET_PWD_VALIDITY,
+    HDR_SET_PWD_MAX_CHALLENGE,
+    HDR_RST_PWD,
+    HDR_SET_PWD_HISTORY
+};
+
+extern const size_t MAX_PASSWORD_LEN;
+extern const unsigned int MAX_PASSWORD_HISTORY;
 
 } // namespace SecuritySever
 

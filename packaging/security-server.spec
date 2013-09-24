@@ -92,6 +92,8 @@ ln -s ../security-server-cookie-check.socket %{buildroot}/usr/lib/systemd/system
 ln -s ../security-server-cookie-check-tmp.socket %{buildroot}/usr/lib/systemd/system/sockets.target.wants/security-server-cookie-check-tmp.socket
 ln -s ../security-server-app-privilege-by-name.socket %{buildroot}/usr/lib/systemd/system/sockets.target.wants/security-server-app-privilege-by-name.socket
 ln -s ../security-server-open-for.socket %{buildroot}/usr/lib/systemd/system/sockets.target.wants/security-server-open-for.socket
+ln -s ../security-server-password-check.socket %{buildroot}/usr/lib/systemd/system/sockets.target.wants/security-server-password-check.socket
+ln -s ../security-server-password-set.socket %{buildroot}/usr/lib/systemd/system/sockets.target.wants/security-server-password-set.socket
 
 %clean
 rm -rf %{buildroot}
@@ -155,6 +157,10 @@ fi
 %attr(-,root,root) /usr/lib/systemd/system/sockets.target.wants/security-server-open-for.socket
 %attr(-,root,root) /usr/lib/systemd/system/security-server-open-for.socket
 %attr(-,root,root) /etc/security/security-server-audit.conf
+%attr(-,root,root) /usr/lib/systemd/system/sockets.target.wants/security-server-password-check.socket
+%attr(-,root,root) /usr/lib/systemd/system/security-server-password-check.socket
+%attr(-,root,root) /usr/lib/systemd/system/sockets.target.wants/security-server-password-set.socket
+%attr(-,root,root) /usr/lib/systemd/system/security-server-password-set.socket
 
 %{_datadir}/license/%{name}
 

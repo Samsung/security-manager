@@ -44,7 +44,6 @@
 #include <privilege-control.h>
 
 #include "security-server-common.h"
-#include "security-server-password.h"
 #include "security-server-comm.h"
 #include "security-server-util.h"
 #include "smack-check.h"
@@ -412,48 +411,6 @@ void *security_server_thread(void *param)
             process_gid_request(client_sockfd, (int)basic_hdr.msg_len);
             break;
 
-        case SECURITY_SERVER_MSG_TYPE_VALID_PWD_REQUEST:
-            SECURE_SLOGD("%s", "Server: validate password request received");
-            authorize_SS_API_caller_socket(client_sockfd, API_PASSWD_CHECK, API_RULE_REQUIRED);
-            process_valid_pwd_request(client_sockfd);
-            break;
-
-        case SECURITY_SERVER_MSG_TYPE_SET_PWD_REQUEST:
-            SECURE_SLOGD("%s", "Server: set password request received");
-            authorize_SS_API_caller_socket(client_sockfd, API_PASSWD_SET, API_RULE_REQUIRED);
-            process_set_pwd_request(client_sockfd);
-            break;
-
-        case SECURITY_SERVER_MSG_TYPE_RESET_PWD_REQUEST:
-            SECURE_SLOGD("%s", "Server: reset password request received");
-            authorize_SS_API_caller_socket(client_sockfd, API_PASSWD_SET, API_RULE_REQUIRED);
-            process_reset_pwd_request(client_sockfd);
-            break;
-
-        case SECURITY_SERVER_MSG_TYPE_CHK_PWD_REQUEST:
-            SECURE_SLOGD("%s", "Server: check password request received");
-            authorize_SS_API_caller_socket(client_sockfd, API_PASSWD_CHECK, API_RULE_REQUIRED);
-            process_chk_pwd_request(client_sockfd);
-            break;
-
-        case SECURITY_SERVER_MSG_TYPE_SET_PWD_HISTORY_REQUEST:
-            SECURE_SLOGD("%s", "Server: set password histroy request received");
-            authorize_SS_API_caller_socket(client_sockfd, API_PASSWD_SET, API_RULE_REQUIRED);
-            process_set_pwd_history_request(client_sockfd);
-            break;
-
-        case SECURITY_SERVER_MSG_TYPE_SET_PWD_MAX_CHALLENGE_REQUEST:
-            SECURE_SLOGD("%s", "Server: set password max challenge request received");
-            authorize_SS_API_caller_socket(client_sockfd, API_PASSWD_SET, API_RULE_REQUIRED);
-            process_set_pwd_max_challenge_request(client_sockfd);
-            break;
-
-        case SECURITY_SERVER_MSG_TYPE_SET_PWD_VALIDITY_REQUEST:
-            SECURE_SLOGD("%s", "Server: set password validity request received");
-            authorize_SS_API_caller_socket(client_sockfd, API_PASSWD_SET, API_RULE_REQUIRED);
-            process_set_pwd_validity_request(client_sockfd);
-            break;
-
         default:
             SEC_SVR_ERR("Unknown msg ID :%d", basic_hdr.msg_id);
             /* Unknown message ID */
@@ -501,7 +458,6 @@ void *security_server_main_thread(void *data)
 
     for (retval = 0; retval < SECURITY_SERVER_NUM_THREADS; retval++)
         thread_status[retval] = 0;
-    initiate_try();
 
     /* Create and bind a Unix domain socket */
     if(SECURITY_SERVER_SUCCESS != get_socket_from_systemd(&server_sockfd))

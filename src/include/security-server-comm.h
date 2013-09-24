@@ -43,20 +43,6 @@ typedef struct
 // #define SECURITY_SERVER_MSG_TYPE_OBJECT_NAME_RESPONSE           0x06
 #define SECURITY_SERVER_MSG_TYPE_GID_REQUEST                    0x07
 #define SECURITY_SERVER_MSG_TYPE_GID_RESPONSE                   0x08
-#define SECURITY_SERVER_MSG_TYPE_VALID_PWD_REQUEST              0x0d
-#define SECURITY_SERVER_MSG_TYPE_VALID_PWD_RESPONSE             0x0e
-#define SECURITY_SERVER_MSG_TYPE_SET_PWD_REQUEST                0x0f
-#define SECURITY_SERVER_MSG_TYPE_SET_PWD_RESPONSE               0x10
-#define SECURITY_SERVER_MSG_TYPE_RESET_PWD_REQUEST              0x11
-#define SECURITY_SERVER_MSG_TYPE_RESET_PWD_RESPONSE             0x12
-#define SECURITY_SERVER_MSG_TYPE_CHK_PWD_REQUEST                0x13
-#define SECURITY_SERVER_MSG_TYPE_CHK_PWD_RESPONSE               0x14
-#define SECURITY_SERVER_MSG_TYPE_SET_PWD_HISTORY_REQUEST        0x15
-#define SECURITY_SERVER_MSG_TYPE_SET_PWD_HISTORY_RESPONSE       0x16
-#define SECURITY_SERVER_MSG_TYPE_SET_PWD_MAX_CHALLENGE_REQUEST  0x19
-#define SECURITY_SERVER_MSG_TYPE_SET_PWD_MAX_CHALLENGE_RESPONSE 0x1a
-#define SECURITY_SERVER_MSG_TYPE_SET_PWD_VALIDITY_REQUEST       0x1b
-#define SECURITY_SERVER_MSG_TYPE_SET_PWD_VALIDITY_RESPONSE      0x1c
 #define SECURITY_SERVER_MSG_TYPE_GENERIC_RESPONSE               0xff
 
 /* Return code */
@@ -67,13 +53,6 @@ typedef struct
 #define SECURITY_SERVER_RETURN_CODE_ACCESS_DENIED                  0x04
 #define SECURITY_SERVER_RETURN_CODE_NO_SUCH_OBJECT                 0x05
 #define SECURITY_SERVER_RETURN_CODE_NO_SUCH_COOKIE                 0x06
-#define SECURITY_SERVER_RETURN_CODE_NO_PASSWORD                    0x07
-#define SECURITY_SERVER_RETURN_CODE_PASSWORD_EXIST                 0x08
-#define SECURITY_SERVER_RETURN_CODE_PASSWORD_MISMATCH              0x09
-#define SECURITY_SERVER_RETURN_CODE_PASSWORD_MAX_ATTEMPTS_EXCEEDED 0x0a
-#define SECURITY_SERVER_RETURN_CODE_PASSWORD_EXPIRED               0x0b
-#define SECURITY_SERVER_RETURN_CODE_PASSWORD_REUSED                0x0c
-#define SECURITY_SERVER_RETURN_CODE_PASSWORD_RETRY_TIMER           0x0d
 #define SECURITY_SERVER_RETURN_CODE_SERVER_ERROR                   0x0e
 
 int return_code_to_error_code(int ret_code);
@@ -95,28 +74,8 @@ int recv_get_object_name(int sockfd, response_header *hdr, char *object, int max
 int recv_hdr(int client_sockfd, basic_header *basic_hdr);
 
 int recv_generic_response(int sockfd, response_header *hdr);
-int recv_pwd_response(int sockfd, response_header *hdr, unsigned int *current_attempts,
-                      unsigned int *max_attempts, unsigned int *valid_days);
-int send_set_pwd_request(int sock_fd, const char *cur_pwd, const char *new_pwd,
-                         const unsigned int max_challenge, const unsigned int valid_period_in_days);
-int send_set_pwd_validity_request(int sock_fd, const unsigned int valid_period_in_days);
-int send_set_pwd_max_challenge_request(int sock_fd, const unsigned int max_challenge);
-int send_chk_pwd_request(int sock_fd, const char *challenge);
 int check_socket_poll(int sockfd, int event, int timeout);
 int free_argv(char **argv, int argc);
-int send_valid_pwd_request(int sock_fd);
-int send_reset_pwd_request(int sock_fd,
-                           const char *new_pwd,
-                           const unsigned int max_challenge,
-                           const unsigned int valid_period_in_days);
-int send_set_pwd_history_request(int sock_fd, int num);
 int get_socket_from_systemd(int *sockfd);
-
-int send_pwd_response(const int sockfd,
-                      const unsigned char msg_id,
-                      const unsigned char return_code,
-                      const unsigned int current_attempts,
-                      const unsigned int max_attempts,
-                      const unsigned int expire_time);
 
 #endif

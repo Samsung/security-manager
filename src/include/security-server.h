@@ -905,7 +905,7 @@ int security_server_chk_pwd(const char *challenge,
  * \par Important notes:
  * There is retry timer on this API to limit replay attack. You will get error if you called this API too often.\n
  *
- * \param[in] number_of_history Number of history to be checked when user tries to change password. Maximum is currently 50
+ * \param[in] history_size Number of history to be checked when user tries to change password. Maximum is currently 50
  *
  * \return 0 on seccuess, negative integer error code on error.
  *
@@ -941,7 +941,7 @@ int security_server_chk_pwd(const char *challenge,
  *
  * Access to this function requires SMACK rule: "<app_label> security-server::api-password-set w"
 */
-int security_server_set_pwd_history(int number_of_history);
+int security_server_set_pwd_history(int history_size);
 
 /*
  * This function allows to get process SMACK label by passing cookie assigned
