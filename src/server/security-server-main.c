@@ -358,13 +358,12 @@ int client_has_access(int sockfd, const char *object)
 void *security_server_thread(void *param)
 {
     int client_sockfd = -1;
-    int server_sockfd, retval;
+    int retval;
     basic_header basic_hdr;
     struct security_server_thread_param *my_param;
 
     my_param = (struct security_server_thread_param*) param;
     client_sockfd = my_param->client_sockfd;
-    server_sockfd = my_param->server_sockfd;
 
     /* Receive request header */
     retval = recv_hdr(client_sockfd, &basic_hdr);

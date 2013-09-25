@@ -136,7 +136,7 @@ bool CookieService::readOne(const ConnectionID &conn, SocketBuffer &buffer, int 
             break;
         };
     } else if (interfaceID == INTERFACE_CHECK) {
-        switch(msgType) {
+        switch(static_cast<CookieCall>(msgType)) {
         case CookieCall::CHECK_PID:
             LogDebug("Entering pid-by-cookie server side handler");
             retval = pidByCookieRequest(buffer, send);
@@ -164,7 +164,7 @@ bool CookieService::readOne(const ConnectionID &conn, SocketBuffer &buffer, int 
         };
     } else if (interfaceID == INTERFACE_CHECK_TMP) {
         //TODO: Merge this interface with INTERFACE_CHECK after INTERFACE_CHECK will be secured by smack 
-        switch(msgType) {
+        switch(static_cast<CookieCall>(msgType)) {
         case CookieCall::CHECK_UID:
             LogDebug("Entering get-uid-by-cookie side handler");
             retval = uidByCookieRequest(buffer, send);
