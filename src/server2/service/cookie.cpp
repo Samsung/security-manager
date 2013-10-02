@@ -97,7 +97,7 @@ bool CookieService::processOne(const ConnectionID &conn, MessageBuffer &buffer, 
 {
     LogDebug("Iteration begin");
     MessageBuffer send, recv;
-    int msgType;
+    CookieCall msgType;
     bool removeGarbage = false;
 
     //waiting for all data
@@ -107,7 +107,9 @@ bool CookieService::processOne(const ConnectionID &conn, MessageBuffer &buffer, 
 
     //receive data from buffer and check MSG_ID
     Try {
-        Deserialization::Deserialize(buffer, msgType);  //receive MSG_ID
+        int msgTypeInt;
+        Deserialization::Deserialize(buffer, msgTypeInt);  //receive MSG_ID
+        msgType = static_cast<CookieCall>(msgTypeInt);
     } Catch (MessageBuffer::Exception::Base) {
         LogDebug("Broken protocol. Closing socket.");
         m_serviceManager->Close(conn);
@@ -118,7 +120,7 @@ bool CookieService::processOne(const ConnectionID &conn, MessageBuffer &buffer, 
 
     //use received data
     if (interfaceID == INTERFACE_GET) {
-        switch(static_cast<CookieCall>(msgType)) {
+        switch(msgType) {
         case CookieCall::GET_COOKIE:
             LogDebug("Entering get-cookie server side handler");
             retval = cookieRequest(send, conn.sock);
@@ -131,7 +133,7 @@ bool CookieService::processOne(const ConnectionID &conn, MessageBuffer &buffer, 
             break;
         };
     } else if (interfaceID == INTERFACE_CHECK) {
-        switch(static_cast<CookieCall>(msgType)) {
+        switch(msgType) {
         case CookieCall::CHECK_PID:
             LogDebug("Entering pid-by-cookie server side handler");
             retval = pidByCookieRequest(buffer, send);
@@ -159,7 +161,7 @@ bool CookieService::processOne(const ConnectionID &conn, MessageBuffer &buffer, 
         };
     } else if (interfaceID == INTERFACE_CHECK_TMP) {
         //TODO: Merge this interface with INTERFACE_CHECK after INTERFACE_CHECK will be secured by smack 
-        switch(static_cast<CookieCall>(msgType)) {
+        switch(msgType) {
         case CookieCall::CHECK_UID:
             LogDebug("Entering get-uid-by-cookie side handler");
             retval = uidByCookieRequest(buffer, send);
