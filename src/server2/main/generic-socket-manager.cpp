@@ -43,15 +43,18 @@ public:
 
         m_hdr.msg_iov = &m_iov;
         m_hdr.msg_iovlen = 1;
-        m_hdr.msg_control = m_cmsgbuf;
-        m_hdr.msg_controllen = CMSG_SPACE(sizeof(int));
 
-        m_cmsg = CMSG_FIRSTHDR(&m_hdr);
-        m_cmsg->cmsg_len = CMSG_LEN(sizeof(int));
-        m_cmsg->cmsg_level = SOL_SOCKET;
-        m_cmsg->cmsg_type = SCM_RIGHTS;
+        if (fileDesc != -1) {
+            m_hdr.msg_control = m_cmsgbuf;
+            m_hdr.msg_controllen = CMSG_SPACE(sizeof(int));
 
-        memmove(CMSG_DATA(m_cmsg), &m_fileDesc, sizeof(int));
+            m_cmsg = CMSG_FIRSTHDR(&m_hdr);
+            m_cmsg->cmsg_len = CMSG_LEN(sizeof(int));
+            m_cmsg->cmsg_level = SOL_SOCKET;
+            m_cmsg->cmsg_type = SCM_RIGHTS;
+
+            memmove(CMSG_DATA(m_cmsg), &m_fileDesc, sizeof(int));
+        }
     }
 
     msghdr* data() { return &m_hdr; }

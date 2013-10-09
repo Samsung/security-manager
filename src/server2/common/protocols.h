@@ -39,6 +39,7 @@ extern char const * const SERVICE_SOCKET_APP_PRIVILEGE_BY_NAME;
 extern char const * const SERVICE_SOCKET_COOKIE_GET;
 extern char const * const SERVICE_SOCKET_COOKIE_CHECK;
 extern char const * const SERVICE_SOCKET_COOKIE_CHECK_TMP;
+extern char const * const SERVICE_SOCKET_OPEN_FOR;
 
 enum class AppPermissionsAction { ENABLE, DISABLE };
 

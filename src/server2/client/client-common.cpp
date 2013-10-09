@@ -215,6 +215,52 @@ int sendToServer(char const * const interface, const RawBuffer &send, MessageBuf
     return SECURITY_SERVER_API_SUCCESS;
 }
 
+int sendToServerAncData(char const * const interface, const RawBuffer &send, struct msghdr &hdr) {
+    int ret;
+    SockRAII sock;
+    ssize_t done = 0;
+
+    if (SECURITY_SERVER_API_SUCCESS != (ret = sock.Connect(interface))) {
+        LogError("Error in SockRAII");
+        return ret;
+    }
+
+    while ((send.size() - done) > 0) {
+        if (0 >= waitForSocket(sock.Get(), POLLOUT, POLL_TIMEOUT)) {
+            LogError("Error in poll(POLLOUT)");
+            return SECURITY_SERVER_API_ERROR_SOCKET;
+        }
+        ssize_t temp = TEMP_FAILURE_RETRY(write(sock.Get(), &send[done], send.size() - done));
+        if (-1 == temp) {
+            int err = errno;
+            LogError("Error in write: " << strerror(err));
+            return SECURITY_SERVER_API_ERROR_SOCKET;
+        }
+        done += temp;
+    }
+
+    if (0 >= waitForSocket(sock.Get(), POLLIN, POLL_TIMEOUT)) {
+        LogError("Error in poll(POLLIN)");
+        return SECURITY_SERVER_API_ERROR_SOCKET;
+    }
+
+    ssize_t temp = TEMP_FAILURE_RETRY(recvmsg(sock.Get(), &hdr, MSG_CMSG_CLOEXEC));
+
+    if (temp < 0) {
+        int err = errno;
+        LogError("Error in recvmsg(): " << strerror(err) << " errno: " << err);
+        return SECURITY_SERVER_API_ERROR_SOCKET;
+    }
+
+    if (0 == temp) {
+        LogError("Read return 0/Connection closed by server(?)");
+        return SECURITY_SERVER_API_ERROR_SOCKET;
+    }
+
+    return SECURITY_SERVER_API_SUCCESS;
+}
+
+
 } // namespace SecurityServer
 
 static void init_lib(void) __attribute__ ((constructor));

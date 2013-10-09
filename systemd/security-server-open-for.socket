@@ -1,0 +1,10 @@
+[Socket]
+ListenStream=/tmp/.security-server-api-open-for.sock
+SocketMode=0777
+SmackLabelIPIn=security-server::api-open-for
+SmackLabelIPOut=@
+
+Service=security-server.service
+
+[Install]
+WantedBy=sockets.target

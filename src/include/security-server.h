@@ -1085,6 +1085,19 @@ int security_server_app_caller_has_privilege(app_type_t app_type,
  */
 int security_server_get_gid_by_cookie(const char *cookie, gid_t *gid);
 
+/*
+ * This function allows to create, if doesn't exist, or open existing file by
+ * Security Server on behalf of calling process in secured directory.
+ *
+ * \param[in] File name to create/open
+ * \param[out] File descriptor
+ *
+ * \return SECURITY_SERVER_API_SUCCESS on success or error code on fail
+ *
+ * Access to this function requires SMACK rule: "<app_label> security-server::api-open-for w"
+ */
+int security_server_open_for(const char *filename, int *fd);
+
 
 #ifdef __cplusplus
 }

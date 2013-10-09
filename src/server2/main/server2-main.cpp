@@ -37,6 +37,7 @@
 #include <get-object-name.h>
 #include <app-permissions.h>
 #include <cookie.h>
+#include <open-for.h>
 #include <echo.h>
 
 IMPLEMENT_SAFE_SINGLETON(SecurityServer::Log::LogSystem);
@@ -52,6 +53,11 @@ int server2(void) {
 //        SecurityServer::EchoService *echoService = new SecurityServer::EchoService;
 //        echoService->Create();
 //        manager.RegisterSocketService(echoService);
+
+
+        SecurityServer::OpenForService *openForService = new SecurityServer::OpenForService;
+        openForService->Create();
+        manager.RegisterSocketService(openForService);
 
         SecurityServer::CookieService *cookieService = new SecurityServer::CookieService;
         cookieService->Create();

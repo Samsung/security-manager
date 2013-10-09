@@ -91,6 +91,7 @@ ln -s ../security-server-cookie-get.socket %{buildroot}/usr/lib/systemd/system/s
 ln -s ../security-server-cookie-check.socket %{buildroot}/usr/lib/systemd/system/sockets.target.wants/security-server-cookie-check.socket
 ln -s ../security-server-cookie-check-tmp.socket %{buildroot}/usr/lib/systemd/system/sockets.target.wants/security-server-cookie-check-tmp.socket
 ln -s ../security-server-app-privilege-by-name.socket %{buildroot}/usr/lib/systemd/system/sockets.target.wants/security-server-app-privilege-by-name.socket
+ln -s ../security-server-open-for.socket %{buildroot}/usr/lib/systemd/system/sockets.target.wants/security-server-open-for.socket
 
 %clean
 rm -rf %{buildroot}
@@ -151,6 +152,8 @@ fi
 %attr(-,root,root) /usr/lib/systemd/system/security-server-cookie-check-tmp.socket
 %attr(-,root,root) /usr/lib/systemd/system/sockets.target.wants/security-server-app-privilege-by-name.socket
 %attr(-,root,root) /usr/lib/systemd/system/security-server-app-privilege-by-name.socket
+%attr(-,root,root) /usr/lib/systemd/system/sockets.target.wants/security-server-open-for.socket
+%attr(-,root,root) /usr/lib/systemd/system/security-server-open-for.socket
 %attr(-,root,root) /etc/security/security-server-audit.conf
 
 %{_datadir}/license/%{name}

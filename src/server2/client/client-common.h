@@ -30,11 +30,25 @@
 
 #include <message-buffer.h>
 
+extern "C" {
+    struct msghdr;
+}
+
 namespace SecurityServer {
 
 typedef std::vector<unsigned char> RawBuffer;
 
 int sendToServer(char const * const interface, const RawBuffer &send, MessageBuffer &recv);
+
+/*
+ * sendToServerAncData is special case when we want to receive file descriptor
+ * passed by Security Server on behalf of calling process. We can't get it with
+ * MessageBuffer.
+ *
+ * This function should be called _ONLY_ in this particular case.
+ *
+ */
+int sendToServerAncData(char const * const interface, const RawBuffer &send, struct msghdr &hdr);
 
 } // namespace SecuritySever
 

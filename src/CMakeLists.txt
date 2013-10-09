@@ -27,6 +27,8 @@ SET(SECURITY_SERVER_SOURCES
     ${SERVER2_PATH}/service/cookie-jar.cpp
     ${SERVER2_PATH}/service/privilege-by-pid.cpp
     ${SERVER2_PATH}/service/get-object-name.cpp
+    ${SERVER2_PATH}/service/open-for.cpp
+    ${SERVER2_PATH}/service/open-for-manager.cpp
     )
 
 SET_SOURCE_FILES_PROPERTIES(
@@ -75,6 +77,7 @@ SET(SECURITY_CLIENT_SOURCES
     ${SECURITY_SERVER_PATH}/server2/client/client-privilege-by-pid.cpp
     ${SECURITY_SERVER_PATH}/server2/client/client-socket-privilege.cpp
     ${SECURITY_SERVER_PATH}/server2/client/client-get-object-name.cpp
+    ${SECURITY_SERVER_PATH}/server2/client/client-open-for.cpp
     ${SECURITY_SERVER_PATH}/client/security-server-client.c
     ${SECURITY_SERVER_PATH}/communication/security-server-comm.c
     ${SECURITY_SERVER_PATH}/util/smack-check.c
