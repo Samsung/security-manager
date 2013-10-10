@@ -79,8 +79,11 @@ public:
 
     void Join() {
         assert(m_state != State::NoThread);
-        m_quit = true;
-        m_waitCondition.notify_one();
+        {
+            std::lock_guard<std::mutex> lock(m_eventQueueMutex);
+            m_quit = true;
+            m_waitCondition.notify_one();
+        }
         m_thread.join();
         m_state = State::NoThread;
     }
@@ -135,10 +138,12 @@ protected:
     }
 
     void ThreadLoop(){
-        while(m_quit == false) {
+        for (;;) {
             EventDescription description = {NULL, NULL, NULL, NULL};
             {
                 std::unique_lock<std::mutex> ulock(m_eventQueueMutex);
+                if (m_quit)
+                    return;
                 if (!m_eventQueue.empty()) {
                     description = m_eventQueue.front();
                     m_eventQueue.pop();
