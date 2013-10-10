@@ -77,14 +77,14 @@ void AppPermissionsService::write(const WriteEvent &event) {
         m_serviceManager->Close(event.connectionID);
 }
 
-void AppPermissionsService::read(const ReadEvent &event) {
+void AppPermissionsService::process(const ReadEvent &event) {
     LogDebug("Read event for counter: " << event.connectionID.counter);
     auto &buffer = m_messageBufferMap[event.connectionID.counter];
     buffer.Push(event.rawBuffer);
 
     // We can get several requests in one package.
     // Extract and process them all
-    while(readOne(event.connectionID, buffer));
+    while(processOne(event.connectionID, buffer));
 }
 
 void AppPermissionsService::close(const CloseEvent &event) {
@@ -92,7 +92,7 @@ void AppPermissionsService::close(const CloseEvent &event) {
     m_messageBufferMap.erase(event.connectionID.counter);
 }
 
-bool AppPermissionsService::readOne(const ConnectionID &conn, MessageBuffer &buffer)
+bool AppPermissionsService::processOne(const ConnectionID &conn, MessageBuffer &buffer)
 {
     LogDebug("Iteration begin");
     MessageBuffer send, recv;

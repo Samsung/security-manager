@@ -81,7 +81,7 @@ void PrivilegeByPidService::write(const WriteEvent &event) {
         m_serviceManager->Close(event.connectionID);
 }
 
-bool PrivilegeByPidService::readOne(const ConnectionID &conn, MessageBuffer &buffer) {
+bool PrivilegeByPidService::processOne(const ConnectionID &conn, MessageBuffer &buffer) {
     LogDebug("Iteration begin");
 
     int retval;
@@ -155,14 +155,14 @@ bool PrivilegeByPidService::readOne(const ConnectionID &conn, MessageBuffer &buf
     return true;
 }
 
-void PrivilegeByPidService::read(const ReadEvent &event) {
+void PrivilegeByPidService::process(const ReadEvent &event) {
     LogDebug("Read event for counter: " << event.connectionID.counter);
     auto &buffer = m_messageBufferMap[event.connectionID.counter];
     buffer.Push(event.rawBuffer);
 
     // We can get several requests in one package.
     // Extract and process them all
-    while(readOne(event.connectionID, buffer));
+    while(processOne(event.connectionID, buffer));
 }
 
 void PrivilegeByPidService::close(const CloseEvent &event) {

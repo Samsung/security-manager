@@ -69,7 +69,7 @@ void EchoService::write(const WriteEvent &event) {
         m_serviceManager->Close(event.connectionID);
 }
 
-void EchoService::read(const ReadEvent &event) {
+void EchoService::process(const ReadEvent &event) {
     LogDebug("ReadEvent. ConnectionID: " << event.connectionID.sock <<
       " Buffer size: " << event.rawBuffer.size());
     m_serviceManager->Write(event.connectionID, event.rawBuffer);

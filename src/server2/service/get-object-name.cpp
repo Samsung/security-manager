@@ -119,7 +119,7 @@ int GetObjectNameService::setName(const gid_t gid)
 }
 
 
-bool GetObjectNameService::readOne(const ConnectionID &conn, MessageBuffer &buffer) {
+bool GetObjectNameService::processOne(const ConnectionID &conn, MessageBuffer &buffer) {
     LogDebug("Iteration begin");
     gid_t gid;
     int retCode = SECURITY_SERVER_API_ERROR_SERVER_ERROR;
@@ -148,14 +148,14 @@ bool GetObjectNameService::readOne(const ConnectionID &conn, MessageBuffer &buff
     return true;
 }
 
-void GetObjectNameService::read(const ReadEvent &event) {
+void GetObjectNameService::process(const ReadEvent &event) {
     LogDebug("Read event for counter: " << event.connectionID.counter);
     auto &buffer = m_messageBufferMap[event.connectionID.counter];
     buffer.Push(event.rawBuffer);
 
     // We can get several requests in one package.
     // Extract and process them all
-    while(readOne(event.connectionID, buffer));
+    while(processOne(event.connectionID, buffer));
 }
 
 void GetObjectNameService::close(const CloseEvent &event) {

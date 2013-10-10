@@ -116,7 +116,7 @@ int GetGidService::setGid(std::string& obj)
 }
 
 
-bool GetGidService::readOne(const ConnectionID &conn, MessageBuffer &buffer) {
+bool GetGidService::processOne(const ConnectionID &conn, MessageBuffer &buffer) {
     LogDebug("Iteration begin");
     std::string objectName;
     int retCode = SECURITY_SERVER_API_ERROR_SERVER_ERROR;
@@ -145,14 +145,14 @@ bool GetGidService::readOne(const ConnectionID &conn, MessageBuffer &buffer) {
     return true;
 }
 
-void GetGidService::read(const ReadEvent &event) {
+void GetGidService::process(const ReadEvent &event) {
     LogDebug("Read event for counter: " << event.connectionID.counter);
     auto &buffer = m_messageBufferMap[event.connectionID.counter];
     buffer.Push(event.rawBuffer);
 
     // We can get several requests in one package.
     // Extract and process them all
-    while(readOne(event.connectionID, buffer));
+    while(processOne(event.connectionID, buffer));
 }
 
 void GetGidService::close(const CloseEvent &event) {

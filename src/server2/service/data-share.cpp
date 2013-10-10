@@ -77,7 +77,7 @@ void SharedMemoryService::write(const WriteEvent &event) {
         m_serviceManager->Close(event.connectionID);
 }
 
-bool SharedMemoryService::readOne(const ConnectionID &conn, MessageBuffer &buffer) {
+bool SharedMemoryService::processOne(const ConnectionID &conn, MessageBuffer &buffer) {
     LogDebug("Iteration begin");
     static const char * const revoke = "-----";
     static const char * const permissions = "rwxat";
@@ -143,14 +143,14 @@ end:
     return true;
 }
 
-void SharedMemoryService::read(const ReadEvent &event) {
+void SharedMemoryService::process(const ReadEvent &event) {
     LogDebug("Read event for counter: " << event.connectionID.counter);
     auto &buffer = m_messageBufferMap[event.connectionID.counter];
     buffer.Push(event.rawBuffer);
 
     // We can get several requests in one package.
     // Extract and process them all
-    while(readOne(event.connectionID, buffer));
+    while(processOne(event.connectionID, buffer));
 }
 
 void SharedMemoryService::close(const CloseEvent &event) {

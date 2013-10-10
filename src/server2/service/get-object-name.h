@@ -46,17 +46,17 @@ public:
 
     DECLARE_THREAD_EVENT(AcceptEvent, accept)
     DECLARE_THREAD_EVENT(WriteEvent, write)
-    DECLARE_THREAD_EVENT(ReadEvent, read)
+    DECLARE_THREAD_EVENT(ReadEvent, process)
     DECLARE_THREAD_EVENT(CloseEvent, close)
 
     void accept(const AcceptEvent &event);
     void write(const WriteEvent &event);
-    void read(const ReadEvent &event);
+    void process(const ReadEvent &event);
     void close(const CloseEvent &event);
 
 private:
     std::string m_name;
-    bool readOne(const ConnectionID &conn, MessageBuffer &buffer);
+    bool processOne(const ConnectionID &conn, MessageBuffer &buffer);
     int  setName(gid_t gid);
     MessageBufferMap m_messageBufferMap;
 };

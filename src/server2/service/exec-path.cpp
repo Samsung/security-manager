@@ -124,7 +124,7 @@ bool ExecPathService::processOne(const ConnectionID &conn, MessageBuffer &buffer
     return true;
 }
 
-void ExecPathService::read(const ReadEvent &event) {
+void ExecPathService::process(const ReadEvent &event) {
     LogDebug("Read event for counter: " << event.connectionID.counter);
     auto &buffer = m_messageBufferMap[event.connectionID.counter];
     buffer.Push(event.rawBuffer);

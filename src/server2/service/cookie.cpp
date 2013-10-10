@@ -78,14 +78,14 @@ void CookieService::write(const WriteEvent &event) {
         m_serviceManager->Close(event.connectionID);
 }
 
-void CookieService::read(const ReadEvent &event) {
+void CookieService::process(const ReadEvent &event) {
     LogDebug("Read event for counter: " << event.connectionID.counter);
     auto &info = m_socketInfoMap[event.connectionID.counter];
     info.buffer.Push(event.rawBuffer);
 
     // We can get several requests in one package.
     // Extract and process them all
-    while(readOne(event.connectionID, info.buffer, info.interfaceID));
+    while(processOne(event.connectionID, info.buffer, info.interfaceID));
 }
 
 void CookieService::close(const CloseEvent &event) {
@@ -93,7 +93,7 @@ void CookieService::close(const CloseEvent &event) {
     m_socketInfoMap.erase(event.connectionID.counter);
 }
 
-bool CookieService::readOne(const ConnectionID &conn, MessageBuffer &buffer, int interfaceID)
+bool CookieService::processOne(const ConnectionID &conn, MessageBuffer &buffer, int interfaceID)
 {
     LogDebug("Iteration begin");
     MessageBuffer send, recv;
