@@ -94,17 +94,27 @@ rm -rf %{buildroot}
 
 %post
 systemctl daemon-reload
-if [ "$1" = 1 ]; then
+if [ $1 = 1 ]; then
+    # installation
+    systemctl start security-server.service
+fi
+
+if [ $1 = 2 ]; then
+    # update
     systemctl restart security-server.service
 fi
 
 %preun
-if [ "$1" = 0 ]; then
+if [ $1 = 0 ]; then
+    # unistall
     systemctl stop security-server.service
 fi
 
 %postun
-systemctl daemon-reload
+if [ $1 = 0 ]; then
+    # unistall
+    systemctl daemon-reload
+fi
 
 %post -n libsecurity-server-client -p /sbin/ldconfig
 
