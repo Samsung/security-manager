@@ -39,7 +39,17 @@ class AppPermissionsService  :
   , public SecurityServer::ServiceThread<AppPermissionsService>
 {
 public:
-    typedef std::map<int, MessageBuffer> MessageBufferMap;
+    enum class InterfaceType {
+        CHANGE_APP_PERMISSIONS,
+        CHECK_APP_PRIVILEGE,
+    };
+
+    struct SocketInfo {
+        InterfaceType interfaceID;
+        MessageBuffer buffer;
+    };
+
+    typedef std::map<int, SocketInfo> SocketInfoMap;
 
     ServiceDescriptionVector GetServiceDescription();
 
@@ -54,9 +64,12 @@ public:
     void close(const CloseEvent &event);
 
 private:
-    bool processOne(const ConnectionID &conn, MessageBuffer &buffer);
+    bool processOne(const ConnectionID &conn, MessageBuffer &buffer, InterfaceType interfaceID);
 
-    MessageBufferMap m_messageBufferMap;
+    bool processPermissionsChange(const ConnectionID &conn, MessageBuffer &buffer);
+    bool processCheckAppPrivilege(const ConnectionID &conn, MessageBuffer &buffer);
+
+    SocketInfoMap m_socketInfoMap;
 };
 
 } // namespace SecurityServer

@@ -26,11 +26,17 @@
 #include <memory>
 #include <dpl/log/log.h>
 #include <dpl/serialization.h>
+#include <privilege-control.h>
+
+#include <sys/smack.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+
+#include <app-permissions.h>
 #include <protocols.h>
 #include <security-server.h>
-#include <privilege-control.h>
 #include <security-server-common.h>
-#include <app-permissions.h>
+
 
 namespace {
 
@@ -54,14 +60,22 @@ int privilegeToSecurityServerError(int error) {
 namespace SecurityServer {
 
 GenericSocketService::ServiceDescriptionVector AppPermissionsService::GetServiceDescription() {
-    return ServiceDescriptionVector
-        {{SERVICE_SOCKET_APP_PERMISSIONS, "security-server::api-app-permissions" }};
+    return ServiceDescriptionVector {
+        { SERVICE_SOCKET_APP_PERMISSIONS,
+          "security-server::api-app-permissions",
+          static_cast<int>(InterfaceType::CHANGE_APP_PERMISSIONS) },
+        { SERVICE_SOCKET_APP_PRIVILEGE_BY_NAME,
+          "security-server::api-app-privilege-by-name",
+          static_cast<int>(InterfaceType::CHECK_APP_PRIVILEGE) }
+    };
 }
 
 void AppPermissionsService::accept(const AcceptEvent &event) {
     LogDebug("Accept event. ConnectionID.sock: " << event.connectionID.sock
         << " ConnectionID.counter: " << event.connectionID.counter
         << " ServiceID: " << event.interfaceID);
+    auto &info = m_socketInfoMap[event.connectionID.counter];
+    info.interfaceID = static_cast<InterfaceType>(event.interfaceID);
 }
 
 void AppPermissionsService::write(const WriteEvent &event) {
@@ -73,23 +87,49 @@ void AppPermissionsService::write(const WriteEvent &event) {
 
 void AppPermissionsService::process(const ReadEvent &event) {
     LogDebug("Read event for counter: " << event.connectionID.counter);
-    auto &buffer = m_messageBufferMap[event.connectionID.counter];
-    buffer.Push(event.rawBuffer);
+    auto &info = m_socketInfoMap[event.connectionID.counter];
+    info.buffer.Push(event.rawBuffer);
 
     // We can get several requests in one package.
     // Extract and process them all
-    while(processOne(event.connectionID, buffer));
+    while(processOne(event.connectionID, info.buffer, info.interfaceID));
 }
 
 void AppPermissionsService::close(const CloseEvent &event) {
     LogDebug("CloseEvent. ConnectionID: " << event.connectionID.sock);
-    m_messageBufferMap.erase(event.connectionID.counter);
+    m_socketInfoMap.erase(event.connectionID.counter);
 }
 
-bool AppPermissionsService::processOne(const ConnectionID &conn, MessageBuffer &buffer)
+bool AppPermissionsService::processOne(const ConnectionID &conn,
+                                       MessageBuffer &buffer,
+                                       InterfaceType interfaceID)
 {
     LogDebug("Iteration begin");
-    MessageBuffer send, recv;
+
+    //waiting for all data
+    if (!buffer.Ready()) {
+        return false;
+    }
+
+    LogDebug("Entering app_permissions server side handler");
+
+    switch(interfaceID) {
+    case InterfaceType::CHANGE_APP_PERMISSIONS:
+        return processPermissionsChange(conn, buffer);
+
+    case InterfaceType::CHECK_APP_PRIVILEGE:
+        return processCheckAppPrivilege(conn, buffer);
+
+    default:
+        LogDebug("Unknown interfaceId. Closing socket.");
+        m_serviceManager->Close(conn);
+        return false;
+    }
+}
+
+bool AppPermissionsService::processPermissionsChange(const ConnectionID &conn, MessageBuffer &buffer)
+{
+    MessageBuffer send;
     std::vector<std::string> permissions_list;
     std::string app_id;
     int persistent;
@@ -98,12 +138,7 @@ bool AppPermissionsService::processOne(const ConnectionID &conn, MessageBuffer &
     app_type_t app_type;
     AppPermissionsAction appPermAction;
 
-    //waiting for all data
-    if (!buffer.Ready()) {
-        return false;
-    }
-
-    LogDebug("Entering app_permissions server side handler");
+    LogDebug("Processing permissions change request");
 
     //receive data from buffer and check MSG_ID
     Try {
@@ -148,13 +183,13 @@ bool AppPermissionsService::processOne(const ConnectionID &conn, MessageBuffer &
 
     //use received data
     if (appPermAction == AppPermissionsAction::ENABLE) {
-        LogDebug("Calling app_enable_permiossions()");
+        LogDebug("Calling perm_app_enable_permissions()");
         result = perm_app_enable_permissions(app_id.c_str(), app_type, perm_list.get(), persistent);
-        LogDebug("app_enable_permissions() returned: " << result);
+        LogDebug("perm_app_enable_permissions() returned: " << result);
     } else {
-        LogDebug("Calling app_disable_permiossions()");
+        LogDebug("Calling perm_app_disable_permissions()");
         result = perm_app_disable_permissions(app_id.c_str(), app_type, perm_list.get());
-        LogDebug("app_disable_permissions() returned: " << result);
+        LogDebug("perm_app_disable_permissions() returned: " << result);
     }
 
     //send response
@@ -163,5 +198,67 @@ bool AppPermissionsService::processOne(const ConnectionID &conn, MessageBuffer &
     return true;
 }
 
-} // namespace SecurityServer
+bool AppPermissionsService::processCheckAppPrivilege(const ConnectionID &conn, MessageBuffer &buffer)
+{
+    MessageBuffer send;
+    std::string privilege_name;
+    std::string app_id;
+    int result = SECURITY_SERVER_API_ERROR_SERVER_ERROR;
+    app_type_t app_type;
+    bool has_permission = false;
+    PrivilegeCheckCall checkType = PrivilegeCheckCall::CHECK_GIVEN_APP;
 
+    LogDebug("Processing app privilege check request");
+
+    //receive data from buffer
+    Try {
+        int temp;
+        Deserialization::Deserialize(buffer, temp); // call type
+        checkType = static_cast<PrivilegeCheckCall>(temp);
+        LogDebug("App privilege check call type: "
+                 << (checkType == PrivilegeCheckCall::CHECK_GIVEN_APP ?
+                     "CHECK_GIVEN_APP":"CHECK_CALLER_APP"));
+        if (checkType == PrivilegeCheckCall::CHECK_GIVEN_APP) { //app_id present only in this case
+            Deserialization::Deserialize(buffer, app_id); //get app id
+        }
+        Deserialization::Deserialize(buffer, temp); //get app type
+        app_type = static_cast<app_type_t>(temp);
+
+        Deserialization::Deserialize(buffer, privilege_name); //get privilege name
+    } Catch (MessageBuffer::Exception::Base) {
+        LogDebug("Broken protocol. Closing socket.");
+        m_serviceManager->Close(conn);
+        return false;
+    }
+
+    if (checkType == PrivilegeCheckCall::CHECK_CALLER_APP) { //get sender app_id in this case
+        char *label = NULL;
+        if (smack_new_label_from_socket(conn.sock, &label) < 0) {
+            LogDebug("Error in smack_new_label_from_socket(): "
+                     "client label is unknown. Sending error response.");
+            Serialization::Serialize(send, SECURITY_SERVER_API_ERROR_GETTING_SOCKET_LABEL_FAILED);
+            m_serviceManager->Write(conn, send.Pop());
+            return false;
+        } else {
+            app_id = label;
+            free(label);
+        }
+    } //end if
+
+    //print received data
+    LogDebug("app_id: " << app_id);
+    LogDebug("app_type: " << static_cast<int>(app_type));
+    LogDebug("privilege_name: " << privilege_name);
+
+    LogDebug("Calling perm_app_has_permission()");
+    result = perm_app_has_permission(app_id.c_str(), app_type, privilege_name.c_str(), &has_permission);
+    LogDebug("perm_app_has_permission() returned: " << result << " , permission enabled: " << has_permission);
+
+    //send response
+    Serialization::Serialize(send, privilegeToSecurityServerError(result));
+    Serialization::Serialize(send, static_cast<int>(has_permission));
+    m_serviceManager->Write(conn, send.Pop());
+    return true;
+}
+
+} // namespace SecurityServer

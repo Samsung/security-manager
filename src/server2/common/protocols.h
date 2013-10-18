@@ -35,6 +35,7 @@ extern char const * const SERVICE_SOCKET_GET_GID;
 extern char const * const SERVICE_SOCKET_PRIVILEGE_BY_PID;
 extern char const * const SERVICE_SOCKET_GET_OBJECT_NAME;
 extern char const * const SERVICE_SOCKET_APP_PERMISSIONS;
+extern char const * const SERVICE_SOCKET_APP_PRIVILEGE_BY_NAME;
 extern char const * const SERVICE_SOCKET_COOKIE_GET;
 extern char const * const SERVICE_SOCKET_COOKIE_CHECK;
 extern char const * const SERVICE_SOCKET_COOKIE_CHECK_TMP;
@@ -50,6 +51,12 @@ enum class CookieCall
     CHECK_PRIVILEGE,
     CHECK_GID,
     CHECK_UID
+};
+
+enum class PrivilegeCheckCall
+{
+    CHECK_GIVEN_APP,
+    CHECK_CALLER_APP
 };
 
 extern const size_t COOKIE_SIZE;

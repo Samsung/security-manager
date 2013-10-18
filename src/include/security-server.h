@@ -126,6 +126,9 @@
 /*! \brief   indicating password retry timeout is not occurred yet  */
 #define SECURITY_SERVER_API_ERROR_PASSWORD_REUSED -20
 
+/*! \brief   indicating getting smack label from socket failed  */
+#define SECURITY_SERVER_API_ERROR_GETTING_SOCKET_LABEL_FAILED -21
+
 /*! \brief   indicating the error with unknown reason */
 #define SECURITY_SERVER_API_ERROR_UNKNOWN -255
 /** @}*/
@@ -1035,6 +1038,40 @@ int security_server_app_disable_permissions(const char *app_id, app_type_t app_t
  * Access to this function requires SMACK rule: "<app_label> security-server::api-cookie-check w"
  */
 int security_server_get_uid_by_cookie(const char *cookie, uid_t *uid);
+
+/*
+ * This function allows middleware to check if an app has the specified privilege
+ * enabled.
+ *
+ * \param[in] Application ID
+ * \param[in] Application type
+ * \param[in] Privilege name
+ * \param[out] Handler to store the result. It is set to 1 (true) if privilege is enabled, 0 (false) otherwise
+ *
+ * \return SECURITY_SERVER_SUCCESS on success or error code on fail
+ *
+ * Access to this function requires SMACK rule: "<app_label> security-server::api-app-privilege-by-name w"
+ */
+int security_server_app_has_privilege(const char *app_id,
+                                      app_type_t app_type,
+                                      const char *privilege_name,
+                                      int *result);
+
+/*
+ * This function allows middleware to check if caller app has the specified privilege
+ * enabled. Security Server gets caller app smack label from the IPC socket.
+ *
+ * \param[in] Application type
+ * \param[in] Privilege name
+ * \param[out] Handler to store the result. It is set to 1 (true) if privilege is enabled, 0 (false) otherwise
+ *
+ * \return SECURITY_SERVER_SUCCESS on success or error code on fail
+ *
+ * Access to this function requires SMACK rule: "<app_label> security-server::api-app-privilege-by-name w"
+ */
+int security_server_app_caller_has_privilege(app_type_t app_type,
+                                             const char *privilege_name,
+                                             int *result);
 
 /*
  * This function allows middleware to get GID assigned to cookie

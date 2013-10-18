@@ -152,3 +152,118 @@ int security_server_app_disable_permissions(const char *app_id, app_type_t app_t
 
     return SECURITY_SERVER_API_ERROR_UNKNOWN;
 }
+
+
+SECURITY_SERVER_API
+int security_server_app_has_privilege(const char *app_id,
+                                      app_type_t app_type,
+                                      const char *privilege_name,
+                                      int *result)
+{
+    using namespace SecurityServer;
+    MessageBuffer send, recv;
+
+    LogDebug("security_server_app_has_privilege() called");
+
+    try {
+        if ((NULL == app_id) || (strlen(app_id) == 0)) {
+            LogError("app_id is NULL or empty");
+            return SECURITY_SERVER_API_ERROR_INPUT_PARAM;
+        }
+        if ((NULL == privilege_name) || (strlen(privilege_name) == 0)) {
+            LogError("privilege_name is NULL or empty");
+            return SECURITY_SERVER_API_ERROR_INPUT_PARAM;
+        }
+        if (NULL == result) {
+            LogError("result is NULL");
+            return SECURITY_SERVER_API_ERROR_INPUT_PARAM;
+        }
+
+        LogDebug("app_id: " << app_id);
+        LogDebug("app_type: " << static_cast<int>(app_type));
+        LogDebug("privilege_name: " << privilege_name);
+
+        //put data into buffer
+        Serialization::Serialize(send, static_cast<int>(PrivilegeCheckCall::CHECK_GIVEN_APP));
+        Serialization::Serialize(send, std::string(app_id));
+        Serialization::Serialize(send, static_cast<int>(app_type));
+        Serialization::Serialize(send, std::string(privilege_name));
+
+        //send buffer to server
+        int apiResult = sendToServer(SERVICE_SOCKET_APP_PRIVILEGE_BY_NAME, send.Pop(), recv);
+        if (apiResult != SECURITY_SERVER_API_SUCCESS) {
+            LogError("Error in sendToServer. Error code: " << apiResult);
+            return apiResult;
+        }
+
+        //receive response from server
+        Deserialization::Deserialize(recv, apiResult);
+        if (apiResult == SECURITY_SERVER_API_SUCCESS) {
+            Deserialization::Deserialize(recv, *result);
+        }
+        return apiResult;
+
+    } catch (MessageBuffer::Exception::Base &e) {
+        LogError("SecurityServer::MessageBuffer::Exception " << e.DumpToString());
+    } catch (std::exception &e) {
+        LogError("STD exception " << e.what());
+    } catch (...) {
+        LogError("Unknown exception occured");
+    }
+
+    return SECURITY_SERVER_API_ERROR_UNKNOWN;
+}
+
+
+SECURITY_SERVER_API
+int security_server_app_caller_has_privilege(app_type_t app_type,
+                                             const char *privilege_name,
+                                             int *result)
+{
+    using namespace SecurityServer;
+    MessageBuffer send, recv;
+
+    LogDebug("security_server_app_caller_has_privilege() called");
+
+    try {
+        if ((NULL == privilege_name) || (strlen(privilege_name) == 0)) {
+            LogError("privilege_name is NULL or empty");
+            return SECURITY_SERVER_API_ERROR_INPUT_PARAM;
+        }
+        if (NULL == result) {
+            LogError("result is NULL");
+            return SECURITY_SERVER_API_ERROR_INPUT_PARAM;
+        }
+
+        LogDebug("app_type: " << static_cast<int>(app_type));
+        LogDebug("privilege_name: " << privilege_name);
+
+        //put data into buffer
+        Serialization::Serialize(send, static_cast<int>(PrivilegeCheckCall::CHECK_CALLER_APP));
+        Serialization::Serialize(send, static_cast<int>(app_type));
+        Serialization::Serialize(send, std::string(privilege_name));
+
+        //send buffer to server
+        int apiResult = sendToServer(SERVICE_SOCKET_APP_PRIVILEGE_BY_NAME, send.Pop(), recv);
+        if (apiResult != SECURITY_SERVER_API_SUCCESS) {
+            LogError("Error in sendToServer. Error code: " << apiResult);
+            return apiResult;
+        }
+
+        //receive response from server
+        Deserialization::Deserialize(recv, apiResult);
+        if (apiResult == SECURITY_SERVER_API_SUCCESS) {
+            Deserialization::Deserialize(recv, *result);
+        }
+        return apiResult;
+
+    } catch (MessageBuffer::Exception::Base &e) {
+        LogError("SecurityServer::MessageBuffer::Exception " << e.DumpToString());
+    } catch (std::exception &e) {
+        LogError("STD exception " << e.what());
+    } catch (...) {
+        LogError("Unknown exception occured");
+    }
+
+    return SECURITY_SERVER_API_ERROR_UNKNOWN;
+}

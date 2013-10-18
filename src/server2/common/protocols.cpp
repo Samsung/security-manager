@@ -39,6 +39,8 @@ char const * const SERVICE_SOCKET_GET_OBJECT_NAME =
     "/tmp/.security-server-api-get-object-name.sock";
 char const * const SERVICE_SOCKET_APP_PERMISSIONS =
     "/tmp/.security-server-api-app-permissions.sock";
+char const * const SERVICE_SOCKET_APP_PRIVILEGE_BY_NAME =
+    "/tmp/.security-server-api-app-privilege-by-name.sock";
 char const * const SERVICE_SOCKET_COOKIE_GET =
     "/tmp/.security-server-api-cookie-get.sock";
 char const * const SERVICE_SOCKET_COOKIE_CHECK =

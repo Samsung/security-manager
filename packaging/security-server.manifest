@@ -5,6 +5,7 @@
 			<label name="security-server::daemon" />
 			<label name="security-server::db" />
 			<label name="security-server::api-app-permissions" />
+			<label name="security-server::api-app-privilege-by-name" />
 			<label name="security-server::api-cookie-check" />
 			<label name="security-server::api-cookie-get" />
 			<label name="security-server::api-data-share" />
