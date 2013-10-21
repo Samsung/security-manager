@@ -41,27 +41,12 @@ const int INTERFACE_CHECK_TMP = 3;
 namespace SecurityServer {
 
 GenericSocketService::ServiceDescriptionVector CookieService::GetServiceDescription() {
-    ServiceDescription sd1 = {
-        "security-server::api-cookie-get",
-        INTERFACE_GET,
-        SERVICE_SOCKET_COOKIE_GET
+    return ServiceDescriptionVector {
+        {SERVICE_SOCKET_COOKIE_GET,       "security-server::api-cookie-get",   INTERFACE_GET },
+        {SERVICE_SOCKET_COOKIE_CHECK,     "security-server::api-cookie-check", INTERFACE_CHECK},
+        {SERVICE_SOCKET_COOKIE_CHECK_TMP, "security-server::api-cookie-check", INTERFACE_CHECK_TMP}
     };
-    ServiceDescription sd2 = {
-        "security-server::api-cookie-check",
-        INTERFACE_CHECK,
-        SERVICE_SOCKET_COOKIE_CHECK
-    };
-    ServiceDescription sd3 = {
-        "security-server::api-cookie-check",
-        INTERFACE_CHECK_TMP,
-        SERVICE_SOCKET_COOKIE_CHECK_TMP
-    };
-    ServiceDescriptionVector v;
-    v.push_back(sd1);
-    v.push_back(sd2);
-    v.push_back(sd3);
-    return v;
-}
+ }
 
 void CookieService::accept(const AcceptEvent &event) {
     LogDebug("Accept event. ConnectionID.sock: " << event.connectionID.sock

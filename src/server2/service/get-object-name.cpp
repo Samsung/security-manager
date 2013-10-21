@@ -38,14 +38,8 @@
 namespace SecurityServer {
 
 GetObjectNameService::ServiceDescriptionVector GetObjectNameService::GetServiceDescription() {
-    ServiceDescription sd = {
-        "*",
-        0,
-        SERVICE_SOCKET_GET_OBJECT_NAME
-    };
-    ServiceDescriptionVector v;
-    v.push_back(sd);
-    return v;
+    return ServiceDescriptionVector
+        {{SERVICE_SOCKET_GET_OBJECT_NAME, "*"}};
 }
 
 void GetObjectNameService::accept(const AcceptEvent &event) {

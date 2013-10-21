@@ -36,35 +36,11 @@
 #include <security-server-util.h>
 #include <smack-check.h>
 
-namespace {
-// Service may open more than one socket.
-// These ID's will be assigned to sockets
-// and will be used only by service.
-// When new connection arrives, AcceptEvent
-// will be generated with proper ID to inform
-// service about input socket.
-//
-// Please note: SocketManaged does not use it and
-// does not check it in any way.
-//
-// If your service require only one socket
-// (uses only one socket labeled with smack)
-// you may ignore this ID (just pass 0)
-const int SERVICE_SOCKET_ID = 0;
-
-} // namespace anonymous
-
 namespace SecurityServer {
 
 GenericSocketService::ServiceDescriptionVector ExecPathService::GetServiceDescription() {
-    ServiceDescription sd = {
-        "security-server",
-        SERVICE_SOCKET_ID,
-        SERVICE_SOCKET_EXEC_PATH
-    };
-    ServiceDescriptionVector v;
-    v.push_back(sd);
-    return v;
+    return ServiceDescriptionVector
+        {{SERVICE_SOCKET_EXEC_PATH, "security-server" }};
 }
 
 void ExecPathService::accept(const AcceptEvent &event) {

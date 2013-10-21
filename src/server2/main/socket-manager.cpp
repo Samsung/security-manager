@@ -206,6 +206,7 @@ void SocketManager::ReadyForAccept(int sock) {
     auto &desc = CreateDefaultReadSocketDescription(client, true);
     desc.interfaceID = m_socketDescriptionVector[sock].interfaceID;
     desc.service = m_socketDescriptionVector[sock].service;
+    desc.useSendMsg = m_socketDescriptionVector[sock].useSendMsg;
 
     GenericSocketService::AcceptEvent event;
     event.connectionID.sock = client;
@@ -248,7 +249,50 @@ void SocketManager::ReadyForRead(int sock) {
     }
 }
 
-void SocketManager::ReadyForWrite(int sock) {
+void SocketManager::ReadyForSendMsg(int sock) {
+    auto &desc = m_socketDescriptionVector[sock];
+
+    if (desc.sendMsgDataQueue.empty()) {
+         FD_CLR(sock, &m_writeSet);
+         return;
+    }
+
+    auto data = desc.sendMsgDataQueue.front();
+    ssize_t result = sendmsg(sock, data.getMsghdr(), data.flags());
+
+    if (result == -1) {
+        int err = errno;
+        switch(err) {
+        case EAGAIN:
+        case EINTR:
+            break;
+        case EPIPE:
+        default:
+            LogDebug("Error during send: " << strerror(err));
+            CloseSocket(sock);
+            break;
+        }
+        return;
+    } else {
+        desc.sendMsgDataQueue.pop();
+    }
+
+    if (desc.sendMsgDataQueue.empty()) {
+        FD_CLR(sock, &m_writeSet);
+    }
+
+    desc.timeout = time(NULL) + SOCKET_TIMEOUT;
+
+    GenericSocketService::WriteEvent event;
+    event.connectionID.sock = sock;
+    event.connectionID.counter = desc.counter;
+    event.size = result;
+    event.left = desc.sendMsgDataQueue.size();
+
+    desc.service->Event(event);
+}
+
+void SocketManager::ReadyForWriteBuffer(int sock) {
     auto &desc = m_socketDescriptionVector[sock];
     size_t size = desc.rawBuffer.size();
     ssize_t result = write(sock, &desc.rawBuffer[0], size);
@@ -261,8 +305,7 @@ void SocketManager::ReadyForWrite(int sock) {
             break;
         case EPIPE:
         default:
-            int i = errno;
-            LogDebug("Error during write: " << strerror(i));
+            LogDebug("Error during write: " << strerror(err));
             CloseSocket(sock);
             break;
         }
@@ -283,6 +326,11 @@ void SocketManager::ReadyForWrite(int sock) {
     event.left = desc.rawBuffer.size();
 
     desc.service->Event(event);
+}
+
+void SocketManager::ReadyForWrite(int sock) {
+    m_socketDescriptionVector[sock].useSendMsg ?
+        ReadyForSendMsg(sock) : ReadyForWriteBuffer(sock);
 }
 
 void SocketManager::MainLoop() {
@@ -504,6 +552,7 @@ void SocketManager::CreateDomainSocket(
 
     description.isListen = true;
     description.interfaceID = desc.interfaceID;
+    description.useSendMsg = desc.useSendMsg;
     description.service = service;
 
     LogDebug("Listen on socket: " << sockfd <<
@@ -548,34 +597,81 @@ void SocketManager::Write(ConnectionID connectionID, const RawBuffer &rawBuffer)
     NotifyMe();
 }
 
+void SocketManager::Write(ConnectionID connectionID, const SendMsgData &sendMsgData) {
+    WriteData data;
+    data.connectionID = connectionID;
+    data.sendMsgData = sendMsgData;
+    {
+        std::unique_lock<std::mutex> ulock(m_eventQueueMutex);
+        m_writeDataQueue.push(data);
+    }
+    NotifyMe();
+}
+
 void SocketManager::NotifyMe() {
     TEMP_FAILURE_RETRY(write(m_notifyMe[1], "You have message ;-)", 1));
 }
 
 void SocketManager::ProcessQueue() {
     WriteBuffer buffer;
+    WriteData data;
     {
         std::unique_lock<std::mutex> ulock(m_eventQueueMutex);
         while (!m_writeBufferQueue.empty()) {
             buffer = m_writeBufferQueue.front();
             m_writeBufferQueue.pop();
-            if (!m_socketDescriptionVector[buffer.connectionID.sock].isOpen) {
+
+            auto &desc = m_socketDescriptionVector[buffer.connectionID.sock];
+
+            if (!desc.isOpen) {
                 LogDebug("Received packet for write but connection is closed. Packet ignored!");
                 continue;
             }
-            if (m_socketDescriptionVector[buffer.connectionID.sock].counter !=
-                buffer.connectionID.counter)
+
+            if (desc.counter != buffer.connectionID.counter)
             {
                 LogDebug("Received packet for write but counter is broken. Packet ignored!");
                 continue;
             }
+
+            if (desc.useSendMsg) {
+                LogError("Some service tried to push rawdata to socket that usees sendmsg!");
+                continue;
+            }
+
             std::copy(
                 buffer.rawBuffer.begin(),
                 buffer.rawBuffer.end(),
-                std::back_inserter(
-                    m_socketDescriptionVector[buffer.connectionID.sock].rawBuffer));
+                std::back_inserter(desc.rawBuffer));
 
             FD_SET(buffer.connectionID.sock, &m_writeSet);
+        }
+
+        while(!m_writeDataQueue.empty()) {
+            data = m_writeDataQueue.front();
+            m_writeDataQueue.pop();
+
+            auto &desc = m_socketDescriptionVector[data.connectionID.sock];
+
+            if (!desc.isOpen) {
+                LogDebug("Received packet for sendmsg but connection is closed. Packet ignored!");
+                continue;
+            }
+
+            if (desc.counter != data.connectionID.counter)
+            {
+                LogDebug("Received packet for write but counter is broken. Packet ignored!");
+                continue;
+            }
+
+            if (!desc.useSendMsg) {
+                LogError("Some service tries to push SendMsgData to socket that uses write!");
+                continue;
+            }
+
+            desc.sendMsgDataQueue.push(data.sendMsgData);
+
+            FD_SET(data.connectionID.sock, &m_writeSet);
         }
     }
 
@@ -619,6 +715,8 @@ void SocketManager::CloseSocket(int sock) {
     desc.service = NULL;
     desc.interfaceID = -1;
     desc.rawBuffer.clear();
+    while(!desc.sendMsgDataQueue.empty())
+        desc.sendMsgDataQueue.pop();
 
     if (service)
         service->Event(event);

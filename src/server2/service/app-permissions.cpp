@@ -54,14 +54,8 @@ int privilegeToSecurityServerError(int error) {
 namespace SecurityServer {
 
 GenericSocketService::ServiceDescriptionVector AppPermissionsService::GetServiceDescription() {
-    ServiceDescription sd = {
-        "security-server::api-app-permissions",
-        0,
-        SERVICE_SOCKET_APP_PERMISSIONS
-    };
-    ServiceDescriptionVector v;
-    v.push_back(sd);
-    return v;
+    return ServiceDescriptionVector
+        {{SERVICE_SOCKET_APP_PERMISSIONS, "security-server::api-app-permissions" }};
 }
 
 void AppPermissionsService::accept(const AcceptEvent &event) {

@@ -37,14 +37,8 @@
 namespace SecurityServer {
 
 GenericSocketService::ServiceDescriptionVector GetGidService::GetServiceDescription() {
-    ServiceDescription sd = {
-        "*",
-        0,
-        SERVICE_SOCKET_GET_GID
-    };
-    ServiceDescriptionVector v;
-    v.push_back(sd);
-    return v;
+    return ServiceDescriptionVector
+        {{SERVICE_SOCKET_GET_GID, "*"}};
 }
 
 void GetGidService::accept(const AcceptEvent &event) {

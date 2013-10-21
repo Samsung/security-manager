@@ -25,7 +25,6 @@
 #ifndef _SECURITY_SERVER_SOCKET_MANAGER_
 #define _SECURITY_SERVER_SOCKET_MANAGER_
 
-#include <tuple>
 #include <vector>
 #include <queue>
 #include <string>
@@ -53,6 +52,7 @@ public:
     virtual void RegisterSocketService(GenericSocketService *service);
     virtual void Close(ConnectionID connectionID);
     virtual void Write(ConnectionID connectionID, const RawBuffer &rawBuffer);
+    virtual void Write(ConnectionID connectionID, const SendMsgData &sendMsgData);
 
 protected:
     void CreateDomainSocket(
@@ -65,6 +65,8 @@ protected:
 
     void ReadyForRead(int sock);
     void ReadyForWrite(int sock);
+    void ReadyForWriteBuffer(int sock);
+    void ReadyForSendMsg(int sock);
     void ReadyForAccept(int sock);
     void ProcessQueue(void);
     void NotifyMe(void);
@@ -74,16 +76,19 @@ protected:
         bool isListen;
         bool isOpen;
         bool isTimeout;
+        bool useSendMsg;
         InterfaceID interfaceID;
         GenericSocketService *service;
         time_t timeout;
         RawBuffer rawBuffer;
+        std::queue<SendMsgData> sendMsgDataQueue;
         int counter;
 
         SocketDescription()
           : isListen(false)
           , isOpen(false)
           , isTimeout(false)
+          , useSendMsg(false)
           , interfaceID(-1)
           , service(NULL)
         {}
@@ -96,6 +101,11 @@ protected:
     struct WriteBuffer {
         ConnectionID connectionID;
         RawBuffer rawBuffer;
+    };
+
+    struct WriteData {
+        ConnectionID connectionID;
+        SendMsgData sendMsgData;
     };
 
     struct Timeout {
@@ -113,6 +123,7 @@ protected:
     bool m_working;
     std::mutex m_eventQueueMutex;
     std::queue<WriteBuffer> m_writeBufferQueue;
+    std::queue<WriteData> m_writeDataQueue;
     std::queue<ConnectionID> m_closeQueue;
     int m_notifyMe[2];
     int m_counter;

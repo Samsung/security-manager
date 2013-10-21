@@ -16,6 +16,7 @@ SET(SECURITY_SERVER_SOURCES
     ${SECURITY_SERVER_PATH}/server/security-server-password.c
     ${SECURITY_SERVER_PATH}/util/security-server-util-common.c
     ${SECURITY_SERVER_PATH}/util/smack-check.c
+    ${SERVER2_PATH}/main/generic-socket-manager.cpp
     ${SERVER2_PATH}/main/socket-manager.cpp
     ${SERVER2_PATH}/main/server2-main.cpp
     ${SERVER2_PATH}/service/data-share.cpp
