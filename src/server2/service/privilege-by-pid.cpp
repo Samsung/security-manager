@@ -122,27 +122,27 @@ bool PrivilegeByPidService::processOne(const ConnectionID &conn, MessageBuffer &
         retval = 1;
     }
 
-    char *path = read_exe_path_from_proc(pid);
-
-    if (retval > 0)
-        LogDebug("SS_SMACK: "
-                << "caller_pid=" << pid
-                << ", subject=" << subject
-                << ", object=" << object
-                << ", access=" << access_rights
-                << ", result=" << retval
-                << ", caller_path=" << path);
-    else
-        LogError("SS_SMACK: "
-                << "caller_pid=" << pid
-                << ", subject=" << subject
-                << ", object=" << object
-                << ", access=" << access_rights
-                << ", result=" << retval
-                << ", caller_path=" << path);
-
-    if (path != NULL)
-        free(path);
+//    char *path = read_exe_path_from_proc(pid);
+//
+//    if (retval > 0)
+//        LogDebug("SS_SMACK: "
+//                << "caller_pid=" << pid
+//                << ", subject=" << subject
+//                << ", object=" << object
+//                << ", access=" << access_rights
+//                << ", result=" << retval
+//                << ", caller_path=" << path);
+//    else
+//        LogError("SS_SMACK: "
+//                << "caller_pid=" << pid
+//                << ", subject=" << subject
+//                << ", object=" << object
+//                << ", access=" << access_rights
+//                << ", result=" << retval
+//                << ", caller_path=" << path);
+//
+//    if (path != NULL)
+//        free(path);
 
     if (retval == 1)   //there is permission
         retCode = SECURITY_SERVER_API_SUCCESS;

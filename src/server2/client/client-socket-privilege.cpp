@@ -37,36 +37,36 @@
 #include <security-server.h>
 #include <security-server-common.h>
 
-static int get_exec_path(pid_t pid, std::string &exe)
-{
-    using namespace SecurityServer;
-
-    try{
-        MessageBuffer send, recv;
-        Serialization::Serialize(send, pid);
-
-        int result = sendToServer(
-                SERVICE_SOCKET_EXEC_PATH,
-                send.Pop(),
-                recv);
-        if(result != SECURITY_SERVER_API_SUCCESS)
-            return result;
-
-        Deserialization::Deserialize(recv, result);
-        if(result != SECURITY_SERVER_API_SUCCESS)
-            return result;
-
-        Deserialization::Deserialize(recv, exe);
-        return result;
-    } catch (MessageBuffer::Exception::Base &e) {
-        LogDebug("SecurityServer::MessageBuffer::Exception " << e.DumpToString());
-    } catch (std::exception &e) {
-        LogDebug("STD exception " << e.what());
-    } catch (...) {
-        LogDebug("Unknown exception occured");
-    }
-    return SECURITY_SERVER_API_ERROR_UNKNOWN;
-}
+//static int get_exec_path(pid_t pid, std::string &exe)
+//{
+//    using namespace SecurityServer;
+//
+//    try{
+//        MessageBuffer send, recv;
+//        Serialization::Serialize(send, pid);
+//
+//        int result = sendToServer(
+//                SERVICE_SOCKET_EXEC_PATH,
+//                send.Pop(),
+//                recv);
+//        if(result != SECURITY_SERVER_API_SUCCESS)
+//            return result;
+//
+//        Deserialization::Deserialize(recv, result);
+//        if(result != SECURITY_SERVER_API_SUCCESS)
+//            return result;
+//
+//        Deserialization::Deserialize(recv, exe);
+//        return result;
+//    } catch (MessageBuffer::Exception::Base &e) {
+//        LogDebug("SecurityServer::MessageBuffer::Exception " << e.DumpToString());
+//    } catch (std::exception &e) {
+//        LogDebug("STD exception " << e.what());
+//    } catch (...) {
+//        LogDebug("Unknown exception occured");
+//    }
+//    return SECURITY_SERVER_API_ERROR_UNKNOWN;
+//}
 
 SECURITY_SERVER_API
 int security_server_check_privilege_by_sockfd(int sockfd,
@@ -116,20 +116,20 @@ int security_server_check_privilege_by_sockfd(int sockfd,
     ret = security_server_check_privilege_by_pid(cr.pid, object, access_rights);
 
     //Getting path for logs
-    if (SECURITY_SERVER_API_SUCCESS != get_exec_path(cr.pid, path)) {
-        LogError("Failed to read executable path for process " << cr.pid);
-    }
-
-    if (ret == SECURITY_SERVER_API_SUCCESS)
-        LogSecureDebug("SS_SMACK: caller_pid=" << cr.pid << ", subject=" <<
-            (subjectPtr.get() ? subjectPtr.get() : "NULL") << ", object=" <<
-            object << ", access=" << access_rights << ", result=" <<
-            ret << ", caller_path=" << path.c_str());
-    else
-        LogSecureWarning("SS_SMACK: caller_pid=" << cr.pid << ", subject=" <<
-            (subjectPtr.get() ? subjectPtr.get() : "NULL") << ", object=" <<
-            object << ", access=" << access_rights << ", result=" <<
-            ret << ", caller_path=" << path.c_str());
+//    if (SECURITY_SERVER_API_SUCCESS != get_exec_path(cr.pid, path)) {
+//        LogError("Failed to read executable path for process " << cr.pid);
+//    }
+//
+//    if (ret == SECURITY_SERVER_API_SUCCESS)
+//        LogSecureDebug("SS_SMACK: caller_pid=" << cr.pid << ", subject=" <<
+//            (subjectPtr.get() ? subjectPtr.get() : "NULL") << ", object=" <<
+//            object << ", access=" << access_rights << ", result=" <<
+//            ret << ", caller_path=" << path.c_str());
+//    else
+//        LogSecureWarning("SS_SMACK: caller_pid=" << cr.pid << ", subject=" <<
+//            (subjectPtr.get() ? subjectPtr.get() : "NULL") << ", object=" <<
+//            object << ", access=" << access_rights << ", result=" <<
+//            ret << ", caller_path=" << path.c_str());
 
     return ret;
 }
