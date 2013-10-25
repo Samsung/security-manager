@@ -39,6 +39,7 @@
 namespace SecurityServer {
 
 GenericSocketService::ServiceDescriptionVector PrivilegeByPidService::GetServiceDescription() {
+    //TODO: after enabled smack protection for api use "security-server::api-privilege-by-pid"
     return ServiceDescriptionVector
         {{SERVICE_SOCKET_PRIVILEGE_BY_PID, "*" }};
 }

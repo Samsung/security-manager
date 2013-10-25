@@ -190,6 +190,8 @@ extern "C" {
  * }
  * ...
  * \endcode
+ *
+ * Access to this function requires SMACK rule: "<app_label> security-server::api-get-gid w"
 */
 int security_server_get_gid(const char *object);
 
@@ -251,6 +253,8 @@ int security_server_get_gid(const char *object);
  * }
  * ...
  * \endcode
+ *
+ * Access to this function requires SMACK rule: "<app_label> security-server::api-get-object-name w"
 */
 int security_server_get_object_name(gid_t gid, char *object, size_t max_object_size);
 
@@ -313,6 +317,8 @@ int security_server_get_object_name(gid_t gid, char *object, size_t max_object_s
  * }
  * ...
  * \endcode
+ *
+ * Access to this function not requires SMACK rule
 */
 int security_server_request_cookie(char *cookie, size_t bufferSize);
 
@@ -373,6 +379,8 @@ int security_server_request_cookie(char *cookie, size_t bufferSize);
  * }
  * ...
  * \endcode
+ *
+ * Access to this function not requires SMACK rule
 */
 int security_server_get_cookie_size(void);
 
@@ -442,6 +450,8 @@ int security_server_get_cookie_size(void);
  * ...
  *
  * \endcode
+ *
+ * Access to this function requires SMACK rule: "<app_label> security-server::api-cookie-check w"
 */
 int security_server_check_privilege(const char *cookie, gid_t privilege);
 
@@ -513,6 +523,8 @@ int security_server_check_privilege_by_sockfd(int sockfd,
  * ...
  *
  * \endcode
+ *
+ * Access to this function requires SMACK rule: "<app_label> security-server::api-cookie-check w"
 */
 int security_server_get_cookie_pid(const char *cookie);
 
@@ -580,6 +592,8 @@ int security_server_get_cookie_pid(const char *cookie);
  * ...
  *
  * \endcode
+ *
+ * Access to this function requires SMACK rule: "<app_label> security-server::api-password-check w"
 */
 int security_server_is_pwd_valid(unsigned int *current_attempts,
                                  unsigned int *max_attempts,
@@ -663,6 +677,8 @@ int security_server_is_pwd_valid(unsigned int *current_attempts,
  * ...
  *
  * \endcode
+ *
+ * Access to this function requires SMACK rule: "<app_label> security-server::api-password-set w"
 */
 int security_server_set_pwd(const char *cur_pwd,
                             const char *new_pwd,
@@ -697,6 +713,8 @@ int security_server_set_pwd(const char *cur_pwd,
  * Identifying calling peer is not ready yet, should be based on SMACK somehow.
  *
  * \see security_server_is_pwd_valid(), security_server_chk_pwd(), security_server_reset_pwd()
+ *
+ * Access to this function requires SMACK rule: "<app_label> security-server::api-password-set w"
  */
 int security_server_set_pwd_validity(const unsigned int valid_period_in_days);
 
@@ -728,6 +746,8 @@ int security_server_set_pwd_validity(const unsigned int valid_period_in_days);
  * Identifying calling peer is not ready yet, should be based on SMACK somehow.
  *
  * \see security_server_is_pwd_valid(), security_server_chk_pwd(), security_server_reset_pwd()
+ *
+ * Access to this function requires SMACK rule: "<app_label> security-server::api-password-set w"
  */
 int security_server_set_pwd_max_challenge(const unsigned int max_challenge);
 
@@ -786,6 +806,8 @@ int security_server_set_pwd_max_challenge(const unsigned int max_challenge);
  * ...
  *
  * \endcode
+ *
+ * Access to this function requires SMACK rule: "<app_label> security-server::api-password-set w"
 */
 int security_server_reset_pwd(const char *new_pwd,
                               const unsigned int max_challenge,
@@ -852,6 +874,8 @@ int security_server_reset_pwd(const char *new_pwd,
  * ...
  *
  * \endcode
+ *
+ * Access to this function requires SMACK rule: "<app_label> security-server::api-password-check w"
 */
 int security_server_chk_pwd(const char *challenge,
                             unsigned int *current_attempt,
@@ -911,6 +935,8 @@ int security_server_chk_pwd(const char *challenge,
  * ...
  *
  * \endcode
+ *
+ * Access to this function requires SMACK rule: "<app_label> security-server::api-password-set w"
 */
 int security_server_set_pwd_history(int number_of_history);
 
@@ -925,6 +951,8 @@ int security_server_set_pwd_history(int number_of_history);
  *
  * \par For free label use free(), label allocated by calloc()
  *      User responsibility is to free resource.
+ *
+ * Access to this function requires SMACK rule: "<app_label> security-server::api-cookie-check w"
  */
 char *security_server_get_smacklabel_cookie(const char *cookie);
 
@@ -939,6 +967,8 @@ char *security_server_get_smacklabel_cookie(const char *cookie);
  *
  * \par For free label use free(), label allocated by calloc().
  *      User responsibility is to free resource.
+ *
+ * Access to this function not requires SMACK rule
  */
 char *security_server_get_smacklabel_sockfd(int fd);
 
@@ -946,6 +976,8 @@ char *security_server_get_smacklabel_sockfd(int fd);
  * This function will give permissions "rwxat" from
  * (subject) customer_label to caller process (object).
  * Object label will be extracted from socket.
+ *
+ * Access to this function requires SMACK rule: "<app_label> security-server::api-data-share w"
  * */
 int security_server_app_give_access(const char *customer_label, int customer_pid);
 
@@ -960,6 +992,8 @@ int security_server_app_give_access(const char *customer_label, int customer_pid
  *
  * \return Privilege confirm or error code
  * SECURITY_SERVER_SUCCESS - on succes
+ *
+ * Access to this function requires SMACK rule: "<app_label> security-server::api-privilege-by-pid w"
  */
 int security_server_check_privilege_by_pid(int pid, const char *object, const char *access_rights);
 
@@ -972,6 +1006,8 @@ int security_server_check_privilege_by_pid(int pid, const char *object, const ch
  * \param[in] Persistent
  *
  * \return SECURITY_SERVER_SUCCESS on success or error code on fail
+ *
+ * Access to this function requires SMACK rule: "<app_label> security-server::api-app-permissions w"
  */
 int security_server_app_enable_permissions(const char *app_id, app_type_t app_type, const char **perm_list, int persistent);
 
@@ -983,6 +1019,8 @@ int security_server_app_enable_permissions(const char *app_id, app_type_t app_ty
  * \param[in] Permissions list
  *
  * \return SECURITY_SERVER_SUCCESS on success or error code on fail
+ *
+ * Access to this function requires SMACK rule: "<app_label> security-server::api-app-permissions w"
  */
 int security_server_app_disable_permissions(const char *app_id, app_type_t app_type, const char **perm_list);
 
@@ -993,6 +1031,8 @@ int security_server_app_disable_permissions(const char *app_id, app_type_t app_t
  * \param[out] Handler to store UID
  *
  * \return SECURITY_SERVER_SUCCESS on success or error code on fail
+ *
+ * Access to this function requires SMACK rule: "<app_label> security-server::api-cookie-check w"
  */
 int security_server_get_uid_by_cookie(const char *cookie, uid_t *uid);
 
@@ -1003,6 +1043,8 @@ int security_server_get_uid_by_cookie(const char *cookie, uid_t *uid);
  * \param[out] Handler to store GID
  *
  * \return SECURITY_SERVER_SUCCESS on success or error code on fail
+ *
+ * Access to this function requires SMACK rule: "<app_label> security-server::api-cookie-check w"
  */
 int security_server_get_gid_by_cookie(const char *cookie, gid_t *gid);
 
