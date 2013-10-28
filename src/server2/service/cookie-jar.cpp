@@ -89,7 +89,7 @@ const Cookie * CookieJar::GenerateCookie(int pid)
     char path[PATH_MAX];
 
     snprintf(link, PATH_MAX, "/proc/%d/exe", pid);
-    retval = readlink(link, path, PATH_MAX);
+    retval = readlink(link, path, PATH_MAX-1);
     if (retval < 0) {
         LogDebug("Unable to get process path");
         return NULL;
