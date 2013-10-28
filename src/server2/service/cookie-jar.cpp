@@ -107,7 +107,7 @@ const Cookie * CookieJar::GenerateCookie(int pid)
         }
         newCookie.smackLabel = label;
     } else
-        newCookie.smackLabel = "smack_disabled";
+        newCookie.smackLabel = "";
 
 
     //get GID list

@@ -29,6 +29,7 @@
 #include <security-server.h>
 #include <security-server-common.h>
 #include <cookie.h>
+#include <smack-check.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/smack.h>
@@ -308,12 +309,16 @@ bool CookieService::privilegeByCookieRequest(MessageBuffer &buffer, MessageBuffe
     const Cookie *searchResult = m_cookieJar.SearchCookie(searchPattern, CompareType::COOKIE_ID);
 
     if (searchResult != NULL) {
-        subject = searchResult->smackLabel;
-
-        if (smack_have_access(subject.c_str(), object.c_str(), access.c_str()) == 1)
+        if (!smack_check()) {
             Serialization::Serialize(send, (int)SECURITY_SERVER_API_SUCCESS);
-        else
-            Serialization::Serialize(send, (int)SECURITY_SERVER_API_ERROR_ACCESS_DENIED);
+        } else {
+            subject = searchResult->smackLabel;
+
+            if (smack_have_access(subject.c_str(), object.c_str(), access.c_str()) == 1)
+                Serialization::Serialize(send, (int)SECURITY_SERVER_API_SUCCESS);
+            else
+                Serialization::Serialize(send, (int)SECURITY_SERVER_API_ERROR_ACCESS_DENIED);
+        }
     } else {
         Serialization::Serialize(send, (int)SECURITY_SERVER_API_ERROR_NO_SUCH_COOKIE);
     }
