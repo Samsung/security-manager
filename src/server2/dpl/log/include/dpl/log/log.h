@@ -123,6 +123,14 @@ class LogSystem :
                const char *function);
 
     /**
+     * Log SS_SMACK into files
+     */
+     void SmackAudit(const char *message,
+                      const char *fileName,
+                      int line,
+                      const char *function);
+
+    /**
      * Set default's DLOG provider Tag
      */
     void SetTag(const char *tag);
@@ -190,6 +198,8 @@ do                                                                         \
 /* Errors must be always logged. */
 #define  LogError(message) DPL_MACRO_FOR_LOGGING(message, Error)
 #define  LogSecureError(message) DPL_MACRO_FOR_LOGGING(message, SecureError)
+
+#define  LogSmackAudit(message) DPL_MACRO_FOR_LOGGING(message, SmackAudit)
 
 #ifdef BUILD_TYPE_DEBUG
     #define LogDebug(message) DPL_MACRO_FOR_LOGGING(message, Debug)

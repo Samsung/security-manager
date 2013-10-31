@@ -14,9 +14,13 @@
 			<label name="security-server::api-get-gid" />
 			<label name="security-server::api-password-check" />
 			<label name="security-server::api-password-set" />
+			<label name="security-server::audit-files" />
 		</provide>
 	</define>
 	<request>
 		<domain name="_" />
 	</request>
+	<assign>
+		<filesystem path="/etc/security/security-server-audit.conf" label="security-server::audit-files" />
+	</assign>
 </manifest>

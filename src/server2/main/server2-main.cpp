@@ -54,7 +54,6 @@ int server2(void) {
 //        echoService->Create();
 //        manager.RegisterSocketService(echoService);
 
-
         SecurityServer::CookieService *cookieService = new SecurityServer::CookieService;
         cookieService->Create();
         manager.RegisterSocketService(cookieService);

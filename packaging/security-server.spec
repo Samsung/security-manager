@@ -73,6 +73,8 @@ rm -rf %{buildroot}
 mkdir -p %{buildroot}/usr/share/license
 cp LICENSE %{buildroot}/usr/share/license/%{name}
 cp LICENSE %{buildroot}/usr/share/license/libsecurity-server-client
+mkdir -p %{buildroot}/etc/security/
+cp security-server-audit.conf %{buildroot}/etc/security/
 %make_install
 
 mkdir -p %{buildroot}/usr/lib/systemd/system/multi-user.target.wants
@@ -146,6 +148,7 @@ fi
 %attr(-,root,root) /usr/lib/systemd/system/security-server-cookie-check.socket
 %attr(-,root,root) /usr/lib/systemd/system/sockets.target.wants/security-server-cookie-check-tmp.socket
 %attr(-,root,root) /usr/lib/systemd/system/security-server-cookie-check-tmp.socket
+%attr(-,root,root) /etc/security/security-server-audit.conf
 
 %{_datadir}/license/%{name}
 

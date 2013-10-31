@@ -313,11 +313,18 @@ bool CookieService::privilegeByCookieRequest(MessageBuffer &buffer, MessageBuffe
             Serialization::Serialize(send, (int)SECURITY_SERVER_API_SUCCESS);
         } else {
             subject = searchResult->smackLabel;
+            int retval;
 
-            if (smack_have_access(subject.c_str(), object.c_str(), access.c_str()) == 1)
+            if ((retval = smack_have_access(subject.c_str(), object.c_str(), access.c_str())) == 1)
                 Serialization::Serialize(send, (int)SECURITY_SERVER_API_SUCCESS);
-            else
+            else {
                 Serialization::Serialize(send, (int)SECURITY_SERVER_API_ERROR_ACCESS_DENIED);
+                LogSmackAudit("SS_SMACK: "
+                    << " subject=" << subject
+                    << ", object=" << object
+                    << ", access=" << access
+                    << ", result=" << retval);
+            }
         }
     } else {
         Serialization::Serialize(send, (int)SECURITY_SERVER_API_ERROR_NO_SUCH_COOKIE);

@@ -26,6 +26,7 @@
 #include <dpl/singleton_impl.h>
 #include <dpl/log/dlog_log_provider.h>
 #include <dpl/log/old_style_log_provider.h>
+#include <dpl/log/audit-smack-log.h>
 
 IMPLEMENT_SINGLETON(SecurityServer::Log::LogSystem)
 
@@ -124,6 +125,13 @@ LogSystem::LogSystem() :
 #else // BUILD_TYPE_DEBUG
     AddProvider(new DLOGLogProvider());
 #endif // BUILD_TYPE_DEBUG
+
+    AuditSmackLog * smackLog = new AuditSmackLog();
+    if (smackLog->Fail()) {
+        delete smackLog;
+    } else {
+        AddProvider(smackLog);
+    }
 }
 
 LogSystem::~LogSystem()
@@ -275,5 +283,19 @@ void LogSystem::SecureWarning(const char *message,
         (*iterator)->SecureWarning(message, filename, line, function);
     }
 }
+
+void LogSystem::SmackAudit(const char *message,
+                     const char *fileName,
+                     int line,
+                     const char *function)
+{
+    for (AbstractLogProviderPtrList::iterator iterator = m_providers.begin();
+         iterator != m_providers.end();
+         ++iterator)
+    {
+        (*iterator)->SmackAudit(message, fileName, line, function);
+    }
+}
+
 }
 } // namespace SecurityServer

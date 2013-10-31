@@ -97,7 +97,6 @@ bool PrivilegeByPidService::processOne(const ConnectionID &conn, MessageBuffer &
         LogDebug("SMACK is not available. Subject label has not been read.");
         retval = 1;
     }
-
 //    char *path = read_exe_path_from_proc(pid);
 //
 //    if (retval > 0)
@@ -120,6 +119,7 @@ bool PrivilegeByPidService::processOne(const ConnectionID &conn, MessageBuffer &
 //    if (path != NULL)
 //        free(path);
 
+
     if (retval == 1)   //there is permission
         retCode = SECURITY_SERVER_API_SUCCESS;
     else                //there is no permission
@@ -128,6 +128,21 @@ bool PrivilegeByPidService::processOne(const ConnectionID &conn, MessageBuffer &
     MessageBuffer sendBuffer;
     Serialization::Serialize(sendBuffer, retCode);
     m_serviceManager->Write(conn, sendBuffer.Pop());
+
+    if (retval != 1) {
+        char *path = read_exe_path_from_proc(pid);
+
+        LogSmackAudit("SS_SMACK: "
+            << "caller_pid=" << pid
+            << ", subject="  << subject
+            << ", object="   << object
+            << ", access="   << access_rights
+            << ", result="   << retval
+            << ", caller_path=" << (path ? path : ""));
+
+        free(path);
+    }
+
     return true;
 }
 
