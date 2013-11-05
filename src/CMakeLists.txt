@@ -8,18 +8,14 @@ PKG_CHECK_MODULES(SECURITY_SERVER_DEP
     )
 
 SET(SECURITY_SERVER_PATH ${PROJECT_SOURCE_DIR}/src)
-SET(SERVER2_PATH ${PROJECT_SOURCE_DIR}/src/server2)
+SET(SERVER2_PATH ${PROJECT_SOURCE_DIR}/src/server)
 
 SET(SECURITY_SERVER_SOURCES
-    ${SECURITY_SERVER_PATH}/communication/security-server-comm.c
-    ${SECURITY_SERVER_PATH}/server/security-server-main.c
-    ${SECURITY_SERVER_PATH}/util/security-server-util-common.c
-    ${SECURITY_SERVER_PATH}/util/smack-check.c
+    ${SERVER2_PATH}/main/security-server-util.cpp
     ${SERVER2_PATH}/main/generic-socket-manager.cpp
     ${SERVER2_PATH}/main/socket-manager.cpp
     ${SERVER2_PATH}/main/server2-main.cpp
     ${SERVER2_PATH}/service/data-share.cpp
-    ${SERVER2_PATH}/service/echo.cpp
     ${SERVER2_PATH}/service/get-gid.cpp
     ${SERVER2_PATH}/service/app-permissions.cpp
     ${SERVER2_PATH}/service/cookie.cpp
@@ -65,25 +61,23 @@ SET(SECURITY_CLIENT_VERSION_MAJOR 1)
 SET(SECURITY_CLIENT_VERSION ${SECURITY_CLIENT_VERSION_MAJOR}.0.1)
 
 INCLUDE_DIRECTORIES(
-    ${SECURITY_SERVER_PATH}/server2/client
-    ${SECURITY_SERVER_PATH}/server2/common
-    ${SECURITY_SERVER_PATH}/server2/dpl/core/include
-    ${SECURITY_SERVER_PATH}/server2/dpl/log/include
+    ${SERVER2_PATH}/client
+    ${SERVER2_PATH}/common
+    ${SERVER2_PATH}/dpl/core/include
+    ${SERVER2_PATH}/dpl/log/include
     )
 
 SET(SECURITY_CLIENT_SOURCES
-    ${SECURITY_SERVER_PATH}/server2/client/client-common.cpp
-    ${SECURITY_SERVER_PATH}/server2/client/client-shared-memory.cpp
-    ${SECURITY_SERVER_PATH}/server2/client/client-get-gid.cpp
-    ${SECURITY_SERVER_PATH}/server2/client/client-app-permissions.cpp
-    ${SECURITY_SERVER_PATH}/server2/client/client-cookie.cpp
-    ${SECURITY_SERVER_PATH}/server2/client/client-privilege-by-pid.cpp
-    ${SECURITY_SERVER_PATH}/server2/client/client-socket-privilege.cpp
-    ${SECURITY_SERVER_PATH}/server2/client/client-get-object-name.cpp
-    ${SECURITY_SERVER_PATH}/server2/client/client-open-for.cpp
-    ${SECURITY_SERVER_PATH}/server2/client/client-password.cpp
-    ${SECURITY_SERVER_PATH}/communication/security-server-comm.c
-    ${SECURITY_SERVER_PATH}/util/smack-check.c
+    ${SERVER2_PATH}/client/client-common.cpp
+    ${SERVER2_PATH}/client/client-shared-memory.cpp
+    ${SERVER2_PATH}/client/client-get-gid.cpp
+    ${SERVER2_PATH}/client/client-app-permissions.cpp
+    ${SERVER2_PATH}/client/client-cookie.cpp
+    ${SERVER2_PATH}/client/client-privilege-by-pid.cpp
+    ${SERVER2_PATH}/client/client-socket-privilege.cpp
+    ${SERVER2_PATH}/client/client-get-object-name.cpp
+    ${SERVER2_PATH}/client/client-open-for.cpp
+    ${SERVER2_PATH}/client/client-password.cpp
     )
 
 ADD_LIBRARY(${TARGET_SECURITY_CLIENT} SHARED ${SECURITY_CLIENT_SOURCES})
@@ -119,4 +113,4 @@ INSTALL(FILES
 
 ################################################################################
 
-ADD_SUBDIRECTORY(server2)
+ADD_SUBDIRECTORY(server)
