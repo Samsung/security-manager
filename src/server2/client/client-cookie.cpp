@@ -51,7 +51,7 @@ int security_server_request_cookie(char *cookie, size_t bufferSize)
 
     LogDebug("security_server_request_cookie() called");
 
-    try {
+    return try_catch([&] {
         //checking parameters
         if (bufferSize < COOKIE_SIZE) {
             LogDebug("Buffer for cookie too small");
@@ -85,16 +85,7 @@ int security_server_request_cookie(char *cookie, size_t bufferSize)
 
         memcpy(cookie, &receivedCookie[0], receivedCookie.size());
         return retval;
-
-    } catch (MessageBuffer::Exception::Base &e) {
-        LogDebug("SecurityServer::MessageBuffer::Exception " << e.DumpToString());
-    } catch (std::exception &e) {
-        LogDebug("STD exception " << e.what());
-    } catch (...) {
-        LogDebug("Unknown exception occured");
-    }
-
-    return SECURITY_SERVER_API_ERROR_UNKNOWN;
+    });
 }
 
 SECURITY_SERVER_API
@@ -113,7 +104,7 @@ int security_server_get_cookie_pid(const char *cookie)
     //preprae cookie to send
     std::vector<char> key(cookie, cookie + COOKIE_SIZE);
 
-    try {
+    return try_catch([&] {
         //put data into buffer
         Serialization::Serialize(send, (int)CookieCall::CHECK_PID);
         Serialization::Serialize(send, key);
@@ -132,16 +123,7 @@ int security_server_get_cookie_pid(const char *cookie)
 
         Deserialization::Deserialize(recv, pid);
         return pid;
-
-    } catch (MessageBuffer::Exception::Base &e) {
-        LogDebug("SecurityServer::MessageBuffer::Exception " << e.DumpToString());
-    } catch (std::exception &e) {
-        LogDebug("STD exception " << e.what());
-    } catch (...) {
-        LogDebug("Unknown exception occured");
-    }
-
-    return SECURITY_SERVER_API_ERROR_UNKNOWN;
+    });
 }
 
 SECURITY_SERVER_API
@@ -207,7 +189,7 @@ int security_server_check_privilege(const char *cookie, gid_t privilege)
     //preprae cookie to send
     std::vector<char> key(cookie, cookie + COOKIE_SIZE);
 
-    try {
+    return try_catch([&] {
         //put data into buffer
         Serialization::Serialize(send, (int)CookieCall::CHECK_PRIVILEGE_GID);
         Serialization::Serialize(send, key);
@@ -223,16 +205,7 @@ int security_server_check_privilege(const char *cookie, gid_t privilege)
         //receive response from server
         Deserialization::Deserialize(recv, retval);
         return retval;
-
-    } catch (MessageBuffer::Exception::Base &e) {
-        LogDebug("SecurityServer::MessageBuffer::Exception " << e.DumpToString());
-    } catch (std::exception &e) {
-        LogDebug("STD exception " << e.what());
-    } catch (...) {
-        LogDebug("Unknown exception occured");
-    }
-
-    return SECURITY_SERVER_API_ERROR_UNKNOWN;
+    });
 }
 
 SECURITY_SERVER_API
@@ -253,7 +226,7 @@ int security_server_check_privilege_by_cookie(const char *cookie, const char *ob
     std::string obj(object);
     std::string access(access_rights);
 
-    try {
+    return try_catch([&] {
         //put data into buffer
         Serialization::Serialize(send, (int)CookieCall::CHECK_PRIVILEGE);
         Serialization::Serialize(send, key);
@@ -270,16 +243,7 @@ int security_server_check_privilege_by_cookie(const char *cookie, const char *ob
         //receive response from server
         Deserialization::Deserialize(recv, retval);
         return retval;
-
-    } catch (MessageBuffer::Exception::Base &e) {
-        LogDebug("SecurityServer::MessageBuffer::Exception " << e.DumpToString());
-    } catch (std::exception &e) {
-        LogDebug("STD exception " << e.what());
-    } catch (...) {
-        LogDebug("Unknown exception occured");
-    }
-
-    return SECURITY_SERVER_API_ERROR_UNKNOWN;
+    });
 }
 
 SECURITY_SERVER_API
@@ -297,7 +261,7 @@ int security_server_get_uid_by_cookie(const char *cookie, uid_t *uid)
     //preprae cookie to send
     std::vector<char> key(cookie, cookie + COOKIE_SIZE);
 
-    try {
+    return try_catch([&] {
         //put data into buffer
         Serialization::Serialize(send, (int)CookieCall::CHECK_UID);
         Serialization::Serialize(send, key);
@@ -318,16 +282,7 @@ int security_server_get_uid_by_cookie(const char *cookie, uid_t *uid)
         }
 
         return retval;
-
-    } catch (MessageBuffer::Exception::Base &e) {
-        LogDebug("SecurityServer::MessageBuffer::Exception " << e.DumpToString());
-    } catch (std::exception &e) {
-        LogDebug("STD exception " << e.what());
-    } catch (...) {
-        LogDebug("Unknown exception occured");
-    }
-
-    return SECURITY_SERVER_API_ERROR_UNKNOWN;
+    });
 }
 
 SECURITY_SERVER_API
@@ -345,7 +300,7 @@ int security_server_get_gid_by_cookie(const char *cookie, gid_t *gid)
     //preprae cookie to send
     std::vector<char> key(cookie, cookie + COOKIE_SIZE);
 
-    try {
+    return try_catch([&] {
         //put data into buffer
         Serialization::Serialize(send, (int)CookieCall::CHECK_GID);
         Serialization::Serialize(send, key);
@@ -366,15 +321,6 @@ int security_server_get_gid_by_cookie(const char *cookie, gid_t *gid)
         }
 
         return retval;
-
-    } catch (MessageBuffer::Exception::Base &e) {
-        LogDebug("SecurityServer::MessageBuffer::Exception " << e.DumpToString());
-    } catch (std::exception &e) {
-        LogDebug("STD exception " << e.what());
-    } catch (...) {
-        LogDebug("Unknown exception occured");
-    }
-
-    return SECURITY_SERVER_API_ERROR_UNKNOWN;
+    });
 }
 

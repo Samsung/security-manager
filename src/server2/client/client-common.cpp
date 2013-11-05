@@ -260,6 +260,19 @@ int sendToServerAncData(char const * const interface, const RawBuffer &send, str
     return SECURITY_SERVER_API_SUCCESS;
 }
 
+int try_catch(const std::function<int()>& func)
+{
+    try {
+        return func();
+    } catch (MessageBuffer::Exception::Base &e) {
+        LogError("SecurityServer::MessageBuffer::Exception " << e.DumpToString());
+    } catch (std::exception &e) {
+        LogError("STD exception " << e.what());
+    } catch (...) {
+        LogError("Unknown exception occured");
+    }
+    return SECURITY_SERVER_API_ERROR_UNKNOWN;
+}
 
 } // namespace SecurityServer
 

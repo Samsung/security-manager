@@ -27,6 +27,7 @@
 #define _SECURITY_SERVER_CLIENT_
 
 #include <vector>
+#include <functional>
 
 #include <message-buffer.h>
 
@@ -53,6 +54,12 @@ int sendToServer(char const * const interface, const RawBuffer &send, MessageBuf
  *
  */
 int sendToServerAncData(char const * const interface, const RawBuffer &send, struct msghdr &hdr);
+
+/*
+ * Decorator function that performs frequently repeated exception handling in
+ * SS client API functions. Accepts lambda expression as an argument.
+ */
+int try_catch(const std::function<int()>& func);
 
 } // namespace SecuritySever
 

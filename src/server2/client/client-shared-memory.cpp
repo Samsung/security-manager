@@ -38,7 +38,7 @@
 SECURITY_SERVER_API
 int security_server_app_give_access(const char *customer_label, int customer_pid) {
     using namespace SecurityServer;
-    try {
+    return try_catch([&] {
         if (1 != smack_check())
             return SECURITY_SERVER_API_SUCCESS;
 
@@ -62,13 +62,6 @@ int security_server_app_give_access(const char *customer_label, int customer_pid
 
         Deserialization::Deserialize(recv, result);
         return result;
-    } catch (MessageBuffer::Exception::Base &e) {
-        LogDebug("SecurityServer::MessageBuffer::Exception " << e.DumpToString());
-    } catch (std::exception &e) {
-        LogDebug("STD exception " << e.what());
-    } catch (...) {
-        LogDebug("Unknown exception occured");
-    }
-    return SECURITY_SERVER_API_ERROR_UNKNOWN;
+    });
 }
 

@@ -37,7 +37,8 @@
 SECURITY_SERVER_API
 int security_server_get_gid(const char *objectName) {
     using namespace SecurityServer;
-    try {
+
+    return try_catch([&] {
         if (NULL == objectName){
             LogDebug("Objects name is NULL");
             return SECURITY_SERVER_API_ERROR_INPUT_PARAM;
@@ -69,14 +70,7 @@ int security_server_get_gid(const char *objectName) {
         // No errors, return gid
         gid_t gid;
         Deserialization::Deserialize(recv, gid);
-        return gid;
-    } catch (MessageBuffer::Exception::Base &e) {
-        LogDebug("SecurityServer::MessageBuffer::Exception " << e.DumpToString());
-    } catch (std::exception &e) {
-        LogDebug("STD exception " << e.what());
-    } catch (...) {
-        LogDebug("Unknown exception occured");
-    }
-    return SECURITY_SERVER_API_ERROR_UNKNOWN;
+        return static_cast<int>(gid);
+    });
 }
 

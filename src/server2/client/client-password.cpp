@@ -33,6 +33,7 @@
 #include <protocols.h>
 
 #include <security-server.h>
+#include <security-server-common.h>
 
 inline bool isPasswordIncorrect(const char* pwd)
 {
@@ -46,7 +47,7 @@ int security_server_is_pwd_valid(unsigned int *current_attempts,
 {
     using namespace SecurityServer;
 
-    try {
+    return try_catch([&] {
         if (NULL == current_attempts || NULL == max_attempts ||
             NULL == valid_secs) {
 
@@ -77,14 +78,7 @@ int security_server_is_pwd_valid(unsigned int *current_attempts,
         }
 
         return retCode;
-    } catch (MessageBuffer::Exception::Base &e) {
-        LogError("SecurityServer::MessageBuffer::Exception " << e.DumpToString());
-    } catch (std::exception &e) {
-        LogError("STD exception " << e.what());
-    } catch (...) {
-        LogError("Unknown exception occured");
-    }
-    return SECURITY_SERVER_API_ERROR_UNKNOWN;
+    });
 }
 
 SECURITY_SERVER_API
@@ -95,7 +89,7 @@ int security_server_chk_pwd(const char *challenge,
 {
     using namespace SecurityServer;
 
-    try {
+    return try_catch([&] {
         if (current_attempts == NULL || max_attempts == NULL || valid_secs == NULL ||
             isPasswordIncorrect(challenge)) {
             LogError("Wrong input param");
@@ -133,14 +127,7 @@ int security_server_chk_pwd(const char *challenge,
         }
 
         return retCode;
-    } catch (MessageBuffer::Exception::Base &e) {
-        LogError("SecurityServer::MessageBuffer::Exception " << e.DumpToString());
-    } catch (std::exception &e) {
-        LogError("STD exception " << e.what());
-    } catch (...) {
-        LogError("Unknown exception occured");
-    }
-    return SECURITY_SERVER_API_ERROR_UNKNOWN;
+    });
 }
 
 SECURITY_SERVER_API
@@ -151,7 +138,7 @@ int security_server_set_pwd(const char *cur_pwd,
 {
     using namespace SecurityServer;
 
-    try {
+    return try_catch([&] {
         if (NULL == cur_pwd)
             cur_pwd = "";
 
@@ -177,14 +164,7 @@ int security_server_set_pwd(const char *cur_pwd,
         Deserialization::Deserialize(recv, retCode);
 
         return retCode;
-    } catch (MessageBuffer::Exception::Base &e) {
-        LogError("SecurityServer::MessageBuffer::Exception " << e.DumpToString());
-    } catch (std::exception &e) {
-        LogError("STD exception " << e.what());
-    } catch (...) {
-        LogError("Unknown exception occured");
-    }
-    return SECURITY_SERVER_API_ERROR_UNKNOWN;
+    });
 }
 
 SECURITY_SERVER_API
@@ -192,7 +172,7 @@ int security_server_set_pwd_validity(const unsigned int valid_period_in_days)
 {
     using namespace SecurityServer;
 
-    try {
+    return try_catch([&] {
         MessageBuffer send, recv;
 
         Serialization::Serialize(send, static_cast<int>(PasswordHdrs::HDR_SET_PWD_VALIDITY));
@@ -207,14 +187,7 @@ int security_server_set_pwd_validity(const unsigned int valid_period_in_days)
         Deserialization::Deserialize(recv, retCode);
 
         return retCode;
-    } catch (MessageBuffer::Exception::Base &e) {
-        LogError("SecurityServer::MessageBuffer::Exception " << e.DumpToString());
-    } catch (std::exception &e) {
-        LogError("STD exception " << e.what());
-    } catch (...) {
-        LogError("Unknown exception occured");
-    }
-    return SECURITY_SERVER_API_ERROR_UNKNOWN;
+    });
 }
 
 SECURITY_SERVER_API
@@ -222,7 +195,7 @@ int security_server_set_pwd_max_challenge(const unsigned int max_challenge)
 {
     using namespace SecurityServer;
 
-    try {
+    return try_catch([&] {
         MessageBuffer send, recv;
 
         Serialization::Serialize(send, static_cast<int>(PasswordHdrs::HDR_SET_PWD_MAX_CHALLENGE));
@@ -237,14 +210,7 @@ int security_server_set_pwd_max_challenge(const unsigned int max_challenge)
         Deserialization::Deserialize(recv, retCode);
 
         return retCode;
-    } catch (MessageBuffer::Exception::Base &e) {
-        LogError("SecurityServer::MessageBuffer::Exception " << e.DumpToString());
-    } catch (std::exception &e) {
-        LogError("STD exception " << e.what());
-    } catch (...) {
-        LogError("Unknown exception occured");
-    }
-    return SECURITY_SERVER_API_ERROR_UNKNOWN;
+    });
 }
 
 SECURITY_SERVER_API
@@ -254,7 +220,7 @@ int security_server_reset_pwd(const char *new_pwd,
 {
     using namespace SecurityServer;
 
-    try {
+    return try_catch([&] {
         if (isPasswordIncorrect(new_pwd)) {
             LogError("Wrong input param.");
             return SECURITY_SERVER_API_ERROR_INPUT_PARAM;
@@ -276,14 +242,7 @@ int security_server_reset_pwd(const char *new_pwd,
         Deserialization::Deserialize(recv, retCode);
 
         return retCode;
-    } catch (MessageBuffer::Exception::Base &e) {
-        LogError("SecurityServer::MessageBuffer::Exception " << e.DumpToString());
-    } catch (std::exception &e) {
-        LogError("STD exception " << e.what());
-    } catch (...) {
-        LogError("Unknown exception occured");
-    }
-    return SECURITY_SERVER_API_ERROR_UNKNOWN;
+    });
 }
 
 SECURITY_SERVER_API
@@ -291,7 +250,7 @@ int security_server_set_pwd_history(int history_size)
 {
     using namespace SecurityServer;
 
-    try {
+    return try_catch([&] {
         if (history_size > static_cast<int>(MAX_PASSWORD_HISTORY) || history_size < 0) {
             LogError("Wrong input param.");
             return SECURITY_SERVER_API_ERROR_INPUT_PARAM;
@@ -311,12 +270,5 @@ int security_server_set_pwd_history(int history_size)
         Deserialization::Deserialize(recv, retCode);
 
         return retCode;
-    } catch (MessageBuffer::Exception::Base &e) {
-        LogError("SecurityServer::MessageBuffer::Exception " << e.DumpToString());
-    } catch (std::exception &e) {
-        LogError("STD exception " << e.what());
-    } catch (...) {
-        LogError("Unknown exception occured");
-    }
-    return SECURITY_SERVER_API_ERROR_UNKNOWN;
+    });
 }

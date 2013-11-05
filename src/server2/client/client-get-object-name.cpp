@@ -38,7 +38,7 @@ SECURITY_SERVER_API
 int security_server_get_object_name(gid_t gid, char *pObjectName, size_t maxObjectSize)
  {
     using namespace SecurityServer;
-    try {
+    return try_catch([&] {
         if (pObjectName == NULL){
             LogDebug("Objects name is NULL or empty");
             return SECURITY_SERVER_API_ERROR_INPUT_PARAM;
@@ -70,13 +70,6 @@ int security_server_get_object_name(gid_t gid, char *pObjectName, size_t maxObje
 
         return result;
 
-    } catch (MessageBuffer::Exception::Base &e) {
-        LogDebug("SecurityServer::MessageBuffer::Exception " << e.DumpToString());
-    } catch (std::exception &e) {
-        LogDebug("STD exception " << e.what());
-    } catch (...) {
-        LogDebug("Unknown exception occured");
-    }
-    return SECURITY_SERVER_API_ERROR_UNKNOWN;
+    });
 }
 

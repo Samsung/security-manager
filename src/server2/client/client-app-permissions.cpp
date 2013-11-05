@@ -47,7 +47,7 @@ int security_server_app_enable_permissions(const char *app_id, app_type_t app_ty
 
     LogDebug("security_server_app_enable_permissions() called");
 
-    try {
+    return try_catch([&] {
         if ((NULL == app_id) || (strlen(app_id) == 0)) {
             LogDebug("App_id is NULL");
             return SECURITY_SERVER_API_ERROR_INPUT_PARAM;
@@ -84,16 +84,7 @@ int security_server_app_enable_permissions(const char *app_id, app_type_t app_ty
         //receive response from server
         Deserialization::Deserialize(recv, result);
         return result;
-
-    } catch (MessageBuffer::Exception::Base &e) {
-        LogDebug("SecurityServer::MessageBuffer::Exception " << e.DumpToString());
-    } catch (std::exception &e) {
-        LogDebug("STD exception " << e.what());
-    } catch (...) {
-        LogDebug("Unknown exception occured");
-    }
-
-    return SECURITY_SERVER_API_ERROR_UNKNOWN;
+    });
 }
 
 
@@ -106,7 +97,7 @@ int security_server_app_disable_permissions(const char *app_id, app_type_t app_t
 
     LogDebug("security_server_app_disable_permissions() called");
 
-    try {
+    return try_catch([&] {
         if ((NULL == app_id) || (strlen(app_id) == 0)) {
             LogDebug("App_id is NULL");
             return SECURITY_SERVER_API_ERROR_INPUT_PARAM;
@@ -141,16 +132,7 @@ int security_server_app_disable_permissions(const char *app_id, app_type_t app_t
         //receive response from server
         Deserialization::Deserialize(recv, result);
         return result;
-
-    } catch (MessageBuffer::Exception::Base &e) {
-        LogDebug("SecurityServer::MessageBuffer::Exception " << e.DumpToString());
-    } catch (std::exception &e) {
-        LogDebug("STD exception " << e.what());
-    } catch (...) {
-        LogDebug("Unknown exception occured");
-    }
-
-    return SECURITY_SERVER_API_ERROR_UNKNOWN;
+    });
 }
 
 
