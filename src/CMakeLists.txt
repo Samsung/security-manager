@@ -26,7 +26,6 @@ SET(SECURITY_SERVER_SOURCES
     ${SERVER2_PATH}/service/cookie.cpp
     ${SERVER2_PATH}/service/cookie-jar.cpp
     ${SERVER2_PATH}/service/privilege-by-pid.cpp
-    ${SERVER2_PATH}/service/exec-path.cpp
     ${SERVER2_PATH}/service/get-object-name.cpp
     )
 
