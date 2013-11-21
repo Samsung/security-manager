@@ -184,7 +184,7 @@ int security_server_app_has_privilege(const char *app_id,
         LogDebug("privilege_name: " << privilege_name);
 
         //put data into buffer
-        Serialization::Serialize(send, static_cast<int>(PrivilegeCheckCall::CHECK_GIVEN_APP));
+        Serialization::Serialize(send, static_cast<int>(PrivilegeCheckHdrs::CHECK_GIVEN_APP));
         Serialization::Serialize(send, std::string(app_id));
         Serialization::Serialize(send, static_cast<int>(app_type));
         Serialization::Serialize(send, std::string(privilege_name));
@@ -239,7 +239,7 @@ int security_server_app_caller_has_privilege(app_type_t app_type,
         LogDebug("privilege_name: " << privilege_name);
 
         //put data into buffer
-        Serialization::Serialize(send, static_cast<int>(PrivilegeCheckCall::CHECK_CALLER_APP));
+        Serialization::Serialize(send, static_cast<int>(PrivilegeCheckHdrs::CHECK_CALLER_APP));
         Serialization::Serialize(send, static_cast<int>(app_type));
         Serialization::Serialize(send, std::string(privilege_name));
 

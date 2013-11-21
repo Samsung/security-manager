@@ -37,6 +37,7 @@
 #include <security-server.h>
 #include <security-server-common.h>
 
+namespace SecurityServer {
 
 namespace {
 
@@ -55,18 +56,20 @@ int privilegeToSecurityServerError(int error) {
     return SECURITY_SERVER_API_ERROR_UNKNOWN;
 }
 
-} // namespace anonymous
+// interface ids
+const InterfaceID CHANGE_APP_PERMISSIONS = 0;
+const InterfaceID CHECK_APP_PRIVILEGE = 1;
 
-namespace SecurityServer {
+} // namespace anonymous
 
 GenericSocketService::ServiceDescriptionVector AppPermissionsService::GetServiceDescription() {
     return ServiceDescriptionVector {
         { SERVICE_SOCKET_APP_PERMISSIONS,
           "security-server::api-app-permissions",
-          static_cast<int>(InterfaceType::CHANGE_APP_PERMISSIONS) },
+          CHANGE_APP_PERMISSIONS },
         { SERVICE_SOCKET_APP_PRIVILEGE_BY_NAME,
           "security-server::api-app-privilege-by-name",
-          static_cast<int>(InterfaceType::CHECK_APP_PRIVILEGE) }
+          CHECK_APP_PRIVILEGE }
     };
 }
 
@@ -74,8 +77,8 @@ void AppPermissionsService::accept(const AcceptEvent &event) {
     LogDebug("Accept event. ConnectionID.sock: " << event.connectionID.sock
         << " ConnectionID.counter: " << event.connectionID.counter
         << " ServiceID: " << event.interfaceID);
-    auto &info = m_socketInfoMap[event.connectionID.counter];
-    info.interfaceID = static_cast<InterfaceType>(event.interfaceID);
+    auto &info = m_connectionInfoMap[event.connectionID.counter];
+    info.interfaceID = event.interfaceID;
 }
 
 void AppPermissionsService::write(const WriteEvent &event) {
@@ -87,7 +90,7 @@ void AppPermissionsService::write(const WriteEvent &event) {
 
 void AppPermissionsService::process(const ReadEvent &event) {
     LogDebug("Read event for counter: " << event.connectionID.counter);
-    auto &info = m_socketInfoMap[event.connectionID.counter];
+    auto &info = m_connectionInfoMap[event.connectionID.counter];
     info.buffer.Push(event.rawBuffer);
 
     // We can get several requests in one package.
@@ -97,12 +100,12 @@ void AppPermissionsService::process(const ReadEvent &event) {
 
 void AppPermissionsService::close(const CloseEvent &event) {
     LogDebug("CloseEvent. ConnectionID: " << event.connectionID.sock);
-    m_socketInfoMap.erase(event.connectionID.counter);
+    m_connectionInfoMap.erase(event.connectionID.counter);
 }
 
 bool AppPermissionsService::processOne(const ConnectionID &conn,
                                        MessageBuffer &buffer,
-                                       InterfaceType interfaceID)
+                                       InterfaceID interfaceID)
 {
     LogDebug("Iteration begin");
 
@@ -114,10 +117,10 @@ bool AppPermissionsService::processOne(const ConnectionID &conn,
     LogDebug("Entering app_permissions server side handler");
 
     switch(interfaceID) {
-    case InterfaceType::CHANGE_APP_PERMISSIONS:
+    case CHANGE_APP_PERMISSIONS:
         return processPermissionsChange(conn, buffer);
 
-    case InterfaceType::CHECK_APP_PRIVILEGE:
+    case CHECK_APP_PRIVILEGE:
         return processCheckAppPrivilege(conn, buffer);
 
     default:
@@ -206,7 +209,7 @@ bool AppPermissionsService::processCheckAppPrivilege(const ConnectionID &conn, M
     int result = SECURITY_SERVER_API_ERROR_SERVER_ERROR;
     app_type_t app_type;
     bool has_permission = false;
-    PrivilegeCheckCall checkType = PrivilegeCheckCall::CHECK_GIVEN_APP;
+    PrivilegeCheckHdrs checkType = PrivilegeCheckHdrs::CHECK_GIVEN_APP;
 
     LogDebug("Processing app privilege check request");
 
@@ -214,11 +217,11 @@ bool AppPermissionsService::processCheckAppPrivilege(const ConnectionID &conn, M
     Try {
         int temp;
         Deserialization::Deserialize(buffer, temp); // call type
-        checkType = static_cast<PrivilegeCheckCall>(temp);
+        checkType = static_cast<PrivilegeCheckHdrs>(temp);
         LogDebug("App privilege check call type: "
-                 << (checkType == PrivilegeCheckCall::CHECK_GIVEN_APP ?
+                 << (checkType == PrivilegeCheckHdrs::CHECK_GIVEN_APP ?
                      "CHECK_GIVEN_APP":"CHECK_CALLER_APP"));
-        if (checkType == PrivilegeCheckCall::CHECK_GIVEN_APP) { //app_id present only in this case
+        if (checkType == PrivilegeCheckHdrs::CHECK_GIVEN_APP) { //app_id present only in this case
             Deserialization::Deserialize(buffer, app_id); //get app id
         }
         Deserialization::Deserialize(buffer, temp); //get app type
@@ -231,7 +234,7 @@ bool AppPermissionsService::processCheckAppPrivilege(const ConnectionID &conn, M
         return false;
     }
 
-    if (checkType == PrivilegeCheckCall::CHECK_CALLER_APP) { //get sender app_id in this case
+    if (checkType == PrivilegeCheckHdrs::CHECK_CALLER_APP) { //get sender app_id in this case
         char *label = NULL;
         if (smack_new_label_from_socket(conn.sock, &label) < 0) {
             LogDebug("Error in smack_new_label_from_socket(): "

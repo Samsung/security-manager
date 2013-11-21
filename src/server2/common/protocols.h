@@ -54,7 +54,7 @@ enum class CookieCall
     CHECK_UID
 };
 
-enum class PrivilegeCheckCall
+enum class PrivilegeCheckHdrs
 {
     CHECK_GIVEN_APP,
     CHECK_CALLER_APP

@@ -53,7 +53,7 @@ void CookieService::accept(const AcceptEvent &event) {
     LogDebug("Accept event. ConnectionID.sock: " << event.connectionID.sock
         << " ConnectionID.counter: " << event.connectionID.counter
         << " ServiceID: " << event.interfaceID);
-    auto &info = m_socketInfoMap[event.connectionID.counter];
+    auto &info = m_connectionInfoMap[event.connectionID.counter];
     info.interfaceID = event.interfaceID;
 }
 
@@ -66,7 +66,7 @@ void CookieService::write(const WriteEvent &event) {
 
 void CookieService::process(const ReadEvent &event) {
     LogDebug("Read event for counter: " << event.connectionID.counter);
-    auto &info = m_socketInfoMap[event.connectionID.counter];
+    auto &info = m_connectionInfoMap[event.connectionID.counter];
     info.buffer.Push(event.rawBuffer);
 
     // We can get several requests in one package.
@@ -76,10 +76,10 @@ void CookieService::process(const ReadEvent &event) {
 
 void CookieService::close(const CloseEvent &event) {
     LogDebug("CloseEvent. ConnectionID: " << event.connectionID.sock);
-    m_socketInfoMap.erase(event.connectionID.counter);
+    m_connectionInfoMap.erase(event.connectionID.counter);
 }
 
-bool CookieService::processOne(const ConnectionID &conn, MessageBuffer &buffer, int interfaceID)
+bool CookieService::processOne(const ConnectionID &conn, MessageBuffer &buffer, InterfaceID interfaceID)
 {
     LogDebug("Iteration begin");
     MessageBuffer send, recv;

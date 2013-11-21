@@ -30,6 +30,7 @@
 #include <generic-socket-manager.h>
 #include <dpl/serialization.h>
 #include <message-buffer.h>
+#include <connection-info.h>
 #include <security-server-common.h>
 
 namespace SecurityServer {
@@ -39,18 +40,6 @@ class AppPermissionsService  :
   , public SecurityServer::ServiceThread<AppPermissionsService>
 {
 public:
-    enum class InterfaceType {
-        CHANGE_APP_PERMISSIONS,
-        CHECK_APP_PRIVILEGE,
-    };
-
-    struct SocketInfo {
-        InterfaceType interfaceID;
-        MessageBuffer buffer;
-    };
-
-    typedef std::map<int, SocketInfo> SocketInfoMap;
-
     ServiceDescriptionVector GetServiceDescription();
 
     DECLARE_THREAD_EVENT(AcceptEvent, accept)
@@ -64,12 +53,12 @@ public:
     void close(const CloseEvent &event);
 
 private:
-    bool processOne(const ConnectionID &conn, MessageBuffer &buffer, InterfaceType interfaceID);
+    bool processOne(const ConnectionID &conn, MessageBuffer &buffer, InterfaceID interfaceID);
 
     bool processPermissionsChange(const ConnectionID &conn, MessageBuffer &buffer);
     bool processCheckAppPrivilege(const ConnectionID &conn, MessageBuffer &buffer);
 
-    SocketInfoMap m_socketInfoMap;
+    ConnectionInfoMap m_connectionInfoMap;
 };
 
 } // namespace SecurityServer

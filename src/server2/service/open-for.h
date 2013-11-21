@@ -34,15 +34,6 @@
 
 namespace SecurityServer
 {
-    typedef std::vector<int> DescriptorVector;
-
-    struct SocketInfo {
-        DescriptorVector descriptorsVector;
-        MessageBuffer buffer;
-    };
-
-    typedef std::map<int, SocketInfo> SocketInfoMap;
-
     class OpenForService
       : public SecurityServer::GenericSocketService
       , public SecurityServer::ServiceThread<OpenForService>
@@ -62,10 +53,21 @@ namespace SecurityServer
         void close(const CloseEvent &event);
 
     private:
+        typedef std::vector<int> DescriptorVector;
+
+        struct OpenForConnInfo {
+            ~OpenForConnInfo();
+
+            DescriptorVector descriptorsVector;
+            MessageBuffer buffer;
+        };
+
+        typedef std::map<int, OpenForConnInfo> OpenForConnInfoMap;
+
         //internal service functions
         bool processOne(const ConnectionID &conn, MessageBuffer &buffer, DescriptorVector &descVector);
 
-        SocketInfoMap m_socketInfoMap;
+        OpenForConnInfoMap m_connectionInfoMap;
         SharedFile m_sharedFile;
     };
 } // namespace SecurityServer

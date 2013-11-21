@@ -29,6 +29,7 @@
 #include <generic-socket-manager.h>
 #include <dpl/serialization.h>
 #include <message-buffer.h>
+#include <connection-info.h>
 #include <security-server-common.h>
 #include <cookie-jar.h>
 
@@ -39,13 +40,6 @@ class CookieService  :
   , public SecurityServer::ServiceThread<CookieService>
 {
 public:
-    struct SocketInfo
-    {
-        int interfaceID;
-        MessageBuffer buffer;
-    };
-
-    typedef std::map<int, SocketInfo> SocketInfoMap;
 
     ServiceDescriptionVector GetServiceDescription();
 
@@ -60,7 +54,7 @@ public:
     void close(const CloseEvent &event);
 
 private:
-    bool processOne(const ConnectionID &conn, MessageBuffer &buffer, int interfaceID);
+    bool processOne(const ConnectionID &conn, MessageBuffer &buffer, InterfaceID interfaceID);
 
     bool cookieRequest(MessageBuffer &send, int socket);
 
@@ -74,7 +68,7 @@ private:
 
     CookieJar m_cookieJar;
 
-    SocketInfoMap m_socketInfoMap;
+    ConnectionInfoMap m_connectionInfoMap;
 };
 
 } // namespace SecurityServer

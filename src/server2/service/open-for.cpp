@@ -28,6 +28,7 @@
 #include <protocols.h>
 #include <open-for.h>
 #include <unistd.h>
+#include <algorithm>
 
 #include <security-server.h>
 #include <security-server-util.h>
@@ -53,6 +54,10 @@ const int SERVICE_SOCKET_ID = 0;
 
 namespace SecurityServer {
 
+OpenForService::OpenForConnInfo::~OpenForConnInfo() {
+    std::for_each(descriptorsVector.begin(),descriptorsVector.end(), ::close);
+}
+
 GenericSocketService::ServiceDescriptionVector OpenForService::GetServiceDescription() {
     return ServiceDescriptionVector
         {{SERVICE_SOCKET_OPEN_FOR, "security-server::api-open-for", SERVICE_SOCKET_ID, true}};
@@ -76,7 +81,7 @@ void OpenForService::write(const WriteEvent &event)
 void OpenForService::process(const ReadEvent &event)
 {
     LogDebug("Read event for counter: " << event.connectionID.counter);
-    auto &info = m_socketInfoMap[event.connectionID.counter];
+    auto &info = m_connectionInfoMap[event.connectionID.counter];
     info.buffer.Push(event.rawBuffer);
 
     // We can get several requests in one package.
@@ -87,12 +92,12 @@ void OpenForService::process(const ReadEvent &event)
 void OpenForService::close(const CloseEvent &event)
 {
     LogDebug("CloseEvent. ConnectionID: " << event.connectionID.sock);
-    auto &descVector = m_socketInfoMap[event.connectionID.counter].descriptorsVector;
+    auto &descVector = m_connectionInfoMap[event.connectionID.counter].descriptorsVector;
 
     for (auto iter = descVector.begin(); iter != descVector.end(); ++iter)
         TEMP_FAILURE_RETRY(::close(*iter));
 
-    m_socketInfoMap.erase(event.connectionID.counter);
+    m_connectionInfoMap.erase(event.connectionID.counter);
 }
 
 bool OpenForService::processOne(const ConnectionID &conn, MessageBuffer &buffer, std::vector<int> &descVector)
