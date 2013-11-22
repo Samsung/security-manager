@@ -37,6 +37,8 @@
 #include <password-exception.h>
 #include <password-file-buffer.h>
 
+#include <fcntl.h>
+
 const std::string DATA_DIR = "/opt/data/security-server";
 const std::string PASSWORD_FILE = "password.pwd";
 const std::string ATTEMPT_FILE = "attempt";
@@ -190,6 +192,8 @@ namespace SecurityServer
             LogError("Failed to write attempt count.");
             Throw(PasswordException::FStreamWriteError);
         }
+        attemptFile.close();
+        int fd = open((DATA_DIR + "/" + ATTEMPT_FILE).c_str(), O_WRONLY | O_APPEND); fsync(fd); close(fd);
     }
 
     bool PasswordFile::isPasswordActive() const

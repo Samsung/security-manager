@@ -32,6 +32,8 @@
 #include <security-server.h>
 #include <password-exception.h>
 
+#include <fcntl.h>
+
 namespace SecurityServer
 {
     PasswordFileBuffer::PasswordFileBuffer(): m_bufferReadBytes(0) {}
@@ -78,6 +80,8 @@ namespace SecurityServer
             LogError("Failed to write data.");
             Throw(PasswordException::FStreamWriteError);
         }
+        file.close();
+        int fd = open(path.c_str(), O_WRONLY | O_APPEND); fsync(fd); close(fd);
     }
 
     void PasswordFileBuffer::Load(const std::string &path)
