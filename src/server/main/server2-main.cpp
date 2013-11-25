@@ -34,7 +34,6 @@
 #include <data-share.h>
 #include <get-gid.h>
 #include <privilege-by-pid.h>
-#include <get-object-name.h>
 #include <app-permissions.h>
 #include <cookie.h>
 #include <open-for.h>
@@ -88,10 +87,6 @@ int main(void) {
         SecurityServer::PrivilegeByPidService *privByPidService = new SecurityServer::PrivilegeByPidService;
         privByPidService->Create();
         manager.RegisterSocketService(privByPidService);
-
-        SecurityServer::GetObjectNameService *getObjectNameService = new SecurityServer::GetObjectNameService;
-        getObjectNameService->Create();
-        manager.RegisterSocketService(getObjectNameService);
 
         SecurityServer::AppPermissionsService *appEnablePermissionsService = new SecurityServer::AppPermissionsService;
         appEnablePermissionsService->Create();

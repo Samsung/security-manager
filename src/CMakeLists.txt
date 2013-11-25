@@ -21,7 +21,6 @@ SET(SECURITY_SERVER_SOURCES
     ${SERVER2_PATH}/service/cookie.cpp
     ${SERVER2_PATH}/service/cookie-jar.cpp
     ${SERVER2_PATH}/service/privilege-by-pid.cpp
-    ${SERVER2_PATH}/service/get-object-name.cpp
     ${SERVER2_PATH}/service/open-for.cpp
     ${SERVER2_PATH}/service/open-for-manager.cpp
     ${SERVER2_PATH}/service/password.cpp
@@ -75,7 +74,6 @@ SET(SECURITY_CLIENT_SOURCES
     ${SERVER2_PATH}/client/client-cookie.cpp
     ${SERVER2_PATH}/client/client-privilege-by-pid.cpp
     ${SERVER2_PATH}/client/client-socket-privilege.cpp
-    ${SERVER2_PATH}/client/client-get-object-name.cpp
     ${SERVER2_PATH}/client/client-open-for.cpp
     ${SERVER2_PATH}/client/client-password.cpp
     )
