@@ -125,13 +125,6 @@ LogSystem::LogSystem() :
 #else // BUILD_TYPE_DEBUG
     AddProvider(new DLOGLogProvider());
 #endif // BUILD_TYPE_DEBUG
-
-    AuditSmackLog * smackLog = new AuditSmackLog();
-    if (smackLog->Fail()) {
-        delete smackLog;
-    } else {
-        AddProvider(smackLog);
-    }
 }
 
 LogSystem::~LogSystem()
