@@ -80,7 +80,6 @@ cp security-server-audit.conf %{buildroot}/etc/security/
 mkdir -p %{buildroot}/usr/lib/systemd/system/multi-user.target.wants
 mkdir -p %{buildroot}/usr/lib/systemd/system/sockets.target.wants
 ln -s ../security-server.service %{buildroot}/usr/lib/systemd/system/multi-user.target.wants/security-server.service
-ln -s ../security-server.socket %{buildroot}/usr/lib/systemd/system/sockets.target.wants/security-server.socket
 ln -s ../security-server-data-share.socket %{buildroot}/usr/lib/systemd/system/sockets.target.wants/security-server-data-share.socket
 ln -s ../security-server-get-gid.socket %{buildroot}/usr/lib/systemd/system/sockets.target.wants/security-server-get-gid.socket
 ln -s ../security-server-privilege-by-pid.socket %{buildroot}/usr/lib/systemd/system/sockets.target.wants/security-server-privilege-by-pid.socket
@@ -131,8 +130,6 @@ fi
 %{_libdir}/libsecurity-server-commons.so.*
 %attr(-,root,root) /usr/lib/systemd/system/multi-user.target.wants/security-server.service
 %attr(-,root,root) /usr/lib/systemd/system/security-server.service
-%attr(-,root,root) /usr/lib/systemd/system/sockets.target.wants/security-server.socket
-%attr(-,root,root) /usr/lib/systemd/system/security-server.socket
 %attr(-,root,root) /usr/lib/systemd/system/sockets.target.wants/security-server-data-share.socket
 %attr(-,root,root) /usr/lib/systemd/system/security-server-data-share.socket
 %attr(-,root,root) /usr/lib/systemd/system/sockets.target.wants/security-server-get-gid.socket
