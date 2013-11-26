@@ -104,6 +104,8 @@ bool OpenForService::processOne(const ConnectionID &conn, MessageBuffer &buffer,
     LogDebug("Iteration begin");
 
     std::string filename;
+    std::string client_label;
+    OpenForHdrs msgType;
     MessageBuffer sendBuffer;
 
     int retCode = SECURITY_SERVER_API_ERROR_SERVER_ERROR;
@@ -113,6 +115,9 @@ bool OpenForService::processOne(const ConnectionID &conn, MessageBuffer &buffer,
         return false;
 
     Try {
+        int msgTypeInt;
+        Deserialization::Deserialize(buffer, msgTypeInt);  //receive MSG_ID
+        msgType = static_cast<OpenForHdrs>(msgTypeInt);
         Deserialization::Deserialize(buffer, filename);
     } Catch (MessageBuffer::Exception::Base) {
         LogError("Broken protocol. Closing socket.");
@@ -120,7 +125,28 @@ bool OpenForService::processOne(const ConnectionID &conn, MessageBuffer &buffer,
         return false;
     }
 
-    retCode = m_sharedFile.getFD(filename, conn.sock, fd);
+    switch(msgType) {
+    case OpenForHdrs::OPEN:
+        LogDebug("Entering open-for OPEN server handler.");
+        Deserialization::Deserialize(buffer, client_label);
+        retCode = m_sharedFile.openSharedFile(filename, client_label, conn.sock, fd);
+        break;
+    case OpenForHdrs::REOPEN:
+        LogDebug("Entering open-for REOPEN server handler.");
+        retCode = m_sharedFile.reopenSharedFile(filename, conn.sock, fd);
+        break;
+    case OpenForHdrs::DELETE:
+        LogDebug("Entering open-for DELETE server handler.");
+        retCode = m_sharedFile.deleteSharedFile(filename, conn.sock);
+        break;
+    case OpenForHdrs::OPEN_DEPRECATED:
+        LogDebug("Entering open-for OPEN-DEPRECATED server handler.");
+        retCode = m_sharedFile.getFD(filename, conn.sock, fd);
+    default:
+        LogError("Error, unknown function called by client,");
+        break;
+    };
+
     if (fd != -1)
         descVector.push_back(fd);
     SendMsgData sendMsgData(retCode, fd);

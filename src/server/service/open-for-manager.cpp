@@ -41,7 +41,6 @@
 #include <security-server-util.h>
 
 const std::string DATA_DIR = "/var/run/security-server";
-const std::string PROHIBITED_STR = "..";
 const std::string ALLOWED_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ \
                                    abcdefghijklmnopqrstuvwxyz \
                                    0123456789._-";
@@ -71,7 +70,7 @@ namespace SecurityServer
             }
             m_sockSmackLabel = label;
         } else
-            m_sockSmackLabel = "";
+            m_sockSmackLabel.clear();
 
         return false;
     }
@@ -92,7 +91,7 @@ namespace SecurityServer
         }
     }
 
-    bool SharedFile::fileExist(const std::string &filename) const
+    bool SharedFile::fileExist(const std::string &filename)
     {
         std::string filepath = DATA_DIR + "/" + filename;
         struct stat buf;
@@ -101,7 +100,7 @@ namespace SecurityServer
                 (((buf.st_mode) & S_IFMT) != S_IFLNK));
     }
 
-    bool SharedFile::dirExist(const std::string &dirpath) const
+    bool SharedFile::dirExist(const std::string &dirpath)
     {
         struct stat buf;
 
@@ -109,7 +108,7 @@ namespace SecurityServer
                 (((buf.st_mode) & S_IFMT) == S_IFDIR));
     }
 
-    bool SharedFile::deleteDir(const std::string &dirpath) const
+    bool SharedFile::deleteDir(const std::string &dirpath)
     {
         DIR *dirp;
         struct dirent *dp;
@@ -154,22 +153,33 @@ namespace SecurityServer
         return false;
     }
 
-    int SharedFile::openFile(const std::string &filename)
+    bool SharedFile::openFile(const std::string &filename, int &fd)
     {
-        int fd = -1;
         std::string filepath = DATA_DIR + "/" + filename;
 
         fd = TEMP_FAILURE_RETRY(open(filepath.c_str(), O_CREAT | O_RDWR, 0600));
         int err = errno;
         if (-1 == fd) {
             LogError("Cannot open file. Error in open(): " << strerror(err));
-            return SECURITY_SERVER_API_ERROR_SERVER_ERROR;
+            return true;
         }
 
-        return fd;
+        return false;
     }
 
-    bool SharedFile::setFileLabel(const std::string &filename, const std::string &label) const
+    bool SharedFile::deleteFile(const std::string &filename)
+    {
+        std::string filepath = DATA_DIR + "/" + filename;
+
+        if (remove(filepath.c_str())) {
+            LogError("Unable to delete file: " << filename.c_str() << " " << strerror(errno));
+            return true;
+        }
+
+        return false;
+    }
+
+    bool SharedFile::setFileLabel(const std::string &filename, const std::string &label)
     {
         std::string filepath = DATA_DIR + "/" + filename;
 
@@ -184,13 +194,16 @@ namespace SecurityServer
     bool SharedFile::getFileLabel(const std::string &filename)
     {
         std::string filepath = DATA_DIR + "/" + filename;
+        char *label = NULL;
 
         if (smack_check()) {
-            char *label = NULL;
-            if (PC_OPERATION_SUCCESS != smack_getlabel(filepath.c_str(), &label, SMACK_LABEL_ACCESS)) {
+            if (0 != smack_getlabel(filepath.c_str(), &label, SMACK_LABEL_ACCESS)) {
                 LogError("Unable to get smack label of process.");
                 return true;
             }
+        }
+
+        if (label) {
             m_fileSmackLabel = label;
             free(label);
         } else
@@ -209,13 +222,36 @@ namespace SecurityServer
             return true;
         }
 
-        found = filename.find(PROHIBITED_STR);
-        if (found != std::string::npos) {
-            LogError("Illegal string in filename.");
-            return true;
-        }
-
         return false;
+    }
+
+    int SharedFile::openSharedFile(const std::string &filename,
+        const std::string &client_label, int socket, int &fd)
+    {
+        if (checkFileNameSyntax(filename))
+            return SECURITY_SERVER_API_ERROR_INPUT_PARAM;
+
+        if (m_sockCred.getCred(socket))
+            return SECURITY_SERVER_API_ERROR_GETTING_SOCKET_LABEL_FAILED;
+
+        if (fileExist(filename))
+            return SECURITY_SERVER_API_ERROR_FILE_EXIST;
+
+        LogSecureDebug("File: " << filename.c_str() << " does not exist.");
+
+        if (createFile(filename))
+            return SECURITY_SERVER_API_ERROR_FILE_CREATION_FAILED;
+
+        if (setFileLabel(filename, m_sockCred.getLabel()))
+            return SECURITY_SERVER_API_ERROR_SETTING_FILE_LABEL_FAILED;
+
+        if (openFile(filename, fd))
+            return SECURITY_SERVER_API_ERROR_FILE_OPEN_FAILED;
+
+        if (setFileLabel(filename, client_label.c_str()))
+            return SECURITY_SERVER_API_ERROR_SETTING_FILE_LABEL_FAILED;
+
+        return SECURITY_SERVER_API_SUCCESS;
     }
 
     int SharedFile::getFD(const std::string &filename, int socket, int &fd)
@@ -239,12 +275,60 @@ namespace SecurityServer
         if (setFileLabel(filename, m_sockCred.getLabel()))
             return SECURITY_SERVER_API_ERROR_SERVER_ERROR;
 
-        fd = openFile(filename);
+        if (openFile(filename, fd))
+            return SECURITY_SERVER_API_ERROR_FILE_OPEN_FAILED;
 
         if (setFileLabel(filename, m_fileSmackLabel))
             return SECURITY_SERVER_API_ERROR_SERVER_ERROR;
 
         return SECURITY_SERVER_API_SUCCESS;
     }
+
+    int SharedFile::reopenSharedFile(const std::string &filename, int socket, int &fd)
+    {
+        if (checkFileNameSyntax(filename))
+            return SECURITY_SERVER_API_ERROR_INPUT_PARAM;
+
+        if (m_sockCred.getCred(socket))
+            return SECURITY_SERVER_API_ERROR_GETTING_SOCKET_LABEL_FAILED;
+
+        if (!fileExist(filename))
+            return SECURITY_SERVER_API_ERROR_FILE_NOT_EXIST;
+
+        if (getFileLabel(filename))
+            return SECURITY_SERVER_API_ERROR_GETTING_FILE_LABEL_FAILED;
+
+        if (m_fileSmackLabel.compare(m_sockCred.getLabel()))
+            return SECURITY_SERVER_API_ERROR_AUTHENTICATION_FAILED;
+
+        if (openFile(filename, fd))
+            return SECURITY_SERVER_API_ERROR_FILE_OPEN_FAILED;
+
+        return SECURITY_SERVER_API_SUCCESS;
+    }
+
+    int SharedFile::deleteSharedFile(const std::string &filename, int socket)
+    {
+        if (checkFileNameSyntax(filename))
+            return SECURITY_SERVER_API_ERROR_INPUT_PARAM;
+
+        if (m_sockCred.getCred(socket))
+            return SECURITY_SERVER_API_ERROR_GETTING_SOCKET_LABEL_FAILED;
+
+        if (!fileExist(filename))
+            return SECURITY_SERVER_API_ERROR_FILE_NOT_EXIST;
+
+        if (getFileLabel(filename))
+            return SECURITY_SERVER_API_ERROR_GETTING_FILE_LABEL_FAILED;
+
+        if (m_fileSmackLabel.compare(m_sockCred.getLabel()))
+            return SECURITY_SERVER_API_ERROR_AUTHENTICATION_FAILED;
+
+        if (deleteFile(filename))
+            return SECURITY_SERVER_API_ERROR_FILE_DELETION_FAILED;
+
+        return SECURITY_SERVER_API_SUCCESS;
+    }
+
 
 } //namespace SecurityServer

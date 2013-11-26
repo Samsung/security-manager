@@ -62,6 +62,14 @@ enum class PrivilegeCheckHdrs
     CHECK_CALLER_APP
 };
 
+enum class OpenForHdrs : unsigned int
+{
+    OPEN,
+    REOPEN,
+    DELETE,
+    OPEN_DEPRECATED
+};
+
 extern const size_t COOKIE_SIZE;
 
 enum class PasswordHdrs

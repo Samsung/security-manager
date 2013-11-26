@@ -51,20 +51,22 @@ namespace SecurityServer
     public:
         SharedFile();
         int getFD(const std::string &filename, int socket, int &fd);
+        int openSharedFile(const std::string &filename, const std::string &client_label,
+            int socket, int &fd);
+        int reopenSharedFile(const std::string &filename, int socket, int &fd);
+        int deleteSharedFile(const std::string &filename, int socket);
 
     private:
-        bool fileExist(const std::string &filename) const;
-        bool dirExist(const std::string &dirpath) const;
-        bool deleteDir(const std::string &dirpath) const;
-        int openFile(const std::string &filename);
-        bool createFile(const std::string &filename);
-        bool setFileLabel(const std::string &filename, const std::string &label) const;
+        static bool fileExist(const std::string &filename);
+        static bool dirExist(const std::string &dirpath);
+        static bool deleteDir(const std::string &dirpath);
+        static bool openFile(const std::string &filename, int &fd);
+        static bool createFile(const std::string &filename);
+        static bool deleteFile(const std::string &filename);
+        static bool setFileLabel(const std::string &filename, const std::string &label);
         bool getFileLabel(const std::string &filename);
         bool checkFileNameSyntax(const std::string &filename) const;
 
-        uid_t m_fileUID;
-        gid_t m_fileGID;
-        mode_t m_fileMode;
         std::string m_fileSmackLabel;
 
         SockCred m_sockCred;

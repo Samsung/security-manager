@@ -129,6 +129,27 @@
 /*! \brief   indicating getting smack label from socket failed  */
 #define SECURITY_SERVER_API_ERROR_GETTING_SOCKET_LABEL_FAILED -21
 
+/*! \brief   indicating getting smack label from file failed  */
+#define SECURITY_SERVER_API_ERROR_GETTING_FILE_LABEL_FAILED -22
+
+/*! \brief   indicating setting smack label for file failed  */
+#define SECURITY_SERVER_API_ERROR_SETTING_FILE_LABEL_FAILED -23
+
+/*! \brief   indicating file already exists  */
+#define SECURITY_SERVER_API_ERROR_FILE_EXIST -24
+
+/*! \brief   indicating file does not exist  */
+#define SECURITY_SERVER_API_ERROR_FILE_NOT_EXIST -25
+
+/*! \brief   indicating file open error  */
+#define SECURITY_SERVER_API_ERROR_FILE_OPEN_FAILED -26
+
+/*! \brief   indicating file creation error  */
+#define SECURITY_SERVER_API_ERROR_FILE_CREATION_FAILED -27
+
+/*! \brief   indicating file deletion error  */
+#define SECURITY_SERVER_API_ERROR_FILE_DELETION_FAILED -28
+
 /*! \brief   indicating the error with unknown reason */
 #define SECURITY_SERVER_API_ERROR_UNKNOWN -255
 /** @}*/
@@ -1030,8 +1051,73 @@ int security_server_get_gid_by_cookie(const char *cookie, gid_t *gid);
  *
  * Access to this function requires SMACK rule: "<app_label> security-server::api-open-for w"
  */
-int security_server_open_for(const char *filename, int *fd);
+int security_server_open_for(const char *filename, int *fd) __attribute__((deprecated));
 
+/*
+ * This function allows to create, if doesn't exist, file by Security Server on
+ * behalf of calling process in secured directory. File gets smack label of
+ * designated client process, passed as 'client_label' argument, which is
+ * allowed to read created file.
+ *
+ * \param[in] File name to create
+ * \param[in] Label of designated client
+ * \param[out] File descriptor
+ *
+ * \return SECURITY_SERVER_API_SUCCESS on success or one of error codes on fail
+ * \return SECURITY_SERVER_API_ERROR_ACCESS_DENIED
+ * \return SECURITY_SERVER_API_ERROR_SOCKET
+ * \retrun SECURITY_SERVER_API_ERROR_INPUT_PARAM
+ * \return SECURITY_SERVER_API_ERROR_GETTING_SOCKET_LABEL_FAILED
+ * \return SECURITY_SERVER_API_ERROR_FILE_CREATION_FAILED
+ * \return SECURITY_SERVER_API_ERROR_SETTING_FILE_LABEL_FAILED
+ * \return SECURITY_SERVER_API_ERROR_FILE_EXIST
+ *
+ * Access to this function requires SMACK rule: "<app_label> security-server::api-open-for w"
+ */
+int security_server_shared_file_open(const char *filename, const char *client_label, int *fd);
+
+/*
+ * This function allows to open existing file by Security Server on behalf of
+ * calling process in secured directory. Security Server checks smack label
+ * of calling process and if it's the same as file label access to file is
+ * granted.
+ *
+ * \param[in] File name to open
+ * \param[out] File descriptor
+ *
+ * \return SECURITY_SERVER_API_SUCCESS on success or one of error codes on fail
+ * \return SECURITY_SERVER_API_ERROR_ACCESS_DENIED
+ * \return SECURITY_SERVER_API_ERROR_SOCKET
+ * \return SECURITY_SERVER_API_ERROR_INPUT_PARAM
+ * \return SECURITY_SERVER_API_ERROR_GETTING_SOCKET_LABEL_FAILED
+ * \return SECURITY_SERVER_API_ERROR_GETTING_FILE_LABEL_FAILED
+ * \return SECURITY_SERVER_API_ERROR_AUTHENTICATION_FAILED
+ * \return SECURITY_SERVER_API_ERROR_FILE_NOT_EXIST
+ *
+ * Access to this function requires SMACK rule: "<app_label> security-server::api-open-for w"
+ */
+int security_server_shared_file_reopen(const char *filename, int *fd);
+
+/*
+ * This function allows to delete existing file by Security Server on behalf of
+ * calling process in secured directory. Security Server checks smack label
+ * of calling process and if it's the same as file label data file is deleted.
+ *
+ * \param[in] File name to delete
+ *
+ * \return SECURITY_SERVER_API_SUCCESS on success or one of error codes on fail
+ * \return SECURITY_SERVER_API_ERROR_ACCESS_DENIED
+ * \return SECURITY_SERVER_API_ERROR_SOCKET
+ * \return SECURITY_SERVER_API_ERROR_INPUT_PARAM
+ * \return SECURITY_SERVER_API_ERROR_GETTING_SOCKET_LABEL_FAILED
+ * \return SECURITY_SERVER_API_ERROR_GETTING_FILE_LABEL_FAILED
+ * \return SECURITY_SERVER_API_ERROR_AUTHENTICATION_FAILED
+ * \return SECURITY_SERVER_API_ERROR_FILE_DELETION_FAILED
+ * \return SECURITY_SERVER_API_ERROR_FILE_NOT_EXIST
+ *
+ * Access to this function requires SMACK rule: "<app_label> security-server::api-open-for w"
+ */
+int security_server_shared_file_delete(const char *filename);
 
 #ifdef __cplusplus
 }

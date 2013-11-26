@@ -16,7 +16,7 @@
  *  limitations under the License
  */
 /*
- * @file        client-open-for-cookie.cpp
+ * @file        client-open-for.cpp
  * @author      Zbigniew Jasinski (z.jasinski@samsung.com)
  * @version     1.0
  * @brief       This file contains implementation of security-server API
@@ -36,39 +36,53 @@
 
 #include <security-server.h>
 
+namespace {
+
+void create_msghdr(struct msghdr* hdr,
+                   struct iovec* iov,
+                   unsigned char* cmsgbuf,
+                   const size_t cmsgbufSize,
+                   int* retcode)
+{
+        memset(hdr, 0, sizeof(struct msghdr));
+        memset(cmsgbuf, 0, cmsgbufSize);
+
+        iov->iov_base = retcode;
+        iov->iov_len = sizeof(*retcode);
+        hdr->msg_iov = iov;
+        hdr->msg_iovlen = 1;
+
+        if (NULL != cmsgbuf) {
+            hdr->msg_control = cmsgbuf;
+            hdr->msg_controllen = cmsgbufSize;
+        }
+}
+
+} // namespace anonymous
+
 SECURITY_SERVER_API
 int security_server_open_for(const char *filename, int *fd)
 {
-   using namespace SecurityServer;
-    try {
-        if (NULL == filename || std::string(filename).empty()) {
+    using namespace SecurityServer;
+    return try_catch([&] {
+        if (NULL == filename || !strlen(filename)) {
             LogError("Error input param.");
             return SECURITY_SERVER_API_ERROR_INPUT_PARAM;
         }
 
         MessageBuffer send;
 
+        Serialization::Serialize(send, (int)OpenForHdrs::OPEN_DEPRECATED);
         Serialization::Serialize(send, std::string(filename));
 
         struct msghdr hdr;
         struct iovec iov;
-        struct cmsghdr *cmsg = NULL;
-        int retcode = -1;
-        int result = -1;
         unsigned char cmsgbuf[CMSG_SPACE(sizeof(int))];
+        int retcode = -1;
 
-        memset(&hdr, 0, sizeof(struct msghdr));
-        memset(cmsgbuf, 0, CMSG_SPACE(sizeof(int)));
+        create_msghdr(&hdr, &iov, &cmsgbuf[0], sizeof(cmsgbuf), &retcode);
 
-        iov.iov_base = &retcode;
-        iov.iov_len = sizeof(retcode);
-        hdr.msg_iov = &iov;
-        hdr.msg_iovlen = 1;
-
-        hdr.msg_control = cmsgbuf;
-        hdr.msg_controllen = CMSG_SPACE(sizeof(int));
-
-        result = sendToServerAncData(SERVICE_SOCKET_OPEN_FOR, send.Pop(), hdr);
+        int result = sendToServerAncData(SERVICE_SOCKET_OPEN_FOR, send.Pop(), hdr);
         if (result != SECURITY_SERVER_API_SUCCESS) {
             *fd = -1;
             return result;
@@ -80,19 +94,146 @@ int security_server_open_for(const char *filename, int *fd)
             return SECURITY_SERVER_API_ERROR_BUFFER_TOO_SMALL;
         }
 
-        for(cmsg = CMSG_FIRSTHDR(&hdr); cmsg != NULL; cmsg = CMSG_NXTHDR(&hdr, cmsg)) {
+        for(cmsghdr *cmsg = CMSG_FIRSTHDR(&hdr); cmsg != NULL; cmsg = CMSG_NXTHDR(&hdr, cmsg)) {
             if((SOL_SOCKET == cmsg->cmsg_level) && (SCM_RIGHTS == cmsg->cmsg_type)) {
                 memmove(fd, CMSG_DATA(cmsg), sizeof(int));
             }
         }
 
         return retcode;
-    } catch (MessageBuffer::Exception::Base &e) {
-        LogDebug("SecurityServer::MessageBuffer::Exception " << e.DumpToString());
-    } catch (std::exception &e) {
-        LogDebug("STD exception " << e.what());
-    } catch (...) {
-        LogDebug("Unknown exception occured");
-    }
-    return SECURITY_SERVER_API_ERROR_UNKNOWN;
+    });
+}
+
+SECURITY_SERVER_API
+int security_server_shared_file_open(const char *filename, const char *client_label, int *fd)
+{
+    using namespace SecurityServer;
+    return try_catch([&] {
+        if ((NULL == filename || !strlen(filename) ||
+            (NULL == client_label || !strlen(client_label)))) {
+            LogError("Error input param.");
+            return SECURITY_SERVER_API_ERROR_INPUT_PARAM;
+        }
+
+        MessageBuffer send;
+
+        Serialization::Serialize(send, (int)OpenForHdrs::OPEN);
+        Serialization::Serialize(send, std::string(filename));
+        Serialization::Serialize(send, std::string(client_label));
+
+        struct msghdr hdr;
+        struct iovec iov;
+        unsigned char cmsgbuf[CMSG_SPACE(sizeof(int))];
+        int retcode = -1;
+
+        create_msghdr(&hdr, &iov, &cmsgbuf[0], sizeof(cmsgbuf), &retcode);
+
+        int result = sendToServerAncData(SERVICE_SOCKET_OPEN_FOR, send.Pop(), hdr);
+        if (result != SECURITY_SERVER_API_SUCCESS) {
+            *fd = -1;
+            return result;
+        }
+
+        if (hdr.msg_flags & MSG_CTRUNC) {
+            LogError("Not enough space for ancillary element array.");
+            *fd = -1;
+            return SECURITY_SERVER_API_ERROR_BUFFER_TOO_SMALL;
+        }
+
+        /*
+         * Since 'socket packet' can handle more than one control message
+         * we need to iterate through all ancillary data elements and check
+         * which one has our file desciptor (SCM_RIGHTS == cmsg->cmsg_type)
+         */
+        for(cmsghdr *cmsg = CMSG_FIRSTHDR(&hdr); cmsg != NULL; cmsg = CMSG_NXTHDR(&hdr, cmsg)) {
+            if((SOL_SOCKET == cmsg->cmsg_level) && (SCM_RIGHTS == cmsg->cmsg_type)) {
+                memmove(fd, CMSG_DATA(cmsg), sizeof(int));
+            }
+        }
+
+        return retcode;
+    });
+}
+
+SECURITY_SERVER_API
+int security_server_shared_file_reopen(const char *filename, int *fd)
+{
+    using namespace SecurityServer;
+    return try_catch([&] {
+        if ((NULL == filename || !strlen(filename))) {
+            LogError("Error input param.");
+            return SECURITY_SERVER_API_ERROR_INPUT_PARAM;
+        }
+
+        MessageBuffer send;
+
+        Serialization::Serialize(send, (int)OpenForHdrs::REOPEN);
+        Serialization::Serialize(send, std::string(filename));
+
+        struct msghdr hdr;
+        struct iovec iov;
+        unsigned char cmsgbuf[CMSG_SPACE(sizeof(int))];
+        int retcode = -1;
+
+        create_msghdr(&hdr, &iov, &cmsgbuf[0], sizeof(cmsgbuf), &retcode);
+
+        int result = sendToServerAncData(SERVICE_SOCKET_OPEN_FOR, send.Pop(), hdr);
+        if (result != SECURITY_SERVER_API_SUCCESS) {
+            *fd = -1;
+            return result;
+        }
+
+        if (hdr.msg_flags & MSG_CTRUNC) {
+            LogError("Not enough space for ancillary element array.");
+            *fd = -1;
+            return SECURITY_SERVER_API_ERROR_BUFFER_TOO_SMALL;
+        }
+
+        /*
+         * Since 'socket packet' can handle more than one control message
+         * we need to iterate through all ancillary data elements and check
+         * which one has our file desciptor (SCM_RIGHTS == cmsg->cmsg_type)
+         */
+        for(cmsghdr *cmsg = CMSG_FIRSTHDR(&hdr); cmsg != NULL; cmsg = CMSG_NXTHDR(&hdr, cmsg)) {
+            if((SOL_SOCKET == cmsg->cmsg_level) && (SCM_RIGHTS == cmsg->cmsg_type)) {
+                memmove(fd, CMSG_DATA(cmsg), sizeof(int));
+            }
+        }
+
+        return retcode;
+    });
+}
+
+SECURITY_SERVER_API
+int security_server_shared_file_delete(const char *filename)
+{
+    using namespace SecurityServer;
+    return try_catch([&] {
+        if ((NULL == filename || !strlen(filename))) {
+            LogError("Error input param.");
+            return SECURITY_SERVER_API_ERROR_INPUT_PARAM;
+        }
+
+        MessageBuffer send;
+
+        Serialization::Serialize(send, (int)OpenForHdrs::DELETE);
+        Serialization::Serialize(send, std::string(filename));
+
+        struct msghdr hdr;
+        struct iovec iov;
+        int retcode = -1;
+
+        create_msghdr(&hdr, &iov, NULL, 0, &retcode);
+
+        int result = sendToServerAncData(SERVICE_SOCKET_OPEN_FOR, send.Pop(), hdr);
+        if (result != SECURITY_SERVER_API_SUCCESS)
+            return result;
+
+        if (hdr.msg_flags & MSG_CTRUNC) {
+            LogError("Not enough space for ancillary element array.");
+            return SECURITY_SERVER_API_ERROR_BUFFER_TOO_SMALL;
+        }
+
+        return retcode;
+    });
 }
