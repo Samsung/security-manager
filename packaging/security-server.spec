@@ -64,7 +64,8 @@ cp %{SOURCE1001} .
 export LDFLAGS+="-Wl,--rpath=%{_libdir}"
 
 %cmake . -DVERSION=%{version} \
-        -DCMAKE_BUILD_TYPE=%{?build_type:%build_type}
+        -DCMAKE_BUILD_TYPE=%{?build_type:%build_type} \
+        -DSMACK=Off
 make %{?jobs:-j%jobs}
 
 
