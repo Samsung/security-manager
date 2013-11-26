@@ -23,6 +23,6 @@
 	</request>
 	<assign>
 		<filesystem path="/etc/security/security-server-audit.conf" label="security-server::audit-files" />
-	    <filesystem path="/usr/bin/security-server" exec_label="none"/>
+	    <filesystem path="/usr/bin/security-server" exec_label="security-server"/>
 	</assign>
 </manifest>
