@@ -7,7 +7,6 @@ ExecStart=/usr/bin/security-server
 Sockets=security-server-data-share.socket
 Sockets=security-server-get-gid.socket
 Sockets=security-server-privilege-by-pid.socket
-Sockets=security-server-exec-path.socket
 Sockets=security-server-app-permissions.socket
 Sockets=security-server-app-privilege-by-name.socket
 Sockets=security-server-cookie-get.socket
