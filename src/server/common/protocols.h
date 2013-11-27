@@ -30,7 +30,6 @@
 namespace SecurityServer {
 
 extern char const * const SERVICE_SOCKET_SHARED_MEMORY;
-extern char const * const SERVICE_SOCKET_ECHO;
 extern char const * const SERVICE_SOCKET_GET_GID;
 extern char const * const SERVICE_SOCKET_PRIVILEGE_BY_PID;
 extern char const * const SERVICE_SOCKET_APP_PERMISSIONS;
