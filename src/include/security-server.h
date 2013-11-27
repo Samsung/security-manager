@@ -733,9 +733,8 @@ int security_server_set_pwd_max_challenge(const unsigned int max_challenge);
  * #include <security-server.h>
  * ...
  * int ret;
- * unsigned int attempt, max_attempt, expire_sec;
  *
- *      ret = security_server_set_pwd("this_is_new_pwd", 20, 365);
+ *      ret = security_server_reset_pwd("this_is_new_pwd", 20, 365);
  *      if(retval != SECURITY_SERVER_API_SUCCESS)
  *      {
  *              printf("%s", "we have error\n");
@@ -745,7 +744,7 @@ int security_server_set_pwd_max_challenge(const unsigned int max_challenge);
  *
  * \endcode
  *
- * Access to this function requires SMACK rule: "<app_label> security-server::api-password-set w"
+ * Access to this function requires SMACK rule: "<app_label> security-server::api-password-reset w"
 */
 int security_server_reset_pwd(const char *new_pwd,
                               const unsigned int max_challenge,

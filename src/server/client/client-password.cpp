@@ -236,7 +236,7 @@ int security_server_reset_pwd(const char *new_pwd,
         Serialization::Serialize(send, max_challenge);
         Serialization::Serialize(send, valid_period_in_days);
 
-        int retCode = sendToServer(SERVICE_SOCKET_PASSWD_SET, send.Pop(), recv);
+        int retCode = sendToServer(SERVICE_SOCKET_PASSWD_RESET, send.Pop(), recv);
         if (SECURITY_SERVER_API_SUCCESS != retCode) {
             LogError("Error in sendToServer. Error code: " << retCode);
             return retCode;

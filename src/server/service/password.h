@@ -69,6 +69,7 @@ namespace SecurityServer
         int processCheckFunctions(PasswordHdrs hdr, MessageBuffer& buffer, unsigned int &cur_att,
                                    unsigned int &max_att, unsigned int &exp_time);
         int processSetFunctions(PasswordHdrs hdr, MessageBuffer& buffer);
+        int processResetFunctions(PasswordHdrs hdr, MessageBuffer& buffer);
 
         // service attributes
         PasswordManager m_pwdManager;

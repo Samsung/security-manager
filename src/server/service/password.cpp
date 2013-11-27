@@ -52,6 +52,7 @@ namespace {
 // you may ignore this ID (just pass 0)
 const InterfaceID SOCKET_ID_CHECK   = 0;
 const InterfaceID SOCKET_ID_SET     = 1;
+const InterfaceID SOCKET_ID_RESET   = 2;
 
 } // namespace anonymous
 
@@ -59,7 +60,8 @@ GenericSocketService::ServiceDescriptionVector PasswordService::GetServiceDescri
 {
     return ServiceDescriptionVector {
         {SERVICE_SOCKET_PASSWD_CHECK, "security-server::api-password-check", SOCKET_ID_CHECK},
-        {SERVICE_SOCKET_PASSWD_SET,   "security-server::api-password-set",   SOCKET_ID_SET}
+        {SERVICE_SOCKET_PASSWD_SET,   "security-server::api-password-set",   SOCKET_ID_SET},
+        {SERVICE_SOCKET_PASSWD_RESET, "security-server::api-password-reset", SOCKET_ID_RESET}
     };
 }
 
@@ -150,16 +152,32 @@ int PasswordService::processSetFunctions(PasswordHdrs hdr, MessageBuffer& buffer
             result = m_pwdManager.setPasswordMaxChallenge(rec_max_challenge);
             break;
 
+        case PasswordHdrs::HDR_SET_PWD_HISTORY:
+            Deserialization::Deserialize(buffer, rec_history);
+            result = m_pwdManager.setPasswordHistory(rec_history);
+            break;
+
+        default:
+            LogError("Unknown msg header.");
+            Throw(Exception::IncorrectHeader);
+    }
+
+    return result;
+}
+
+int PasswordService::processResetFunctions(PasswordHdrs hdr, MessageBuffer& buffer)
+{
+    int result = SECURITY_SERVER_API_ERROR_SERVER_ERROR;
+
+    std::string newPwd;
+    unsigned int rec_att = 0, rec_days = 0;
+
+    switch(hdr) {
         case PasswordHdrs::HDR_RST_PWD:
             Deserialization::Deserialize(buffer, newPwd);
             Deserialization::Deserialize(buffer, rec_att);
             Deserialization::Deserialize(buffer, rec_days);
             result = m_pwdManager.resetPassword(newPwd, rec_att, rec_days);
-            break;
-
-        case PasswordHdrs::HDR_SET_PWD_HISTORY:
-            Deserialization::Deserialize(buffer, rec_history);
-            result = m_pwdManager.setPasswordHistory(rec_history);
             break;
 
         default:
@@ -196,6 +214,10 @@ bool PasswordService::processOne(const ConnectionID &conn, MessageBuffer &buffer
 
                 case SOCKET_ID_SET:
                     retCode = processSetFunctions(hdr, buffer);
+                    break;
+
+                case SOCKET_ID_RESET:
+                    retCode = processResetFunctions(hdr, buffer);
                     break;
 
                 default:

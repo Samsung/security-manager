@@ -10,6 +10,7 @@ INSTALL(FILES
     ${CMAKE_SOURCE_DIR}/systemd/security-server-app-privilege-by-name.socket
     ${CMAKE_SOURCE_DIR}/systemd/security-server-cookie-check-tmp.socket
     ${CMAKE_SOURCE_DIR}/systemd/security-server-open-for.socket
+    ${CMAKE_SOURCE_DIR}/systemd/security-server-password-reset.socket
     ${CMAKE_SOURCE_DIR}/systemd/security-server-password-check.socket
     ${CMAKE_SOURCE_DIR}/systemd/security-server-password-set.socket
     DESTINATION

@@ -40,6 +40,7 @@ extern char const * const SERVICE_SOCKET_COOKIE_CHECK_TMP;
 extern char const * const SERVICE_SOCKET_OPEN_FOR;
 extern char const * const SERVICE_SOCKET_PASSWD_CHECK;
 extern char const * const SERVICE_SOCKET_PASSWD_SET;
+extern char const * const SERVICE_SOCKET_PASSWD_RESET;
 
 enum class AppPermissionsAction { ENABLE, DISABLE };
 

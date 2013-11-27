@@ -15,6 +15,7 @@
 			<label name="security-server::api-get-gid" />
 			<label name="security-server::api-password-check" />
 			<label name="security-server::api-password-set" />
+			<label name="security-server::api-password-reset" />
 			<label name="security-server::audit-files" />
 		</provide>
 	</define>
