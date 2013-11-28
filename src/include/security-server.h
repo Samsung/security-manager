@@ -397,10 +397,6 @@ int security_server_check_privilege_by_cookie(const char *cookie,
                                               const char *object,
                                               const char *access_rights);
 
-int security_server_check_privilege_by_sockfd(int sockfd,
-                                              const char *object,
-                                              const char *access_rights);
-
 /**
  * \par Description:
  * This API searchs a cookie value and returns PID of the given cookie.
@@ -919,11 +915,12 @@ char *security_server_get_smacklabel_sockfd(int fd);
 int security_server_app_give_access(const char *customer_label, int customer_pid);
 
 /*
- * This function allows middleware to check priviliges of process with specified PID.
+ * This function allows middleware to check priviliges of process with specified PID or socket
+ * file descriptor.
  * Service is able to check proces acces to the specified object label with specified
  * access rights.
  *
- * \param[in] PID number of process to be checked
+ * \param[in] PID id of process or SOCKFD socket file descriptor to be checked
  * \param[in] SMACK object label
  * \param[in] SMACK access rights to be checked
  *
@@ -934,6 +931,9 @@ int security_server_app_give_access(const char *customer_label, int customer_pid
  */
 int security_server_check_privilege_by_pid(int pid, const char *object, const char *access_rights);
 
+int security_server_check_privilege_by_sockfd(int sockfd,
+                                              const char *object,
+                                              const char *access_rights);
 /*
  * This function allows middleware to enable permissions for specified app_id.
  *
