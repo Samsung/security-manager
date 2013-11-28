@@ -60,7 +60,7 @@ int util_smack_label_is_valid(const char *smack_label)
 
     return 1;
 err:
-    LogError("Invalid Smack label: " << smack_label);
+    LogError("Invalid Smack label: " << (smack_label ? smack_label : ""));
     return 0;
 }
 

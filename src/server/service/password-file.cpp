@@ -38,6 +38,7 @@
 #include <password-file-buffer.h>
 
 #include <fcntl.h>
+#include <string.h>
 
 const std::string DATA_DIR = "/opt/data/security-server";
 const std::string PASSWORD_FILE = "password.pwd";
@@ -193,7 +194,15 @@ namespace SecurityServer
             Throw(PasswordException::FStreamWriteError);
         }
         attemptFile.close();
-        int fd = open((DATA_DIR + "/" + ATTEMPT_FILE).c_str(), O_WRONLY | O_APPEND); fsync(fd); close(fd);
+
+        int fd;
+        if (0 <= (fd = open((DATA_DIR + "/" + ATTEMPT_FILE).c_str(), O_WRONLY | O_APPEND))) {
+            fsync(fd); // force synchronization system buffers with file
+            close(fd);
+        } else {
+            int err = errno;
+            LogError("Failed to sync attempt file: " << DATA_DIR << "/" << ATTEMPT_FILE << "strerror: " << strerror(err));
+        }
     }
 
     bool PasswordFile::isPasswordActive() const

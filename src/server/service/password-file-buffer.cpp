@@ -33,6 +33,7 @@
 #include <password-exception.h>
 
 #include <fcntl.h>
+#include <string.h>
 
 namespace SecurityServer
 {
@@ -81,7 +82,15 @@ namespace SecurityServer
             Throw(PasswordException::FStreamWriteError);
         }
         file.close();
-        int fd = open(path.c_str(), O_WRONLY | O_APPEND); fsync(fd); close(fd);
+
+        int fd;
+        if (0 <= (fd = open(path.c_str(), O_WRONLY | O_APPEND))) {
+            fsync(fd);
+            close(fd);
+        } else {
+            int err = errno;
+            LogError("Failed to fsync on file: " << path << " strerror: " << strerror(err));
+        }
     }
 
     void PasswordFileBuffer::Load(const std::string &path)
