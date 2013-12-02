@@ -40,9 +40,10 @@
 namespace {
     bool calculateExpiredTime(unsigned int receivedDays, unsigned int &validSecs)
     {
-        validSecs = 0;
+        validSecs = SecurityServer::PASSWORD_INFINITE_EXPIRATION_TIME;
 
-        if(receivedDays == 0)
+        //when receivedDays means infinite expiration, return default validSecs value.
+        if(receivedDays == SecurityServer::PASSWORD_INFINITE_EXPIRATION_DAYS)
             return true;
 
         time_t curTime = time(NULL);
@@ -54,10 +55,6 @@ namespace {
             validSecs = (curTime + (receivedDays * 86400));
             return true;
         }
-
-        //when receivedDays equal to zero, it means infinite password valid time
-        //if receivedDays is 0 return true, else return false (that is, an error)
-        return false;
     }
 } //namespace
 
@@ -104,7 +101,7 @@ namespace SecurityServer
         maxAttempt = m_pwdFile.getMaxAttempt();
         expirationTime = m_pwdFile.getExpireTimeLeft();
 
-        if ((maxAttempt != 0) && (currentAttempt >= maxAttempt)) {
+        if (m_pwdFile.checkIfAttemptsExceeded()) {
             LogError("Too many tries.");
             return SECURITY_SERVER_API_ERROR_PASSWORD_MAX_ATTEMPTS_EXCEEDED;
         }
@@ -163,8 +160,7 @@ namespace SecurityServer
         }
 
         // check attempt
-        unsigned int maxAttempt = m_pwdFile.getMaxAttempt();
-        if ((maxAttempt != 0) && (m_pwdFile.getAttempt() >= maxAttempt)) {
+        if (m_pwdFile.checkIfAttemptsExceeded()) {
             LogError("Too many attempts.");
             return SECURITY_SERVER_API_ERROR_PASSWORD_MAX_ATTEMPTS_EXCEEDED;
         }

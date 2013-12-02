@@ -65,6 +65,7 @@ namespace SecurityServer
         bool isPasswordReused(const std::string &password) const;
 
         bool checkExpiration() const;
+        bool checkIfAttemptsExceeded() const;
         bool isIgnorePeriod() const;
 
     private:

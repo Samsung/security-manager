@@ -34,6 +34,7 @@
 #include <dpl/log/log.h>
 
 #include <security-server.h>
+#include <protocols.h>
 #include <password-exception.h>
 #include <password-file-buffer.h>
 
@@ -67,7 +68,8 @@ namespace SecurityServer
         Serialization::Serialize(stream, m_password);
     }
 
-    PasswordFile::PasswordFile(): m_maxAttempt(0), m_historySize(0),  m_expireTime(0), m_attempt(0)
+    PasswordFile::PasswordFile(): m_maxAttempt(PASSWORD_INFINITE_ATTEMPT_COUNT), m_historySize(0),
+                                  m_expireTime(PASSWORD_INFINITE_EXPIRATION_TIME), m_attempt(0)
     {
         // check if data directory exists
         // if not create it
@@ -302,7 +304,7 @@ namespace SecurityServer
 
     time_t PasswordFile::getExpireTimeLeft() const
     {
-        if(m_expireTime > 0)
+        if(m_expireTime != PASSWORD_INFINITE_EXPIRATION_TIME)
             return (m_expireTime - time(NULL));
         else
             return m_expireTime;
@@ -311,7 +313,12 @@ namespace SecurityServer
     bool PasswordFile::checkExpiration() const
     {
         //return true if expired, else false
-        return ((m_expireTime != 0) && (time(NULL) > m_expireTime));
+        return ((m_expireTime != PASSWORD_INFINITE_EXPIRATION_TIME) && (time(NULL) > m_expireTime));
+    }
+
+    bool PasswordFile::checkIfAttemptsExceeded() const
+    {
+        return ((m_maxAttempt != PASSWORD_INFINITE_ATTEMPT_COUNT) && (m_attempt >= m_maxAttempt));
     }
 
     bool PasswordFile::isIgnorePeriod() const
