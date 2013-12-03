@@ -155,7 +155,7 @@ namespace SecurityServer
         //check delivered currentPassword
         //when m_passwordActive flag is true, currentPassword shouldn't be empty
         if (currentPassword.empty() && m_pwdFile.isPasswordActive()) {
-            LogError("Password is already set.");
+            LogError("Password is already set. History count: " << m_pwdFile.getHistorySize());
             return SECURITY_SERVER_API_ERROR_PASSWORD_EXIST;
         }
 
@@ -183,8 +183,8 @@ namespace SecurityServer
             return SECURITY_SERVER_API_ERROR_PASSWORD_EXPIRED;
         }
 
-        //check history
-        if (m_pwdFile.isPasswordActive()) {
+        //check history, however only if history is active
+        if (m_pwdFile.isPasswordActive() && m_pwdFile.isHistoryActive()) {
             if (m_pwdFile.isPasswordReused(newPassword)) {
                 LogError("Password reused.");
                 return SECURITY_SERVER_API_ERROR_PASSWORD_REUSED;
@@ -198,6 +198,7 @@ namespace SecurityServer
 
         //setting password
         m_pwdFile.setPassword(newPassword);
+        m_pwdFile.activatePassword();
         m_pwdFile.setMaxAttempt(receivedAttempts);
         m_pwdFile.setExpireTime(valid_secs);
         m_pwdFile.writeMemoryToFile();
@@ -243,6 +244,7 @@ namespace SecurityServer
             return SECURITY_SERVER_API_ERROR_INPUT_PARAM;
 
         m_pwdFile.setPassword(newPassword);
+        m_pwdFile.activatePassword();
         m_pwdFile.setMaxAttempt(receivedAttempts);
         m_pwdFile.setExpireTime(valid_secs);
         m_pwdFile.writeMemoryToFile();

@@ -46,6 +46,8 @@ namespace SecurityServer
 
         void setPassword(const std::string &password);
         bool checkPassword(const std::string &password) const;
+
+        void activatePassword();
         bool isPasswordActive() const;
 
         void setHistory(unsigned int history);
@@ -67,6 +69,8 @@ namespace SecurityServer
         bool checkExpiration() const;
         bool checkIfAttemptsExceeded() const;
         bool isIgnorePeriod() const;
+
+        bool isHistoryActive() const;
 
     private:
         typedef std::vector<unsigned char> RawHash;
@@ -102,6 +106,7 @@ namespace SecurityServer
         unsigned int m_maxAttempt;
         unsigned int m_historySize;
         time_t m_expireTime;
+        bool m_passwordActive;
 
         //attempt file data
         unsigned int m_attempt;

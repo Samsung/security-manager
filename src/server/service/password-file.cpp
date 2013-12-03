@@ -69,7 +69,8 @@ namespace SecurityServer
     }
 
     PasswordFile::PasswordFile(): m_maxAttempt(PASSWORD_INFINITE_ATTEMPT_COUNT), m_historySize(0),
-                                  m_expireTime(PASSWORD_INFINITE_EXPIRATION_TIME), m_attempt(0)
+                                  m_expireTime(PASSWORD_INFINITE_EXPIRATION_TIME),
+                                  m_passwordActive(false), m_attempt(0)
     {
         // check if data directory exists
         // if not create it
@@ -158,10 +159,14 @@ namespace SecurityServer
     {
         PasswordFileBuffer pwdBuffer;
 
+        LogError("Saving max_att: " << m_maxAttempt << ", history_size: " << m_historySize <<
+                 ", m_expireTime: " << m_expireTime << ", isActive: " << m_passwordActive);
+
         //serialize password attributes
         Serialization::Serialize(pwdBuffer, m_maxAttempt);
         Serialization::Serialize(pwdBuffer, m_historySize);
         Serialization::Serialize(pwdBuffer, m_expireTime);
+        Serialization::Serialize(pwdBuffer, m_passwordActive);
         Serialization::Serialize(pwdBuffer, m_passwords);
 
         pwdBuffer.Save(DATA_DIR + "/" + PASSWORD_FILE);
@@ -178,7 +183,11 @@ namespace SecurityServer
         Deserialization::Deserialize(pwdFile, m_maxAttempt);
         Deserialization::Deserialize(pwdFile, m_historySize);
         Deserialization::Deserialize(pwdFile, m_expireTime);
+        Deserialization::Deserialize(pwdFile, m_passwordActive);
         Deserialization::Deserialize(pwdFile, m_passwords);
+
+        LogError("Received max_att: " << m_maxAttempt << ", history_size: " << m_historySize <<
+                 ", m_expireTime: " << m_expireTime << ", isActive: " << m_passwordActive);
     }
 
     void PasswordFile::writeAttemptToFile() const
@@ -207,9 +216,14 @@ namespace SecurityServer
         }
     }
 
+    void PasswordFile::activatePassword()
+    {
+        m_passwordActive = true;
+    }
+
     bool PasswordFile::isPasswordActive() const
     {
-        return !(m_passwords.empty());
+        return m_passwordActive;
     }
 
     void PasswordFile::setHistory(unsigned int history)
@@ -258,7 +272,9 @@ namespace SecurityServer
 
         LogSecureDebug("PwdCount: " << m_passwords.size() << ", PwdMaxHistory: " << getHistorySize());
 
-        if(std::find_if(m_passwords.begin(), m_passwords.end(),
+        auto history_beginning = (m_passwords.begin())++;
+
+        if(std::find_if(history_beginning, m_passwords.end(),
                         [&hashedPwd](const Password& pwd) { return (pwd.m_password == hashedPwd); })
                 != m_passwords.end()) {
             LogSecureDebug("Passwords match!");
@@ -329,6 +345,11 @@ namespace SecurityServer
         m_retryTimerStart = retryTimerStop;
 
         return (diff.count() < RETRY_TIMEOUT);
+    }
+
+    bool PasswordFile::isHistoryActive() const
+    {
+        return (m_historySize != 0);
     }
 
     //hashPassword is also used in Password struct constructor, that's why it's static. Moreover
