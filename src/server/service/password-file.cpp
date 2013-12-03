@@ -318,7 +318,7 @@ namespace SecurityServer
 
     bool PasswordFile::checkIfAttemptsExceeded() const
     {
-        return ((m_maxAttempt != PASSWORD_INFINITE_ATTEMPT_COUNT) && (m_attempt >= m_maxAttempt));
+        return ((m_maxAttempt != PASSWORD_INFINITE_ATTEMPT_COUNT) && (m_attempt > m_maxAttempt));
     }
 
     bool PasswordFile::isIgnorePeriod() const

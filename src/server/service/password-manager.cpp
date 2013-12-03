@@ -97,6 +97,9 @@ namespace SecurityServer
             return SECURITY_SERVER_API_ERROR_NO_PASSWORD;
         }
 
+        m_pwdFile.incrementAttempt();
+        m_pwdFile.writeAttemptToFile();
+
         currentAttempt = m_pwdFile.getAttempt();
         maxAttempt = m_pwdFile.getMaxAttempt();
         expirationTime = m_pwdFile.getExpireTimeLeft();
@@ -105,9 +108,6 @@ namespace SecurityServer
             LogError("Too many tries.");
             return SECURITY_SERVER_API_ERROR_PASSWORD_MAX_ATTEMPTS_EXCEEDED;
         }
-
-        m_pwdFile.incrementAttempt();
-        m_pwdFile.writeAttemptToFile();
 
         if (!m_pwdFile.checkPassword(challenge)) {
             LogError("Wrong password.");
@@ -159,15 +159,15 @@ namespace SecurityServer
             return SECURITY_SERVER_API_ERROR_PASSWORD_EXIST;
         }
 
+        //increment attempt count before checking it against max attempt count
+        m_pwdFile.incrementAttempt();
+        m_pwdFile.writeAttemptToFile();
+
         // check attempt
         if (m_pwdFile.checkIfAttemptsExceeded()) {
             LogError("Too many attempts.");
             return SECURITY_SERVER_API_ERROR_PASSWORD_MAX_ATTEMPTS_EXCEEDED;
         }
-
-        //if we didn't exceed max attempts, increment attempt count and save it to separate file
-        m_pwdFile.incrementAttempt();
-        m_pwdFile.writeAttemptToFile();
 
         //check current password, however only when we don't send empty string as current.
         if(!currentPassword.empty()) {
