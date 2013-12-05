@@ -50,11 +50,10 @@ namespace SecurityServer
         void activatePassword();
         bool isPasswordActive() const;
 
-        void setHistory(unsigned int history);
-        unsigned int getHistorySize() const;
+        void setMaxHistorySize(unsigned int history);
+        unsigned int getMaxHistorySize() const;
 
-        time_t getExpireTime() const;
-        time_t getExpireTimeLeft() const;
+        unsigned int getExpireTimeLeft() const;
         void setExpireTime(int expireTime);
 
         //attempt manipulating functions
@@ -104,7 +103,7 @@ namespace SecurityServer
         //password file data
         PasswordList m_passwords;
         unsigned int m_maxAttempt;
-        unsigned int m_historySize;
+        unsigned int m_maxHistorySize;
         time_t m_expireTime;
         bool m_passwordActive;
 

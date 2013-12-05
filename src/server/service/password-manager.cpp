@@ -155,7 +155,7 @@ namespace SecurityServer
         //check delivered currentPassword
         //when m_passwordActive flag is true, currentPassword shouldn't be empty
         if (currentPassword.empty() && m_pwdFile.isPasswordActive()) {
-            LogError("Password is already set. History count: " << m_pwdFile.getHistorySize());
+            LogError("Password is already set. Max history: " << m_pwdFile.getMaxHistorySize());
             return SECURITY_SERVER_API_ERROR_PASSWORD_EXIST;
         }
 
@@ -268,7 +268,7 @@ namespace SecurityServer
             return SECURITY_SERVER_API_ERROR_PASSWORD_RETRY_TIMER;
         }
 
-        m_pwdFile.setHistory(history);
+        m_pwdFile.setMaxHistorySize(history);
         m_pwdFile.writeMemoryToFile();
 
         return SECURITY_SERVER_API_SUCCESS;

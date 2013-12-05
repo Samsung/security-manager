@@ -80,6 +80,7 @@ extern const unsigned int MAX_PASSWORD_HISTORY;
 extern const unsigned int PASSWORD_INFINITE_EXPIRATION_DAYS;
 extern const time_t PASSWORD_INFINITE_EXPIRATION_TIME;
 extern const unsigned int PASSWORD_INFINITE_ATTEMPT_COUNT;
+extern const unsigned int PASSWORD_API_NO_EXPIRATION;
 
 extern const int SECURITY_SERVER_MAX_OBJ_NAME;
 

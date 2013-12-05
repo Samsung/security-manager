@@ -68,7 +68,8 @@ namespace SecurityServer
         Serialization::Serialize(stream, m_password);
     }
 
-    PasswordFile::PasswordFile(): m_maxAttempt(PASSWORD_INFINITE_ATTEMPT_COUNT), m_historySize(0),
+    PasswordFile::PasswordFile(): m_maxAttempt(PASSWORD_INFINITE_ATTEMPT_COUNT),
+                                  m_maxHistorySize(0),
                                   m_expireTime(PASSWORD_INFINITE_EXPIRATION_TIME),
                                   m_passwordActive(false), m_attempt(0)
     {
@@ -159,12 +160,13 @@ namespace SecurityServer
     {
         PasswordFileBuffer pwdBuffer;
 
-        LogError("Saving max_att: " << m_maxAttempt << ", history_size: " << m_historySize <<
-                 ", m_expireTime: " << m_expireTime << ", isActive: " << m_passwordActive);
+        LogSecureDebug("Saving max_att: " << m_maxAttempt << ", history_size: " <<
+                       m_maxHistorySize << ", m_expireTime: " << m_expireTime << ", isActive: " <<
+                       m_passwordActive);
 
         //serialize password attributes
         Serialization::Serialize(pwdBuffer, m_maxAttempt);
-        Serialization::Serialize(pwdBuffer, m_historySize);
+        Serialization::Serialize(pwdBuffer, m_maxHistorySize);
         Serialization::Serialize(pwdBuffer, m_expireTime);
         Serialization::Serialize(pwdBuffer, m_passwordActive);
         Serialization::Serialize(pwdBuffer, m_passwords);
@@ -181,13 +183,14 @@ namespace SecurityServer
         m_passwords.clear();
 
         Deserialization::Deserialize(pwdFile, m_maxAttempt);
-        Deserialization::Deserialize(pwdFile, m_historySize);
+        Deserialization::Deserialize(pwdFile, m_maxHistorySize);
         Deserialization::Deserialize(pwdFile, m_expireTime);
         Deserialization::Deserialize(pwdFile, m_passwordActive);
         Deserialization::Deserialize(pwdFile, m_passwords);
 
-        LogError("Received max_att: " << m_maxAttempt << ", history_size: " << m_historySize <<
-                 ", m_expireTime: " << m_expireTime << ", isActive: " << m_passwordActive);
+        LogSecureDebug("Loaded max_att: " << m_maxAttempt << ", history_size: " <<
+                       m_maxHistorySize << ", m_expireTime: " << m_expireTime << ", isActive: " <<
+                       m_passwordActive);
     }
 
     void PasswordFile::writeAttemptToFile() const
@@ -226,19 +229,19 @@ namespace SecurityServer
         return m_passwordActive;
     }
 
-    void PasswordFile::setHistory(unsigned int history)
+    void PasswordFile::setMaxHistorySize(unsigned int history)
     {
         //setting history should be independent from password being set
-        m_historySize = history;
+        m_maxHistorySize = history;
 
         //we want to keep 1 current pwd, plus history amount of passwords.
         if(m_passwords.size() > 1+history)
             m_passwords.resize(1+history);
     }
 
-    unsigned int PasswordFile::getHistorySize() const
+    unsigned int PasswordFile::getMaxHistorySize() const
     {
-        return m_historySize;
+        return m_maxHistorySize;
     }
 
     unsigned int PasswordFile::getAttempt() const
@@ -270,7 +273,8 @@ namespace SecurityServer
     {
         RawHash hashedPwd = hashPassword(password);
 
-        LogSecureDebug("PwdCount: " << m_passwords.size() << ", PwdMaxHistory: " << getHistorySize());
+        LogSecureDebug("Checking if pwd is reused. PwdCount: " << m_passwords.size() <<
+                       ", PwdMaxHistory: " << getMaxHistorySize());
 
         auto history_beginning = (m_passwords.begin())++;
 
@@ -292,7 +296,7 @@ namespace SecurityServer
         m_passwords.push_front(Password(hashedPwd));
 
         //one current password, plus history amount of passwords
-        if(m_passwords.size() > 1+getHistorySize())
+        if(m_passwords.size() > 1+getMaxHistorySize())
             m_passwords.pop_back();
     }
 
@@ -313,17 +317,13 @@ namespace SecurityServer
         }
     }
 
-    time_t PasswordFile::getExpireTime() const
+    unsigned int PasswordFile::getExpireTimeLeft() const
     {
-        return m_expireTime;
-    }
-
-    time_t PasswordFile::getExpireTimeLeft() const
-    {
-        if(m_expireTime != PASSWORD_INFINITE_EXPIRATION_TIME)
-            return (m_expireTime - time(NULL));
-        else
-            return m_expireTime;
+        if(m_expireTime != PASSWORD_INFINITE_EXPIRATION_TIME) {
+            time_t timeLeft = m_expireTime - time(NULL);
+            return (timeLeft < 0) ? 0 : static_cast<unsigned int>(timeLeft);
+        } else
+            return PASSWORD_API_NO_EXPIRATION;
     }
 
     bool PasswordFile::checkExpiration() const
@@ -349,7 +349,7 @@ namespace SecurityServer
 
     bool PasswordFile::isHistoryActive() const
     {
-        return (m_historySize != 0);
+        return (m_maxHistorySize != 0);
     }
 
     //hashPassword is also used in Password struct constructor, that's why it's static. Moreover
