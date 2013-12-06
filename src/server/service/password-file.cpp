@@ -27,10 +27,14 @@
 
 #include <fstream>
 #include <algorithm>
+#include <limits>
+
+#include <fcntl.h>
+#include <string.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 #include <openssl/sha.h>
-
-#include <sys/stat.h>
 
 #include <dpl/log/log.h>
 
@@ -38,10 +42,6 @@
 #include <protocols.h>
 #include <password-exception.h>
 #include <password-file-buffer.h>
-
-#include <fcntl.h>
-#include <string.h>
-#include <unistd.h>
 
 namespace {
     const std::string DATA_DIR = "/opt/data/security-server";
@@ -51,10 +51,12 @@ namespace {
     const double RETRY_TIMEOUT = 0.5;
     const mode_t FILE_MODE = S_IRUSR | S_IWUSR;
     const unsigned int CURRENT_FILE_VERSION = 3;
-}
+} // namespace anonymous
 
 namespace SecurityServer
 {
+    const time_t PASSWORD_INFINITE_EXPIRATION_TIME = std::numeric_limits<time_t>::max();
+
     class NoPassword: public IPassword
     {
         public:
@@ -453,7 +455,7 @@ namespace SecurityServer
         return m_passwordCurrent->match(password);
     }
 
-    void PasswordFile::setExpireTime(int expireTime)
+    void PasswordFile::setExpireTime(time_t expireTime)
     {
         if(isPasswordActive())
             m_expireTime = expireTime;

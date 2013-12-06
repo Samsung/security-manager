@@ -38,7 +38,7 @@
 #include <security-server.h>
 
 namespace {
-    bool calculateExpiredTime(unsigned int receivedDays, unsigned int &validSecs)
+    bool calculateExpiredTime(unsigned int receivedDays, time_t &validSecs)
     {
         validSecs = SecurityServer::PASSWORD_INFINITE_EXPIRATION_TIME;
 
@@ -128,7 +128,7 @@ namespace SecurityServer
         LogSecureDebug("Curpwd = " << currentPassword << ", newpwd = " << newPassword <<
                        ", recatt = " << receivedAttempts << ", recdays = " << receivedDays);
 
-        unsigned int valid_secs = 0;
+        time_t valid_secs = 0;
 
         if (m_pwdFile.isIgnorePeriod()) {
             LogError("Retry timeout occured.");
@@ -205,7 +205,7 @@ namespace SecurityServer
 
     int PasswordManager::setPasswordValidity(const unsigned int receivedDays)
     {
-        unsigned int valid_secs = 0;
+        time_t valid_secs = 0;
 
         LogSecureDebug("received_days: " << receivedDays);
 
@@ -227,7 +227,7 @@ namespace SecurityServer
                                        const unsigned int receivedAttempts,
                                        const unsigned int receivedDays)
     {
-        unsigned int valid_secs = 0;
+        time_t valid_secs = 0;
 
         if(!calculateExpiredTime(receivedDays, valid_secs))
             return SECURITY_SERVER_API_ERROR_INPUT_PARAM;

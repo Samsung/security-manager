@@ -59,7 +59,6 @@ const size_t COOKIE_SIZE = 20;
 const size_t MAX_PASSWORD_LEN = 32;
 const unsigned int MAX_PASSWORD_HISTORY = 50;
 const unsigned int PASSWORD_INFINITE_EXPIRATION_DAYS = 0;
-const time_t PASSWORD_INFINITE_EXPIRATION_TIME = 0xFFFFFFFF;
 const unsigned int PASSWORD_INFINITE_ATTEMPT_COUNT = 0;
 const unsigned int PASSWORD_API_NO_EXPIRATION = 0xFFFFFFFF;
 

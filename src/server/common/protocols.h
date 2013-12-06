@@ -86,7 +86,6 @@ enum class PasswordHdrs
 extern const size_t MAX_PASSWORD_LEN;
 extern const unsigned int MAX_PASSWORD_HISTORY;
 extern const unsigned int PASSWORD_INFINITE_EXPIRATION_DAYS;
-extern const time_t PASSWORD_INFINITE_EXPIRATION_TIME;
 extern const unsigned int PASSWORD_INFINITE_ATTEMPT_COUNT;
 extern const unsigned int PASSWORD_API_NO_EXPIRATION;
 

@@ -38,6 +38,8 @@
 
 namespace SecurityServer
 {
+    extern const time_t PASSWORD_INFINITE_EXPIRATION_TIME;
+
     struct IPassword: public ISerializable
     {
         typedef std::vector<unsigned char> RawHash;
@@ -72,7 +74,7 @@ namespace SecurityServer
         unsigned int getMaxHistorySize() const;
 
         unsigned int getExpireTimeLeft() const;
-        void setExpireTime(int expireTime);
+        void setExpireTime(time_t expireTime);
 
         //attempt manipulating functions
         unsigned int getAttempt() const;
