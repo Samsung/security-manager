@@ -63,11 +63,6 @@ namespace SecurityServer
     int PasswordManager::isPwdValid(unsigned int &currentAttempt, unsigned int &maxAttempt,
                                     unsigned int &expirationTime) const
     {
-        if (m_pwdFile.isIgnorePeriod()) {
-            LogError("Retry timeout occured.");
-            return SECURITY_SERVER_API_ERROR_PASSWORD_RETRY_TIMER;
-        }
-
         if (!m_pwdFile.isPasswordActive()) {
             LogError("Current password not active.");
             return SECURITY_SERVER_API_ERROR_NO_PASSWORD;
@@ -135,7 +130,6 @@ namespace SecurityServer
 
         unsigned int valid_secs = 0;
 
-        //check retry timer
         if (m_pwdFile.isIgnorePeriod()) {
             LogError("Retry timeout occured.");
             return SECURITY_SERVER_API_ERROR_PASSWORD_RETRY_TIMER;
@@ -235,11 +229,6 @@ namespace SecurityServer
     {
         unsigned int valid_secs = 0;
 
-        if (m_pwdFile.isIgnorePeriod()) {
-            LogError("Retry timeout occured.");
-            return SECURITY_SERVER_API_ERROR_PASSWORD_RETRY_TIMER;
-        }
-
         if(!calculateExpiredTime(receivedDays, valid_secs))
             return SECURITY_SERVER_API_ERROR_INPUT_PARAM;
 
@@ -260,12 +249,6 @@ namespace SecurityServer
         if(history > MAX_PASSWORD_HISTORY) {
             LogError("Incorrect input param.");
             return SECURITY_SERVER_API_ERROR_INPUT_PARAM;
-        }
-
-        // check retry time
-        if (m_pwdFile.isIgnorePeriod()) {
-            LogError("Retry timeout occurred.");
-            return SECURITY_SERVER_API_ERROR_PASSWORD_RETRY_TIMER;
         }
 
         m_pwdFile.setMaxHistorySize(history);
