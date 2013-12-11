@@ -41,6 +41,32 @@
 
 IMPLEMENT_SAFE_SINGLETON(SecurityServer::Log::LogSystem);
 
+#define REGISTER_SOCKET_SERVICE(manager, service) \
+    registerSocketService<service>(manager, #service)
+
+template<typename T>
+void registerSocketService(SecurityServer::SocketManager &manager, const std::string& serviceName)
+{
+    T *service = NULL;
+    try {
+        service = new T();
+        service->Create();
+        manager.RegisterSocketService(service);
+        service = NULL;
+    } catch (const SecurityServer::Exception &exception) {
+        LogError("Error in creating service " << serviceName <<
+                 ", details:\n" << exception.DumpToString());
+    } catch (const std::exception& e) {
+        LogError("Error in creating service " << serviceName <<
+                 ", details:\n" << e.what());
+    } catch (...) {
+        LogError("Error in creating service " << serviceName <<
+                 ", unknown exception occured");
+    }
+    if (service)
+        delete service;
+}
+
 int main(void) {
 
     UNHANDLED_EXCEPTION_HANDLER_BEGIN
@@ -68,33 +94,13 @@ int main(void) {
         LogInfo("Start!");
         SecurityServer::SocketManager manager;
 
-        SecurityServer::OpenForService *openForService = new SecurityServer::OpenForService;
-        openForService->Create();
-        manager.RegisterSocketService(openForService);
-
-        SecurityServer::CookieService *cookieService = new SecurityServer::CookieService;
-        cookieService->Create();
-        manager.RegisterSocketService(cookieService);
-
-        SecurityServer::SharedMemoryService *shmService = new SecurityServer::SharedMemoryService;
-        shmService->Create();
-        manager.RegisterSocketService(shmService);
-
-        SecurityServer::GetGidService *getGidService = new SecurityServer::GetGidService;
-        getGidService->Create();
-        manager.RegisterSocketService(getGidService);
-
-        SecurityServer::PrivilegeByPidService *privByPidService = new SecurityServer::PrivilegeByPidService;
-        privByPidService->Create();
-        manager.RegisterSocketService(privByPidService);
-
-        SecurityServer::AppPermissionsService *appEnablePermissionsService = new SecurityServer::AppPermissionsService;
-        appEnablePermissionsService->Create();
-        manager.RegisterSocketService(appEnablePermissionsService);
-
-        SecurityServer::PasswordService *pwdService = new SecurityServer::PasswordService;
-        pwdService->Create();
-        manager.RegisterSocketService(pwdService);
+        REGISTER_SOCKET_SERVICE(manager, SecurityServer::OpenForService);
+        REGISTER_SOCKET_SERVICE(manager, SecurityServer::CookieService);
+        REGISTER_SOCKET_SERVICE(manager, SecurityServer::SharedMemoryService);
+        REGISTER_SOCKET_SERVICE(manager, SecurityServer::GetGidService);
+        REGISTER_SOCKET_SERVICE(manager, SecurityServer::PrivilegeByPidService);
+        REGISTER_SOCKET_SERVICE(manager, SecurityServer::AppPermissionsService);
+        REGISTER_SOCKET_SERVICE(manager, SecurityServer::PasswordService);
 
         manager.MainLoop();
     }

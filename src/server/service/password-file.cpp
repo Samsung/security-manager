@@ -19,6 +19,7 @@
  * @file        password-file.cpp
  * @author      Zbigniew Jasinski (z.jasinski@samsung.com)
  * @author      Lukasz Kostyra (l.kostyra@partner.samsung.com)
+ * @author      Piotr Bartosiewicz (p.bartosiewi@partner.samsung.com)
  * @version     1.0
  * @brief       Implementation of PasswordFile, used to manage password files.
  */
@@ -41,34 +42,96 @@
 #include <fcntl.h>
 #include <string.h>
 
-const std::string DATA_DIR = "/opt/data/security-server";
-const std::string PASSWORD_FILE = "password.pwd";
-const std::string ATTEMPT_FILE = "attempt";
-const double RETRY_TIMEOUT = 0.5;
+namespace {
+    const std::string DATA_DIR = "/opt/data/security-server";
+    const std::string PASSWORD_FILE = DATA_DIR + "/password";
+    const std::string OLD_VERSION_PASSWORD_FILE = DATA_DIR + "/password.pwd";
+    const std::string ATTEMPT_FILE = DATA_DIR + "/attempt";
+    const double RETRY_TIMEOUT = 0.5;
+    const mode_t FILE_MODE = S_IRUSR | S_IWUSR;
+    const unsigned int CURRENT_FILE_VERSION = 3;
+}
 
 namespace SecurityServer
 {
-    PasswordFile::Password::Password()
+    class NoPassword: public IPassword
     {
-        m_password = PasswordFile::hashPassword("");
+        public:
+            NoPassword(IStream&) {}
+            NoPassword() {}
+
+            void Serialize(IStream &stream) const
+            {
+                Serialization::Serialize(stream, static_cast<unsigned int>(PasswordType::NONE));
+            }
+
+            bool match(const std::string &) const
+            {
+                return false;
+            }
+    };
+
+    class SHA256Password: public IPassword
+    {
+        public:
+            SHA256Password(IStream& stream)
+            {
+                Deserialization::Deserialize(stream, m_hash);
+            }
+
+            SHA256Password(const std::string &password)
+                : m_hash(hash(password)) {}
+
+            SHA256Password(const RawHash& hash)
+                : m_hash(hash) {}
+
+            void Serialize(IStream &stream) const
+            {
+                Serialization::Serialize(stream, static_cast<unsigned int>(PasswordType::SHA256));
+                Serialization::Serialize(stream, m_hash);
+            }
+
+            bool match(const std::string &password) const
+            {
+                return m_hash == hash(password);
+            }
+        private:
+            RawHash m_hash;
+
+            static RawHash hash(const std::string &password)
+            {
+                RawHash result(SHA256_DIGEST_LENGTH);
+
+                SHA256_CTX context;
+                SHA256_Init(&context);
+                SHA256_Update(&context, reinterpret_cast<const unsigned char*>(password.c_str()),
+                        password.size());
+                SHA256_Final(result.data(), &context);
+
+                return result;
+            }
+    };
+
+    // deserialization of new password format
+    template <>
+    void Deserialization::Deserialize(IStream& stream, IPasswordPtr& ptr)
+    {
+        unsigned int algorithm;
+        Deserialization::Deserialize(stream, algorithm);
+        switch (algorithm) {
+            case IPassword::PasswordType::NONE:
+                ptr.reset(new NoPassword());
+                break;
+            case IPassword::PasswordType::SHA256:
+                ptr.reset(new SHA256Password(stream));
+                break;
+            default:
+                Throw(PasswordException::FStreamReadError);
+        }
     }
 
-    PasswordFile::Password::Password(const RawHash& password)
-    {
-        m_password = password;
-    }
-
-    PasswordFile::Password::Password(IStream& stream)
-    {
-        Deserialization::Deserialize(stream, m_password);
-    }
-
-    void PasswordFile::Password::Serialize(IStream &stream) const
-    {
-        Serialization::Serialize(stream, m_password);
-    }
-
-    PasswordFile::PasswordFile(): m_maxAttempt(PASSWORD_INFINITE_ATTEMPT_COUNT),
+    PasswordFile::PasswordFile(): m_passwordCurrent(new NoPassword()),
+                                  m_maxAttempt(PASSWORD_INFINITE_ATTEMPT_COUNT),
                                   m_maxHistorySize(0),
                                   m_expireTime(PASSWORD_INFINITE_EXPIRATION_TIME),
                                   m_passwordActive(false), m_attempt(0)
@@ -87,6 +150,15 @@ namespace SecurityServer
         resetTimer();
     }
 
+    void PasswordFile::resetState()
+    {
+        m_passwordCurrent.reset(new NoPassword());
+        m_maxAttempt = PASSWORD_INFINITE_ATTEMPT_COUNT;
+        m_maxHistorySize = 0;
+        m_expireTime = PASSWORD_INFINITE_EXPIRATION_TIME;
+        m_passwordActive = false;
+    }
+
     void PasswordFile::resetTimer()
     {
         m_retryTimerStart = std::chrono::monotonic_clock::now();
@@ -95,49 +167,55 @@ namespace SecurityServer
 
     void PasswordFile::preparePwdFile()
     {
-        std::string s_pwdfilePath = DATA_DIR + "/" + PASSWORD_FILE;
-
         // check if password file exists
-        // if not create it
-        if (!fileExists(s_pwdfilePath)) {
+        if (!fileExists(PASSWORD_FILE)) {
+            // if old format file exist - load it
+            if (tryLoadMemoryFromOldFormatFile()) {
+                // save in new format
+                writeMemoryToFile();
+                // and remove old file
+                remove(OLD_VERSION_PASSWORD_FILE.c_str());
+                return;
+            }
+
             LogSecureDebug("PWD_DBG not found password file. Creating.");
-            __mode_t oldMask = umask(S_IRUSR | S_IWUSR);
 
             //create file
             writeMemoryToFile();
-
-            umask(oldMask);
         } else {     //if file exists, load data
             LogSecureDebug("PWD_DBG found password file. Opening.");
-            loadMemoryFromFile();
+            try {
+                loadMemoryFromFile();
+            } catch (...) {
+                LogError("Invalid " << PASSWORD_FILE << " file format");
+                resetState();
+                writeMemoryToFile();
+            }
         }
     }
 
     void PasswordFile::prepareAttemptFile()
     {
-        std::string s_attemptfilePath = DATA_DIR + "/" + ATTEMPT_FILE;
-
         // check if attempt file exists
         // if not create it
-        if (!fileExists(s_attemptfilePath)) {
+        if (!fileExists(ATTEMPT_FILE)) {
             LogSecureDebug("PWD_DBG not found attempt file. Creating.");
-            __mode_t oldMask = umask(S_IRUSR | S_IWUSR);
 
             writeAttemptToFile();
-
-            umask(oldMask);
         } else {
             LogSecureDebug("PWD_DBG found attempt file. Opening.");
-            std::ifstream attemptFile(s_attemptfilePath);
-            if(!attemptFile.good()) {
+            std::ifstream attemptFile(ATTEMPT_FILE);
+            if(!attemptFile) {
                 LogError("Failed to open attempt file.");
-                Throw(PasswordException::FStreamOpenError);
+                // ignore error
+                return;
             }
 
             attemptFile.read(reinterpret_cast<char*>(&m_attempt), sizeof(unsigned int));
             if(!attemptFile) {
                 LogError("Failed to read attempt count.");
-                Throw(PasswordException::FStreamReadError);
+                // ignore error
+                resetAttempt();
             }
         }
     }
@@ -165,37 +243,108 @@ namespace SecurityServer
                        m_passwordActive);
 
         //serialize password attributes
+        Serialization::Serialize(pwdBuffer, CURRENT_FILE_VERSION);
         Serialization::Serialize(pwdBuffer, m_maxAttempt);
         Serialization::Serialize(pwdBuffer, m_maxHistorySize);
         Serialization::Serialize(pwdBuffer, m_expireTime);
         Serialization::Serialize(pwdBuffer, m_passwordActive);
-        Serialization::Serialize(pwdBuffer, m_passwords);
+        Serialization::Serialize(pwdBuffer, m_passwordCurrent);
+        Serialization::Serialize(pwdBuffer, m_passwordHistory);
 
-        pwdBuffer.Save(DATA_DIR + "/" + PASSWORD_FILE);
+        pwdBuffer.Save(PASSWORD_FILE);
+
+        chmod(PASSWORD_FILE.c_str(), FILE_MODE);
     }
 
     void PasswordFile::loadMemoryFromFile()
     {
         PasswordFileBuffer pwdFile;
 
-        pwdFile.Load(DATA_DIR + "/" + PASSWORD_FILE);
+        pwdFile.Load(PASSWORD_FILE);
 
-        m_passwords.clear();
+        unsigned int fileVersion = 0;
+        Deserialization::Deserialize(pwdFile, fileVersion);
+        if (fileVersion != CURRENT_FILE_VERSION)
+            Throw(PasswordException::FStreamReadError);
+
+        m_passwordHistory.clear();
 
         Deserialization::Deserialize(pwdFile, m_maxAttempt);
         Deserialization::Deserialize(pwdFile, m_maxHistorySize);
         Deserialization::Deserialize(pwdFile, m_expireTime);
         Deserialization::Deserialize(pwdFile, m_passwordActive);
-        Deserialization::Deserialize(pwdFile, m_passwords);
+        Deserialization::Deserialize(pwdFile, m_passwordCurrent);
+        Deserialization::Deserialize(pwdFile, m_passwordHistory);
 
         LogSecureDebug("Loaded max_att: " << m_maxAttempt << ", history_size: " <<
                        m_maxHistorySize << ", m_expireTime: " << m_expireTime << ", isActive: " <<
                        m_passwordActive);
     }
 
+    bool PasswordFile::tryLoadMemoryFromOldFormatFile()
+    {
+        struct stat oldFileStat;
+        if (stat(OLD_VERSION_PASSWORD_FILE.c_str(), &oldFileStat) != 0)
+            return false;
+
+        static const int ELEMENT_SIZE = sizeof(unsigned) + SHA256_DIGEST_LENGTH;
+        static const int VERSION_1_REMAINING = sizeof(unsigned) * 4;
+        static const int VERSION_2_REMAINING = VERSION_1_REMAINING + sizeof(bool);
+        int remaining = oldFileStat.st_size % ELEMENT_SIZE;
+
+        if (remaining != VERSION_1_REMAINING && remaining != VERSION_2_REMAINING)
+            return false;
+
+        try {
+            PasswordFileBuffer pwdFile;
+            pwdFile.Load(OLD_VERSION_PASSWORD_FILE);
+
+            Deserialization::Deserialize(pwdFile, m_maxAttempt);
+            Deserialization::Deserialize(pwdFile, m_maxHistorySize);
+            Deserialization::Deserialize(pwdFile, m_expireTime);
+            if (m_expireTime == 0)
+                m_expireTime = PASSWORD_INFINITE_EXPIRATION_TIME;
+            if (remaining == VERSION_2_REMAINING)
+                Deserialization::Deserialize(pwdFile, m_passwordActive);
+            else
+                m_passwordActive = true;
+
+            // deserialize passwords in old format
+            struct OldPassword {
+                OldPassword() {}
+                OldPassword(IStream &stream)
+                {
+                    Deserialization::Deserialize(stream, m_hash);
+                }
+                IPassword::RawHash m_hash;
+            };
+            std::list<OldPassword> oldFormatPasswords;
+            Deserialization::Deserialize(pwdFile, oldFormatPasswords);
+
+            // convert passwords to new format
+            m_passwordHistory.clear();
+            if (oldFormatPasswords.empty()) {
+                m_passwordCurrent.reset(new NoPassword());
+                m_passwordActive = false;
+            } else {
+                m_passwordCurrent.reset(new SHA256Password(oldFormatPasswords.front().m_hash));
+                std::for_each(++oldFormatPasswords.begin(), oldFormatPasswords.end(),
+                        [&m_passwordHistory] (const OldPassword& pwd)
+                        {m_passwordHistory.push_back(IPasswordPtr(new SHA256Password(pwd.m_hash)));}
+                        );
+            }
+        } catch (...) {
+            LogWarning("Invalid " << OLD_VERSION_PASSWORD_FILE << " file format");
+            resetState();
+            return false;
+        }
+
+        return true;
+    }
+
     void PasswordFile::writeAttemptToFile() const
     {
-        std::ofstream attemptFile(DATA_DIR + "/" + ATTEMPT_FILE, std::ofstream::trunc);
+        std::ofstream attemptFile(ATTEMPT_FILE, std::ofstream::trunc);
 
         if(!attemptFile.good()) {
             LogError("Failed to open attempt file.");
@@ -210,12 +359,13 @@ namespace SecurityServer
         attemptFile.close();
 
         int fd;
-        if (0 <= (fd = open((DATA_DIR + "/" + ATTEMPT_FILE).c_str(), O_WRONLY | O_APPEND))) {
+        if (0 <= (fd = open(ATTEMPT_FILE.c_str(), O_WRONLY | O_APPEND))) {
+            fchmod(fd, FILE_MODE);
             fsync(fd); // force synchronization system buffers with file
             close(fd);
         } else {
             int err = errno;
-            LogError("Failed to sync attempt file: " << DATA_DIR << "/" << ATTEMPT_FILE << "strerror: " << strerror(err));
+            LogError("Failed to sync attempt file: " << ATTEMPT_FILE << "strerror: " << strerror(err));
         }
     }
 
@@ -234,9 +384,8 @@ namespace SecurityServer
         //setting history should be independent from password being set
         m_maxHistorySize = history;
 
-        //we want to keep 1 current pwd, plus history amount of passwords.
-        if(m_passwords.size() > 1+history)
-            m_passwords.resize(1+history);
+        while(m_passwordHistory.size() > history)
+            m_passwordHistory.pop_back();
     }
 
     unsigned int PasswordFile::getMaxHistorySize() const
@@ -271,16 +420,12 @@ namespace SecurityServer
 
     bool PasswordFile::isPasswordReused(const std::string &password) const
     {
-        RawHash hashedPwd = hashPassword(password);
+        LogSecureDebug("Checking if pwd is reused. HistorySize: " << m_passwordHistory.size() <<
+                       ", MaxHistorySize: " << getMaxHistorySize());
 
-        LogSecureDebug("Checking if pwd is reused. PwdCount: " << m_passwords.size() <<
-                       ", PwdMaxHistory: " << getMaxHistorySize());
-
-        auto history_beginning = (m_passwords.begin())++;
-
-        if(std::find_if(history_beginning, m_passwords.end(),
-                        [&hashedPwd](const Password& pwd) { return (pwd.m_password == hashedPwd); })
-                != m_passwords.end()) {
+        //go through history and check if password existed earlier
+        if(std::any_of(m_passwordHistory.begin(), m_passwordHistory.end(),
+                       [&password](const IPasswordPtr& pwd) { return pwd->match(password); })) {
             LogSecureDebug("Passwords match!");
             return true;
         }
@@ -291,20 +436,20 @@ namespace SecurityServer
 
     void PasswordFile::setPassword(const std::string &password)
     {
-        RawHash hashedPwd = hashPassword(password);
+        //put current password to history
+        m_passwordHistory.push_front(std::move(m_passwordCurrent));
 
-        m_passwords.push_front(Password(hashedPwd));
+        //erase last password if we exceed max history size
+        if(m_passwordHistory.size() > getMaxHistorySize())
+            m_passwordHistory.pop_back();
 
-        //one current password, plus history amount of passwords
-        if(m_passwords.size() > 1+getMaxHistorySize())
-            m_passwords.pop_back();
+        //replace current password with new one
+        m_passwordCurrent.reset(new SHA256Password(password));
     }
 
     bool PasswordFile::checkPassword(const std::string &password) const
     {
-        RawHash hashedPwd = hashPassword(password);
-
-        return (hashedPwd == m_passwords.begin()->m_password);
+        return m_passwordCurrent->match(password);
     }
 
     void PasswordFile::setExpireTime(int expireTime)
@@ -350,21 +495,6 @@ namespace SecurityServer
     bool PasswordFile::isHistoryActive() const
     {
         return (m_maxHistorySize != 0);
-    }
-
-    //hashPassword is also used in Password struct constructor, that's why it's static. Moreover
-    //it is assumed that incorrect input password was checked earlier.
-    PasswordFile::RawHash PasswordFile::hashPassword(const std::string &password)
-    {
-        RawHash result(SHA256_DIGEST_LENGTH);
-
-        SHA256_CTX context;
-        SHA256_Init(&context);
-        SHA256_Update(&context, reinterpret_cast<const unsigned char*>(password.c_str()),
-                      password.size());
-        SHA256_Final(result.data(), &context);
-
-        return result;
     }
 } //namespace SecurityServer
 

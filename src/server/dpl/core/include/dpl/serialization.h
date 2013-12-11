@@ -26,6 +26,7 @@
 #include <vector>
 #include <list>
 #include <map>
+#include <memory>
 
 namespace SecurityServer {
 // Abstract data stream buffer
@@ -203,6 +204,13 @@ struct Serialization {
     {
         Serialize(stream, *map);
     }
+
+    // std::unique_ptr
+    template <typename T>
+    static void Serialize(IStream& stream, const std::unique_ptr<T>& p)
+    {
+        Serialize(stream, *p);
+    }
 }; // struct Serialization
 
 struct Deserialization {
@@ -321,7 +329,7 @@ struct Deserialization {
         for (int i = 0; i < length; ++i) {
             T obj;
             Deserialize(stream, obj);
-            list.push_back(obj);
+            list.push_back(std::move(obj));
         }
     }
     template <typename T>
@@ -340,7 +348,7 @@ struct Deserialization {
         for (int i = 0; i < length; ++i) {
             T obj;
             Deserialize(stream, obj);
-            vec.push_back(obj);
+            vec.push_back(std::move(obj));
         }
     }
     template <typename T>
@@ -375,7 +383,7 @@ struct Deserialization {
             T obj;
             Deserialize(stream, key);
             Deserialize(stream, obj);
-            map[key] = obj;
+            map[key] = std::move(obj);
         }
     }
     template <typename K, typename T>

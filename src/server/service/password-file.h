@@ -19,6 +19,7 @@
  * @file        password-file.h
  * @author      Zbigniew Jasinski (z.jasinski@samsung.com)
  * @author      Lukasz Kostyra (l.kostyra@partner.samsung.com)
+ * @author      Piotr Bartosiewicz (p.bartosiewi@partner.samsung.com)
  * @version     1.0
  * @brief       Implementation of PasswordFile, used to manage password files.
  */
@@ -29,6 +30,7 @@
 #include <vector>
 #include <list>
 #include <chrono>
+#include <memory>
 
 #include <time.h>
 
@@ -36,6 +38,22 @@
 
 namespace SecurityServer
 {
+    struct IPassword: public ISerializable
+    {
+        typedef std::vector<unsigned char> RawHash;
+
+        enum class PasswordType : unsigned int
+        {
+            NONE = 0,
+            SHA256 = 1,
+        };
+
+        virtual bool match(const std::string &password) const = 0;
+    };
+
+    typedef std::unique_ptr<IPassword> IPasswordPtr;
+    typedef std::list<IPasswordPtr> PasswordList;
+
     class PasswordFile
     {
     public:
@@ -72,40 +90,28 @@ namespace SecurityServer
         bool isHistoryActive() const;
 
     private:
-        typedef std::vector<unsigned char> RawHash;
         typedef std::chrono::duration<double> TimeDiff;
         typedef std::chrono::time_point<std::chrono::monotonic_clock, TimeDiff> TimePoint;
 
-        struct Password: public ISerializable
-        {
-            Password();
-            Password(const RawHash& password);
-            Password(IStream& stream);
-
-            virtual void Serialize(IStream &stream) const;
-
-            RawHash m_password;
-        };
-
-        typedef std::list<Password> PasswordList;
-
         void loadMemoryFromFile();
+        bool tryLoadMemoryFromOldFormatFile();
 
         void resetTimer();
         void preparePwdFile();
         void prepareAttemptFile();
+        void resetState();
         bool fileExists(const std::string &filename) const;
         bool dirExists(const std::string &dirpath) const;
-        static RawHash hashPassword(const std::string &password);
 
         mutable TimePoint m_retryTimerStart;
 
         //password file data
-        PasswordList m_passwords;
+        IPasswordPtr m_passwordCurrent;
+        PasswordList m_passwordHistory;
         unsigned int m_maxAttempt;
         unsigned int m_maxHistorySize;
-        time_t m_expireTime;
-        bool m_passwordActive;
+        time_t       m_expireTime;
+        bool         m_passwordActive;
 
         //attempt file data
         unsigned int m_attempt;
