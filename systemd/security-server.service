@@ -14,8 +14,8 @@ Sockets=security-server-cookie-check.socket
 Sockets=security-server-cookie-check-tmp.socket
 Sockets=security-server-open-for.socket
 Sockets=security-server-password-check.socket
-Scokets=security-server-password-set.socket
-Scokets=security-server-password-reset.socket
+Sockets=security-server-password-set.socket
+Sockets=security-server-password-reset.socket
 
 [Install]
 WantedBy=multi-user.target
