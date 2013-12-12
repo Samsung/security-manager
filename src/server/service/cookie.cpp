@@ -42,7 +42,7 @@ namespace SecurityServer {
 
 GenericSocketService::ServiceDescriptionVector CookieService::GetServiceDescription() {
     return ServiceDescriptionVector {
-        {SERVICE_SOCKET_COOKIE_GET,       "security-server::api-cookie-get",   INTERFACE_GET },
+        {SERVICE_SOCKET_COOKIE_GET,       "*",   INTERFACE_GET },
         {SERVICE_SOCKET_COOKIE_CHECK,     "security-server::api-cookie-check", INTERFACE_CHECK},
         {SERVICE_SOCKET_COOKIE_CHECK_TMP, "security-server::api-cookie-check", INTERFACE_CHECK_TMP}
     };

@@ -1,7 +1,6 @@
 [Socket]
 ListenStream=/tmp/.security-server-api-cookie-get.sock
 SocketMode=0777
-#SmackLabelIPIn=security-server::api-cookie-get
 SmackLabelIPIn=*
 SmackLabelIPOut=@
 

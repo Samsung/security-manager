@@ -1,8 +1,7 @@
 [Socket]
 ListenStream=/tmp/.security-server-api-privilege-by-pid.sock
 SocketMode=0777
-#SmackLabelIPIn=security-server::api-privilege-by-pid
-SmackLabelIPIn=*
+SmackLabelIPIn=security-server::api-privilege-by-pid
 SmackLabelIPOut=@
 
 Service=security-server.service
