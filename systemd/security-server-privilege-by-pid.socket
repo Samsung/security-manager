@@ -6,5 +6,9 @@ SmackLabelIPOut=@
 
 Service=security-server.service
 
+[Unit]
+Wants=security-server.target
+Before=security-server.target
+
 [Install]
 WantedBy=sockets.target

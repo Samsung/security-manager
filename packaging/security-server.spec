@@ -136,6 +136,7 @@ fi
 %{_libdir}/libsecurity-server-commons.so.*
 %attr(-,root,root) /usr/lib/systemd/system/multi-user.target.wants/security-server.service
 %attr(-,root,root) /usr/lib/systemd/system/security-server.service
+%attr(-,root,root) /usr/lib/systemd/system/security-server.target
 %attr(-,root,root) /usr/lib/systemd/system/sockets.target.wants/security-server-data-share.socket
 %attr(-,root,root) /usr/lib/systemd/system/security-server-data-share.socket
 %attr(-,root,root) /usr/lib/systemd/system/sockets.target.wants/security-server-get-gid.socket
