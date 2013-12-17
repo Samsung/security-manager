@@ -11,7 +11,6 @@ Sockets=security-server-app-permissions.socket
 Sockets=security-server-app-privilege-by-name.socket
 Sockets=security-server-cookie-get.socket
 Sockets=security-server-cookie-check.socket
-Sockets=security-server-cookie-check-tmp.socket
 Sockets=security-server-open-for.socket
 Sockets=security-server-password-check.socket
 Sockets=security-server-password-set.socket

@@ -36,15 +36,13 @@
 //interfaces ID
 const int INTERFACE_GET = 0;
 const int INTERFACE_CHECK = 1;
-const int INTERFACE_CHECK_TMP = 3;
 
 namespace SecurityServer {
 
 GenericSocketService::ServiceDescriptionVector CookieService::GetServiceDescription() {
     return ServiceDescriptionVector {
         {SERVICE_SOCKET_COOKIE_GET,       "*",   INTERFACE_GET },
-        {SERVICE_SOCKET_COOKIE_CHECK,     "security-server::api-cookie-check", INTERFACE_CHECK},
-        {SERVICE_SOCKET_COOKIE_CHECK_TMP, "security-server::api-cookie-check", INTERFACE_CHECK_TMP}
+        {SERVICE_SOCKET_COOKIE_CHECK,     "security-server::api-cookie-check", INTERFACE_CHECK}
     };
  }
 
@@ -139,14 +137,6 @@ bool CookieService::processOne(const ConnectionID &conn, MessageBuffer &buffer, 
             retval = privilegeByCookieRequest(buffer, send);
             break;
 
-        default:
-            LogDebug("Error, unknown function called by client");
-            retval = false;
-            break;
-        };
-    } else if (interfaceID == INTERFACE_CHECK_TMP) {
-        //TODO: Merge this interface with INTERFACE_CHECK after INTERFACE_CHECK will be secured by smack 
-        switch(msgType) {
         case CookieCall::CHECK_UID:
             LogDebug("Entering get-uid-by-cookie side handler");
             retval = uidByCookieRequest(buffer, send);

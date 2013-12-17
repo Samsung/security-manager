@@ -92,7 +92,6 @@ ln -s ../security-server-privilege-by-pid.socket %{buildroot}/usr/lib/systemd/sy
 ln -s ../security-server-app-permissions.socket %{buildroot}/usr/lib/systemd/system/sockets.target.wants/security-server-app-permissions.socket
 ln -s ../security-server-cookie-get.socket %{buildroot}/usr/lib/systemd/system/sockets.target.wants/security-server-cookie-get.socket
 ln -s ../security-server-cookie-check.socket %{buildroot}/usr/lib/systemd/system/sockets.target.wants/security-server-cookie-check.socket
-ln -s ../security-server-cookie-check-tmp.socket %{buildroot}/usr/lib/systemd/system/sockets.target.wants/security-server-cookie-check-tmp.socket
 ln -s ../security-server-app-privilege-by-name.socket %{buildroot}/usr/lib/systemd/system/sockets.target.wants/security-server-app-privilege-by-name.socket
 ln -s ../security-server-open-for.socket %{buildroot}/usr/lib/systemd/system/sockets.target.wants/security-server-open-for.socket
 ln -s ../security-server-password-check.socket %{buildroot}/usr/lib/systemd/system/sockets.target.wants/security-server-password-check.socket
@@ -149,8 +148,6 @@ fi
 %attr(-,root,root) /usr/lib/systemd/system/security-server-cookie-get.socket
 %attr(-,root,root) /usr/lib/systemd/system/sockets.target.wants/security-server-cookie-check.socket
 %attr(-,root,root) /usr/lib/systemd/system/security-server-cookie-check.socket
-%attr(-,root,root) /usr/lib/systemd/system/sockets.target.wants/security-server-cookie-check-tmp.socket
-%attr(-,root,root) /usr/lib/systemd/system/security-server-cookie-check-tmp.socket
 %attr(-,root,root) /usr/lib/systemd/system/sockets.target.wants/security-server-app-privilege-by-name.socket
 %attr(-,root,root) /usr/lib/systemd/system/security-server-app-privilege-by-name.socket
 %attr(-,root,root) /usr/lib/systemd/system/sockets.target.wants/security-server-open-for.socket

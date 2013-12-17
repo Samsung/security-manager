@@ -265,7 +265,7 @@ int security_server_get_uid_by_cookie(const char *cookie, uid_t *uid)
         Serialization::Serialize(send, key);
 
         //send buffer to server
-        retval = sendToServer(SERVICE_SOCKET_COOKIE_CHECK_TMP, send.Pop(), recv);
+        retval = sendToServer(SERVICE_SOCKET_COOKIE_CHECK, send.Pop(), recv);
         if (retval != SECURITY_SERVER_API_SUCCESS) {
             LogDebug("Error in sendToServer. Error code: " << retval);
             return retval;
@@ -304,7 +304,7 @@ int security_server_get_gid_by_cookie(const char *cookie, gid_t *gid)
         Serialization::Serialize(send, key);
 
         //send buffer to server
-        retval = sendToServer(SERVICE_SOCKET_COOKIE_CHECK_TMP, send.Pop(), recv);
+        retval = sendToServer(SERVICE_SOCKET_COOKIE_CHECK, send.Pop(), recv);
         if (retval != SECURITY_SERVER_API_SUCCESS) {
             LogDebug("Error in sendToServer. Error code: " << retval);
             return retval;
