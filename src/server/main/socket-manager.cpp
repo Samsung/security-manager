@@ -580,7 +580,7 @@ void SocketManager::RegisterSocketService(GenericSocketService *service) {
 
 void SocketManager::Close(ConnectionID connectionID) {
     {
-        std::unique_lock<std::mutex> ulock(m_eventQueueMutex);
+        std::lock_guard<std::mutex> ulock(m_eventQueueMutex);
         m_closeQueue.push(connectionID);
     }
     NotifyMe();
@@ -591,7 +591,7 @@ void SocketManager::Write(ConnectionID connectionID, const RawBuffer &rawBuffer)
     buffer.connectionID = connectionID;
     buffer.rawBuffer = rawBuffer;
     {
-        std::unique_lock<std::mutex> ulock(m_eventQueueMutex);
+        std::lock_guard<std::mutex> ulock(m_eventQueueMutex);
         m_writeBufferQueue.push(buffer);
     }
     NotifyMe();
@@ -602,7 +602,7 @@ void SocketManager::Write(ConnectionID connectionID, const SendMsgData &sendMsgD
     data.connectionID = connectionID;
     data.sendMsgData = sendMsgData;
     {
-        std::unique_lock<std::mutex> ulock(m_eventQueueMutex);
+        std::lock_guard<std::mutex> ulock(m_eventQueueMutex);
         m_writeDataQueue.push(data);
     }
     NotifyMe();
@@ -616,7 +616,7 @@ void SocketManager::ProcessQueue() {
     WriteBuffer buffer;
     WriteData data;
     {
-        std::unique_lock<std::mutex> ulock(m_eventQueueMutex);
+        std::lock_guard<std::mutex> ulock(m_eventQueueMutex);
         while (!m_writeBufferQueue.empty()) {
             buffer = m_writeBufferQueue.front();
             m_writeBufferQueue.pop();
@@ -678,7 +678,7 @@ void SocketManager::ProcessQueue() {
     while (1) {
         ConnectionID connection;
         {
-            std::unique_lock<std::mutex> ulock(m_eventQueueMutex);
+            std::lock_guard<std::mutex> ulock(m_eventQueueMutex);
             if (m_closeQueue.empty())
                 return;
             connection = m_closeQueue.front();
