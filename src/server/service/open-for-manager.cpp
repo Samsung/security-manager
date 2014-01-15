@@ -29,6 +29,7 @@
 #include <sys/types.h>
 #include <dirent.h>
 #include <fcntl.h>
+#include <unistd.h>
 
 #include <sys/smack.h>
 #include <smack-check.h>

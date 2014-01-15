@@ -41,6 +41,7 @@
 
 #include <fcntl.h>
 #include <string.h>
+#include <unistd.h>
 
 namespace {
     const std::string DATA_DIR = "/opt/data/security-server";
