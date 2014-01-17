@@ -90,8 +90,13 @@ namespace SecurityServer
         bool isHistoryActive() const;
 
     private:
+#if (__GNUC__ > 4) || (__GNUC__ == 4 && (__GNUC_MINOR__ >= 7))
+        typedef std::chrono::steady_clock ClockType;
+#else
+        typedef std::chrono::monotonic_clock ClockType;
+#endif
         typedef std::chrono::duration<double> TimeDiff;
-        typedef std::chrono::time_point<std::chrono::monotonic_clock, TimeDiff> TimePoint;
+        typedef std::chrono::time_point<ClockType, TimeDiff> TimePoint;
 
         void loadMemoryFromFile();
         bool tryLoadMemoryFromOldFormatFile();

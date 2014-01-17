@@ -162,7 +162,7 @@ namespace SecurityServer
 
     void PasswordFile::resetTimer()
     {
-        m_retryTimerStart = std::chrono::monotonic_clock::now();
+        m_retryTimerStart = ClockType::now();
         m_retryTimerStart -= TimeDiff(RETRY_TIMEOUT);
     }
 
@@ -330,7 +330,7 @@ namespace SecurityServer
             } else {
                 m_passwordCurrent.reset(new SHA256Password(oldFormatPasswords.front().m_hash));
                 std::for_each(++oldFormatPasswords.begin(), oldFormatPasswords.end(),
-                        [&m_passwordHistory] (const OldPassword& pwd)
+                        [&] (const OldPassword& pwd)
                         {m_passwordHistory.push_back(IPasswordPtr(new SHA256Password(pwd.m_hash)));}
                         );
             }
@@ -485,7 +485,7 @@ namespace SecurityServer
 
     bool PasswordFile::isIgnorePeriod() const
     {
-        TimePoint retryTimerStop = std::chrono::monotonic_clock::now();
+        TimePoint retryTimerStop = ClockType::now();
         TimeDiff diff = retryTimerStop - m_retryTimerStart;
 
         m_retryTimerStart = retryTimerStop;
