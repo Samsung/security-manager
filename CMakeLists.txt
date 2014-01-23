@@ -50,6 +50,7 @@ ADD_DEFINITIONS("-Wextra")                      # Generate even more extra warni
 
 STRING(REGEX MATCH "([^.]*)" API_VERSION "${VERSION}")
 ADD_DEFINITIONS("-DAPI_VERSION=\"$(API_VERSION)\"")
+
 ADD_DEFINITIONS("-DSMACK_ENABLED")
 
 IF (CMAKE_BUILD_TYPE MATCHES "DEBUG")
@@ -60,13 +61,6 @@ ENDIF (CMAKE_BUILD_TYPE MATCHES "DEBUG")
 SET(TARGET_SECURITY_SERVER "security-server")
 SET(TARGET_SECURITY_CLIENT "security-server-client")
 SET(TARGET_SERVER_COMMON "security-server-commons")
-
-INSTALL(FILES
-    ${CMAKE_SOURCE_DIR}/packaging/libsecurity-server-client.manifest
-    ${CMAKE_SOURCE_DIR}/packaging/security-server.manifest
-    DESTINATION
-    /usr/share
-)
 
 ADD_SUBDIRECTORY(src)
 ADD_SUBDIRECTORY(build)

@@ -1,19 +1,18 @@
 Name:       security-server
 Summary:    Security server and utilities
-Version:    0.0.73
+Version:    0.0.118
 Release:    1
 Group:      Security/Service
 License:    Apache-2.0
 Source0:    %{name}-%{version}.tar.gz
+Source1:    security-server.manifest
+Source2:    libsecurity-server-client.manifest
 BuildRequires: cmake
 BuildRequires: zip
 BuildRequires: pkgconfig(dlog)
 BuildRequires: pkgconfig(openssl)
 BuildRequires: libattr-devel
 BuildRequires: pkgconfig(libsmack)
-Requires(preun):  systemd
-Requires(post):   systemd
-Requires(postun): systemd
 BuildRequires: pkgconfig(libprivilege-control)
 BuildRequires: pkgconfig(libsystemd-daemon)
 %{?systemd_requires}
@@ -58,7 +57,8 @@ Certificates for the Tizen Web-Runtime
 
 %prep
 %setup -q
-cp %{SOURCE1001} .
+cp %{SOURCE1} .
+cp %{SOURCE2} .
 
 %build
 %if 0%{?sec_build_binary_debug_enable}
@@ -130,7 +130,8 @@ fi
 %postun -n libsecurity-server-client -p /sbin/ldconfig
 
 %files -n security-server
-%manifest %{_datadir}/security-server.manifest
+%manifest security-server.manifest
+%defattr(-,root,root,-)
 %attr(755,root,root) /usr/bin/security-server
 %{_libdir}/libsecurity-server-commons.so.*
 %attr(-,root,root) /usr/lib/systemd/system/multi-user.target.wants/security-server.service
@@ -163,7 +164,7 @@ fi
 %{_datadir}/license/%{name}
 
 %files -n libsecurity-server-client
-%manifest %{name}.manifest
+%manifest libsecurity-server-client.manifest
 %defattr(-,root,root,-)
 %{_libdir}/libsecurity-server-client.so.*
 %{_datadir}/license/libsecurity-server-client

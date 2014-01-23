@@ -1,30 +1,5 @@
 <manifest>
-	<define>
-		<domain name="security-server" />
-		<provide>
-			<label name="security-server::daemon" />
-			<label name="security-server::db" />
-			<label name="security-server::api-app-permissions" />
-			<label name="security-server::api-app-privilege-by-name" />
-			<label name="security-server::api-cookie-check" />
-			<label name="security-server::api-cookie-get" />
-			<label name="security-server::api-data-share" />
-			<label name="security-server::api-privilege-by-pid" />
-			<label name="security-server::api-get-smacklabel-socket" />
-			<label name="security-server::api-get-object-name" />
-			<label name="security-server::api-get-gid" />
-			<label name="security-server::api-password-check" />
-			<label name="security-server::api-password-set" />
-			<label name="security-server::api-password-reset" />
-			<label name="security-server::api-open-for" />
-			<label name="security-server::audit-files" />
-		</provide>
-	</define>
-	<request>
-		<domain name="_" />
-	</request>
-	<assign>
-		<filesystem path="/etc/security/security-server-audit.conf" label="security-server::audit-files" />
-	    <filesystem path="/usr/bin/security-server" label="security-server" exec_label="security-server"/>
-	</assign>
+ <request>
+    <domain name="_"/>
+ </request>
 </manifest>

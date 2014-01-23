@@ -123,10 +123,10 @@ namespace SecurityServer
         unsigned int algorithm;
         Deserialization::Deserialize(stream, algorithm);
         switch (algorithm) {
-            case IPassword::PasswordType::NONE:
+            case (unsigned int)IPassword::PasswordType::NONE:
                 ptr.reset(new NoPassword());
                 break;
-            case IPassword::PasswordType::SHA256:
+            case (unsigned int)IPassword::PasswordType::SHA256:
                 ptr.reset(new SHA256Password(stream));
                 break;
             default:
