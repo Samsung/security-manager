@@ -142,6 +142,7 @@ bool OpenForService::processOne(const ConnectionID &conn, MessageBuffer &buffer,
     case OpenForHdrs::OPEN_DEPRECATED:
         LogDebug("Entering open-for OPEN-DEPRECATED server handler.");
         retCode = m_sharedFile.getFD(filename, conn.sock, fd);
+        break;
     default:
         LogError("Error, unknown function called by client,");
         break;
