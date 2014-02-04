@@ -37,6 +37,7 @@
 #include <openssl/sha.h>
 
 #include <dpl/log/log.h>
+#include <dpl/fstream-helper.h>
 
 #include <security-server.h>
 #include <protocols.h>
@@ -359,17 +360,10 @@ namespace SecurityServer
             LogError("Failed to write attempt count.");
             Throw(PasswordException::FStreamWriteError);
         }
-        attemptFile.close();
 
-        int fd;
-        if (0 <= (fd = open(ATTEMPT_FILE.c_str(), O_WRONLY | O_APPEND))) {
-            fchmod(fd, FILE_MODE);
-            fsync(fd); // force synchronization system buffers with file
-            close(fd);
-        } else {
-            int err = errno;
-            LogError("Failed to sync attempt file: " << ATTEMPT_FILE << "strerror: " << strerror(err));
-        }
+        attemptFile.flush();
+        fsync(DPL::FstreamHelper::getFd(attemptFile)); // flush kernel space buffer
+        attemptFile.close();
     }
 
     void PasswordFile::activatePassword()

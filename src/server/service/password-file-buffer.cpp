@@ -28,6 +28,7 @@
 #include <iterator>
 
 #include <dpl/log/log.h>
+#include <dpl/fstream-helper.h>
 
 #include <security-server.h>
 #include <password-exception.h>
@@ -82,16 +83,10 @@ namespace SecurityServer
             LogError("Failed to write data.");
             Throw(PasswordException::FStreamWriteError);
         }
-        file.close();
 
-        int fd;
-        if (0 <= (fd = open(path.c_str(), O_WRONLY | O_APPEND))) {
-            fsync(fd);
-            close(fd);
-        } else {
-            int err = errno;
-            LogError("Failed to fsync on file: " << path << " strerror: " << strerror(err));
-        }
+        file.flush();
+        fsync(DPL::FstreamHelper::getFd(file)); // flush kernel space buffer
+        file.close();
     }
 
     void PasswordFileBuffer::Load(const std::string &path)
