@@ -443,7 +443,7 @@ int security_server_check_privilege_by_cookie(const char *cookie,
  * \return positive integer on success meaning the PID, 0 means the cookie is for root process, negative integer error code on error.
  *
  * \par Prospective clients:
- * Only pre-defiend middleware daemons
+ * Only pre-defined middleware daemons
  *
  * \par Known issues/bugs:
  * None
@@ -522,7 +522,7 @@ int security_server_get_cookie_pid(const char *cookie);
  *
  * \see security_server_set_pwd(), security_server_chk_pwd()
  *
- * \remarks If password file is currupted or accitentally deleted, this API may not synchronized with security-server, but security-server will check file status on next request.
+ * \remarks If password file is corrupted or accidentally deleted, this API may not synchronized with security-server, but security-server will check file status on next request.
  *
  * \par Sample code:
  * \code
@@ -580,7 +580,7 @@ int security_server_is_pwd_valid(unsigned int *current_attempts,
  * \param[in] max_challenge Maximum number of attempts that user can try to check the password without success in serial. 0 means infinity.
  * \param[in] valid_period_in_days. Number of days that this password is valid. 0 means infinity
  *
- * \return 0 on seccuess, negative integer error code on error.
+ * \return 0 on success, negative integer error code on error.
  *
  * \par Prospective clients:
  * Platform's THE ONLY setting application and some dedicated privileged processes
@@ -594,7 +594,7 @@ int security_server_is_pwd_valid(unsigned int *current_attempts,
  *
  * \see security_server_is_pwd_valid(), security_server_chk_pwd(), security_server_reset_pwd()
  *
- * \remarks Only setting application can call this API. The password file will be acces controlled and securely hashed. Security-server will remain previous password file to recover unexpected password file curruption.
+ * \remarks Only setting application can call this API. The password file will be access controlled and securely hashed. Security-server will remain previous password file to recover unexpected password file corruption.
  * \remarks If current password exists and it's expired, or max attempts reached, you cannot call this API. You have to call security_server_reset_pwd() API.
  *
  * \par Sample code:
@@ -714,7 +714,7 @@ int security_server_set_pwd_max_challenge(const unsigned int max_challenge);
  * This API should be used by setting application or dedicated processes when the user changes his/her phone password.
  *
  * \par Typical use case:
- * User forgots the password. He calls emergency manager(auto or manual)  for reset password. Emergency manager calls this API and reset phone password.
+ * User forgets the password. He calls emergency manager(auto or manual)  for reset password. Emergency manager calls this API and reset phone password.
  *
  * \par Method of function operation:
  * Resetting phone password with input string without any matching current password.
@@ -729,7 +729,7 @@ int security_server_set_pwd_max_challenge(const unsigned int max_challenge);
  * \param[in] max_challenge Maximum number of attempts that user can try to check the password without success in serial. 0 means infinity.
  * \param[in] valid_period_in_days. Number of days that this password is valid. 0 means infinity
  *
- * \return 0 on seccuess, negative integer error code on error.
+ * \return 0 on success, negative integer error code on error.
  *
  * \par Prospective clients:
  * Platform's THE ONLY setting application and some dedicated privileged processes
@@ -743,7 +743,7 @@ int security_server_set_pwd_max_challenge(const unsigned int max_challenge);
  *
  * \see security_server_is_pwd_valid(), security_server_chk_pwd(), security_server_set_pwd()
  *
- * \remarks Only dedicated applications can call this API. The password file will be acces controlled and securely hashed. Security-server will remain previous password file to recover unexpected password file curruption.
+ * \remarks Only dedicated applications can call this API. The password file will be access controlled and securely hashed. Security-server will remain previous password file to recover unexpected password file corruption.
  *
  * \par Sample code:
  * \code
@@ -791,7 +791,7 @@ int security_server_reset_pwd(const char *new_pwd,
  * \param[out] max_attempts Number of maximum attempts that the password locks. 0 means infinite
  * \param[out] valid_secs Remaining time in second which represents this password will be expired. 0xFFFFFFFF means infinite
  *
- * \return 0 on seccuess, negative integer error code on error.
+ * \return 0 on success, negative integer error code on error.
  *
  * \par Prospective clients:
  * Applications which has phone UI lock feature.
@@ -858,7 +858,7 @@ int security_server_chk_pwd(const char *challenge,
  *
  * \param[in] history_size Number of history to be checked when user tries to change password. Maximum is currently 50
  *
- * \return 0 on seccuess, negative integer error code on error.
+ * \return 0 on success, negative integer error code on error.
  *
  * \par Prospective clients:
  * MDM client, Enterprise manager.
@@ -872,7 +872,7 @@ int security_server_chk_pwd(const char *challenge,
  *
  * \see security_server_set_pwd()
  *
- * \remarks The password file will be acces controlled and securely hashed. Security-server will remain previous password file to recover unexpected password file curruption.
+ * \remarks The password file will be access controlled and securely hashed. Security-server will remain previous password file to recover unexpected password file curruption.
  *
  * \par Sample code:
  * \code
@@ -936,9 +936,9 @@ char *security_server_get_smacklabel_sockfd(int fd);
 int security_server_app_give_access(const char *customer_label, int customer_pid);
 
 /*
- * This function allows middleware to check priviliges of process with specified PID or socket
+ * This function allows middleware to check privileges of process with specified PID or socket
  * file descriptor.
- * Service is able to check proces acces to the specified object label with specified
+ * Service is able to check process access to the specified object label with specified
  * access rights.
  *
  * \param[in] PID id of process or SOCKFD socket file descriptor to be checked
@@ -946,7 +946,7 @@ int security_server_app_give_access(const char *customer_label, int customer_pid
  * \param[in] SMACK access rights to be checked
  *
  * \return Privilege confirm or error code
- * SECURITY_SERVER_SUCCESS - on succes
+ * SECURITY_SERVER_SUCCESS - on success
  *
  * Access to this function requires SMACK rule: "<app_label> security-server::api-privilege-by-pid w"
  */
@@ -959,7 +959,7 @@ int security_server_check_privilege_by_sockfd(int sockfd,
  * This function allows middleware to enable permissions for specified app_id.
  *
  * \param[in] Application ID
- * \param[in] Application type definet in enum at the beginning of this file
+ * \param[in] Application type defined in enum at the beginning of this file
  * \param[in] Permissions list
  * \param[in] Persistent
  *
@@ -973,7 +973,7 @@ int security_server_app_enable_permissions(const char *app_id, app_type_t app_ty
  * This function allows middleware to disable permissions for specified app_id.
  *
  * \param[in] Application ID
- * \param[in] Application type definet in enum at the beginning of this file
+ * \param[in] Application type defined in enum at the beginning of this file
  * \param[in] Permissions list
  *
  * \return SECURITY_SERVER_SUCCESS on success or error code on fail
@@ -1066,7 +1066,7 @@ int security_server_open_for(const char *filename, int *fd) __attribute__((depre
  * \return SECURITY_SERVER_API_SUCCESS on success or one of error codes on fail
  * \return SECURITY_SERVER_API_ERROR_ACCESS_DENIED
  * \return SECURITY_SERVER_API_ERROR_SOCKET
- * \retrun SECURITY_SERVER_API_ERROR_INPUT_PARAM
+ * \return SECURITY_SERVER_API_ERROR_INPUT_PARAM
  * \return SECURITY_SERVER_API_ERROR_GETTING_SOCKET_LABEL_FAILED
  * \return SECURITY_SERVER_API_ERROR_FILE_CREATION_FAILED
  * \return SECURITY_SERVER_API_ERROR_SETTING_FILE_LABEL_FAILED
