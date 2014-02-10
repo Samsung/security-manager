@@ -26,12 +26,14 @@
 #include <dpl/log/log.h>
 #include <dpl/serialization.h>
 #include <protocols.h>
+#include <cookie-common.h>
 #include <security-server.h>
 #include <cookie.h>
 #include <smack-check.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/smack.h>
+#include <linux/limits.h>
 
 //interfaces ID
 const int INTERFACE_GET = 0;
@@ -181,13 +183,28 @@ bool CookieService::cookieRequest(MessageBuffer &send, int socket)
         return false;
 
     const Cookie *generatedCookie = m_cookieJar.GenerateCookie(cr.pid);
-    if (generatedCookie != NULL) {
-        //cookie created correct
-        Serialization::Serialize(send, (int)SECURITY_SERVER_API_SUCCESS);
-        Serialization::Serialize(send, generatedCookie->cookieId);
-    } else {
+
+    if (generatedCookie == NULL) {
         //unable to create cookie
         Serialization::Serialize(send, (int)SECURITY_SERVER_API_ERROR_UNKNOWN);
+        return true;
+    }
+
+    //checking if binary path match created / found cookie
+    char path[PATH_MAX];
+    int ret = getPidPath(path, PATH_MAX, cr.pid);
+
+    if (ret < 0) {
+        LogError("Unable to check process binary path");
+        Serialization::Serialize(send, (int)SECURITY_SERVER_API_ERROR_UNKNOWN);
+    } else {
+        if (generatedCookie->binaryPath.compare(path)) {
+            LogDebug("Found cookie but no match in bin path");
+            Serialization::Serialize(send, (int)SECURITY_SERVER_API_ERROR_UNKNOWN);
+        } else {
+            Serialization::Serialize(send, (int)SECURITY_SERVER_API_SUCCESS);
+            Serialization::Serialize(send, generatedCookie->cookieId);
+        }
     }
 
     return true;

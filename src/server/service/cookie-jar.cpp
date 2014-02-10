@@ -24,6 +24,7 @@
 
 #include <cookie-jar.h>
 #include <protocols.h>
+#include <cookie-common.h>
 #include <dpl/log/log.h>
 #include <dpl/exception.h>
 #include <vector>
@@ -71,7 +72,7 @@ const Cookie * CookieJar::GenerateCookie(int pid)
         return searchResult;
     }
 
-    searchResult = &newCookie;   //only for searchResult != NULL
+    searchResult = &newCookie;   //only for searchResult != NULL during while loop init
     while(searchResult != NULL) {
         //generate unique key
         std::ifstream urandom("/dev/urandom", std::ifstream::binary);
@@ -85,16 +86,12 @@ const Cookie * CookieJar::GenerateCookie(int pid)
     }
 
     //obtain process path
-    char link[PATH_MAX];
     char path[PATH_MAX];
-
-    snprintf(link, PATH_MAX, "/proc/%d/exe", pid);
-    retval = readlink(link, path, PATH_MAX-1);
+    retval = getPidPath(path, PATH_MAX, pid);
     if (retval < 0) {
         LogDebug("Unable to get process path");
         return NULL;
     }
-    path[retval] = '\0';
     newCookie.binaryPath = path;
 
     //get smack label if smack enabled
@@ -145,6 +142,7 @@ const Cookie * CookieJar::GenerateCookie(int pid)
     for (size_t k = 0; k < newCookie.permissions.size(); k++)
         LogDebug("GID: " << newCookie.permissions[k]);
 
+    //only when cookie ready store it
     m_cookieList.push_back(newCookie);
     return &m_cookieList[m_cookieList.size() - 1];
 }

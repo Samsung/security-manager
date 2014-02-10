@@ -20,6 +20,7 @@ SET(SECURITY_SERVER_SOURCES
     ${SERVER2_PATH}/service/app-permissions.cpp
     ${SERVER2_PATH}/service/cookie.cpp
     ${SERVER2_PATH}/service/cookie-jar.cpp
+    ${SERVER2_PATH}/service/cookie-common.cpp
     ${SERVER2_PATH}/service/privilege-by-pid.cpp
     ${SERVER2_PATH}/service/open-for.cpp
     ${SERVER2_PATH}/service/open-for-manager.cpp
