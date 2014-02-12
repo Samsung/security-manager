@@ -28,7 +28,7 @@
 #include <iterator>
 
 #include <dpl/log/log.h>
-#include <dpl/fstream-helper.h>
+#include <dpl/fstream_accessors.h>
 
 #include <security-server.h>
 #include <password-exception.h>
@@ -85,7 +85,7 @@ namespace SecurityServer
         }
 
         file.flush();
-        fsync(DPL::FstreamHelper::getFd(file)); // flush kernel space buffer
+        fsync(DPL::FstreamAccessors<std::ofstream>::GetFd(file)); // flush kernel space buffer
         file.close();
     }
 

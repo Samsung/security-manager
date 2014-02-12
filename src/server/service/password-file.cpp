@@ -37,7 +37,7 @@
 #include <openssl/sha.h>
 
 #include <dpl/log/log.h>
-#include <dpl/fstream-helper.h>
+#include <dpl/fstream_accessors.h>
 
 #include <security-server.h>
 #include <protocols.h>
@@ -362,7 +362,7 @@ namespace SecurityServer
         }
 
         attemptFile.flush();
-        fsync(DPL::FstreamHelper::getFd(attemptFile)); // flush kernel space buffer
+        fsync(DPL::FstreamAccessors<std::ofstream>::GetFd(attemptFile)); // flush kernel space buffer
         attemptFile.close();
     }
 

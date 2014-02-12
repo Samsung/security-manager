@@ -22,10 +22,8 @@
  *
  */
 
-#ifndef __FSTREAM_HELPER__
-#define __FSTREAM_HELPER__
-
-#include <fstream>
+#ifndef SECURITY_SERVER_FSTREAM_ACCESSORS_H
+#define SECURITY_SERVER_FSTREAM_ACCESSORS_H
 
 namespace DPL {
 
@@ -36,13 +34,15 @@ namespace DPL {
  * physical device [fsync(int fd) - syscall] on opened fstream object
 */
 
-struct FstreamHelper : std::fstream::__filebuf_type {
-    template<typename T>
-    static int getFd(T &strm) {
-        return static_cast<FstreamHelper *>(strm.rdbuf())->_M_file.fd();
+template<typename T>
+class FstreamAccessors : T::__filebuf_type {
+    typedef FstreamAccessors<T> MyType;
+public:
+    static int GetFd(T &strm) {
+        return static_cast<MyType *>(strm.rdbuf())->_M_file.fd();
     }
 };
 
 } // namespace DPL
 
-#endif // __FSTREAM_HELPER__
+#endif // SECURITY_SERVER_FSTREAM_ACCESSORS_H

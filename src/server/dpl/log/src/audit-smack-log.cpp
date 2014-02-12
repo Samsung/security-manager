@@ -39,7 +39,7 @@
 
 #include <dpl/log/audit-smack-log.h>
 #include <dpl/log/log.h>
-#include <dpl/fstream-helper.h>
+#include <dpl/fstream_accessors.h>
 
 #define UNUSED __attribute__((unused))
 
@@ -136,7 +136,7 @@ void AuditSmackLog::HandleWrite(const char *message,
         std::string("] ") << function << std::string("(): ") <<
         message << std::endl;
 
-    fsync(DPL::FstreamHelper::getFd(m_outputStream)); // flush kernel space buffer
+    fsync(DPL::FstreamAccessors<std::ofstream>::GetFd(m_outputStream)); // flush kernel space buffer
 }
 
 int AuditSmackLog::CreateLogFile()
