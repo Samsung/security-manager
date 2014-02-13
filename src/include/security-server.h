@@ -708,7 +708,8 @@ int security_server_set_pwd_max_challenge(const unsigned int max_challenge);
 
 /**
  * \par Description:
- * This API sets phone password only if current password is invalid or user forgot the password.
+ * This API sets phone password without performing any checks connected with provided password. It
+ * should be used only if current password is invalid or user forgot the password.
  *
  * \par Purpose:
  * This API should be used by setting application or dedicated processes when the user changes his/her phone password.
@@ -717,7 +718,9 @@ int security_server_set_pwd_max_challenge(const unsigned int max_challenge);
  * User forgets the password. He calls emergency manager(auto or manual)  for reset password. Emergency manager calls this API and reset phone password.
  *
  * \par Method of function operation:
- * Resetting phone password with input string without any matching current password.
+ * Resetting phone password with input string without any matching current password. Function does
+ * no checks before password replacement (expiration time check, currently set password checks,
+ * history check and attempt count check are skipped).
  *
  * \par Sync (or) Async:
  * This is a Synchronous API.
