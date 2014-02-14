@@ -135,8 +135,6 @@ void AuditSmackLog::HandleWrite(const char *message,
         LocateSourceFileName(filename) << std::string(":") << line <<
         std::string("] ") << function << std::string("(): ") <<
         message << std::endl;
-
-    fsync(DPL::FstreamAccessors<std::ofstream>::GetFd(m_outputStream)); // flush kernel space buffer
 }
 
 int AuditSmackLog::CreateLogFile()
