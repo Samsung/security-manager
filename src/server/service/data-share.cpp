@@ -77,7 +77,7 @@ bool SharedMemoryService::processOne(const ConnectionID &conn, MessageBuffer &bu
     }
 
     if (smack_check()) {
-        if (0 != smack_new_label_from_socket(conn.sock, &providerLabel)) {
+        if (0 > smack_new_label_from_socket(conn.sock, &providerLabel)) {
             LogDebug("Error in smack_new_label_from_socket");
             retCode = SECURITY_SERVER_API_ERROR_BAD_REQUEST;
             goto end;
