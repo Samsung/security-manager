@@ -76,9 +76,11 @@
 #define SECURITY_SERVER_API_ERROR_BAD_RESPONSE -3
 
 /*! \brief   indicating the transmitting request has been failed */
+/* deprecated unused */
 #define SECURITY_SERVER_API_ERROR_SEND_FAILED -4
 
 /*! \brief   indicating the receiving response has been failed */
+/* deprecated unused */
 #define SECURITY_SERVER_API_ERROR_RECV_FAILED -5
 
 /*! \brief   indicating requesting object is not exist */
@@ -536,7 +538,7 @@ int security_server_get_cookie_pid(const char *cookie);
  * {
  *      printf("%s", "There is no password exists\n");
  * }
- * else if(is_pwd_set == SECURITY_SERVER_SUCCESS && expire_sec > 0 && attempt < max_attempts)
+ * else if(is_pwd_set == SECURITY_SERVER_API_SUCCESS && expire_sec > 0 && attempt < max_attempts)
  * {
  *	printf("%s", "Password is valid by now\n");
  * }
@@ -615,7 +617,7 @@ int security_server_is_pwd_valid(unsigned int *current_attempts,
  *              ...
  *      }
  * }
- * else if(is_pwd_set == SECURITY_SERVER_SUCCESS && expire_sec > 0 && attempt < max_attempts)
+ * else if(is_pwd_set == SECURITY_SERVER_API_SUCCESS && expire_sec > 0 && attempt < max_attempts)
  * {
  *	printf("%s", "Password is valid by now\n");
  *      ret = security_server_set_pwd("this_is_current_pwd", "this_is_new_pwd", 20, 365);
@@ -934,6 +936,20 @@ char *security_server_get_smacklabel_sockfd(int fd);
  * (subject) customer_label to caller process (object).
  * Object label will be extracted from socket.
  *
+ * \param[in] CUSTOMER_LABEL execute label of the process that should have access to caller.
+ * \param[in] CUSTOMER_PID all rules applied by this function should be removed from system
+ *                         when process with CUSTOMER_PID dies.
+ *
+ * \return SECURITY_SERVER_API_SUCCESS on success
+ * \return SECURITY_SERVER_API_ERROR_GETTING_SOCKET_LABEL_FAILED
+ * \return SECURITY_SERVER_API_ERROR_ACCESS_DENIED
+ * \return SECURITY_SERVER_API_ERROR_BAD_REQUEST input params were rejected by security-server
+ * \return SECURITY_SERVER_API_ERROR_INPUT_PARAM input params were rejected by client library
+ * \return SECURITY_SERVER_API_ERROR_SOCKET connection to security server failed.
+ *
+ * Important: In current implementation CUSTOMER_PID is ignored! This mean that rules applied
+ * by this function won't be revoke until device reset!
+ *
  * Access to this function requires SMACK rule: "<app_label> security-server::api-data-share w"
  * */
 int security_server_app_give_access(const char *customer_label, int customer_pid);
@@ -949,7 +965,7 @@ int security_server_app_give_access(const char *customer_label, int customer_pid
  * \param[in] SMACK access rights to be checked
  *
  * \return Privilege confirm or error code
- * SECURITY_SERVER_SUCCESS - on success
+ * \return SECURITY_SERVER_API_SUCCESS - on succes
  *
  * Access to this function requires SMACK rule: "<app_label> security-server::api-privilege-by-pid w"
  */
@@ -966,7 +982,7 @@ int security_server_check_privilege_by_sockfd(int sockfd,
  * \param[in] Permissions list
  * \param[in] Persistent
  *
- * \return SECURITY_SERVER_SUCCESS on success or error code on fail
+ * \return SECURITY_SERVER_API_SUCCESS on success or error code on fail
  *
  * Access to this function requires SMACK rule: "<app_label> security-server::api-app-permissions w"
  */
@@ -979,7 +995,7 @@ int security_server_app_enable_permissions(const char *app_id, app_type_t app_ty
  * \param[in] Application type defined in enum at the beginning of this file
  * \param[in] Permissions list
  *
- * \return SECURITY_SERVER_SUCCESS on success or error code on fail
+ * \return SECURITY_SERVER_API_SUCCESS on success or error code on fail
  *
  * Access to this function requires SMACK rule: "<app_label> security-server::api-app-permissions w"
  */
@@ -991,7 +1007,7 @@ int security_server_app_disable_permissions(const char *app_id, app_type_t app_t
  * \param[in] Cookie
  * \param[out] Handler to store UID
  *
- * \return SECURITY_SERVER_SUCCESS on success or error code on fail
+ * \return SECURITY_SERVER_API_SUCCESS on success or error code on fail
  *
  * Access to this function requires SMACK rule: "<app_label> security-server::api-cookie-check w"
  */
@@ -1006,7 +1022,7 @@ int security_server_get_uid_by_cookie(const char *cookie, uid_t *uid);
  * \param[in] Privilege name
  * \param[out] Handler to store the result. It is set to 1 (true) if privilege is enabled, 0 (false) otherwise
  *
- * \return SECURITY_SERVER_SUCCESS on success or error code on fail
+ * \return SECURITY_SERVER_API_SUCCESS on success or error code on fail
  *
  * Access to this function requires SMACK rule: "<app_label> security-server::api-app-privilege-by-name w"
  */
@@ -1023,7 +1039,7 @@ int security_server_app_has_privilege(const char *app_id,
  * \param[in] Privilege name
  * \param[out] Handler to store the result. It is set to 1 (true) if privilege is enabled, 0 (false) otherwise
  *
- * \return SECURITY_SERVER_SUCCESS on success or error code on fail
+ * \return SECURITY_SERVER_API_SUCCESS on success or error code on fail
  *
  * Access to this function requires SMACK rule: "<app_label> security-server::api-app-privilege-by-name w"
  */
@@ -1037,7 +1053,7 @@ int security_server_app_caller_has_privilege(app_type_t app_type,
  * \param[in] Cookie
  * \param[out] Handler to store GID
  *
- * \return SECURITY_SERVER_SUCCESS on success or error code on fail
+ * \return SECURITY_SERVER_API_SUCCESS on success or error code on fail
  *
  * Access to this function requires SMACK rule: "<app_label> security-server::api-cookie-check w"
  */
