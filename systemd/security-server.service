@@ -13,6 +13,7 @@ Sockets=security-server-cookie-check.socket
 Sockets=security-server-password-check.socket
 Sockets=security-server-password-set.socket
 Sockets=security-server-password-reset.socket
+Sockets=security-manager-installer.socket # TODO: move to separate systemd service
 
 [Install]
 WantedBy=multi-user.target

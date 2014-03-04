@@ -1,0 +1,15 @@
+[Socket]
+ListenStream=/tmp/.security-manager-api-installer.sock
+SocketMode=0777
+SmackLabelIPIn=*
+SmackLabelIPOut=@
+
+# TODO: move to separate systemd service
+Service=security-server.service
+
+[Unit]
+Wants=security-server.target
+Before=security-server.target
+
+[Install]
+WantedBy=sockets.target
