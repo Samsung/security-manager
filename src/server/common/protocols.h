@@ -33,11 +33,9 @@ namespace SecurityServer {
 extern char const * const SERVICE_SOCKET_SHARED_MEMORY;
 extern char const * const SERVICE_SOCKET_GET_GID;
 extern char const * const SERVICE_SOCKET_PRIVILEGE_BY_PID;
-extern char const * const SERVICE_SOCKET_APP_PERMISSIONS;
 extern char const * const SERVICE_SOCKET_APP_PRIVILEGE_BY_NAME;
 extern char const * const SERVICE_SOCKET_COOKIE_GET;
 extern char const * const SERVICE_SOCKET_COOKIE_CHECK;
-extern char const * const SERVICE_SOCKET_OPEN_FOR;
 extern char const * const SERVICE_SOCKET_PASSWD_CHECK;
 extern char const * const SERVICE_SOCKET_PASSWD_SET;
 extern char const * const SERVICE_SOCKET_PASSWD_RESET;
@@ -53,20 +51,6 @@ enum class CookieCall
     CHECK_PRIVILEGE,
     CHECK_GID,
     CHECK_UID
-};
-
-enum class PrivilegeCheckHdrs
-{
-    CHECK_GIVEN_APP,
-    CHECK_CALLER_APP
-};
-
-enum class OpenForHdrs : unsigned int
-{
-    OPEN,
-    REOPEN,
-    DELETE,
-    OPEN_DEPRECATED
 };
 
 extern const size_t COOKIE_SIZE;

@@ -35,6 +35,7 @@
 #include <smack-check.h>
 
 #include <privilege-control.h>
+#include <smack-common.h>
 
 namespace SecurityServer {
 
@@ -86,7 +87,7 @@ bool PrivilegeByPidService::processOne(const ConnectionID &conn, MessageBuffer &
         retval = smack_pid_have_access(pid, object.c_str(), access_rights.c_str());
         LogDebug("smack_pid_have_access returned " << retval);
 
-        if (get_smack_label_from_process(pid, subject) != PC_OPERATION_SUCCESS) {
+        if (-1 != get_smack_label_from_process(pid, subject)) {
             // subject label is set to empty string
             LogError("get_smack_label_from_process failed. Subject label has not been read.");
         } else {

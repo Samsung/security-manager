@@ -40,6 +40,7 @@
 #include <linux/limits.h>
 #include <signal.h>
 #include <errno.h>
+#include <smack-common.h>
 
 namespace SecurityServer {
 
@@ -97,8 +98,7 @@ const Cookie * CookieJar::GenerateCookie(int pid)
     //get smack label if smack enabled
     if (smack_check()) {
         char label[SMACK_LABEL_LEN + 1];
-        retval = get_smack_label_from_process(pid, label);
-        if (retval != PC_OPERATION_SUCCESS) {
+        if (-1 == get_smack_label_from_process(pid, label)) {
             LogDebug("Unable to get smack label of process");
             return NULL;
         }

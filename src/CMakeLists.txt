@@ -17,17 +17,15 @@ SET(SECURITY_SERVER_SOURCES
     ${SERVER2_PATH}/main/server2-main.cpp
     ${SERVER2_PATH}/service/data-share.cpp
     ${SERVER2_PATH}/service/get-gid.cpp
-    ${SERVER2_PATH}/service/app-permissions.cpp
     ${SERVER2_PATH}/service/cookie.cpp
     ${SERVER2_PATH}/service/cookie-jar.cpp
     ${SERVER2_PATH}/service/cookie-common.cpp
     ${SERVER2_PATH}/service/privilege-by-pid.cpp
-    ${SERVER2_PATH}/service/open-for.cpp
-    ${SERVER2_PATH}/service/open-for-manager.cpp
     ${SERVER2_PATH}/service/password.cpp
     ${SERVER2_PATH}/service/password-file.cpp
     ${SERVER2_PATH}/service/password-manager.cpp
     ${SERVER2_PATH}/service/password-file-buffer.cpp
+    ${SERVER2_PATH}/service/smack-common.cpp
     )
 
 SET_SOURCE_FILES_PROPERTIES(
@@ -53,6 +51,7 @@ ADD_EXECUTABLE(${TARGET_SECURITY_SERVER} ${SECURITY_SERVER_SOURCES})
 TARGET_LINK_LIBRARIES(${TARGET_SECURITY_SERVER}
     ${SECURITY_SERVER_DEP_LIBRARIES}
     ${TARGET_SERVER_COMMON}
+    -lcap
     )
 
 ################################################################################
@@ -71,11 +70,9 @@ SET(SECURITY_CLIENT_SOURCES
     ${SERVER2_PATH}/client/client-common.cpp
     ${SERVER2_PATH}/client/client-shared-memory.cpp
     ${SERVER2_PATH}/client/client-get-gid.cpp
-    ${SERVER2_PATH}/client/client-app-permissions.cpp
     ${SERVER2_PATH}/client/client-cookie.cpp
     ${SERVER2_PATH}/client/client-privilege-by-pid.cpp
     ${SERVER2_PATH}/client/client-socket-privilege.cpp
-    ${SERVER2_PATH}/client/client-open-for.cpp
     ${SERVER2_PATH}/client/client-password.cpp
     )
 
