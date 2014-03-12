@@ -48,7 +48,7 @@ int security_server_check_privilege_by_sockfd(int sockfd,
 
     //for get socket options
     struct ucred cr;
-    size_t len = sizeof(struct ucred);
+    socklen_t len = sizeof(struct ucred);
 
     //SMACK runtime check
     if (!SecurityServer::smack_runtime_check())
