@@ -23,7 +23,7 @@
 #define SECURITY_SERVER_H
 
 #include <sys/types.h>
-#include <privilege-control.h>
+
 
 /**
  * @file    security-server.h
