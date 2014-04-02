@@ -75,6 +75,9 @@
 /*! \brief   indicating the response from Security Server is malformed */
 #define SECURITY_SERVER_API_ERROR_BAD_RESPONSE -3
 
+/*! \brief   indicating the requested service does not exist */
+#define SECURITY_SERVER_API_ERROR_NO_SUCH_SERVICE -4
+
 /*! \brief   indicating requesting object is not exist */
 #define SECURITY_SERVER_API_ERROR_NO_SUCH_OBJECT -6
 

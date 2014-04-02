@@ -107,7 +107,7 @@ public:
 
         if (strlen(interface) >= sizeof(clientAddr.sun_path)) {
             LogError("Error: interface name " << interface << "is too long. Max len is:" << sizeof(clientAddr.sun_path));
-            return SECURITY_SERVER_API_ERROR_SOCKET;
+            return SECURITY_SERVER_API_ERROR_NO_SUCH_SERVICE;
         }
 
         strcpy(clientAddr.sun_path, interface);
@@ -148,6 +148,8 @@ public:
             LogError("Error connecting socket: " << strerror(err));
             if (err == EACCES)
                 return SECURITY_SERVER_API_ERROR_ACCESS_DENIED;
+            if (err == ENOTSOCK)
+                return SECURITY_SERVER_API_ERROR_NO_SUCH_SERVICE;
             return SECURITY_SERVER_API_ERROR_SOCKET;
         }
 
