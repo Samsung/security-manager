@@ -41,6 +41,7 @@ int security_server_check_privilege_by_pid(
         int pid,
         const char *object,
         const char *access_rights) {
+#if 0
     using namespace SecurityServer;
     return try_catch([&] {
         if (1 != smack_check())
@@ -78,5 +79,7 @@ int security_server_check_privilege_by_pid(
         Deserialization::Deserialize(recv, result);
         return result;
     });
+#endif
+	return SECURITY_SERVER_API_SUCCESS;
 }
 

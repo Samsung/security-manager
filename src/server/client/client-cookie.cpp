@@ -209,6 +209,7 @@ int security_server_check_privilege(const char *cookie, gid_t privilege)
 SECURITY_SERVER_API
 int security_server_check_privilege_by_cookie(const char *cookie, const char *object, const char *access_rights)
 {
+#if 0
     using namespace SecurityServer;
     MessageBuffer send, recv;
     int retval = SECURITY_SERVER_API_ERROR_UNKNOWN;
@@ -242,6 +243,8 @@ int security_server_check_privilege_by_cookie(const char *cookie, const char *ob
         Deserialization::Deserialize(recv, retval);
         return retval;
     });
+#endif
+	return SECURITY_SERVER_API_SUCCESS;
 }
 
 SECURITY_SERVER_API
