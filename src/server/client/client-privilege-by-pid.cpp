@@ -38,9 +38,10 @@
 
 SECURITY_SERVER_API
 int security_server_check_privilege_by_pid(
-        int pid,
-        const char *object,
-        const char *access_rights) {
+    int pid                   SECURITY_SERVER_UNUSED,
+    const char *object        SECURITY_SERVER_UNUSED,
+    const char *access_rights SECURITY_SERVER_UNUSED)
+{
 #if 0
     using namespace SecurityServer;
     return try_catch([&] {

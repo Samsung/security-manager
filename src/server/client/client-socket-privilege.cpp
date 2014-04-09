@@ -37,9 +37,10 @@
 #include <security-server.h>
 
 SECURITY_SERVER_API
-int security_server_check_privilege_by_sockfd(int sockfd,
-                                              const char *object,
-                                              const char *access_rights)
+int security_server_check_privilege_by_sockfd(
+    int sockfd                SECURITY_SERVER_UNUSED,
+    const char *object        SECURITY_SERVER_UNUSED,
+    const char *access_rights SECURITY_SERVER_UNUSED)
 {
 #if 0
     char *subject = NULL;
