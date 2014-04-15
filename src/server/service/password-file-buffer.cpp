@@ -53,12 +53,7 @@ namespace SecurityServer
             Throw(PasswordException::OutOfData);
         }
 
-        void* ret = memcpy(bytes, &m_buffer[m_bufferReadBytes], num);
-
-        if(ret == 0) {
-            LogError("Failed to read " << num << " bytes.");
-            Throw(PasswordException::MemoryError);
-        }
+        memcpy(bytes, &m_buffer[m_bufferReadBytes], num);
 
         m_bufferReadBytes += num;
     }

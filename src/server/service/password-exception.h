@@ -38,7 +38,6 @@ namespace SecurityServer
         DECLARE_EXCEPTION_TYPE(Base, FStreamOpenError)
         DECLARE_EXCEPTION_TYPE(Base, FStreamWriteError)
         DECLARE_EXCEPTION_TYPE(Base, FStreamReadError)
-        DECLARE_EXCEPTION_TYPE(Base, MemoryError)
         DECLARE_EXCEPTION_TYPE(Base, NoPasswords)
         DECLARE_EXCEPTION_TYPE(Base, PasswordNotActive)
         DECLARE_EXCEPTION_TYPE(Base, MakeDirError)
