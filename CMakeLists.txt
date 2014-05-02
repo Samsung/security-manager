@@ -60,6 +60,7 @@ ENDIF (CMAKE_BUILD_TYPE MATCHES "DEBUG")
 
 SET(TARGET_SECURITY_SERVER "security-server")
 SET(TARGET_SECURITY_CLIENT "security-server-client")
+SET(TARGET_SECURITY_MANAGER_CLIENT "security-manager-client")
 SET(TARGET_SERVER_COMMON "security-server-commons")
 
 ADD_SUBDIRECTORY(src)

@@ -7,6 +7,7 @@ License:    Apache-2.0
 Source0:    %{name}-%{version}.tar.gz
 Source1:    security-server.manifest
 Source2:    libsecurity-server-client.manifest
+Source3:    libsecurity-manager-client.manifest
 BuildRequires: cmake
 BuildRequires: zip
 BuildRequires: pkgconfig(dlog)
@@ -29,7 +30,7 @@ Requires(post): /sbin/ldconfig
 Requires(postun): /sbin/ldconfig
 
 %description -n libsecurity-server-client
-Tizen Security server client libraries
+Tizen Security server client library
 
 %package -n libsecurity-server-client-devel
 Summary:    Security server (client-devel)
@@ -39,6 +40,24 @@ Requires:   libprivilege-control-devel
 
 %description -n libsecurity-server-client-devel
 Development files needed for using the security client
+
+%package -n libsecurity-manager-client
+Summary:    Security manager (client)
+Group:      Security/Libraries
+Requires:   security-server = %{version}-%{release}
+Requires(post): /sbin/ldconfig
+Requires(postun): /sbin/ldconfig
+
+%description -n libsecurity-manager-client
+Tizen Security manager client library
+
+%package -n libsecurity-manager-client-devel
+Summary:    Security manager (client-devel)
+Group:      Security/Development
+Requires:   libsecurity-manager-client = %{version}-%{release}
+
+%description -n libsecurity-manager-client-devel
+Development files needed for using the security manager client
 
 %package -n security-server-devel
 Summary:    for web applications (Development)
@@ -60,6 +79,7 @@ Certificates for the Tizen Web-Runtime
 %setup -q
 cp %{SOURCE1} .
 cp %{SOURCE2} .
+cp %{SOURCE3} .
 
 %build
 %if 0%{?sec_build_binary_debug_enable}
@@ -80,6 +100,7 @@ rm -rf %{buildroot}
 mkdir -p %{buildroot}/usr/share/license
 cp LICENSE %{buildroot}/usr/share/license/%{name}
 cp LICENSE %{buildroot}/usr/share/license/libsecurity-server-client
+cp LICENSE %{buildroot}/usr/share/license/libsecurity-manager-client
 mkdir -p %{buildroot}/etc/security/
 cp security-server-audit.conf %{buildroot}/etc/security/
 %make_install
@@ -126,7 +147,11 @@ fi
 
 %post -n libsecurity-server-client -p /sbin/ldconfig
 
+%post -n libsecurity-manager-client -p /sbin/ldconfig
+
 %postun -n libsecurity-server-client -p /sbin/ldconfig
+
+%postun -n libsecurity-manager-client -p /sbin/ldconfig
 
 %files -n security-server
 %manifest security-server.manifest
@@ -169,5 +194,19 @@ fi
 %defattr(-,root,root,-)
 %{_libdir}/libsecurity-server-client.so
 %{_libdir}/libsecurity-server-commons.so
-/usr/include/security-server/security-server.h
-%{_libdir}/pkgconfig/*.pc
+%{_includedir}/security-server/security-server.h
+%{_libdir}/pkgconfig/security-server.pc
+
+%files -n libsecurity-manager-client
+%manifest libsecurity-manager-client.manifest
+%defattr(-,root,root,-)
+%{_libdir}/libsecurity-manager-client.so.*
+%{_datadir}/license/libsecurity-manager-client
+
+%files -n libsecurity-manager-client-devel
+%manifest %{name}.manifest
+%defattr(-,root,root,-)
+%{_libdir}/libsecurity-manager-client.so
+%{_libdir}/libsecurity-server-commons.so
+%{_includedir}/security-manager/security-manager.h
+%{_libdir}/pkgconfig/security-manager.pc

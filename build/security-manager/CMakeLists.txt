@@ -13,8 +13,14 @@
 #    limitations under the License.
 #
 # @file        CMakeLists.txt
-# @author      Tomasz Swierczek (t.swierczek@samsung.com)
+# @author      Pawel Polawski (p.polawski@samsung.com)
+# @brief
 #
 
-ADD_SUBDIRECTORY(security-server)
-ADD_SUBDIRECTORY(security-manager)
+CONFIGURE_FILE(security-manager.pc.in security-manager.pc @ONLY)
+
+INSTALL(FILES
+    ${CMAKE_BINARY_DIR}/build/security-manager/security-manager.pc
+    DESTINATION
+    ${LIB_INSTALL_DIR}/pkgconfig
+    )

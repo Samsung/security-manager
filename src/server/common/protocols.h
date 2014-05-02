@@ -1,7 +1,7 @@
 /*
  *  Copyright (c) 2000 - 2013 Samsung Electronics Co., Ltd All Rights Reserved
  *
- *  Contact: Bumjin Im <bj.im@samsung.com>
+ *  Contact: Bartlomiej Grzelewski <b.grzelewski@samsung.com>
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -27,6 +27,17 @@
 
 #include <cstddef>
 #include <time.h>
+#include <vector>
+#include <utility>
+#include <string>
+
+struct app_inst_req {
+    std::string appId;
+    std::string pkgId;
+    std::vector<uid_t> allowedUsers;
+    std::vector<std::string> privileges;
+    std::vector<std::pair<std::string, int>> appPaths;
+};
 
 namespace SecurityServer {
 
@@ -39,6 +50,7 @@ extern char const * const SERVICE_SOCKET_COOKIE_CHECK;
 extern char const * const SERVICE_SOCKET_PASSWD_CHECK;
 extern char const * const SERVICE_SOCKET_PASSWD_SET;
 extern char const * const SERVICE_SOCKET_PASSWD_RESET;
+extern char const * const SERVICE_SOCKET_INSTALLER;
 
 enum class AppPermissionsAction { ENABLE, DISABLE };
 
@@ -64,6 +76,12 @@ enum class PasswordHdrs
     HDR_SET_PWD_MAX_CHALLENGE,
     HDR_RST_PWD,
     HDR_SET_PWD_HISTORY
+};
+
+enum class SecurityModuleCall
+{
+    APP_INSTALL,
+    APP_UNINSTALL
 };
 
 extern const size_t MAX_PASSWORD_LEN;

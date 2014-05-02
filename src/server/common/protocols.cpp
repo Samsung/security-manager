@@ -1,7 +1,7 @@
 /*
  *  Copyright (c) 2000 - 2013 Samsung Electronics Co., Ltd All Rights Reserved
  *
- *  Contact: Bumjin Im <bj.im@samsung.com>
+ *  Contact: Bartlomiej Grzelewski <b.grzelewski@samsung.com>
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -28,23 +28,25 @@
 namespace SecurityServer {
 
 char const * const SERVICE_SOCKET_SHARED_MEMORY =
-    "/tmp/.security-server-api-data-share.sock";
+        "/tmp/.security-server-api-data-share.sock";
 char const * const SERVICE_SOCKET_GET_GID =
-    "/tmp/.security-server-api-get-gid.sock";
+        "/tmp/.security-server-api-get-gid.sock";
 char const * const SERVICE_SOCKET_PRIVILEGE_BY_PID =
-    "/tmp/.security-server-api-privilege-by-pid.sock";
+        "/tmp/.security-server-api-privilege-by-pid.sock";
 char const * const SERVICE_SOCKET_APP_PRIVILEGE_BY_NAME =
-    "/tmp/.security-server-api-app-privilege-by-name.sock";
+        "/tmp/.security-server-api-app-privilege-by-name.sock";
 char const * const SERVICE_SOCKET_COOKIE_GET =
-    "/tmp/.security-server-api-cookie-get.sock";
+        "/tmp/.security-server-api-cookie-get.sock";
 char const * const SERVICE_SOCKET_COOKIE_CHECK =
-    "/tmp/.security-server-api-cookie-check.sock";
+        "/tmp/.security-server-api-cookie-check.sock";
 char const * const SERVICE_SOCKET_PASSWD_CHECK =
-    "/tmp/.security-server-api-password-check.sock";
+        "/tmp/.security-server-api-password-check.sock";
 char const * const SERVICE_SOCKET_PASSWD_SET =
-    "/tmp/.security-server-api-password-set.sock";
+        "/tmp/.security-server-api-password-set.sock";
 char const * const SERVICE_SOCKET_PASSWD_RESET =
-    "/tmp/.security-server-api-password-reset.sock";
+        "/tmp/.security-server-api-password-reset.sock";
+char const * const SERVICE_SOCKET_INSTALLER =
+        "/tmp/.security-manager-api.sock";
 
 const size_t COOKIE_SIZE = 20;
 

@@ -32,6 +32,7 @@
 #include <message-buffer.h>
 
 #define SECURITY_SERVER_API __attribute__((visibility("default")))
+#define SECURITY_MANAGER_API __attribute__((visibility("default")))
 #define SECURITY_SERVER_UNUSED __attribute__((unused))
 
 extern "C" {
