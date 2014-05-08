@@ -35,7 +35,7 @@
 #include <security-server.h>
 
 SECURITY_SERVER_API
-int security_server_app_has_privilege(const char *app_id,
+int security_server_app_has_privilege(const char *app_label,
                                       app_type_t app_type,
                                       const char *privilege_name,
                                       int *result)
@@ -46,7 +46,7 @@ int security_server_app_has_privilege(const char *app_id,
     LogDebug("security_server_app_has_privilege() called");
 
     try {
-        if ((NULL == app_id) || (strlen(app_id) == 0)) {
+        if ((NULL == app_label) || (strlen(app_label) == 0)) {
             LogError("app_id is NULL or empty");
             return SECURITY_SERVER_API_ERROR_INPUT_PARAM;
         }
@@ -59,13 +59,13 @@ int security_server_app_has_privilege(const char *app_id,
             return SECURITY_SERVER_API_ERROR_INPUT_PARAM;
         }
 
-        LogDebug("app_id: " << app_id);
+        LogDebug("app_label: " << app_label);
         LogDebug("app_type: " << static_cast<int>(app_type));
         LogDebug("privilege_name: " << privilege_name);
 
         //put data into buffer
         Serialization::Serialize(send, static_cast<int>(PrivilegeCheckHdrs::CHECK_GIVEN_APP));
-        Serialization::Serialize(send, std::string(app_id));
+        Serialization::Serialize(send, std::string(app_label));
         Serialization::Serialize(send, static_cast<int>(app_type));
         Serialization::Serialize(send, std::string(privilege_name));
 

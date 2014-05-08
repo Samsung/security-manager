@@ -4,7 +4,6 @@ INSTALL(FILES
     ${CMAKE_SOURCE_DIR}/systemd/security-server-data-share.socket
     ${CMAKE_SOURCE_DIR}/systemd/security-server-get-gid.socket
     ${CMAKE_SOURCE_DIR}/systemd/security-server-privilege-by-pid.socket
-    ${CMAKE_SOURCE_DIR}/systemd/security-server-app-permissions.socket
     ${CMAKE_SOURCE_DIR}/systemd/security-server-cookie-get.socket
     ${CMAKE_SOURCE_DIR}/systemd/security-server-cookie-check.socket
     ${CMAKE_SOURCE_DIR}/systemd/security-server-app-privilege-by-name.socket

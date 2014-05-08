@@ -55,7 +55,6 @@ int privilegeToSecurityServerError(int error) {
 }
 
 // interface ids
-const SecurityServer::InterfaceID CHANGE_APP_PERMISSIONS = 0;
 const SecurityServer::InterfaceID CHECK_APP_PRIVILEGE = 1;
 
 } // namespace anonymous
@@ -64,9 +63,6 @@ namespace SecurityServer {
 
 GenericSocketService::ServiceDescriptionVector AppPermissionsService::GetServiceDescription() {
     return ServiceDescriptionVector {
-        { SERVICE_SOCKET_APP_PERMISSIONS,
-          "security-server::api-app-permissions",
-          CHANGE_APP_PERMISSIONS },
         { SERVICE_SOCKET_APP_PRIVILEGE_BY_NAME,
           "security-server::api-app-privilege-by-name",
           CHECK_APP_PRIVILEGE }
@@ -132,7 +128,7 @@ bool AppPermissionsService::processCheckAppPrivilege(const ConnectionID &conn, M
 {
     MessageBuffer send;
     std::string privilege_name;
-    std::string app_id;
+    std::string app_label;
     int result = SECURITY_SERVER_API_ERROR_SERVER_ERROR;
     app_type_t app_type;
     bool has_permission = false;
@@ -148,8 +144,8 @@ bool AppPermissionsService::processCheckAppPrivilege(const ConnectionID &conn, M
         LogDebug("App privilege check call type: "
                  << (checkType == PrivilegeCheckHdrs::CHECK_GIVEN_APP ?
                      "CHECK_GIVEN_APP":"CHECK_CALLER_APP"));
-        if (checkType == PrivilegeCheckHdrs::CHECK_GIVEN_APP) { //app_id present only in this case
-            Deserialization::Deserialize(buffer, app_id); //get app id
+        if (checkType == PrivilegeCheckHdrs::CHECK_GIVEN_APP) { //app_label present only in this case
+            Deserialization::Deserialize(buffer, app_label); //get app_label
         }
         Deserialization::Deserialize(buffer, temp); //get app type
         app_type = static_cast<app_type_t>(temp);
@@ -161,27 +157,13 @@ bool AppPermissionsService::processCheckAppPrivilege(const ConnectionID &conn, M
         return false;
     }
 
-    if (checkType == PrivilegeCheckHdrs::CHECK_CALLER_APP) { //get sender app_id in this case
-        char *label = NULL;
-        if (smack_new_label_from_socket(conn.sock, &label) < 0) {
-            LogDebug("Error in smack_new_label_from_socket(): "
-                     "client label is unknown. Sending error response.");
-            Serialization::Serialize(send, SECURITY_SERVER_API_ERROR_GETTING_SOCKET_LABEL_FAILED);
-            m_serviceManager->Write(conn, send.Pop());
-            return false;
-        } else {
-            app_id = label;
-            free(label);
-        }
-    } //end if
-
     //print received data
-    LogDebug("app_id: " << app_id);
+    LogDebug("app_label: " << app_label);
     LogDebug("app_type: " << static_cast<int>(app_type));
     LogDebug("privilege_name: " << privilege_name);
 
     LogDebug("Calling perm_app_has_permission()");
-    result = perm_app_has_permission(app_id.c_str(), app_type, privilege_name.c_str(), &has_permission);
+    result = perm_app_has_permission(app_label.c_str(), app_type, privilege_name.c_str(), &has_permission);
     LogDebug("perm_app_has_permission() returned: " << result << " , permission enabled: " << has_permission);
 
     //send response

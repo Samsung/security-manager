@@ -974,7 +974,7 @@ int security_server_check_privilege_by_sockfd(int sockfd,
  * This function allows middleware to check if an app has the specified privilege
  * enabled.
  *
- * \param[in] Application ID
+ * \param[in] Application ID (smack label)
  * \param[in] Application type
  * \param[in] Privilege name
  * \param[out] Handler to store the result. It is set to 1 (true) if privilege is enabled, 0 (false) otherwise
@@ -983,7 +983,7 @@ int security_server_check_privilege_by_sockfd(int sockfd,
  *
  * Access to this function requires SMACK rule: "<app_label> security-server::api-app-privilege-by-name w"
  */
-int security_server_app_has_privilege(const char *app_id,
+int security_server_app_has_privilege(const char *app_label,
                                       app_type_t app_type,
                                       const char *privilege_name,
                                       int *result);
