@@ -23,7 +23,7 @@
 #define SECURITY_SERVER_H
 
 #include <sys/types.h>
-
+#include <privilege-control.h>
 
 /**
  * @file    security-server.h
@@ -969,6 +969,24 @@ int security_server_check_privilege_by_pid(int pid, const char *object, const ch
 int security_server_check_privilege_by_sockfd(int sockfd,
                                               const char *object,
                                               const char *access_rights);
+
+/*
+ * This function allows middleware to check if an app has the specified privilege
+ * enabled.
+ *
+ * \param[in] Application ID
+ * \param[in] Application type
+ * \param[in] Privilege name
+ * \param[out] Handler to store the result. It is set to 1 (true) if privilege is enabled, 0 (false) otherwise
+ *
+ * \return SECURITY_SERVER_API_SUCCESS on success or error code on fail
+ *
+ * Access to this function requires SMACK rule: "<app_label> security-server::api-app-privilege-by-name w"
+ */
+int security_server_app_has_privilege(const char *app_id,
+                                      app_type_t app_type,
+                                      const char *privilege_name,
+                                      int *result);
 
 #ifdef __cplusplus
 }

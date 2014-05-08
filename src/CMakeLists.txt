@@ -17,6 +17,7 @@ SET(SECURITY_SERVER_SOURCES
     ${SERVER2_PATH}/main/server2-main.cpp
     ${SERVER2_PATH}/service/data-share.cpp
     ${SERVER2_PATH}/service/get-gid.cpp
+    ${SERVER2_PATH}/service/app-permissions.cpp
     ${SERVER2_PATH}/service/cookie.cpp
     ${SERVER2_PATH}/service/cookie-jar.cpp
     ${SERVER2_PATH}/service/cookie-common.cpp
@@ -71,6 +72,7 @@ SET(SECURITY_CLIENT_SOURCES
     ${SERVER2_PATH}/client/client-common.cpp
     ${SERVER2_PATH}/client/client-shared-memory.cpp
     ${SERVER2_PATH}/client/client-get-gid.cpp
+    ${SERVER2_PATH}/client/client-app-permissions.cpp
     ${SERVER2_PATH}/client/client-cookie.cpp
     ${SERVER2_PATH}/client/client-privilege-by-pid.cpp
     ${SERVER2_PATH}/client/client-socket-privilege.cpp

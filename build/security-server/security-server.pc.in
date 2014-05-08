@@ -6,6 +6,6 @@ includedir=${prefix}/include
 Name: security-server
 Description: Security Server Package
 Version: 1.0.1
-Requires: openssl libsmack
-Libs: -L${libdir} -lsecurity-server-client -lsmack
+Requires: openssl libsmack libprivilege-control
+Libs: -L${libdir} -lsecurity-server-client
 Cflags: -I${includedir}/security-server

@@ -34,6 +34,7 @@
 #include <data-share.h>
 #include <get-gid.h>
 #include <privilege-by-pid.h>
+#include <app-permissions.h>
 #include <cookie.h>
 #include <password.h>
 #include <installer.h>
@@ -97,6 +98,7 @@ int main(void) {
         REGISTER_SOCKET_SERVICE(manager, SecurityServer::SharedMemoryService);
         REGISTER_SOCKET_SERVICE(manager, SecurityServer::GetGidService);
         REGISTER_SOCKET_SERVICE(manager, SecurityServer::PrivilegeByPidService);
+        REGISTER_SOCKET_SERVICE(manager, SecurityServer::AppPermissionsService);
         REGISTER_SOCKET_SERVICE(manager, SecurityServer::PasswordService);
         REGISTER_SOCKET_SERVICE(manager, SecurityServer::InstallerService);
 

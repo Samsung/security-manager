@@ -111,6 +111,7 @@ ln -s ../security-server.service %{buildroot}/usr/lib/systemd/system/multi-user.
 ln -s ../security-server-data-share.socket %{buildroot}/usr/lib/systemd/system/sockets.target.wants/security-server-data-share.socket
 ln -s ../security-server-get-gid.socket %{buildroot}/usr/lib/systemd/system/sockets.target.wants/security-server-get-gid.socket
 ln -s ../security-server-privilege-by-pid.socket %{buildroot}/usr/lib/systemd/system/sockets.target.wants/security-server-privilege-by-pid.socket
+ln -s ../security-server-app-permissions.socket %{buildroot}/usr/lib/systemd/system/sockets.target.wants/security-server-app-permissions.socket
 ln -s ../security-server-cookie-get.socket %{buildroot}/usr/lib/systemd/system/sockets.target.wants/security-server-cookie-get.socket
 ln -s ../security-server-cookie-check.socket %{buildroot}/usr/lib/systemd/system/sockets.target.wants/security-server-cookie-check.socket
 ln -s ../security-server-app-privilege-by-name.socket %{buildroot}/usr/lib/systemd/system/sockets.target.wants/security-server-app-privilege-by-name.socket
@@ -168,6 +169,8 @@ fi
 %attr(-,root,root) /usr/lib/systemd/system/security-server-get-gid.socket
 %attr(-,root,root) /usr/lib/systemd/system/sockets.target.wants/security-server-privilege-by-pid.socket
 %attr(-,root,root) /usr/lib/systemd/system/security-server-privilege-by-pid.socket
+%attr(-,root,root) /usr/lib/systemd/system/sockets.target.wants/security-server-app-permissions.socket
+%attr(-,root,root) /usr/lib/systemd/system/security-server-app-permissions.socket
 %attr(-,root,root) /usr/lib/systemd/system/sockets.target.wants/security-server-cookie-get.socket
 %attr(-,root,root) /usr/lib/systemd/system/security-server-cookie-get.socket
 %attr(-,root,root) /usr/lib/systemd/system/sockets.target.wants/security-server-cookie-check.socket
