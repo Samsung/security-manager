@@ -46,7 +46,7 @@ char const * const SERVICE_SOCKET_PASSWD_SET =
 char const * const SERVICE_SOCKET_PASSWD_RESET =
         "/tmp/.security-server-api-password-reset.sock";
 char const * const SERVICE_SOCKET_INSTALLER =
-        "/tmp/.security-manager-api.sock";
+        "/tmp/.security-manager-installer.sock";
 
 const size_t COOKIE_SIZE = 20;
 
