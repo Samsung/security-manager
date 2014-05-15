@@ -1,5 +1,5 @@
 [Socket]
-ListenStream=/tmp/.security-server-api-privilege-by-pid.sock
+ListenStream=/run/security-server/security-server-api-privilege-by-pid.socket
 SocketMode=0777
 SmackLabelIPIn=*
 SmackLabelIPOut=@

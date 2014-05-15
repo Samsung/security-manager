@@ -1,5 +1,5 @@
 [Socket]
-ListenStream=/tmp/.security-server-api-cookie-check.sock
+ListenStream=/run/security-server/security-server-api-cookie-check.socket
 SocketMode=0777
 SmackLabelIPIn=*
 SmackLabelIPOut=@
