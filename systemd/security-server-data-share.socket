@@ -1,5 +1,5 @@
 [Socket]
-ListenStream=/tmp/.security-server-api-data-share.sock
+ListenStream=/run/security-server/security-server-api-data-share.socket
 SocketMode=0777
 SmackLabelIPIn=*
 SmackLabelIPOut=@

@@ -1,5 +1,5 @@
 [Socket]
-ListenStream=/tmp/.security-manager-api-installer.sock
+ListenStream=/run/security-manager/security-manager-installer.socket
 SocketMode=0777
 SmackLabelIPIn=*
 SmackLabelIPOut=@

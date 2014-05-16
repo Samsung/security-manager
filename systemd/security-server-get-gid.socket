@@ -1,5 +1,5 @@
 [Socket]
-ListenStream=/tmp/.security-server-api-get-gid.sock
+ListenStream=/run/security-server/security-server-api-get-gid.socket
 SocketMode=0777
 SmackLabelIPIn=*
 SmackLabelIPOut=@

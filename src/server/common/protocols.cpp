@@ -25,28 +25,34 @@
 #include <protocols.h>
 #include <cstddef>
 
+
 namespace SecurityServer {
 
+#define SOCKET_PATH_PREFIX "/run/"
+#define SOCKET_PATH_PREFIX_SECURITY_SERVER SOCKET_PATH_PREFIX "security-server/"
+#define SOCKET_PATH_PREFIX_SECURITY_MANAGER SOCKET_PATH_PREFIX "security-manager/"
+
 char const * const SERVICE_SOCKET_SHARED_MEMORY =
-        "/tmp/.security-server-api-data-share.sock";
+        SOCKET_PATH_PREFIX_SECURITY_SERVER "security-server-api-data-share.socket";
 char const * const SERVICE_SOCKET_GET_GID =
-        "/tmp/.security-server-api-get-gid.sock";
+        SOCKET_PATH_PREFIX_SECURITY_SERVER "security-server-api-get-gid.socket";
 char const * const SERVICE_SOCKET_PRIVILEGE_BY_PID =
-        "/tmp/.security-server-api-privilege-by-pid.sock";
+        SOCKET_PATH_PREFIX_SECURITY_SERVER "security-server-api-privilege-by-pid.socket";
 char const * const SERVICE_SOCKET_APP_PRIVILEGE_BY_NAME =
-        "/tmp/.security-server-api-app-privilege-by-name.sock";
+        SOCKET_PATH_PREFIX_SECURITY_SERVER "security-server-api-app-privilege-by-name.socket";
 char const * const SERVICE_SOCKET_COOKIE_GET =
-        "/tmp/.security-server-api-cookie-get.sock";
+        SOCKET_PATH_PREFIX_SECURITY_SERVER "security-server-api-cookie-get.socket";
 char const * const SERVICE_SOCKET_COOKIE_CHECK =
-        "/tmp/.security-server-api-cookie-check.sock";
+        SOCKET_PATH_PREFIX_SECURITY_SERVER "security-server-api-cookie-check.socket";
 char const * const SERVICE_SOCKET_PASSWD_CHECK =
-        "/tmp/.security-server-api-password-check.sock";
+        SOCKET_PATH_PREFIX_SECURITY_SERVER "security-server-api-password-check.socket";
 char const * const SERVICE_SOCKET_PASSWD_SET =
-        "/tmp/.security-server-api-password-set.sock";
+        SOCKET_PATH_PREFIX_SECURITY_SERVER "security-server-api-password-set.socket";
 char const * const SERVICE_SOCKET_PASSWD_RESET =
-        "/tmp/.security-server-api-password-reset.sock";
+        SOCKET_PATH_PREFIX_SECURITY_SERVER "security-server-api-password-reset.socket";
+
 char const * const SERVICE_SOCKET_INSTALLER =
-        "/tmp/.security-manager-api.sock";
+        SOCKET_PATH_PREFIX_SECURITY_MANAGER"/tmp/.security-manager-installer.socket";
 
 const size_t COOKIE_SIZE = 20;
 
