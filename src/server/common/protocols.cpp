@@ -52,7 +52,7 @@ char const * const SERVICE_SOCKET_PASSWD_RESET =
         SOCKET_PATH_PREFIX_SECURITY_SERVER "security-server-api-password-reset.socket";
 
 char const * const SERVICE_SOCKET_INSTALLER =
-        SOCKET_PATH_PREFIX_SECURITY_MANAGER"/tmp/.security-manager-installer.socket";
+        SOCKET_PATH_PREFIX_SECURITY_MANAGER "security-manager-installer.socket";
 
 const size_t COOKIE_SIZE = 20;
 
