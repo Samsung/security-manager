@@ -17,7 +17,8 @@
  */
 /*
  * @file        installer.cpp
- * @author      Michal Witanowski (m.witanowski@samsung.com)
+ * @author      Michal Witanowski <m.witanowski@samsung.com>
+ * @author      Jacek Bukarewicz <j.bukarewicz@samsung.com>
  * @brief       Implementation of installer service for libprivilege-control encapsulation.
  */
 
@@ -29,6 +30,7 @@
 #include "protocols.h"
 #include "security-server.h"
 #include "security-manager.h"
+#include "smack-rules.h"
 
 namespace SecurityServer {
 
@@ -237,10 +239,20 @@ bool InstallerService::processAppInstall(MessageBuffer &buffer, MessageBuffer &s
         }
     }
 
+    // TODO: This should be done only for the first application in the package
+    if (!SecurityManager::SmackRules::installPackageRules(req.pkgId)) {
+        LogError("Failed to apply package-specific smack rules");
+        goto error_label;
+    }
+
     // finish database transaction
     result = perm_end();
     LogDebug("perm_end() returned " << result);
     if (PC_OPERATION_SUCCESS != result) {
+        // TODO: Uncomment once proper pkgId -> smack label mapping is implemented (currently all
+        //       applications are mapped to user label and removal of such rules would be harmful)
+        //SecurityManager::SmackRules::uninstallPackageRules(req.pkgId);
+
         // error in libprivilege-control
         Serialization::Serialize(send, SECURITY_SERVER_API_ERROR_SERVER_ERROR);
         return false;
@@ -284,6 +296,18 @@ bool InstallerService::processAppUninstall(MessageBuffer &buffer, MessageBuffer 
         Serialization::Serialize(send, SECURITY_SERVER_API_ERROR_SERVER_ERROR);
         return false;
     }
+
+    // TODO: Uncomment once proper pkgId -> smack label mapping is implemented (currently all
+    //       applications are mapped to user label and removal of such rules would be harmful)
+    // TODO: This should be performed only for the last application in the package
+    // TODO: retrieve pkgId as it's not available in the request
+    //if (!SecurityManager::SmackRules::uninstallPackageRules(pkgId)) {
+    //    LogError("Error on uninstallation of package-specific smack rules");
+    //    result = perm_rollback();
+    //    LogDebug("perm_rollback() returned " << result);
+    //    Serialization::Serialize(send, SECURITY_SERVER_API_ERROR_SERVER_ERROR);
+    //    return false;
+    //}
 
     // finish database transaction
     result = perm_end();

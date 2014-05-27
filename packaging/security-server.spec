@@ -103,6 +103,8 @@ cp LICENSE %{buildroot}/usr/share/license/libsecurity-server-client
 cp LICENSE %{buildroot}/usr/share/license/libsecurity-manager-client
 mkdir -p %{buildroot}/etc/security/
 cp security-server-audit.conf %{buildroot}/etc/security/
+mkdir -p %{buildroot}/etc/smack/
+cp app-rules-template.smack %{buildroot}/etc/smack/
 %make_install
 
 mkdir -p %{buildroot}/usr/lib/systemd/system/multi-user.target.wants
@@ -174,7 +176,6 @@ fi
 %attr(-,root,root) /usr/lib/systemd/system/security-server-cookie-check.socket
 %attr(-,root,root) /usr/lib/systemd/system/sockets.target.wants/security-server-app-privilege-by-name.socket
 %attr(-,root,root) /usr/lib/systemd/system/security-server-app-privilege-by-name.socket
-%attr(-,root,root) /etc/security/security-server-audit.conf
 %attr(-,root,root) /usr/lib/systemd/system/sockets.target.wants/security-server-password-check.socket
 %attr(-,root,root) /usr/lib/systemd/system/security-server-password-check.socket
 %attr(-,root,root) /usr/lib/systemd/system/sockets.target.wants/security-server-password-set.socket
@@ -183,7 +184,8 @@ fi
 %attr(-,root,root) /usr/lib/systemd/system/security-server-password-reset.socket
 %attr(-,root,root) /usr/lib/systemd/system/sockets.target.wants/security-manager-installer.socket
 %attr(-,root,root) /usr/lib/systemd/system/security-manager-installer.socket
-
+%attr(-,root,root) /etc/security/security-server-audit.conf
+%attr(-,root,root) /etc/smack/app-rules-template.smack
 %{_datadir}/license/%{name}
 
 %files -n libsecurity-server-client

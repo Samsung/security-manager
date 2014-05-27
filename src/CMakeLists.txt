@@ -27,6 +27,7 @@ SET(SECURITY_SERVER_SOURCES
     ${SERVER2_PATH}/service/password-manager.cpp
     ${SERVER2_PATH}/service/password-file-buffer.cpp
     ${SERVER2_PATH}/service/smack-common.cpp
+    ${SERVER2_PATH}/service/smack-rules.cpp
     ${SERVER2_PATH}/service/installer.cpp
     )
 

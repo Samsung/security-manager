@@ -1,0 +1,6 @@
+System ~APP~ rwx
+~APP~ System wx
+~APP~ System::Shared rx
+~APP~ System::Run rwxat
+~APP~ System::Log rwxa
+~APP~ _ l
