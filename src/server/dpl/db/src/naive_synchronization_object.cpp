@@ -22,10 +22,51 @@
  */
 #include <stddef.h>
 #include <dpl/db/naive_synchronization_object.h>
-#include <dpl/thread.h>
+#include <dpl/assert.h>
+#include <time.h>
 
 namespace {
     unsigned int seed = time(NULL);
+}
+
+//Taken from Thread class, so we don't have to pull whole definition
+//(only this part is needed)
+namespace Thread {
+
+static const size_t NANOSECONDS_PER_SECOND =
+    static_cast<uint64_t>(1000 * 1000 * 1000);
+
+static const size_t NANOSECONDS_PER_MILISECOND =
+    static_cast<uint64_t>(1000 * 1000);
+
+void NanoSleep(uint64_t nanoseconds)
+{
+    timespec requestedTime = {
+        static_cast<time_t>(
+            nanoseconds / NANOSECONDS_PER_SECOND),
+
+        static_cast<long>(
+            nanoseconds % NANOSECONDS_PER_SECOND)
+    };
+
+    timespec remainingTime;
+
+    for (;;) {
+        if (nanosleep(&requestedTime, &remainingTime) == 0) {
+            break;
+        }
+
+        int error = errno;
+        Assert(error == EINTR);
+
+        requestedTime = remainingTime;
+    }
+}
+
+void MiliSleep(uint64_t miliseconds)
+{
+    NanoSleep(miliseconds * NANOSECONDS_PER_MILISECOND);
+}
 }
 
 namespace DPL {
