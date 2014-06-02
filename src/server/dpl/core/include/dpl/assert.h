@@ -40,4 +40,13 @@ SECURITYMANAGER_NORETURN void AssertProc(const char *condition,
                                                                    __FUNCTION__); \
                                } } while (0)
 
+#define AssertMsg(Condition, Msg)                                         \
+    do {                                                                  \
+        if (!(Condition)) {                                               \
+            SecurityManager::AssertProc(                                              \
+                (std::string(std::string(#Condition)+" ") + Msg).c_str(), \
+                __FILE__, __LINE__, __FUNCTION__);                        \
+        }                                                                 \
+    } while (0)
+
 #endif // SECURITY_MANAGER_ASSERT_H
