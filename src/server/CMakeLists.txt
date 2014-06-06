@@ -24,6 +24,7 @@ INCLUDE_DIRECTORIES(
     ${SERVER_PATH}/include
     ${SERVER_PATH}/main/include
     ${SERVER_PATH}/service/include
+    ${SERVER_PATH}/db/include
     ${DPL_PATH}/core/include
     ${DPL_PATH}/log/include
     ${DPL_PATH}/db/include
@@ -38,6 +39,7 @@ SET(SERVER_SOURCES
     ${SERVER_PATH}/service/smack-common.cpp
     ${SERVER_PATH}/service/smack-rules.cpp
     ${SERVER_PATH}/service/installer.cpp
+    ${SERVER_PATH}/db/privilege_db.cpp
     ${DPL_PATH}/core/src/errno_string.cpp
     ${DPL_PATH}/core/src/string.cpp
     ${DPL_PATH}/db/src/naive_synchronization_object.cpp
