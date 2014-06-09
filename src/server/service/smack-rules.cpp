@@ -226,7 +226,7 @@ bool SmackRules::installPackageRules(const std::string &pkgId) {
              return false;
          }
 
-         if (!smackRules.apply()) {
+         if (smack_smackfs_path() != NULL && !smackRules.apply()) {
              LogError("Failed to apply application rules to kernel");
              return false;
          }
@@ -258,7 +258,7 @@ bool SmackRules::uninstallPackageRules(const std::string &pkgId) {
     try {
         SmackRules rules;
         if (rules.loadFromFile(path)) {
-            if (!rules.clear()) {
+            if (smack_smackfs_path() != NULL && !rules.clear()) {
                 LogWarning("Failed to clear smack kernel rules for pkgId: " << pkgId);
                 // don't stop uninstallation
             }
