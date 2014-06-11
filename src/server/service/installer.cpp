@@ -99,24 +99,25 @@ FileDecision labelLinksToExecs(const FTSENT *ftsent)
     LogSecureDebug("Entering function: " << __func__);
 
     struct stat buf;
-    char *target;
 
     // check if it's a link
     if ( !S_ISLNK(ftsent->fts_statp->st_mode))
         return FileDecision::SKIP;
 
-    target = realpath(ftsent->fts_path, NULL);
-    if (!target) {
+    std::unique_ptr<char, std::function<void(void*)>> target(realpath(ftsent->fts_path, NULL), free);
+
+    if (!target.get()) {
         LogSecureError("Getting link target for " << ftsent->fts_path << " failed (Error = " << strerror(errno) << ")");
         return FileDecision::ERROR;
     }
-    if (-1 == stat(target, &buf)) {
-        LogSecureError("stat failed for " << target << " (Error = " << strerror(errno) << ")");
+
+    if (-1 == stat(target.get(), &buf)) {
+        LogSecureError("stat failed for " << target.get() << " (Error = " << strerror(errno) << ")");
         return FileDecision::ERROR;
     }
     // skip if link target is not a regular executable file
     if (buf.st_mode != (buf.st_mode | S_IXUSR | S_IFREG)) {
-        LogSecureDebug(target << "is not a regular executable file. Skipping.");
+        LogSecureDebug(target.get() << "is not a regular executable file. Skipping.");
         return FileDecision::SKIP;
     }
 

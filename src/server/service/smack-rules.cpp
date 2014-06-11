@@ -29,6 +29,7 @@
 #include <sys/smack.h>
 #include <fcntl.h>
 #include <fstream>
+#include <cstring>
 
 #include <dpl/log/log.h>
 
@@ -74,7 +75,7 @@ bool SmackRules::loadFromFile(const std::string &path)
     int fd;
     bool ret = true;
 
-    fd = open(path.c_str(), O_RDONLY);
+    fd = TEMP_FAILURE_RETRY(open(path.c_str(), O_RDONLY));
     if (fd == -1) {
         LogError("Failed to open file: %s" << path);
         return false;
@@ -85,7 +86,11 @@ bool SmackRules::loadFromFile(const std::string &path)
         ret = false;
     }
 
-    close(fd);
+    if (close(fd) == -1) {
+        // don't change the return code, the descriptor should be closed despite the error.
+        LogWarning("Error while closing the file: " << path << ", error: " << strerror(errno));
+    }
+
     return ret;
 }
 
@@ -94,7 +99,7 @@ bool SmackRules::saveToFile(const std::string &path) const
     int fd;
     bool ret = true;
 
-    fd = open(path.c_str(), O_CREAT | O_WRONLY | O_TRUNC, 0644);
+    fd = TEMP_FAILURE_RETRY(open(path.c_str(), O_CREAT | O_WRONLY | O_TRUNC, 0644));
     if (fd == -1) {
         LogError("Failed to create file: %s" << path);
         return false;
@@ -106,7 +111,18 @@ bool SmackRules::saveToFile(const std::string &path) const
         ret = false;
     }
 
-    close(fd);
+    if (close(fd) == -1) {
+        if (errno == EIO) {
+            LogError("I/O Error occured while closing the file: " << path << ", error: " << strerror(errno));
+            unlink(path.c_str());
+            return false;
+        } else {
+            // non critical error
+            // don't change the return code, the descriptor should be closed despite the error.
+            LogWarning("Error while closing the file: " << path << ", error: " << strerror(errno));
+        }
+    }
+
     return ret;
 }
 
