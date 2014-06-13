@@ -22,8 +22,8 @@
  * @brief       Implementation of GenericEvent.
  */
 
-#ifndef _SECURITY_SERVER_GENERIC_EVENT_
-#define _SECURITY_SERVER_GENERIC_EVENT_
+#ifndef _SECURITY_MANAGER_GENERIC_EVENT_
+#define _SECURITY_MANAGER_GENERIC_EVENT_
 
 namespace SecurityManager {
 
@@ -33,4 +33,4 @@ struct GenericEvent {
 
 } // namespace SecurityManager
 
-#endif // _SECURITY_SERVER_GENERIC_EVENT_
+#endif // _SECURITY_MANAGER_GENERIC_EVENT_

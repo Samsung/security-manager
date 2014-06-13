@@ -19,8 +19,8 @@
  * @version     1.0
  * @brief       This file is the implementation file of singleton
  */
-#ifndef SECURITYSERVER_SINGLETON_IMPL_H
-#define SECURITYSERVER_SINGLETON_IMPL_H
+#ifndef SECURITYMANAGER_SINGLETON_IMPL_H
+#define SECURITYMANAGER_SINGLETON_IMPL_H
 
 /*
  * WARNING!
@@ -50,4 +50,4 @@ Class &Singleton<Class>::Instance()
     template SecurityManager::Singleton<Type>&SecurityManager::Singleton<Type>::InternalInstance();    \
     template Type & SecurityManager::Singleton<Type>::Instance();                            \
 
-#endif // SECURITYSERVER_SINGLETON_IMPL_H
+#endif // SECURITYMANAGER_SINGLETON_IMPL_H

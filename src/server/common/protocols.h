@@ -19,11 +19,11 @@
  * @file        protocols.h
  * @author      Bartlomiej Grzelewski (b.grzelewski@samsung.com)
  * @version     1.0
- * @brief       This file contains list of all protocols suported by security-sever.
+ * @brief       This file contains list of all protocols suported by security-manager.
  */
 
-#ifndef _SECURITY_SERVER_PROTOCOLS_
-#define _SECURITY_SERVER_PROTOCOLS_
+#ifndef _SECURITY_MANAGER_PROTOCOLS_
+#define _SECURITY_MANAGER_PROTOCOLS_
 
 #include <vector>
 #include <string>
@@ -48,4 +48,4 @@ enum class SecurityModuleCall
 
 } // namespace SecurityManager
 
-#endif // _SECURITY_SERVER_PROTOCOLS_
+#endif // _SECURITY_MANAGER_PROTOCOLS_

@@ -19,8 +19,8 @@
  * @version     1.0
  * @brief       This file is the implementation file of singleton
  */
-#ifndef SECURITYSERVER_SINGLETON_H
-#define SECURITYSERVER_SINGLETON_H
+#ifndef SECURITYMANAGER_SINGLETON_H
+#define SECURITYMANAGER_SINGLETON_H
 
 namespace SecurityManager {
 template<typename Class>
@@ -48,4 +48,4 @@ class Singleton :
 };
 } // namespace SecurityManager
 
-#endif // SECURITYSERVER_SINGLETON_H
+#endif // SECURITYMANAGER_SINGLETON_H

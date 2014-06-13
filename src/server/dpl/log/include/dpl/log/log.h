@@ -19,8 +19,8 @@
  * @version     1.0
  * @brief       This file is the implementation file of log system
  */
-#ifndef SECURITYSERVER_LOG_H
-#define SECURITYSERVER_LOG_H
+#ifndef SECURITYMANAGER_LOG_H
+#define SECURITYMANAGER_LOG_H
 
 #include <dpl/singleton.h>
 #include <dpl/noncopyable.h>
@@ -31,7 +31,7 @@
 namespace SecurityManager {
 namespace Log {
 /**
- * SecurityServer log system
+ * SecurityManager log system
  *
  * To switch logs into old style, export
  * DPL_USE_OLD_STYLE_LOGS before application start
@@ -219,4 +219,4 @@ do                                                                         \
     #define LogSecureWarning(message) DPL_MACRO_DUMMY_LOGGING(message, SecureWarning)
 #endif // BUILD_TYPE_DEBUG
 
-#endif // SECURITYSERVER_LOG_H
+#endif // SECURITYMANAGER_LOG_H

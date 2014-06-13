@@ -21,8 +21,8 @@
  * @brief       Implementation of installer service for libprivilege-control encapsulation.
  */
 
-#ifndef _SECURITY_SERVER_INSTALLER_
-#define _SECURITY_SERVER_INSTALLER_
+#ifndef _SECURITY_MANAGER_INSTALLER_
+#define _SECURITY_MANAGER_INSTALLER_
 
 #include <service-thread.h>
 #include <generic-socket-manager.h>
@@ -92,4 +92,4 @@ private:
 
 } // namespace SecurityManager
 
-#endif // _SECURITY_SERVER_INSTALLER_
+#endif // _SECURITY_MANAGER_INSTALLER_

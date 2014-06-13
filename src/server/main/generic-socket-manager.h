@@ -22,8 +22,8 @@
  * @brief       Implementation of GenericSocketService and GenericSocketManager.
  */
 
-#ifndef _SECURITY_SERVER_GENERIC_SERVICE_MANAGER_
-#define _SECURITY_SERVER_GENERIC_SERVICE_MANAGER_
+#ifndef _SECURITY_MANAGER_GENERIC_SERVICE_MANAGER_
+#define _SECURITY_MANAGER_GENERIC_SERVICE_MANAGER_
 
 #include <vector>
 #include <string>
@@ -140,4 +140,4 @@ struct GenericSocketManager {
 
 } // namespace SecurityManager
 
-#endif // _SECURITY_SERVER_GENERIC_SERVICE_MANAGER_
+#endif // _SECURITY_MANAGER_GENERIC_SERVICE_MANAGER_

@@ -40,7 +40,7 @@ const char *OLD_STYLE_PEDANTIC_LOGS_ENV_NAME =
     "DPL_USE_OLD_STYLE_PEDANTIC_LOGS";
 const char *OLD_STYLE_LOGS_MASK_ENV_NAME = "DPL_USE_OLD_STYLE_LOGS_MASK";
 #endif // BUILD_TYPE_DEBUG
-const char *SECURITY_SERVER_LOG_OFF = "DPL_LOG_OFF";
+const char *SECURITY_MANAGER_LOG_OFF = "DPL_LOG_OFF";
 } // namespace anonymous
 
 bool LogSystem::IsLoggingEnabled() const
@@ -49,7 +49,7 @@ bool LogSystem::IsLoggingEnabled() const
 }
 
 LogSystem::LogSystem() :
-    m_isLoggingEnabled(!getenv(SECURITY_SERVER_LOG_OFF))
+    m_isLoggingEnabled(!getenv(SECURITY_MANAGER_LOG_OFF))
 {
 #ifdef BUILD_TYPE_DEBUG
     bool oldStyleLogs = false;

@@ -19,8 +19,8 @@
  * @version     1.0
  * @brief       This file is the header file of binary queue
  */
-#ifndef SECURITY_SERVER_BINARY_QUEUE_H
-#define SECURITY_SERVER_BINARY_QUEUE_H
+#ifndef SECURITY_MANAGER_BINARY_QUEUE_H
+#define SECURITY_MANAGER_BINARY_QUEUE_H
 
 //#include <dpl/abstract_input_output.h>
 #include <dpl/exception.h>
@@ -295,4 +295,4 @@ class BinaryQueue
 
 } // namespace SecurityManager
 
-#endif // SECURITY_SERVER_BINARY_QUEUE_H
+#endif // SECURITY_MANAGER_BINARY_QUEUE_H

@@ -49,7 +49,7 @@ void AssertProc(const char *condition,
         INTERNAL_LOG(
             "################################################################################");
         INTERNAL_LOG(
-            "###                          SecurityServer assertion failed!                           ###");
+            "###                          SecurityManager assertion failed!                           ###");
         INTERNAL_LOG(
             "################################################################################");
         INTERNAL_LOG("### Condition: " << condition);

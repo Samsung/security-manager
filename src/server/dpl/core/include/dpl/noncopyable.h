@@ -19,8 +19,8 @@
  * @version     1.0
  * @brief       This file is the implementation file of noncopyable
  */
-#ifndef SECURITYSERVER_NONCOPYABLE_H
-#define SECURITYSERVER_NONCOPYABLE_H
+#ifndef SECURITYMANAGER_NONCOPYABLE_H
+#define SECURITYMANAGER_NONCOPYABLE_H
 
 namespace SecurityManager {
 class Noncopyable
@@ -35,4 +35,4 @@ class Noncopyable
 };
 } // namespace SecurityManager
 
-#endif // SECURITYSERVER_NONCOPYABLE_H
+#endif // SECURITYMANAGER_NONCOPYABLE_H

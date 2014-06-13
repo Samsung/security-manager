@@ -1,5 +1,5 @@
 /*
- *  security-server
+ *  security-manager
  *
  *  Copyright (c) 2000 - 2011 Samsung Electronics Co., Ltd All Rights Reserved
  *
@@ -19,8 +19,8 @@
  *
  */
 
-#ifndef SECURITY_SERVER_UTIL_H
-#define SECURITY_SERVER_UTIL_H
+#ifndef SECURITY_MANAGER_UTIL_H
+#define SECURITY_MANAGER_UTIL_H
 
 #include <sys/types.h>
 
@@ -31,4 +31,4 @@ char *read_exe_path_from_proc(pid_t pid);
 
 } // namespace SecurityManager
 
-#endif /*SECURITY_SERVER_UTIL_H*/
+#endif /*SECURITY_MANAGER_UTIL_H*/

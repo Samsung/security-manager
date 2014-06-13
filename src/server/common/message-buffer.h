@@ -22,8 +22,8 @@
  * @brief       Implementatin of MessageBuffer.
  */
 
-#ifndef _SECURITY_SERVER_SOCKET_BUFFER_
-#define _SECURITY_SERVER_SOCKET_BUFFER_
+#ifndef _SECURITY_MANAGER_SOCKET_BUFFER_
+#define _SECURITY_MANAGER_SOCKET_BUFFER_
 
 #include <vector>
 
@@ -76,4 +76,4 @@ protected:
 
 } // namespace SecurityManager
 
-#endif // _SECURITY_SERVER_SOCKET_BUFFER_
+#endif // _SECURITY_MANAGER_SOCKET_BUFFER_

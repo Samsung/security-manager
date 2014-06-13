@@ -19,8 +19,8 @@
  * @version     1.0
  * @brief       This file is the implementation file of abstract log provider
  */
-#ifndef SECURITYSERVER_ABSTRACT_LOG_PROVIDER_H
-#define SECURITYSERVER_ABSTRACT_LOG_PROVIDER_H
+#ifndef SECURITYMANAGER_ABSTRACT_LOG_PROVIDER_H
+#define SECURITYMANAGER_ABSTRACT_LOG_PROVIDER_H
 
 namespace SecurityManager {
 namespace Log {
@@ -78,4 +78,4 @@ class AbstractLogProvider
 }
 } // namespace SecurityManager
 
-#endif // SECURITYSERVER_ABSTRACT_LOG_PROVIDER_H
+#endif // SECURITYMANAGER_ABSTRACT_LOG_PROVIDER_H

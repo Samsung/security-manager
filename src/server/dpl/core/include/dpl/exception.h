@@ -19,8 +19,8 @@
  * @version 1.0
  * @brief   Header file for base exception
  */
-#ifndef SECURITY_SERVER_EXCEPTION_H
-#define SECURITY_SERVER_EXCEPTION_H
+#ifndef SECURITY_MANAGER_EXCEPTION_H
+#define SECURITY_MANAGER_EXCEPTION_H
 
 #include <string>
 #include <cstring>
@@ -94,7 +94,7 @@ class Exception
     {
         std::ostringstream message;
         message <<
-        "\033[1;5;31m\n=== Unhandled SecurityServer exception occurred ===\033[m\n\n";
+        "\033[1;5;31m\n=== Unhandled SecurityManager exception occurred ===\033[m\n\n";
         message << "\033[1;33mException trace:\033[m\n\n";
         message << e.DumpToString();
         message << "\033[1;31m\n=== Will now abort ===\033[m\n";
@@ -106,7 +106,7 @@ class Exception
     {
         std::ostringstream message;
         message <<
-        "\033[1;5;31m\n=== Unhandled non-SecurityServer exception occurred ===\033[m\n\n";
+        "\033[1;5;31m\n=== Unhandled non-SecurityManager exception occurred ===\033[m\n\n";
         message << "\033[1;31m\n=== Will now abort ===\033[m\n";
 
         return message.str();
@@ -382,4 +382,4 @@ DECLARE_EXCEPTION_TYPE(Exception, InternalError) ///< Unexpected error from
 }
 }
 
-#endif // SECURITY_SERVER_EXCEPTION_H
+#endif // SECURITY_MANAGER_EXCEPTION_H

@@ -19,8 +19,8 @@
  * @version     1.0
  * @brief       This file is the implementation file of assert
  */
-#ifndef SECURITY_SERVER_ASSERT_H
-#define SECURITY_SERVER_ASSERT_H
+#ifndef SECURITY_MANAGER_ASSERT_H
+#define SECURITY_MANAGER_ASSERT_H
 
 #include <dpl/noreturn.h>
 
@@ -28,7 +28,7 @@ namespace SecurityManager {
 // Assertion handler procedure
 // Do not call directly
 // Always use Assert macro
-SECURITYSERVER_NORETURN void AssertProc(const char *condition,
+SECURITYMANAGER_NORETURN void AssertProc(const char *condition,
                              const char *file,
                              int line,
                              const char *function);
@@ -40,4 +40,4 @@ SECURITYSERVER_NORETURN void AssertProc(const char *condition,
                                                                    __FUNCTION__); \
                                } } while (0)
 
-#endif // SECURITY_SERVER_ASSERT_H
+#endif // SECURITY_MANAGER_ASSERT_H

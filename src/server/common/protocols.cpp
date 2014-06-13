@@ -19,7 +19,7 @@
  * @file        protocols.cpp
  * @author      Bartlomiej Grzelewski (b.grzelewski@samsung.com)
  * @version     1.0
- * @brief       List of all protocols supported by security server.
+ * @brief       List of all protocols supported by security manager.
  */
 
 #include <protocols.h>

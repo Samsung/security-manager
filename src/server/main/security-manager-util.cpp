@@ -1,5 +1,5 @@
 /*
- *  security-server
+ *  security-manager
  *
  *  Copyright (c) 2000 - 2011 Samsung Electronics Co., Ltd All Rights Reserved
  *

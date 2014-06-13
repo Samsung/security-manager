@@ -19,9 +19,9 @@
  * @version     1.0
  * @brief       This file is the implementation file of noreturn
  */
-#ifndef SECURITYSERVER_NORETURN_H
-#define SECURITYSERVER_NORETURN_H
+#ifndef SECURITYMANAGER_NORETURN_H
+#define SECURITYMANAGER_NORETURN_H
 
-#define SECURITYSERVER_NORETURN __attribute__((__noreturn__))
+#define SECURITYMANAGER_NORETURN __attribute__((__noreturn__))
 
-#endif // SECURITYSERVER_NORETURN_H
+#endif // SECURITYMANAGER_NORETURN_H

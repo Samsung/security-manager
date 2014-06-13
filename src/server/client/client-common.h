@@ -20,20 +20,19 @@
  * @author      Bartlomiej Grzelewski (b.grzelewski@samsung.com)
  * @version     1.0
  * @brief       This file constains implementation of common types
- *              used in security server.
+ *              used in security manager.
  */
 
-#ifndef _SECURITY_SERVER_CLIENT_
-#define _SECURITY_SERVER_CLIENT_
+#ifndef _SECURITY_MANAGER_CLIENT_
+#define _SECURITY_MANAGER_CLIENT_
 
 #include <vector>
 #include <functional>
 
 #include <message-buffer.h>
 
-#define SECURITY_SERVER_API __attribute__((visibility("default")))
 #define SECURITY_MANAGER_API __attribute__((visibility("default")))
-#define SECURITY_SERVER_UNUSED __attribute__((unused))
+#define SECURITY_MANAGER_UNUSED __attribute__((unused))
 
 extern "C" {
     struct msghdr;
@@ -47,13 +46,13 @@ int sendToServer(char const * const interface, const RawBuffer &send, MessageBuf
 
 /*
  * sendToServerAncData is special case when we want to receive file descriptor
- * passed by Security Server on behalf of calling process. We can't get it with
+ * passed by Security Manager on behalf of calling process. We can't get it with
  * MessageBuffer.
  *
  * This function should be called _ONLY_ in this particular case.
  *
  */
-int sendToServerAncData(char const * const interface, const RawBuffer &send, struct msghdr &hdr);
+int sendToManagerAncData(char const * const interface, const RawBuffer &send, struct msghdr &hdr);
 
 /*
  * Decorator function that performs frequently repeated exception handling in
@@ -63,4 +62,4 @@ int try_catch(const std::function<int()>& func);
 
 } // namespace SecurityManager
 
-#endif // _SECURITY_SERVER_CLIENT_
+#endif // _SECURITY_MANAGER_CLIENT_

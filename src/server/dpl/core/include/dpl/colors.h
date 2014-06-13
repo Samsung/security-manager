@@ -21,8 +21,8 @@
  *              and html output
  */
 
-#ifndef SECURITY_SERVER_COLORS_H
-#define SECURITY_SERVER_COLORS_H
+#ifndef SECURITY_MANAGER_COLORS_H
+#define SECURITY_MANAGER_COLORS_H
 
 namespace SecurityManager {
 namespace Colors {
@@ -70,4 +70,4 @@ extern const char* BOLD_WHITE_END;
 } //namespace Colors
 } //namespace SecurityManager
 
-#endif /* SECURITY_SERVER_COLORS_H */
+#endif /* SECURITY_MANAGER_COLORS_H */
