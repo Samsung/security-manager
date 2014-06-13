@@ -99,7 +99,7 @@ void DLOGLogProvider::Pedantic(const char *message,
                                int line,
                                const char *function)
 {
-    SLOG(LOG_DEBUG, "SecurityServer", "%s", FormatMessage(message,
+    SLOG(LOG_DEBUG, "SecurityManager", "%s", FormatMessage(message,
                                               filename,
                                               line,
                                               function).c_str());

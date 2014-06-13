@@ -26,7 +26,7 @@
 
 #include <limits>
 
-#include <security-server-util.h>
+#include <security-manager-util.h>
 #include <dpl/log/log.h>
 
 namespace {

@@ -20,7 +20,7 @@
 ############################# Check minimum CMake version #####################
 
 CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
-PROJECT("security-server")
+PROJECT("security-manager")
 
 ############################# cmake packages ##################################
 
@@ -58,9 +58,10 @@ IF (CMAKE_BUILD_TYPE MATCHES "DEBUG")
     ADD_DEFINITIONS("-DBUILD_TYPE_DEBUG")
 ENDIF (CMAKE_BUILD_TYPE MATCHES "DEBUG")
 
-SET(TARGET_SECURITY_SERVER "security-server")
+
+SET(TARGET_SECURITY_MANAGER "security-manager")
 SET(TARGET_SECURITY_MANAGER_CLIENT "security-manager-client")
-SET(TARGET_SERVER_COMMON "security-server-commons")
+SET(TARGET_SERVER_COMMON "security-manager-commons")
 
 ADD_SUBDIRECTORY(src)
 ADD_SUBDIRECTORY(build)

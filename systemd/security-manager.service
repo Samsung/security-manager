@@ -1,0 +1,11 @@
+[Unit]
+Description=Start the security manager
+
+[Service]
+Type=notify
+ExecStart=/usr/bin/security-manager
+
+Sockets=security-manager-installer.socket
+
+[Install]
+WantedBy=multi-user.target

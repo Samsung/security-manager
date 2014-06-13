@@ -1,11 +1,11 @@
-Name:       security-server
-Summary:    Security server and utilities
-Version:    0.0.119
+Name:       security-manager
+Summary:    Security manager and utilities
+Version:    0.0.1
 Release:    1
 Group:      Security/Service
 License:    Apache-2.0
 Source0:    %{name}-%{version}.tar.gz
-Source1:    security-server.manifest
+Source1:    security-manager.manifest
 Source3:    libsecurity-manager-client.manifest
 BuildRequires: cmake
 BuildRequires: zip
@@ -18,12 +18,12 @@ BuildRequires: pkgconfig(libsystemd-daemon)
 %{?systemd_requires}
 
 %description
-Tizen security server and utilities
+Tizen security manager and utilities
 
 %package -n libsecurity-manager-client
 Summary:    Security manager (client)
 Group:      Security/Libraries
-Requires:   security-server = %{version}-%{release}
+Requires:   security-manager = %{version}-%{release}
 Requires(post): /sbin/ldconfig
 Requires(postun): /sbin/ldconfig
 
@@ -63,14 +63,14 @@ mkdir -p %{buildroot}/usr/share/license
 cp LICENSE %{buildroot}/usr/share/license/%{name}
 cp LICENSE %{buildroot}/usr/share/license/libsecurity-manager-client
 mkdir -p %{buildroot}/etc/security/
-cp security-server-audit.conf %{buildroot}/etc/security/
+cp security-manager-audit.conf %{buildroot}/etc/security/
 mkdir -p %{buildroot}/etc/smack/
 cp app-rules-template.smack %{buildroot}/etc/smack/
 %make_install
 
 mkdir -p %{buildroot}/usr/lib/systemd/system/multi-user.target.wants
 mkdir -p %{buildroot}/usr/lib/systemd/system/sockets.target.wants
-ln -s ../security-server.service %{buildroot}/usr/lib/systemd/system/multi-user.target.wants/security-server.service
+ln -s ../security-manager.service %{buildroot}/usr/lib/systemd/system/multi-user.target.wants/security-manager.service
 ln -s ../security-manager-installer.socket %{buildroot}/usr/lib/systemd/system/sockets.target.wants/security-manager-installer.socket
 
 %clean
@@ -80,18 +80,18 @@ rm -rf %{buildroot}
 systemctl daemon-reload
 if [ $1 = 1 ]; then
     # installation
-    systemctl start security-server.service
+    systemctl start security-manager.service
 fi
 
 if [ $1 = 2 ]; then
     # update
-    systemctl restart security-server.service
+    systemctl restart security-manager.service
 fi
 
 %preun
 if [ $1 = 0 ]; then
     # unistall
-    systemctl stop security-server.service
+    systemctl stop security-manager.service
 fi
 
 %postun
@@ -104,20 +104,19 @@ fi
 
 %postun -n libsecurity-manager-client -p /sbin/ldconfig
 
-%files -n security-server
-%manifest security-server.manifest
+%files -n security-manager
+%manifest security-manager.manifest
 %defattr(-,root,root,-)
-%attr(755,root,root) /usr/bin/security-server
-%{_libdir}/libsecurity-server-commons.so.*
-%attr(-,root,root) /usr/lib/systemd/system/multi-user.target.wants/security-server.service
-%attr(-,root,root) /usr/lib/systemd/system/security-server.service
-%attr(-,root,root) /usr/lib/systemd/system/security-server.target
+%attr(755,root,root) /usr/bin/security-manager
+%{_libdir}/libsecurity-manager-commons.so.*
+%attr(-,root,root) /usr/lib/systemd/system/multi-user.target.wants/security-manager.service
+%attr(-,root,root) /usr/lib/systemd/system/security-manager.service
+%attr(-,root,root) /usr/lib/systemd/system/security-manager.target
 %attr(-,root,root) /usr/lib/systemd/system/sockets.target.wants/security-manager-installer.socket
 %attr(-,root,root) /usr/lib/systemd/system/security-manager-installer.socket
-%attr(-,root,root) /etc/security/security-server-audit.conf
+%attr(-,root,root) /etc/security/security-manager-audit.conf
 %attr(-,root,root) /etc/smack/app-rules-template.smack
 %{_datadir}/license/%{name}
-
 
 %files -n libsecurity-manager-client
 %manifest libsecurity-manager-client.manifest
@@ -129,7 +128,7 @@ fi
 %manifest %{name}.manifest
 %defattr(-,root,root,-)
 %{_libdir}/libsecurity-manager-client.so
-%{_libdir}/libsecurity-server-commons.so
+%{_libdir}/libsecurity-manager-commons.so
 %{_includedir}/security-manager/security-manager.h
 %{_includedir}/security-server/security-server.h
 %{_libdir}/pkgconfig/security-manager.pc

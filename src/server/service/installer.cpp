@@ -266,7 +266,7 @@ InstallerService::InstallerService()
 GenericSocketService::ServiceDescriptionVector InstallerService::GetServiceDescription()
 {
     return ServiceDescriptionVector {
-        {SERVICE_SOCKET_INSTALLER, "security-server::installer", INSTALLER_IFACE},
+        {SERVICE_SOCKET_INSTALLER, "security-manager::installer", INSTALLER_IFACE},
     };
 }
 

@@ -5,11 +5,11 @@ SmackLabelIPIn=*
 SmackLabelIPOut=@
 
 # TODO: move to separate systemd service
-Service=security-server.service
+Service=security-manager.service
 
 [Unit]
-Wants=security-server.target
-Before=security-server.target
+Wants=security-manager.target
+Before=security-manager.target
 
 [Install]
 WantedBy=sockets.target

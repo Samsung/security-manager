@@ -46,10 +46,10 @@
 namespace {
 
 const std::string AUDIT_CONFIG_LOG_PATH = "/etc/security/";
-const std::string AUDIT_CONFIG_FILENAME = "security-server-audit.conf";
+const std::string AUDIT_CONFIG_FILENAME = "security-manager-audit.conf";
 const std::string AUDIT_LOG_DIRECTORY = "/var/log/audit/";
 const std::string AUDIT_LOG_FILENAME_PREFIX = "audit-smack";
-const std::string AUDIT_LOG_SMACK_LABEL = "security-server::audit-files";
+const std::string AUDIT_LOG_SMACK_LABEL = "security-manager::audit-files";
 
 } // namespace anonymous
 
