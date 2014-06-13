@@ -33,13 +33,13 @@
 
 #include <installer.h>
 
-IMPLEMENT_SAFE_SINGLETON(SecurityServer::Log::LogSystem);
+IMPLEMENT_SAFE_SINGLETON(SecurityManager::Log::LogSystem);
 
 #define REGISTER_SOCKET_SERVICE(manager, service) \
     registerSocketService<service>(manager, #service)
 
 template<typename T>
-void registerSocketService(SecurityServer::SocketManager &manager, const std::string& serviceName)
+void registerSocketService(SecurityManager::SocketManager &manager, const std::string& serviceName)
 {
     T *service = NULL;
     try {
@@ -47,7 +47,7 @@ void registerSocketService(SecurityServer::SocketManager &manager, const std::st
         service->Create();
         manager.RegisterSocketService(service);
         service = NULL;
-    } catch (const SecurityServer::Exception &exception) {
+    } catch (const SecurityManager::Exception &exception) {
         LogError("Error in creating service " << serviceName <<
                  ", details:\n" << exception.DumpToString());
     } catch (const std::exception& e) {
@@ -65,16 +65,16 @@ int main(void) {
 
     UNHANDLED_EXCEPTION_HANDLER_BEGIN
     {
-        SecurityServer::Singleton<SecurityServer::Log::LogSystem>::Instance().SetTag("SECURITY_SERVER");
+        SecurityManager::Singleton<SecurityManager::Log::LogSystem>::Instance().SetTag("SECURITY_MANAGER");
 
         // This provider may be used in security-server only.
         // If we add it inside LogSystem constructor it also
         // will be used by security-server-client library.
-        SecurityServer::Log::AuditSmackLog *smackLog = new SecurityServer::Log::AuditSmackLog;
+        SecurityManager::Log::AuditSmackLog *smackLog = new SecurityManager::Log::AuditSmackLog;
         if (smackLog->Fail())
             delete smackLog;
         else
-            SecurityServer::Singleton<SecurityServer::Log::LogSystem>::Instance().AddProvider(smackLog);
+            SecurityManager::Singleton<SecurityManager::Log::LogSystem>::Instance().AddProvider(smackLog);
 
         sigset_t mask;
         sigemptyset(&mask);
@@ -86,9 +86,9 @@ int main(void) {
         }
 
         LogInfo("Start!");
-        SecurityServer::SocketManager manager;
+        SecurityManager::SocketManager manager;
 
-        REGISTER_SOCKET_SERVICE(manager, SecurityServer::InstallerService);
+        REGISTER_SOCKET_SERVICE(manager, SecurityManager::InstallerService);
 
         manager.MainLoop();
     }

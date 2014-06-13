@@ -22,7 +22,7 @@
 #ifndef SECURITYSERVER_ABSTRACT_LOG_PROVIDER_H
 #define SECURITYSERVER_ABSTRACT_LOG_PROVIDER_H
 
-namespace SecurityServer {
+namespace SecurityManager {
 namespace Log {
 class AbstractLogProvider
 {
@@ -76,6 +76,6 @@ class AbstractLogProvider
     static const char *LocateSourceFileName(const char *filename);
 };
 }
-} // namespace SecurityServer
+} // namespace SecurityManager
 
 #endif // SECURITYSERVER_ABSTRACT_LOG_PROVIDER_H

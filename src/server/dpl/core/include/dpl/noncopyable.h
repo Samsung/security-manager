@@ -22,7 +22,7 @@
 #ifndef SECURITYSERVER_NONCOPYABLE_H
 #define SECURITYSERVER_NONCOPYABLE_H
 
-namespace SecurityServer {
+namespace SecurityManager {
 class Noncopyable
 {
   private:
@@ -33,6 +33,6 @@ class Noncopyable
     Noncopyable();
     virtual ~Noncopyable();
 };
-} // namespace SecurityServer
+} // namespace SecurityManager
 
 #endif // SECURITYSERVER_NONCOPYABLE_H

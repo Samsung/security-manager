@@ -35,13 +35,13 @@
 
 #include <generic-socket-manager.h>
 
-namespace SecurityServer {
+namespace SecurityManager {
 
 class SocketManager : public GenericSocketManager {
 public:
     class Exception {
     public:
-        DECLARE_EXCEPTION_TYPE(SecurityServer::Exception, Base)
+        DECLARE_EXCEPTION_TYPE(SecurityManager::Exception, Base)
         DECLARE_EXCEPTION_TYPE(Base, InitFailed)
     };
     SocketManager();
@@ -130,6 +130,6 @@ protected:
     std::priority_queue<Timeout> m_timeoutQueue;
 };
 
-} // namespace SecurityServer
+} // namespace SecurityManager
 
 #endif // _SECURITY_SERVER_SOCKET_MANAGER_

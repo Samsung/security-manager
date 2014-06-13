@@ -30,7 +30,7 @@
  * singleton_safe_impl.h if possible.
  */
 
-namespace SecurityServer {
+namespace SecurityManager {
 template<typename Class>
 Singleton<Class>& Singleton<Class>::InternalInstance()
 {
@@ -44,10 +44,10 @@ Class &Singleton<Class>::Instance()
     Singleton<Class>& instance = Singleton<Class>::InternalInstance();
     return instance;
 }
-} // namespace SecurityServer
+} // namespace SecurityManager
 
 #define IMPLEMENT_SINGLETON(Type)                                           \
-    template SecurityServer::Singleton<Type>&SecurityServer::Singleton<Type>::InternalInstance();    \
-    template Type & SecurityServer::Singleton<Type>::Instance();                            \
+    template SecurityManager::Singleton<Type>&SecurityManager::Singleton<Type>::InternalInstance();    \
+    template Type & SecurityManager::Singleton<Type>::Instance();                            \
 
 #endif // SECURITYSERVER_SINGLETON_IMPL_H

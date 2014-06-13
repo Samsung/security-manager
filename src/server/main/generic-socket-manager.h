@@ -36,7 +36,7 @@ extern "C" {
 struct msghdr;
 } // extern "C"
 
-namespace SecurityServer {
+namespace SecurityManager {
 
 typedef int InterfaceID;
 
@@ -138,6 +138,6 @@ struct GenericSocketManager {
     virtual ~GenericSocketManager(){}
 };
 
-} // namespace SecurityServer
+} // namespace SecurityManager
 
 #endif // _SECURITY_SERVER_GENERIC_SERVICE_MANAGER_

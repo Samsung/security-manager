@@ -9,7 +9,7 @@
 
 #include <smack-check.h>
 
-namespace SecurityServer {
+namespace SecurityManager {
 
 int get_smack_label_from_process(pid_t pid, char *smack_label)
 {
@@ -114,5 +114,5 @@ int smack_pid_have_access(pid_t pid,
 
 
 
-} // namespace SecurityServer
+} // namespace SecurityManager
 

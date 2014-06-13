@@ -26,7 +26,7 @@
 #include <dpl/exception.h>
 #include <cstdlib>
 
-namespace SecurityServer {
+namespace SecurityManager {
 void AssertProc(const char *condition,
                 const char *file,
                 int line,
@@ -37,7 +37,7 @@ void AssertProc(const char *condition,
     {                                                                  \
         std::ostringstream platformLog;                                \
         platformLog << message;                                        \
-        SecurityServer::Log::LogSystemSingleton::Instance().Pedantic(             \
+        SecurityManager::Log::LogSystemSingleton::Instance().Pedantic(             \
             platformLog.str().c_str(),                                 \
             __FILE__, __LINE__, __FUNCTION__);                         \
     } \
@@ -65,4 +65,4 @@ void AssertProc(const char *condition,
     // Fail with c-library abort
     abort();
 }
-} // namespace SecurityServer
+} // namespace SecurityManager

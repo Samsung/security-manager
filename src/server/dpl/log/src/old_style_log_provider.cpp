@@ -29,11 +29,11 @@
 #include <unistd.h>
 #include <dlog.h>
 
-namespace SecurityServer {
+namespace SecurityManager {
 namespace Log {
 namespace // anonymous
 {
-using namespace SecurityServer::Colors::Text;
+using namespace SecurityManager::Colors::Text;
 const char *DEBUG_BEGIN = GREEN_BEGIN;
 const char *DEBUG_END = GREEN_END;
 const char *INFO_BEGIN = CYAN_BEGIN;
@@ -310,4 +310,4 @@ void OldStyleLogProvider::SmackAudit(const char *message,
 }
 
 }
-} // namespace SecurityServer
+} // namespace SecurityManager

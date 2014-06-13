@@ -28,7 +28,7 @@
 #include <sstream>
 #include <list>
 
-namespace SecurityServer {
+namespace SecurityManager {
 namespace Log {
 /**
  * SecurityServer log system
@@ -168,7 +168,7 @@ class NullStream
  */
 typedef Singleton<LogSystem> LogSystemSingleton;
 }
-} // namespace SecurityServer
+} // namespace SecurityManager
 
 //
 // Log support
@@ -178,18 +178,18 @@ typedef Singleton<LogSystem> LogSystemSingleton;
 /* avoid warnings about unused variables */
 #define DPL_MACRO_DUMMY_LOGGING(message, function)                         \
     do {                                                                   \
-        SecurityServer::Log::NullStream ns;                                \
+        SecurityManager::Log::NullStream ns;                                \
         ns << message;                                                     \
     } while (0)
 
 #define DPL_MACRO_FOR_LOGGING(message, function)                           \
 do                                                                         \
 {                                                                          \
-    if (SecurityServer::Log::LogSystemSingleton::Instance().IsLoggingEnabled())   \
+    if (SecurityManager::Log::LogSystemSingleton::Instance().IsLoggingEnabled())   \
     {                                                                      \
         std::ostringstream platformLog;                                    \
         platformLog << message;                                            \
-        SecurityServer::Log::LogSystemSingleton::Instance().function(      \
+        SecurityManager::Log::LogSystemSingleton::Instance().function(      \
             platformLog.str().c_str(),                                     \
             __FILE__, __LINE__, __FUNCTION__);                             \
     }                                                                      \

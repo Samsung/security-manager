@@ -52,7 +52,7 @@ const time_t SOCKET_TIMEOUT = 20;
 
 } // namespace anonymous
 
-namespace SecurityServer {
+namespace SecurityManager {
 
 struct DummyService : public GenericSocketService {
     ServiceDescriptionVector GetServiceDescription() {
@@ -728,4 +728,4 @@ void SocketManager::CloseSocket(int sock) {
     FD_CLR(sock, &m_writeSet);
 }
 
-} // namespace SecurityServer
+} // namespace SecurityManager

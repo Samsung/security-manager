@@ -41,7 +41,7 @@
 #include "smack-rules.h"
 #include "security-manager-common.h"
 
-namespace SecurityServer {
+namespace SecurityManager {
 
 namespace {
 
@@ -507,4 +507,4 @@ bool InstallerService::processAppUninstall(MessageBuffer &buffer, MessageBuffer 
     return true;
 }
 
-} // namespace SecurityServer
+} // namespace SecurityManager

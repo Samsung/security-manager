@@ -29,7 +29,7 @@
 #include <generic-socket-manager.h>
 #include <message-buffer.h>
 
-namespace SecurityServer
+namespace SecurityManager
 {
     struct ConnectionInfo {
         InterfaceID interfaceID;
@@ -37,6 +37,6 @@ namespace SecurityServer
     };
 
     typedef std::map<int, ConnectionInfo> ConnectionInfoMap;
-} //namespace SecurityServer
+} //namespace SecurityManager
 
 #endif //_CONNECTION_INFO_H_

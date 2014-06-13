@@ -53,7 +53,7 @@ const std::string AUDIT_LOG_SMACK_LABEL = "security-manager::audit-files";
 
 } // namespace anonymous
 
-namespace SecurityServer {
+namespace SecurityManager {
 namespace Log {
 
 AuditSmackLog::AuditSmackLog()
@@ -307,4 +307,4 @@ void AuditSmackLog::SecureError(const char *message UNUSED,
 }
 
 } // namespace Log
-} // namespace SecurityServer
+} // namespace SecurityManager

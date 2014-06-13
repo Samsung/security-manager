@@ -23,7 +23,7 @@
 #include <stddef.h>
 #include <dpl/colors.h>
 
-namespace SecurityServer {
+namespace SecurityManager {
 namespace Colors {
 namespace Text {
 const char* BOLD_GREEN_BEGIN = "\033[1;32m";
@@ -67,4 +67,4 @@ const char* BOLD_WHITE_BEGIN = "<font color=\"white\"><b>";
 const char* BOLD_WHITE_END = "</b></font>";
 } //namespace Html
 } //namespace Colors
-} //namespace SecurityServer
+} //namespace SecurityManager

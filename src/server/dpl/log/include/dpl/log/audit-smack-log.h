@@ -33,7 +33,7 @@
 #include <memory>
 #include <functional>
 
-namespace SecurityServer {
+namespace SecurityManager {
 namespace Log {
 
 class AuditSmackLog :
@@ -110,5 +110,5 @@ private:
 };
 
 }  // namespace Log
-}  // namespace SecurityServer
+}  // namespace SecurityManager
 #endif  // _AUDIT_SMACK_LOG_

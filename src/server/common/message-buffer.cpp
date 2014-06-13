@@ -26,7 +26,7 @@
 
 #include <dpl/log/log.h>
 
-namespace SecurityServer {
+namespace SecurityManager {
 
 void MessageBuffer::Push(const RawBuffer &data) {
     m_buffer.AppendCopy(&data[0], data.size());
@@ -65,5 +65,5 @@ void MessageBuffer::Write(size_t num, const void *bytes) {
     m_buffer.AppendCopy(bytes, num);
 }
 
-} // namespace SecurityServer
+} // namespace SecurityManager
 

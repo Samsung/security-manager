@@ -40,7 +40,7 @@
 
 #define DEFINE_THREAD_EVENT(eventType)                                \
     void Event(const eventType &event) {                              \
-        SecurityServer::ServiceThread<ParentClassName>::              \
+        SecurityManager::ServiceThread<ParentClassName>::              \
             Event(event,                                              \
                   this,                                               \
                   &ParentClassName::EventInternal##eventType);        \
@@ -49,13 +49,13 @@
 
 #define DECLARE_THREAD_EVENT(eventType, methodName)                   \
     void Event(const eventType &event) {                              \
-        SecurityServer::ServiceThread<ParentClassName>::              \
+        SecurityManager::ServiceThread<ParentClassName>::              \
             Event(event,                                              \
                   this,                                               \
                   &ParentClassName::methodName);                      \
     }
 
-namespace SecurityServer {
+namespace SecurityManager {
 
 template <class Service>
 class ServiceThread {
@@ -172,6 +172,6 @@ protected:
     bool m_quit;
 };
 
-} // namespace SecurityServer
+} // namespace SecurityManager
 
 #endif // _SECURITY_SERVER_SERVICE_THREAD_

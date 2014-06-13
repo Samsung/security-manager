@@ -25,7 +25,7 @@
 
 #define UNUSED __attribute__((unused))
 
-namespace SecurityServer {
+namespace SecurityManager {
 namespace Log {
 
 void AbstractLogProvider::SetTag(const char *tag UNUSED) {}

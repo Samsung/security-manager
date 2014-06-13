@@ -36,7 +36,7 @@ struct app_inst_req {
     std::vector<std::pair<std::string, int>> appPaths;
 };
 
-namespace SecurityServer {
+namespace SecurityManager {
 
 extern char const * const SERVICE_SOCKET_INSTALLER;
 
@@ -46,6 +46,6 @@ enum class SecurityModuleCall
     APP_UNINSTALL
 };
 
-} // namespace SecuritySever
+} // namespace SecurityManager
 
 #endif // _SECURITY_SERVER_PROTOCOLS_

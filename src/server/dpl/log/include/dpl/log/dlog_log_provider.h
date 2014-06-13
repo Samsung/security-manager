@@ -26,7 +26,7 @@
 #include <memory>
 #include <string>
 
-namespace SecurityServer {
+namespace SecurityManager {
 namespace Log {
 class DLOGLogProvider :
     public AbstractLogProvider
@@ -89,6 +89,6 @@ class DLOGLogProvider :
 };
 
 } // namespace Log
-} // namespace SecurityServer
+} // namespace SecurityManager
 
 #endif // SECURITYSERVER_DLOG_LOG_PROVIDER_H

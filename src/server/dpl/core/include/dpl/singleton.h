@@ -22,7 +22,7 @@
 #ifndef SECURITYSERVER_SINGLETON_H
 #define SECURITYSERVER_SINGLETON_H
 
-namespace SecurityServer {
+namespace SecurityManager {
 template<typename Class>
 class Singleton :
     private Class
@@ -46,6 +46,6 @@ class Singleton :
 
     static Class &Instance();
 };
-} // namespace SecurityServer
+} // namespace SecurityManager
 
 #endif // SECURITYSERVER_SINGLETON_H

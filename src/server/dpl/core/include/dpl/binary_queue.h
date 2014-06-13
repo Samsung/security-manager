@@ -28,7 +28,7 @@
 #include <memory>
 #include <list>
 
-namespace SecurityServer {
+namespace SecurityManager {
 /**
  * Binary queue auto pointer
  */
@@ -47,7 +47,7 @@ class BinaryQueue
     class Exception
     {
       public:
-        DECLARE_EXCEPTION_TYPE(SecurityServer::Exception, Base)
+        DECLARE_EXCEPTION_TYPE(SecurityManager::Exception, Base)
         DECLARE_EXCEPTION_TYPE(Base, OutOfData)
     };
 
@@ -293,6 +293,6 @@ class BinaryQueue
     virtual size_t Write(const BinaryQueue &buffer, size_t bufferSize);
 };
 
-} // namespace SecurityServer
+} // namespace SecurityManager
 
 #endif // SECURITY_SERVER_BINARY_QUEUE_H

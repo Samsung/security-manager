@@ -25,12 +25,12 @@
 #ifndef _SECURITY_SERVER_GENERIC_EVENT_
 #define _SECURITY_SERVER_GENERIC_EVENT_
 
-namespace SecurityServer {
+namespace SecurityManager {
 
 struct GenericEvent {
     virtual ~GenericEvent(){}
 };
 
-} // namespace SecurityServer
+} // namespace SecurityManager
 
 #endif // _SECURITY_SERVER_GENERIC_EVENT_

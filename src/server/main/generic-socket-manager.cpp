@@ -27,7 +27,7 @@
 
 #include <generic-socket-manager.h>
 
-namespace SecurityServer {
+namespace SecurityManager {
 
 class SendMsgData::Internal {
 public:
@@ -112,5 +112,5 @@ int SendMsgData::flags() {
     return m_flags;
 }
 
-} // namespace SecurityServer
+} // namespace SecurityManager
 

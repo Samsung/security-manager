@@ -26,7 +26,7 @@
 #include <cstddef>
 
 
-namespace SecurityServer {
+namespace SecurityManager {
 
 #define SOCKET_PATH_PREFIX "/run/"
 #define SOCKET_PATH_PREFIX_SECURITY_MANAGER SOCKET_PATH_PREFIX "security-manager/"
@@ -34,5 +34,5 @@ namespace SecurityServer {
 char const * const SERVICE_SOCKET_INSTALLER =
         SOCKET_PATH_PREFIX_SECURITY_MANAGER "security-manager-installer.socket";
 
-} // namespace SecurityServer
+} // namespace SecurityManager
 

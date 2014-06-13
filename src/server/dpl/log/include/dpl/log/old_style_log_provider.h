@@ -25,7 +25,7 @@
 #include <dpl/log/abstract_log_provider.h>
 #include <string>
 
-namespace SecurityServer {
+namespace SecurityManager {
 namespace Log {
 class OldStyleLogProvider :
     public AbstractLogProvider
@@ -99,6 +99,6 @@ class OldStyleLogProvider :
                       const char *function);
 };
 }
-} // namespace SecurityServer
+} // namespace SecurityManager
 
 #endif // SECURITYSERVER_OLD_STYLE_LOG_PROVIDER_H

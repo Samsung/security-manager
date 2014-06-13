@@ -27,7 +27,7 @@
 
 #define UNUSED __attribute__((unused))
 
-namespace SecurityServer {
+namespace SecurityManager {
 namespace Log {
 std::string DLOGLogProvider::FormatMessage(const char *message,
                                            const char *filename,
@@ -149,4 +149,4 @@ void DLOGLogProvider::SmackAudit(const char *message UNUSED,
 }
 
 } // nemespace Log
-} // namespace SecurityServer
+} // namespace SecurityManager

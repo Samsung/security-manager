@@ -39,7 +39,7 @@ extern "C" {
     struct msghdr;
 }
 
-namespace SecurityServer {
+namespace SecurityManager {
 
 typedef std::vector<unsigned char> RawBuffer;
 
@@ -61,6 +61,6 @@ int sendToServerAncData(char const * const interface, const RawBuffer &send, str
  */
 int try_catch(const std::function<int()>& func);
 
-} // namespace SecuritySever
+} // namespace SecurityManager
 
 #endif // _SECURITY_SERVER_CLIENT_

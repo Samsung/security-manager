@@ -28,9 +28,9 @@
 #include <dpl/log/old_style_log_provider.h>
 #include <dpl/log/audit-smack-log.h>
 
-IMPLEMENT_SINGLETON(SecurityServer::Log::LogSystem)
+IMPLEMENT_SINGLETON(SecurityManager::Log::LogSystem)
 
-namespace SecurityServer {
+namespace SecurityManager {
 namespace Log {
 namespace // anonymous
 {
@@ -291,4 +291,4 @@ void LogSystem::SmackAudit(const char *message,
 }
 
 }
-} // namespace SecurityServer
+} // namespace SecurityManager

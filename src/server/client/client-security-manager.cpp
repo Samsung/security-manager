@@ -118,7 +118,7 @@ int security_manager_app_inst_req_add_path(app_inst_req *p_req, const char *path
 SECURITY_MANAGER_API
 int security_manager_app_install(const app_inst_req *p_req)
 {
-    using namespace SecurityServer;
+    using namespace SecurityManager;
     MessageBuffer send, recv;
 
     LogDebug("app_install() called");
@@ -157,7 +157,7 @@ int security_manager_app_install(const app_inst_req *p_req)
 SECURITY_MANAGER_API
 int security_manager_app_uninstall(const app_inst_req *p_req)
 {
-    using namespace SecurityServer;
+    using namespace SecurityManager;
     MessageBuffer send, recv;
 
     LogDebug("app_uninstall() called");

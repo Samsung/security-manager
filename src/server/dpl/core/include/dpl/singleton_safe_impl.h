@@ -23,7 +23,7 @@
 #define SECURITYSERVER_SINGLETON_SAFE_IMPL_H
 
 #define IMPLEMENT_SAFE_SINGLETON(Class)                                        \
-    namespace SecurityServer {                                                                \
+    namespace SecurityManager {                                                    \
     template<>                                                                     \
     Singleton<Class>&Singleton<Class>::InternalInstance()                         \
     {                                                                              \
@@ -40,6 +40,6 @@
                                                                                \
     template Singleton<Class>&Singleton<Class>::InternalInstance();               \
     template Class & Singleton<Class>::Instance();                                  \
-    } // namespace SecurityServer
+    } // namespace SecurityManager
 
 #endif // SECURITYSERVER_SINGLETON_SAFE_IMPL_H

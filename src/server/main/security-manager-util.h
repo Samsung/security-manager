@@ -24,11 +24,11 @@
 
 #include <sys/types.h>
 
-namespace SecurityServer {
+namespace SecurityManager {
 
 int util_smack_label_is_valid(const char *smack_label);
 char *read_exe_path_from_proc(pid_t pid);
 
-} // namespace SecurityServer
+} // namespace SecurityManager
 
 #endif /*SECURITY_SERVER_UTIL_H*/

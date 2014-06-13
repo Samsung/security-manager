@@ -1,5 +1,5 @@
 /*
- *  security-server
+ *  security-manager
  *
  *  Copyright (c) 2000 - 2013 Samsung Electronics Co., Ltd All Rights Reserved
  *
@@ -21,7 +21,7 @@
 #ifndef _SMACK_CHECK_H_
 #define _SMACK_CHECK_H_
 
-namespace SecurityServer {
+namespace SecurityManager {
 
 /*
  * A very simple runtime check for SMACK on the platform
@@ -37,6 +37,6 @@ int smack_runtime_check(void);
  */
 int smack_check(void);
 
-} // namespace SecurityServer
+} // namespace SecurityManager
 
 #endif // _SMACK_CHECK_H_

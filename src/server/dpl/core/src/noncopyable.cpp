@@ -22,10 +22,10 @@
 #include <stddef.h>
 #include <dpl/noncopyable.h>
 
-namespace SecurityServer {
+namespace SecurityManager {
 Noncopyable::Noncopyable()
 {}
 
 Noncopyable::~Noncopyable()
 {}
-} // namespace SecurityServer
+} // namespace SecurityManager

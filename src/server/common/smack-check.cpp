@@ -5,7 +5,7 @@
 
 #include <dpl/log/log.h>
 
-namespace SecurityServer {
+namespace SecurityManager {
 
 int smack_runtime_check(void)
 {
@@ -31,4 +31,4 @@ int smack_check(void)
 #endif
 }
 
-} // namespace SecurityServer
+} // namespace SecurityManager

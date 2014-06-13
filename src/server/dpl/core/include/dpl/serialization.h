@@ -28,7 +28,7 @@
 #include <map>
 #include <memory>
 
-namespace SecurityServer {
+namespace SecurityManager {
 // Abstract data stream buffer
 class IStream
 {
@@ -393,6 +393,6 @@ struct Deserialization {
         Deserialize(stream, *map);
     }
 }; // struct Deserialization
-} // namespace SecurityServer
+} // namespace SecurityManager
 
 #endif // SERIALIZATION_H

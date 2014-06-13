@@ -24,7 +24,7 @@
 
 #include <dpl/noreturn.h>
 
-namespace SecurityServer {
+namespace SecurityManager {
 // Assertion handler procedure
 // Do not call directly
 // Always use Assert macro
@@ -32,9 +32,9 @@ SECURITYSERVER_NORETURN void AssertProc(const char *condition,
                              const char *file,
                              int line,
                              const char *function);
-} // namespace SecurityServer
+} // namespace SecurityManager
 
-#define Assert(Condition) do { if (!(Condition)) { SecurityServer::AssertProc(#Condition, \
+#define Assert(Condition) do { if (!(Condition)) { SecurityManager::AssertProc(#Condition, \
                                                                    __FILE__, \
                                                                    __LINE__, \
                                                                    __FUNCTION__); \

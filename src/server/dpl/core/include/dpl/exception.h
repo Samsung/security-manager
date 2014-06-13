@@ -29,7 +29,7 @@
 #include <cstdlib>
 #include <sstream>
 
-namespace SecurityServer {
+namespace SecurityManager {
 void LogUnhandledException(const std::string &str);
 void LogUnhandledException(const std::string &str,
                            const char *filename,
@@ -37,7 +37,7 @@ void LogUnhandledException(const std::string &str,
                            const char *function);
 }
 
-namespace SecurityServer {
+namespace SecurityManager {
 class Exception
 {
   private:
@@ -287,7 +287,7 @@ class Exception
         return m_className;
     }
 };
-} // namespace SecurityServer
+} // namespace SecurityManager
 
 #define Try try
 
@@ -332,7 +332,7 @@ class Exception
         Class(const char *path, \
               const char *function, \
               int line, \
-              const SecurityServer::Exception & reason, \
+              const SecurityManager::Exception & reason, \
               const std::string & message = std::string()) :                                                                                                                             \
             BaseClass(path, function, line, reason, message)                                                                            \
         {                                                                                                                                 \
@@ -343,11 +343,11 @@ class Exception
 #define UNHANDLED_EXCEPTION_HANDLER_BEGIN try
 
 #define UNHANDLED_EXCEPTION_HANDLER_END                                                                   \
-    catch (const SecurityServer::Exception &exception)                                                               \
+    catch (const SecurityManager::Exception &exception)                                                               \
     {                                                                                                     \
         std::ostringstream msg;                                                                           \
-        msg << SecurityServer::Exception::KnownExceptionToString(exception);                                         \
-        SecurityServer::LogUnhandledException(msg.str(), __FILE__, __LINE__, __FUNCTION__);                          \
+        msg << SecurityManager::Exception::KnownExceptionToString(exception);                                         \
+        SecurityManager::LogUnhandledException(msg.str(), __FILE__, __LINE__, __FUNCTION__);                          \
         abort();                                                                                          \
     }                                                                                                     \
     catch (std::exception& e)                                                                             \
@@ -355,19 +355,19 @@ class Exception
         std::ostringstream msg;                                                                           \
         msg << e.what();                                                                                  \
         msg << "\n";                                                                                      \
-        msg << SecurityServer::Exception::UnknownExceptionToString();                                                \
-        SecurityServer::LogUnhandledException(msg.str(), __FILE__, __LINE__, __FUNCTION__);                          \
+        msg << SecurityManager::Exception::UnknownExceptionToString();                                                \
+        SecurityManager::LogUnhandledException(msg.str(), __FILE__, __LINE__, __FUNCTION__);                          \
         abort();                                                                                          \
     }                                                                                                     \
     catch (...)                                                                                           \
     {                                                                                                     \
         std::ostringstream msg;                                                                           \
-        msg << SecurityServer::Exception::UnknownExceptionToString();                                                \
-        SecurityServer::LogUnhandledException(msg.str(), __FILE__, __LINE__, __FUNCTION__);                          \
+        msg << SecurityManager::Exception::UnknownExceptionToString();                                                \
+        SecurityManager::LogUnhandledException(msg.str(), __FILE__, __LINE__, __FUNCTION__);                          \
         abort();                                                                                          \
     }
 
-namespace SecurityServer {
+namespace SecurityManager {
 namespace CommonException {
 /**
  * Internal exception definitions

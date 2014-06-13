@@ -31,16 +31,16 @@
 #include <dpl/exception.h>
 #include <dpl/serialization.h>
 
-namespace SecurityServer {
+namespace SecurityManager {
 
 typedef std::vector<unsigned char> RawBuffer;
 
-class MessageBuffer : public SecurityServer::IStream {
+class MessageBuffer : public SecurityManager::IStream {
 public:
     class Exception
     {
     public:
-        DECLARE_EXCEPTION_TYPE(SecurityServer::Exception, Base)
+        DECLARE_EXCEPTION_TYPE(SecurityManager::Exception, Base)
         DECLARE_EXCEPTION_TYPE(Base, OutOfData)
     };
 
@@ -71,9 +71,9 @@ protected:
     }
 
     size_t m_bytesLeft;
-    SecurityServer::BinaryQueue m_buffer;
+    SecurityManager::BinaryQueue m_buffer;
 };
 
-} // namespace SecurityServer
+} // namespace SecurityManager
 
 #endif // _SECURITY_SERVER_SOCKET_BUFFER_

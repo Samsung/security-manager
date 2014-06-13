@@ -24,7 +24,7 @@
 #ifndef SECURITY_SERVER_COLORS_H
 #define SECURITY_SERVER_COLORS_H
 
-namespace SecurityServer {
+namespace SecurityManager {
 namespace Colors {
 namespace Text {
 extern const char* BOLD_GREEN_BEGIN;
@@ -68,6 +68,6 @@ extern const char* BOLD_WHITE_BEGIN;
 extern const char* BOLD_WHITE_END;
 } //namespace Html
 } //namespace Colors
-} //namespace SecurityServer
+} //namespace SecurityManager
 
 #endif /* SECURITY_SERVER_COLORS_H */

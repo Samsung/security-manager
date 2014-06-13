@@ -29,18 +29,18 @@
 #include <message-buffer.h>
 #include <connection-info.h>
 
-namespace SecurityServer {
+namespace SecurityManager {
 
 class InstallerException
 {
 public:
-    DECLARE_EXCEPTION_TYPE(SecurityServer::Exception, Base)
+    DECLARE_EXCEPTION_TYPE(SecurityManager::Exception, Base)
     DECLARE_EXCEPTION_TYPE(Base, InvalidAction)
 };
 
 class InstallerService :
-    public SecurityServer::GenericSocketService,
-    public SecurityServer::ServiceThread<InstallerService>
+    public SecurityManager::GenericSocketService,
+    public SecurityManager::ServiceThread<InstallerService>
 {
 public:
     InstallerService();
@@ -90,6 +90,6 @@ private:
     bool processAppUninstall(MessageBuffer &buffer, MessageBuffer &send);
 };
 
-} // namespace SecurityServer
+} // namespace SecurityManager
 
 #endif // _SECURITY_SERVER_INSTALLER_

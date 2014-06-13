@@ -38,14 +38,14 @@
 
 #include <security-manager.h>
 
-IMPLEMENT_SAFE_SINGLETON(SecurityServer::Log::LogSystem);
+IMPLEMENT_SAFE_SINGLETON(SecurityManager::Log::LogSystem);
 
 namespace {
 
 const int POLL_TIMEOUT = 2000;
 
 void securityClientEnableLogSystem(void) {
-    SecurityServer::Singleton<SecurityServer::Log::LogSystem>::Instance().SetTag("SECURITY_SERVER_CLIENT");
+    SecurityManager::Singleton<SecurityManager::Log::LogSystem>::Instance().SetTag("SECURITY_MANAGER_CLIENT");
 }
 
 int waitForSocket(int sock, int event, int timeout) {
@@ -166,7 +166,7 @@ private:
 
 } // namespace anonymous
 
-namespace SecurityServer {
+namespace SecurityManager {
 
 
 int sendToServer(char const * const interface, const RawBuffer &send, MessageBuffer &recv) {
@@ -267,7 +267,7 @@ int try_catch(const std::function<int()>& func)
     try {
         return func();
     } catch (MessageBuffer::Exception::Base &e) {
-        LogError("SecurityServer::MessageBuffer::Exception " << e.DumpToString());
+        LogError("SecurityManager::MessageBuffer::Exception " << e.DumpToString());
     } catch (std::exception &e) {
         LogError("STD exception " << e.what());
     } catch (...) {
@@ -276,7 +276,7 @@ int try_catch(const std::function<int()>& func)
     return SECURITY_MANAGER_API_ERROR_UNKNOWN;
 }
 
-} // namespace SecurityServer
+} // namespace SecurityMANAGER
 
 static void init_lib(void) __attribute__ ((constructor));
 static void init_lib(void)
