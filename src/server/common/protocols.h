@@ -25,10 +25,7 @@
 #ifndef _SECURITY_SERVER_PROTOCOLS_
 #define _SECURITY_SERVER_PROTOCOLS_
 
-#include <cstddef>
-#include <time.h>
 #include <vector>
-#include <utility>
 #include <string>
 
 struct app_inst_req {
@@ -41,61 +38,13 @@ struct app_inst_req {
 
 namespace SecurityServer {
 
-extern char const * const SERVICE_SOCKET_SHARED_MEMORY;
-extern char const * const SERVICE_SOCKET_GET_GID;
-extern char const * const SERVICE_SOCKET_PRIVILEGE_BY_PID;
-extern char const * const SERVICE_SOCKET_APP_PRIVILEGE_BY_NAME;
-extern char const * const SERVICE_SOCKET_COOKIE_GET;
-extern char const * const SERVICE_SOCKET_COOKIE_CHECK;
-extern char const * const SERVICE_SOCKET_PASSWD_CHECK;
-extern char const * const SERVICE_SOCKET_PASSWD_SET;
-extern char const * const SERVICE_SOCKET_PASSWD_RESET;
 extern char const * const SERVICE_SOCKET_INSTALLER;
-
-enum class AppPermissionsAction { ENABLE, DISABLE };
-
-enum class CookieCall
-{
-    GET_COOKIE,
-    CHECK_PID,
-    CHECK_SMACKLABEL,
-    CHECK_PRIVILEGE_GID,
-    CHECK_PRIVILEGE,
-    CHECK_GID,
-    CHECK_UID
-};
-
-enum class PrivilegeCheckHdrs
-{
-    CHECK_GIVEN_APP,
-    CHECK_CALLER_APP
-};
-extern const size_t COOKIE_SIZE;
-
-enum class PasswordHdrs
-{
-    HDR_IS_PWD_VALID,
-    HDR_CHK_PWD,
-    HDR_SET_PWD,
-    HDR_SET_PWD_VALIDITY,
-    HDR_SET_PWD_MAX_CHALLENGE,
-    HDR_RST_PWD,
-    HDR_SET_PWD_HISTORY
-};
 
 enum class SecurityModuleCall
 {
     APP_INSTALL,
     APP_UNINSTALL
 };
-
-extern const size_t MAX_PASSWORD_LEN;
-extern const unsigned int MAX_PASSWORD_HISTORY;
-extern const unsigned int PASSWORD_INFINITE_EXPIRATION_DAYS;
-extern const unsigned int PASSWORD_INFINITE_ATTEMPT_COUNT;
-extern const unsigned int PASSWORD_API_NO_EXPIRATION;
-
-extern const int SECURITY_SERVER_MAX_OBJ_NAME;
 
 } // namespace SecuritySever
 

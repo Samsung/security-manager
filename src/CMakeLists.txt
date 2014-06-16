@@ -1,6 +1,5 @@
 PKG_CHECK_MODULES(SECURITY_SERVER_DEP
     dlog
-    openssl
     libsmack
     libprivilege-control
     libsystemd-daemon
@@ -15,17 +14,6 @@ SET(SECURITY_SERVER_SOURCES
     ${SERVER2_PATH}/main/generic-socket-manager.cpp
     ${SERVER2_PATH}/main/socket-manager.cpp
     ${SERVER2_PATH}/main/server2-main.cpp
-    ${SERVER2_PATH}/service/data-share.cpp
-    ${SERVER2_PATH}/service/get-gid.cpp
-    ${SERVER2_PATH}/service/app-permissions.cpp
-    ${SERVER2_PATH}/service/cookie.cpp
-    ${SERVER2_PATH}/service/cookie-jar.cpp
-    ${SERVER2_PATH}/service/cookie-common.cpp
-    ${SERVER2_PATH}/service/privilege-by-pid.cpp
-    ${SERVER2_PATH}/service/password.cpp
-    ${SERVER2_PATH}/service/password-file.cpp
-    ${SERVER2_PATH}/service/password-manager.cpp
-    ${SERVER2_PATH}/service/password-file-buffer.cpp
     ${SERVER2_PATH}/service/smack-common.cpp
     ${SERVER2_PATH}/service/smack-rules.cpp
     ${SERVER2_PATH}/service/installer.cpp
@@ -57,43 +45,6 @@ TARGET_LINK_LIBRARIES(${TARGET_SECURITY_SERVER}
     -lcap
     )
 
-################################################################################
-
-SET(SECURITY_CLIENT_VERSION_MAJOR 1)
-SET(SECURITY_CLIENT_VERSION ${SECURITY_CLIENT_VERSION_MAJOR}.0.1)
-
-INCLUDE_DIRECTORIES(
-    ${SERVER2_PATH}/client
-    ${SERVER2_PATH}/common
-    ${SERVER2_PATH}/dpl/core/include
-    ${SERVER2_PATH}/dpl/log/include
-    )
-
-SET(SECURITY_CLIENT_SOURCES
-    ${SERVER2_PATH}/client/client-common.cpp
-    ${SERVER2_PATH}/client/client-shared-memory.cpp
-    ${SERVER2_PATH}/client/client-get-gid.cpp
-    ${SERVER2_PATH}/client/client-app-permissions.cpp
-    ${SERVER2_PATH}/client/client-cookie.cpp
-    ${SERVER2_PATH}/client/client-privilege-by-pid.cpp
-    ${SERVER2_PATH}/client/client-socket-privilege.cpp
-    ${SERVER2_PATH}/client/client-password.cpp
-    )
-
-ADD_LIBRARY(${TARGET_SECURITY_CLIENT} SHARED ${SECURITY_CLIENT_SOURCES})
-
-SET_TARGET_PROPERTIES(
-    ${TARGET_SECURITY_CLIENT}
-    PROPERTIES
-        COMPILE_FLAGS "-D_GNU_SOURCE -fPIC -fvisibility=hidden"
-        SOVERSION ${SECURITY_CLIENT_VERSION_MAJOR}
-        VERSION ${SECURITY_CLIENT_VERSION}
-    )
-
-TARGET_LINK_LIBRARIES(${TARGET_SECURITY_CLIENT}
-    ${SECURITY_SERVER_DEP_LIBRARIES}
-    ${TARGET_SERVER_COMMON}
-    )
 
 ################################################################################
 
@@ -129,7 +80,6 @@ TARGET_LINK_LIBRARIES(${TARGET_SECURITY_MANAGER_CLIENT}
 
 ################################################################################
 
-INSTALL(TARGETS ${TARGET_SECURITY_CLIENT} DESTINATION ${LIB_INSTALL_DIR})
 INSTALL(TARGETS ${TARGET_SECURITY_MANAGER_CLIENT} DESTINATION ${LIB_INSTALL_DIR})
 
 INSTALL(TARGETS ${TARGET_SECURITY_SERVER} DESTINATION bin)
@@ -143,11 +93,6 @@ INSTALL(FILES
     ${SECURITY_SERVER_PATH}/include/security-manager.h
     DESTINATION  ${INCLUDE_INSTALL_DIR}/security-manager
     )
-
-################################################################################
-
-#CONFIGURE_FILE(security-server.pc.in security-server.pc @ONLY)
-#INSTALL
 
 ################################################################################
 

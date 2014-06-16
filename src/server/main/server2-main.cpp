@@ -31,12 +31,6 @@
 
 #include <socket-manager.h>
 
-#include <data-share.h>
-#include <get-gid.h>
-#include <privilege-by-pid.h>
-#include <app-permissions.h>
-#include <cookie.h>
-#include <password.h>
 #include <installer.h>
 
 IMPLEMENT_SAFE_SINGLETON(SecurityServer::Log::LogSystem);
@@ -94,12 +88,6 @@ int main(void) {
         LogInfo("Start!");
         SecurityServer::SocketManager manager;
 
-        REGISTER_SOCKET_SERVICE(manager, SecurityServer::CookieService);
-        REGISTER_SOCKET_SERVICE(manager, SecurityServer::SharedMemoryService);
-        REGISTER_SOCKET_SERVICE(manager, SecurityServer::GetGidService);
-        REGISTER_SOCKET_SERVICE(manager, SecurityServer::PrivilegeByPidService);
-        REGISTER_SOCKET_SERVICE(manager, SecurityServer::AppPermissionsService);
-        REGISTER_SOCKET_SERVICE(manager, SecurityServer::PasswordService);
         REGISTER_SOCKET_SERVICE(manager, SecurityServer::InstallerService);
 
         manager.MainLoop();

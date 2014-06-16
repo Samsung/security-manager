@@ -29,40 +29,10 @@
 namespace SecurityServer {
 
 #define SOCKET_PATH_PREFIX "/run/"
-#define SOCKET_PATH_PREFIX_SECURITY_SERVER SOCKET_PATH_PREFIX "security-server/"
 #define SOCKET_PATH_PREFIX_SECURITY_MANAGER SOCKET_PATH_PREFIX "security-manager/"
-
-char const * const SERVICE_SOCKET_SHARED_MEMORY =
-        SOCKET_PATH_PREFIX_SECURITY_SERVER "security-server-api-data-share.socket";
-char const * const SERVICE_SOCKET_GET_GID =
-        SOCKET_PATH_PREFIX_SECURITY_SERVER "security-server-api-get-gid.socket";
-char const * const SERVICE_SOCKET_PRIVILEGE_BY_PID =
-        SOCKET_PATH_PREFIX_SECURITY_SERVER "security-server-api-privilege-by-pid.socket";
-char const * const SERVICE_SOCKET_APP_PRIVILEGE_BY_NAME =
-        SOCKET_PATH_PREFIX_SECURITY_SERVER "security-server-api-app-privilege-by-name.socket";
-char const * const SERVICE_SOCKET_COOKIE_GET =
-        SOCKET_PATH_PREFIX_SECURITY_SERVER "security-server-api-cookie-get.socket";
-char const * const SERVICE_SOCKET_COOKIE_CHECK =
-        SOCKET_PATH_PREFIX_SECURITY_SERVER "security-server-api-cookie-check.socket";
-char const * const SERVICE_SOCKET_PASSWD_CHECK =
-        SOCKET_PATH_PREFIX_SECURITY_SERVER "security-server-api-password-check.socket";
-char const * const SERVICE_SOCKET_PASSWD_SET =
-        SOCKET_PATH_PREFIX_SECURITY_SERVER "security-server-api-password-set.socket";
-char const * const SERVICE_SOCKET_PASSWD_RESET =
-        SOCKET_PATH_PREFIX_SECURITY_SERVER "security-server-api-password-reset.socket";
 
 char const * const SERVICE_SOCKET_INSTALLER =
         SOCKET_PATH_PREFIX_SECURITY_MANAGER "security-manager-installer.socket";
-
-const size_t COOKIE_SIZE = 20;
-
-const size_t MAX_PASSWORD_LEN = 32;
-const unsigned int MAX_PASSWORD_HISTORY = 50;
-const unsigned int PASSWORD_INFINITE_EXPIRATION_DAYS = 0;
-const unsigned int PASSWORD_INFINITE_ATTEMPT_COUNT = 0;
-const unsigned int PASSWORD_API_NO_EXPIRATION = 0xFFFFFFFF;
-
-const int SECURITY_SERVER_MAX_OBJ_NAME = 30;
 
 } // namespace SecurityServer
 
