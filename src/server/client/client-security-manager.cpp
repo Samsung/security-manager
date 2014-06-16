@@ -35,7 +35,7 @@
 #include <protocols.h>
 
 #include <security-manager.h>
-#include <security-server.h>
+
 
 
 SECURITY_MANAGER_API
@@ -140,14 +140,14 @@ int security_manager_app_install(const app_inst_req *p_req)
 
         //send buffer to server
         int retval = sendToServer(SERVICE_SOCKET_INSTALLER, send.Pop(), recv);
-        if (retval != SECURITY_SERVER_API_SUCCESS) {
+        if (retval != SECURITY_MANAGER_API_SUCCESS) {
             LogDebug("Error in sendToServer. Error code: " << retval);
             return SECURITY_MANAGER_ERROR_UNKNOWN;
         }
 
         //receive response from server
         Deserialization::Deserialize(recv, retval);
-        if (retval != SECURITY_SERVER_API_SUCCESS)
+        if (retval != SECURITY_MANAGER_API_SUCCESS)
             return SECURITY_MANAGER_ERROR_UNKNOWN;
 
         return SECURITY_MANAGER_SUCCESS;;
@@ -175,14 +175,14 @@ int security_manager_app_uninstall(const app_inst_req *p_req)
 
         //send buffer to server
         int retval = sendToServer(SERVICE_SOCKET_INSTALLER, send.Pop(), recv);
-        if (retval != SECURITY_SERVER_API_SUCCESS) {
+        if (retval != SECURITY_MANAGER_API_SUCCESS) {
             LogDebug("Error in sendToServer. Error code: " << retval);
             return SECURITY_MANAGER_ERROR_UNKNOWN;
         }
 
         //receive response from server
         Deserialization::Deserialize(recv, retval);
-        if (retval != SECURITY_SERVER_API_SUCCESS)
+        if (retval != SECURITY_MANAGER_API_SUCCESS)
             return SECURITY_MANAGER_ERROR_UNKNOWN;
 
         return SECURITY_MANAGER_SUCCESS;;

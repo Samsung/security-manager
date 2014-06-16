@@ -130,5 +130,4 @@ fi
 %{_libdir}/libsecurity-manager-client.so
 %{_libdir}/libsecurity-manager-commons.so
 %{_includedir}/security-manager/security-manager.h
-%{_includedir}/security-server/security-server.h
 %{_libdir}/pkgconfig/security-manager.pc

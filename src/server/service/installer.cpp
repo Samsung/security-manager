@@ -37,7 +37,6 @@
 
 #include "installer.h"
 #include "protocols.h"
-#include "security-server.h"
 #include "security-manager.h"
 #include "smack-rules.h"
 #include "security-manager-common.h"
@@ -391,7 +390,7 @@ bool InstallerService::processAppInstall(MessageBuffer &buffer, MessageBuffer &s
     LogDebug("perm_begin() returned " << result);
     if (PC_OPERATION_SUCCESS != result) {
         // libprivilege is locked
-        Serialization::Serialize(send, SECURITY_SERVER_API_ERROR_SERVER_ERROR);
+        Serialization::Serialize(send, SECURITY_MANAGER_API_ERROR_SERVER_ERROR);
         return false;
     }
 
@@ -439,19 +438,19 @@ bool InstallerService::processAppInstall(MessageBuffer &buffer, MessageBuffer &s
         //SecurityManager::SmackRules::uninstallPackageRules(req.pkgId);
 
         // error in libprivilege-control
-        Serialization::Serialize(send, SECURITY_SERVER_API_ERROR_SERVER_ERROR);
+        Serialization::Serialize(send, SECURITY_MANAGER_API_ERROR_SERVER_ERROR);
         return false;
     }
 
     // success
-    Serialization::Serialize(send, SECURITY_SERVER_API_SUCCESS);
+    Serialization::Serialize(send, SECURITY_MANAGER_API_SUCCESS);
     return true;
 
 error_label:
     // rollback failed transaction before exiting
     result = perm_rollback();
     LogDebug("perm_rollback() returned " << result);
-    Serialization::Serialize(send, SECURITY_SERVER_API_ERROR_SERVER_ERROR);
+    Serialization::Serialize(send, SECURITY_MANAGER_API_ERROR_SERVER_ERROR);
     return false;
 }
 
@@ -466,7 +465,7 @@ bool InstallerService::processAppUninstall(MessageBuffer &buffer, MessageBuffer 
     LogDebug("perm_begin() returned " << result);
     if (PC_OPERATION_SUCCESS != result) {
         // libprivilege is locked
-        Serialization::Serialize(send, SECURITY_SERVER_API_ERROR_SERVER_ERROR);
+        Serialization::Serialize(send, SECURITY_MANAGER_API_ERROR_SERVER_ERROR);
         return false;
     }
 
@@ -478,7 +477,7 @@ bool InstallerService::processAppUninstall(MessageBuffer &buffer, MessageBuffer 
         // error in libprivilege-control
         result = perm_rollback();
         LogDebug("perm_rollback() returned " << result);
-        Serialization::Serialize(send, SECURITY_SERVER_API_ERROR_SERVER_ERROR);
+        Serialization::Serialize(send, SECURITY_MANAGER_API_ERROR_SERVER_ERROR);
         return false;
     }
 
@@ -490,7 +489,7 @@ bool InstallerService::processAppUninstall(MessageBuffer &buffer, MessageBuffer 
     //    LogError("Error on uninstallation of package-specific smack rules");
     //    result = perm_rollback();
     //    LogDebug("perm_rollback() returned " << result);
-    //    Serialization::Serialize(send, SECURITY_SERVER_API_ERROR_SERVER_ERROR);
+    //    Serialization::Serialize(send, SECURITY_MANAGER_API_ERROR_SERVER_ERROR);
     //    return false;
     //}
 
@@ -499,12 +498,12 @@ bool InstallerService::processAppUninstall(MessageBuffer &buffer, MessageBuffer 
     LogDebug("perm_end() returned " << result);
     if (PC_OPERATION_SUCCESS != result) {
         // error in libprivilege-control
-        Serialization::Serialize(send, SECURITY_SERVER_API_ERROR_SERVER_ERROR);
+        Serialization::Serialize(send, SECURITY_MANAGER_API_ERROR_SERVER_ERROR);
         return false;
     }
 
     // success
-    Serialization::Serialize(send, SECURITY_SERVER_API_SUCCESS);
+    Serialization::Serialize(send, SECURITY_MANAGER_API_SUCCESS);
     return true;
 }
 
