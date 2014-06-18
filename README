@@ -1,29 +1,11 @@
-README for security-server project
+README for security-manager project
 
-security-server project contains of two parts:
-1) the server part, that is implemented as a daemon that has vast rights for
-vulnerable, security-related data, and that may be trusted by its clients.
+The security manager is project forked from security-server, from which
+it inherits its main design: division for two parts:
+* system daemon (security-manager)
+* library for communication with daemon (libsecurity-manager).
 
-2) the client part, libsecurity-server: a library that allows programs to
-communicate with the server part to ask for granting some rights or to get some
-security-related data.
-
-The libsecurity-server library's API is available in the header file
-src/incluce/privilege-control.h.
-
-The libsecurity-server API may be used to:
-* enable SMACK security for in-direct interprocess communication.
-* password management (setting, restoring, checking passwords)
-* check for SMACK rights that other processes have if its smack label is not
-known, but a remote's side pid is known or communication to it is established
-with socket.
-* enabling and disabling permissions for a specified application
-
-
-security-server2:
-
-The server part is implemented in a /src/server2 directory.
-The implementation is divided into:
+The implementation of daemon part is divided into:
     manager part: that is responsible for threads and communication management
     with no awareness of what information is being transferred. This part is
     implemented by SocketManager class that works with GenericSocketService as
@@ -31,12 +13,11 @@ The implementation is divided into:
 and
     services part: implemented as classes derived from GenericSocketService
     grouped in src/server2/service directory that defines actions done by
-    security-server after receiving certain requests from client side.
+    security-manager after receiving certain requests from client side.
 
-Adding services to security-server should be done by creating a new class
-derived from GenericSocketService, implementing proper functions for it,
-registering it to SocketManager in main loop and making unix socket for service.
+The security-manager's manager part is fully inherited from security-server,
+while services are completely diffrent.
 
-The paths of unix sockets used in communication between server and libclient are
-defined in src/server2/common directory. Sockets themselves are configured in
-files in systemd directory.
+The security-manager services are ment to gather information about security
+permissions in the system and provide access to that data via means of
+libsecurity-manager.
