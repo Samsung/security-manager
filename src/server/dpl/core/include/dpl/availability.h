@@ -18,13 +18,13 @@
  * @author      Jihoon Chung (jihoon.chung@samsung.com)
  * @version     1.0
  */
-#ifndef DPL_AVAILABILITY_H
-#define DPL_AVAILABILITY_H
+#ifndef SECURITY_MANAGER_AVAILABILITY_H
+#define SECURITY_MANAGER_AVAILABILITY_H
 
-#define DPL_DEPRECATED __attribute__((deprecated))
-#define DPL_DEPRECATED_WITH_MESSAGE(msg) __attribute__((deprecated(msg)))
+#define SECURITY_MANAGER_DEPRECATED __attribute__((deprecated))
+#define SECURITY_MANAGER_DEPRECATED_WITH_MESSAGE(msg) __attribute__((deprecated(msg)))
 
-#define DPL_UNUSED __attribute__((unused))
-#define DPL_UNUSED_PARAM(variable) (void)variable
+#define SECURITY_MANAGER_UNUSED __attribute__((unused))
+#define SECURITY_MANAGER_UNUSED_PARAM(variable) (void)variable
 
-#endif // DPL_AVAILABILITY_H
+#endif // SECURITY_MANAGER_AVAILABILITY_H

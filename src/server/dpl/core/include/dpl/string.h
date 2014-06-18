@@ -18,8 +18,8 @@
  * @author      Piotr Marcinkiewicz (p.marcinkiew@samsung.com)
  * @version     1.0
  */
-#ifndef DPL_STRING
-#define DPL_STRING
+#ifndef SECURITY_MANAGER_STRING
+#define SECURITY_MANAGER_STRING
 
 #include <dpl/exception.h>
 #include <dpl/char_traits.h>
@@ -27,7 +27,7 @@
 #include <ostream>
 #include <numeric>
 
-namespace DPL {
+namespace SecurityManager {
 // @brief DPL string
 typedef std::basic_string<wchar_t, CharTraits> String;
 
@@ -35,7 +35,7 @@ typedef std::basic_string<wchar_t, CharTraits> String;
 class StringException
 {
   public:
-    DECLARE_EXCEPTION_TYPE(DPL::Exception, Base)
+    DECLARE_EXCEPTION_TYPE(SecurityManager::Exception, Base)
 
     // @brief Invalid init for UTF8 to UTF32 converter
     DECLARE_EXCEPTION_TYPE(Base, IconvInitErrorUTF8ToUTF32)
@@ -56,10 +56,10 @@ class StringException
     DECLARE_EXCEPTION_TYPE(Base, ICUInvalidCharacterFound)
 };
 
-//!\brief convert ASCII string to DPL::String
+//!\brief convert ASCII string to SecurityManager::String
 String FromASCIIString(const std::string& aString);
 
-//!\brief convert UTF32 string to DPL::String
+//!\brief convert UTF32 string to SecurityManager::String
 String FromUTF32String(const std::wstring& aString);
 
 //@brief Returns String object created from UTF8 string
@@ -150,8 +150,8 @@ template<class StringType> void Trim(StringType & obj, typename StringType::cons
 }
 
 
-} //namespace DPL
+} //namespace SecurityManager
 
-std::ostream& operator<<(std::ostream& aStream, const DPL::String& aString);
+std::ostream& operator<<(std::ostream& aStream, const SecurityManager::String& aString);
 
-#endif // DPL_STRING
+#endif // SECURITY_MANAGER_STRING

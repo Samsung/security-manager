@@ -69,7 +69,7 @@ void MiliSleep(uint64_t miliseconds)
 }
 }
 
-namespace DPL {
+namespace SecurityManager {
 namespace DB {
 void NaiveSynchronizationObject::Synchronize()
 {
@@ -82,4 +82,4 @@ void NaiveSynchronizationObject::NotifyAll()
     // No need to inform about anything
 }
 } // namespace DB
-} // namespace DPL
+} // namespace SecurityManager

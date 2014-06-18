@@ -31,7 +31,7 @@
 #include <cstdio>
 #include <cstdarg>
 
-namespace DPL {
+namespace SecurityManager {
 namespace DB {
 namespace // anonymous
 {
@@ -863,4 +863,4 @@ SqlConnection::AllocDefaultSynchronizationObject()
     return new NaiveSynchronizationObject();
 }
 } // namespace DB
-} // namespace DPL
+} // namespace SecurityManager

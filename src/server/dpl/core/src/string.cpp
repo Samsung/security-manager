@@ -35,7 +35,7 @@
 #include <unicode/ustring.h>
 
 // TODO: Completely move to ICU
-namespace DPL {
+namespace SecurityManager {
 namespace //anonymous
 {
 class ASCIIValidator
@@ -122,7 +122,7 @@ String FromUTF8String(const std::string& aIn)
     return &output[1];
 }
 
-std::string ToUTF8String(const DPL::String& aIn)
+std::string ToUTF8String(const SecurityManager::String& aIn)
 {
     if (aIn.empty()) {
         return std::string();
@@ -242,9 +242,9 @@ int StringCompare(const String &left,
         return static_cast<int>(u_strcmp(leftICU.get(), rightICU.get()));
     }
 }
-} //namespace DPL
+} //namespace SecurityManager
 
-std::ostream& operator<<(std::ostream& aStream, const DPL::String& aString)
+std::ostream& operator<<(std::ostream& aStream, const SecurityManager::String& aString)
 {
-    return aStream << DPL::ToUTF8String(aString);
+    return aStream << SecurityManager::ToUTF8String(aString);
 }

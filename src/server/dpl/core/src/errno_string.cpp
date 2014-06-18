@@ -33,7 +33,7 @@
 #include <cerrno>
 #include <stdexcept>
 
-namespace DPL {
+namespace SecurityManager {
 namespace // anonymous
 {
 const size_t DEFAULT_ERRNO_STRING_SIZE = 32;
@@ -96,4 +96,4 @@ std::string GetErrnoString(int error)
         }
     }
 }
-} // namespace DPL
+} // namespace SecurityManager

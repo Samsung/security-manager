@@ -25,7 +25,7 @@
 #ifndef SECURITY_MANAGER_FSTREAM_ACCESSORS_H
 #define SECURITY_MANAGER_FSTREAM_ACCESSORS_H
 
-namespace DPL {
+namespace SecurityManager {
 
 /*
  * Bypass lack of public member function to get file
@@ -43,6 +43,6 @@ public:
     }
 };
 
-} // namespace DPL
+} // namespace SecurityManager
 
 #endif // SECURITY_MANAGER_FSTREAM_ACCESSORS_H

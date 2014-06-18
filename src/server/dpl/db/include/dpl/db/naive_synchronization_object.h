@@ -20,12 +20,12 @@
  * @brief       This file is the implementation file of SQL naive
  * synchronization object
  */
-#ifndef DPL_NAIVE_SYNCHRONIZATION_OBJECT_H
-#define DPL_NAIVE_SYNCHRONIZATION_OBJECT_H
+#ifndef SECURITY_MANAGER_NAIVE_SYNCHRONIZATION_OBJECT_H
+#define SECURITY_MANAGER_NAIVE_SYNCHRONIZATION_OBJECT_H
 
 #include <dpl/db/sql_connection.h>
 
-namespace DPL {
+namespace SecurityManager {
 namespace DB {
 /**
  * Naive synchronization object used to synchronize SQL connection
@@ -40,6 +40,6 @@ class NaiveSynchronizationObject :
     virtual void NotifyAll();
 };
 } // namespace DB
-} // namespace DPL
+} // namespace SecurityManager
 
-#endif // DPL_NAIVE_SYNCHRONIZATION_OBJECT_H
+#endif // SECURITY_MANAGER_NAIVE_SYNCHRONIZATION_OBJECT_H

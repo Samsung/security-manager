@@ -19,8 +19,8 @@
  * @version     1.0
  * @brief       This file is the implementation file of SQL connection
  */
-#ifndef DPL_SQL_CONNECTION_H
-#define DPL_SQL_CONNECTION_H
+#ifndef SECURITY_MANAGER_SQL_CONNECTION_H
+#define SECURITY_MANAGER_SQL_CONNECTION_H
 
 #include <dpl/noncopyable.h>
 #include <dpl/exception.h>
@@ -35,7 +35,7 @@
 #include <memory>
 #include <stdint.h>
 
-namespace DPL {
+namespace SecurityManager {
 namespace DB {
 /**
  * SQL connection class
@@ -49,7 +49,7 @@ class SqlConnection
     class Exception
     {
       public:
-        DECLARE_EXCEPTION_TYPE(DPL::Exception, Base)
+        DECLARE_EXCEPTION_TYPE(SecurityManager::Exception, Base)
         DECLARE_EXCEPTION_TYPE(Base, SyntaxError)
         DECLARE_EXCEPTION_TYPE(Base, ConnectionBroken)
         DECLARE_EXCEPTION_TYPE(Base, InternalError)
@@ -506,6 +506,6 @@ class SqlConnection
     RowID GetLastInsertRowID() const;
 };
 } // namespace DB
-} // namespace DPL
+} // namespace SecurityManager
 
-#endif // DPL_SQL_CONNECTION_H
+#endif // SECURITY_MANAGER_SQL_CONNECTION_H
