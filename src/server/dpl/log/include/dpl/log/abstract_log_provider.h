@@ -67,10 +67,6 @@ class AbstractLogProvider
                        const char *fileName,
                        int line,
                        const char *function) = 0;
-    virtual void SmackAudit(const char *message,
-                       const char *fileName,
-                       int line,
-                       const char *function) = 0;
 
   protected:
     static const char *LocateSourceFileName(const char *filename);

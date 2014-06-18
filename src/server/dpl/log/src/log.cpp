@@ -26,7 +26,6 @@
 #include <dpl/singleton_impl.h>
 #include <dpl/log/dlog_log_provider.h>
 #include <dpl/log/old_style_log_provider.h>
-#include <dpl/log/audit-smack-log.h>
 
 IMPLEMENT_SINGLETON(SecurityManager::Log::LogSystem)
 
@@ -274,19 +273,6 @@ void LogSystem::SecureWarning(const char *message,
          ++iterator)
     {
         (*iterator)->SecureWarning(message, filename, line, function);
-    }
-}
-
-void LogSystem::SmackAudit(const char *message,
-                     const char *fileName,
-                     int line,
-                     const char *function)
-{
-    for (AbstractLogProviderPtrList::iterator iterator = m_providers.begin();
-         iterator != m_providers.end();
-         ++iterator)
-    {
-        (*iterator)->SmackAudit(message, fileName, line, function);
     }
 }
 

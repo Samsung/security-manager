@@ -79,10 +79,6 @@ class DLOGLogProvider :
                        const char *fileName,
                        int line,
                        const char *function);
-    virtual void SmackAudit(const char *message,
-                       const char *fileName,
-                       int line,
-                       const char *function);
 
     // Set global Tag according to DLOG
     void SetTag(const char *tag);

@@ -298,16 +298,5 @@ void OldStyleLogProvider::SecureError(const char *message,
 #endif
 }
 
-void OldStyleLogProvider::SmackAudit(const char *message,
-                               const char *fileName,
-                               int line,
-                               const char *function)
-{
-    (void)message;
-    (void)fileName;
-    (void)line;
-    (void)function;
-}
-
 }
 } // namespace SecurityManager

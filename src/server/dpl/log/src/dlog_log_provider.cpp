@@ -141,12 +141,5 @@ void DLOGLogProvider::SecureError(const char *message UNUSED,
         FormatMessage(message, filename, line, function).c_str());
 }
 
-void DLOGLogProvider::SmackAudit(const char *message UNUSED,
-                           const char *filename UNUSED,
-                           int line UNUSED,
-                           const char *function UNUSED)
-{
-}
-
 } // nemespace Log
 } // namespace SecurityManager

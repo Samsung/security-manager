@@ -25,7 +25,6 @@
 #include <signal.h>
 
 #include <dpl/log/log.h>
-#include <dpl/log/audit-smack-log.h>
 #include <dpl/singleton.h>
 #include <dpl/singleton_safe_impl.h>
 
@@ -66,15 +65,6 @@ int main(void) {
     UNHANDLED_EXCEPTION_HANDLER_BEGIN
     {
         SecurityManager::Singleton<SecurityManager::Log::LogSystem>::Instance().SetTag("SECURITY_MANAGER");
-
-        // This provider may be used in security-manager only.
-        // If we add it inside LogSystem constructor it also
-        // will be used by security-manager-client library.
-        SecurityManager::Log::AuditSmackLog *smackLog = new SecurityManager::Log::AuditSmackLog;
-        if (smackLog->Fail())
-            delete smackLog;
-        else
-            SecurityManager::Singleton<SecurityManager::Log::LogSystem>::Instance().AddProvider(smackLog);
 
         sigset_t mask;
         sigemptyset(&mask);

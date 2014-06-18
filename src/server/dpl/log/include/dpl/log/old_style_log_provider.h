@@ -93,10 +93,6 @@ class OldStyleLogProvider :
                        const char *fileName,
                        int line,
                        const char *function);
-    virtual void SmackAudit(const char *message,
-                      const char *fileName,
-                      int line,
-                      const char *function);
 };
 }
 } // namespace SecurityManager
