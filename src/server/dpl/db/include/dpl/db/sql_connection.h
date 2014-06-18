@@ -432,6 +432,14 @@ class SqlConnection
 
     static SynchronizationObject *AllocDefaultSynchronizationObject();
 
+    /**
+     * Execute SQL command without result
+     *
+     * @param format
+     * @param ...
+     */
+    void ExecCommand(const char *format, ...);
+
   public:
     /**
      * Open SQL connection
@@ -455,16 +463,6 @@ class SqlConnection
      * Destructor
      */
     virtual ~SqlConnection();
-
-    /**
-     * Execute SQL command without result
-     *
-     * @param format
-     * @param ...
-     */
-    void ExecCommand(const char *format, ...) DPL_DEPRECATED_WITH_MESSAGE(
-            "To prevent sql injection do not use this \
-             method for direct sql execution");
 
     /**
      * Execute BEGIN; command to start new transaction
