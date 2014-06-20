@@ -31,7 +31,6 @@
 struct app_inst_req {
     std::string appId;
     std::string pkgId;
-    std::vector<uid_t> allowedUsers;
     std::vector<std::string> privileges;
     std::vector<std::pair<std::string, int>> appPaths;
 };

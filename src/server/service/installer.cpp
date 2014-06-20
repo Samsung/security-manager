@@ -371,7 +371,6 @@ bool InstallerService::processAppInstall(MessageBuffer &buffer, MessageBuffer &s
     app_inst_req req;
     Deserialization::Deserialize(buffer, req.appId);
     Deserialization::Deserialize(buffer, req.pkgId);
-    Deserialization::Deserialize(buffer, req.allowedUsers);
     Deserialization::Deserialize(buffer, req.privileges);
     Deserialization::Deserialize(buffer, req.appPaths);
 

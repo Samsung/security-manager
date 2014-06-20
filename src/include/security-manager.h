@@ -163,16 +163,6 @@ int security_manager_app_inst_req_set_app_id(app_inst_req *p_req, const char *ap
 int security_manager_app_inst_req_set_pkg_id(app_inst_req *p_req, const char *pkg_id);
 
 /*
- * This function is used to add allowed user to app_inst_req structure,
- * it can be called multiple times
- *
- * \param[in] Pointer handling app_inst_req structure
- * \param[in] Privileged user identifier
- * \return API return code or error code
- */
-int security_manager_app_inst_req_add_allowed_user(app_inst_req *p_req, const uid_t user_id);
-
-/*
  * This function is used to add privilege to app_inst_req structure,
  * it can be called multiple times
  *

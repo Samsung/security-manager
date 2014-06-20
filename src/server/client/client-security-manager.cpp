@@ -83,17 +83,6 @@ int security_manager_app_inst_req_set_pkg_id(app_inst_req *p_req, const char *pk
 }
 
 SECURITY_MANAGER_API
-int security_manager_app_inst_req_add_allowed_user(app_inst_req *p_req, const uid_t user_id)
-{
-    if (!p_req)
-        return SECURITY_MANAGER_ERROR_INPUT_PARAM;
-
-    p_req->allowedUsers.push_back(user_id);
-
-    return SECURITY_MANAGER_SUCCESS;
-}
-
-SECURITY_MANAGER_API
 int security_manager_app_inst_req_add_privilege(app_inst_req *p_req, const char *privilege)
 {
     if (!p_req || !privilege)
@@ -134,7 +123,6 @@ int security_manager_app_install(const app_inst_req *p_req)
         Serialization::Serialize(send, (int)SecurityModuleCall::APP_INSTALL);
         Serialization::Serialize(send, p_req->appId);
         Serialization::Serialize(send, p_req->pkgId);
-        Serialization::Serialize(send, p_req->allowedUsers);
         Serialization::Serialize(send, p_req->privileges);
         Serialization::Serialize(send, p_req->appPaths);
 
