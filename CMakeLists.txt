@@ -1,4 +1,4 @@
-# Copyright (c) 2011 Samsung Electronics Co., Ltd All Rights Reserved
+# Copyright (c) 2011 - 2014 Samsung Electronics Co., Ltd All Rights Reserved
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -58,11 +58,6 @@ IF (CMAKE_BUILD_TYPE MATCHES "DEBUG")
     ADD_DEFINITIONS("-DBUILD_TYPE_DEBUG")
 ENDIF (CMAKE_BUILD_TYPE MATCHES "DEBUG")
 
-
-SET(TARGET_SECURITY_MANAGER "security-manager")
-SET(TARGET_SECURITY_MANAGER_CLIENT "security-manager-client")
-SET(TARGET_SERVER_COMMON "security-manager-commons")
-
 ADD_SUBDIRECTORY(src)
-ADD_SUBDIRECTORY(build)
+ADD_SUBDIRECTORY(pc)
 ADD_SUBDIRECTORY(systemd)

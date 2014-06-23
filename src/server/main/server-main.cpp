@@ -16,7 +16,7 @@
  *  limitations under the License
  */
 /*
- * @file        sever2-main.cpp
+ * @file        server-main.cpp
  * @author      Bartlomiej Grzelewski (b.grzelewski@samsung.com)
  * @version     1.0
  * @brief       Implementation of security-manager on basis of security-server

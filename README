@@ -12,7 +12,7 @@ The implementation of daemon part is divided into:
     a generalization for services that security-server provides.
 and
     services part: implemented as classes derived from GenericSocketService
-    grouped in src/server2/service directory that defines actions done by
+    grouped in src/server/service directory that defines actions done by
     security-manager after receiving certain requests from client side.
 
 The security-manager's manager part is fully inherited from security-server,

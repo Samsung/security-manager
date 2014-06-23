@@ -1,94 +1,14 @@
-PKG_CHECK_MODULES(SECURITY_MANAGER_DEP
-    dlog
-    libsmack
-    libprivilege-control
-    libsystemd-daemon
-    REQUIRED
-    )
+SET(INCLUDE_PATH ${PROJECT_SOURCE_DIR}/src/include)
+SET(COMMON_PATH  ${PROJECT_SOURCE_DIR}/src/common)
+SET(CLIENT_PATH  ${PROJECT_SOURCE_DIR}/src/client)
+SET(SERVER_PATH  ${PROJECT_SOURCE_DIR}/src/server)
+SET(DPL_PATH     ${PROJECT_SOURCE_DIR}/src/dpl)
 
-SET(SECURITY_MANAGER_PATH ${PROJECT_SOURCE_DIR}/src)
-SET(SERVER2_PATH ${PROJECT_SOURCE_DIR}/src/server)
+SET(TARGET_SERVER "security-manager")
+SET(TARGET_CLIENT "security-manager-client")
+SET(TARGET_COMMON "security-manager-commons")
 
-SET(SECURITY_MANAGER_SOURCES
-    ${SERVER2_PATH}/main/security-manager-util.cpp
-    ${SERVER2_PATH}/main/generic-socket-manager.cpp
-    ${SERVER2_PATH}/main/socket-manager.cpp
-    ${SERVER2_PATH}/main/server2-main.cpp
-    ${SERVER2_PATH}/service/smack-common.cpp
-    ${SERVER2_PATH}/service/smack-rules.cpp
-    ${SERVER2_PATH}/service/installer.cpp
-    )
-
-SET_SOURCE_FILES_PROPERTIES(
-    ${SECURITY_MANAGER_SOURCES}
-    PROPERTIES
-        COMPILE_FLAGS "-D_GNU_SOURCE -fvisibility=hidden")
-
-INCLUDE_DIRECTORIES(SYSTEM
-    ${SECURITY_MANAGER_DEP_INCLUDE_DIRS}
-    )
-
-INCLUDE_DIRECTORIES(
-    ${SECURITY_MANAGER_PATH}/include
-    ${SERVER2_PATH}/main
-    ${SERVER2_PATH}/common
-    ${SERVER2_PATH}/service
-    ${SERVER2_PATH}/dpl/core/include
-    ${SERVER2_PATH}/dpl/log/include
-    )
-
-ADD_EXECUTABLE(${TARGET_SECURITY_MANAGER} ${SECURITY_MANAGER_SOURCES})
-
-TARGET_LINK_LIBRARIES(${TARGET_SECURITY_MANAGER}
-    ${SECURITY_MANAGER_DEP_LIBRARIES}
-    ${TARGET_SERVER_COMMON}
-    -lcap
-    )
-
-
-################################################################################
-
-SET(SECURITY_MANAGER_CLIENT_VERSION_MAJOR 1)
-SET(SECURITY_MANAGER_CLIENT_VERSION ${SECURITY_MANAGER_CLIENT_VERSION_MAJOR}.0.1)
-
-INCLUDE_DIRECTORIES(
-    ${SERVER2_PATH}/client
-    ${SERVER2_PATH}/common
-    ${SERVER2_PATH}/dpl/core/include
-    ${SERVER2_PATH}/dpl/log/include
-    )
-
-SET(SECURITY_MANAGER_CLIENT_SOURCES
-    ${SERVER2_PATH}/client/client-security-manager.cpp
-    ${SERVER2_PATH}/client/client-common.cpp
-    )
-
-ADD_LIBRARY(${TARGET_SECURITY_MANAGER_CLIENT} SHARED ${SECURITY_MANAGER_CLIENT_SOURCES})
-
-SET_TARGET_PROPERTIES(
-    ${TARGET_SECURITY_MANAGER_CLIENT}
-    PROPERTIES
-        COMPILE_FLAGS "-D_GNU_SOURCE -fPIC -fvisibility=hidden"
-        SOVERSION ${SECURITY_MANAGER_CLIENT_VERSION_MAJOR}
-        VERSION ${SECURITY_MANAGER_CLIENT_VERSION}
-    )
-
-TARGET_LINK_LIBRARIES(${TARGET_SECURITY_MANAGER_CLIENT}
-    ${SECURITY_MANAGER_DEP_LIBRARIES}
-    ${TARGET_SERVER_COMMON}
-    )
-
-################################################################################
-
-INSTALL(TARGETS ${TARGET_SECURITY_MANAGER_CLIENT} DESTINATION ${LIB_INSTALL_DIR})
-
-INSTALL(TARGETS ${TARGET_SECURITY_MANAGER} DESTINATION bin)
-
-INSTALL(FILES
-    ${SECURITY_MANAGER_PATH}/include/security-manager.h
-    DESTINATION  ${INCLUDE_INSTALL_DIR}/security-manager
-    )
-
-################################################################################
-
+ADD_SUBDIRECTORY(include)
+ADD_SUBDIRECTORY(common)
+ADD_SUBDIRECTORY(client)
 ADD_SUBDIRECTORY(server)

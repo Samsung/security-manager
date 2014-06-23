@@ -1,52 +1,43 @@
-PKG_CHECK_MODULES(COMMON_DEP
-    dlog
+PKG_CHECK_MODULES(SERVER_DEP
     REQUIRED
-    )
-
-SET(COMMON_PATH ${PROJECT_SOURCE_DIR}/src/server)
-
-SET(COMMON_SOURCES
-    ${COMMON_PATH}/common/protocols.cpp
-    ${COMMON_PATH}/common/message-buffer.cpp
-    ${COMMON_PATH}/common/smack-check.cpp
-    ${COMMON_PATH}/dpl/log/src/abstract_log_provider.cpp
-    ${COMMON_PATH}/dpl/log/src/dlog_log_provider.cpp
-    ${COMMON_PATH}/dpl/log/src/log.cpp
-    ${COMMON_PATH}/dpl/log/src/old_style_log_provider.cpp
-    ${COMMON_PATH}/dpl/core/src/assert.cpp
-    ${COMMON_PATH}/dpl/core/src/binary_queue.cpp
-    ${COMMON_PATH}/dpl/core/src/colors.cpp
-    ${COMMON_PATH}/dpl/core/src/exception.cpp
-    ${COMMON_PATH}/dpl/core/src/noncopyable.cpp
-    ${COMMON_PATH}/dpl/core/src/serialization.cpp
-    ${COMMON_PATH}/dpl/core/src/singleton.cpp
+    libcap
+    libsmack
+    libprivilege-control
+    libsystemd-daemon
     )
 
 INCLUDE_DIRECTORIES(SYSTEM
-    ${COMMON_DEP_INCLUDE_DIRS}
+    ${SERVER_DEP_INCLUDE_DIRS}
     )
 
 INCLUDE_DIRECTORIES(
-    ${COMMON_PATH}/common
-    ${COMMON_PATH}/dpl/core/include
-    ${COMMON_PATH}/dpl/log/include
+    ${INCLUDE_PATH}
+    ${COMMON_PATH}/include
+    ${SERVER_PATH}/main/include
+    ${SERVER_PATH}/service/include
+    ${DPL_PATH}/core/include
+    ${DPL_PATH}/log/include
     )
 
-ADD_LIBRARY(${TARGET_SERVER_COMMON} SHARED ${COMMON_SOURCES})
+SET(SERVER_SOURCES
+    ${SERVER_PATH}/main/security-manager-util.cpp
+    ${SERVER_PATH}/main/generic-socket-manager.cpp
+    ${SERVER_PATH}/main/socket-manager.cpp
+    ${SERVER_PATH}/main/server-main.cpp
+    ${SERVER_PATH}/service/smack-common.cpp
+    ${SERVER_PATH}/service/smack-rules.cpp
+    ${SERVER_PATH}/service/installer.cpp
+    )
 
-SET_TARGET_PROPERTIES(
-    ${TARGET_SERVER_COMMON}
+ADD_EXECUTABLE(${TARGET_SERVER} ${SERVER_SOURCES})
+
+SET_TARGET_PROPERTIES(${TARGET_SERVER}
     PROPERTIES
-        COMPILE_FLAGS "-D_GNU_SOURCE -fPIC -fvisibility=default"
-        SOVERSION 1.0.0
-        VERSION 1.0.0
+        COMPILE_FLAGS "-D_GNU_SOURCE -fvisibility=hidden")
+
+TARGET_LINK_LIBRARIES(${TARGET_SERVER}
+    ${TARGET_COMMON}
+    ${SERVER_DEP_LIBRARIES}
     )
 
-TARGET_LINK_LIBRARIES(${TARGET_SERVER_COMMON}
-    ${COMMON_DEP_LIBRARIES}
-    )
-
-################################################################################
-
-INSTALL(TARGETS ${TARGET_SERVER_COMMON} DESTINATION ${LIB_INSTALL_DIR})
-
+INSTALL(TARGETS ${TARGET_SERVER} DESTINATION bin)
