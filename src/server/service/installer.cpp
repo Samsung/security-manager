@@ -39,7 +39,6 @@
 #include "protocols.h"
 #include "security-manager.h"
 #include "smack-rules.h"
-#include "security-manager-common.h"
 
 namespace SecurityManager {
 
@@ -232,7 +231,7 @@ bool setupPath(const std::string &pkgId, const std::pair<std::string, int> &appP
 
     switch (pathType) {
     case SECURITY_MANAGER_PATH_PRIVATE:
-        if(!generateAppLabel(pkgId,label))
+        if (!SmackRules::generateAppLabel(pkgId, label))
             return false;
         label_executables = true;
         label_transmute = false;

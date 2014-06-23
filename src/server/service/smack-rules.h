@@ -69,6 +69,16 @@ public:
      *         false otherwise
      */
     static bool uninstallPackageRules(const std::string &pkgId);
+
+    /**
+    * Generates label for application with package identifier
+    * read from @ref appPkgId and assigns it to @ref label.
+    * @param[in] appPkgId application's package identifier.
+    * @param[out] label string into which application's label will be stored into.
+    * @return true on success, false on error.
+    */
+    static bool generateAppLabel(const std::string &appPkgId, std::string &label);
+
 private:
     static std::string getPackageRulesFilePath(const std::string &pkgId);
 

@@ -35,13 +35,19 @@
 #include <dpl/log/log.h>
 
 #include "smack-rules.h"
-#include "security-manager-common.h"
 
 namespace SecurityManager {
 
 const char *const SMACK_APP_LABEL_TEMPLATE     = "~APP~";
 const char *const APP_RULES_TEMPLATE_FILE_PATH = "/etc/smack/app-rules-template.smack";
 const char *const APP_RULES_DIRECTORY          = "/etc/smack/accesses.d/";
+
+bool SmackRules::generateAppLabel(const std::string &appPkgId, std::string &label)
+{
+    (void) appPkgId; //todo use pkgId to generate label
+    label = "User";
+    return true;
+}
 
 SmackRules::SmackRules()
 {
@@ -176,14 +182,14 @@ bool SmackRules::addFromTemplate(const std::vector<std::string> &templateRules,
         }
 
         if (subjectIsTemplate) {
-            if (!SecurityManager::generateAppLabel(pkgId, subject)) {
+            if (!generateAppLabel(pkgId, subject)) {
                 LogError("Failed to generate app label from pkgid: " << pkgId);
                 return false;
             }
         }
 
         if (objectIsTemplate) {
-            if (!SecurityManager::generateAppLabel(pkgId, object)) {
+            if (!generateAppLabel(pkgId, object)) {
                 LogError("Failed to generate app label from pkgid: " << pkgId);
                 return false;
             }
