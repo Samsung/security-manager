@@ -30,6 +30,7 @@
 #include <fcntl.h>
 #include <fstream>
 #include <cstring>
+#include <sstream>
 
 #include <dpl/log/log.h>
 
@@ -153,16 +154,16 @@ bool SmackRules::addFromTemplateFile(const std::string &pkgId)
 bool SmackRules::addFromTemplate(const std::vector<std::string> &templateRules,
         const std::string &pkgId)
 {
-    std::string tokens[3];
-    std::string &subject = tokens[0];
-    std::string &object = tokens[1];
-    std::string &permissions = tokens[2];
-
-    for (auto rule = templateRules.begin(); rule != templateRules.end(); ++rule) {
-        if (rule->length() == 0)
+    for (auto rule : templateRules) {
+        if (rule.empty())
             continue;
 
-        if (!tokenizeRule(*rule, tokens, sizeof(tokens) / sizeof(*tokens))) {
+        std::stringstream stream(rule);
+        std::string subject, object, permissions;
+        stream >> subject >> object >> permissions;
+
+        if (stream.fail() || !stream.eof()) {
+            LogError("Invalid rule template: " << rule);
             return false;
         }
 
@@ -170,7 +171,7 @@ bool SmackRules::addFromTemplate(const std::vector<std::string> &templateRules,
         bool objectIsTemplate = (object == SMACK_APP_LABEL_TEMPLATE);
 
         if (objectIsTemplate == subjectIsTemplate) {
-            LogError("Invalid rule template. Exactly one app label template expected: " << *rule);
+            LogError("Invalid rule template. Exactly one app label template expected: " << rule);
             return false;
         }
 
@@ -192,33 +193,6 @@ bool SmackRules::addFromTemplate(const std::vector<std::string> &templateRules,
             LogError("Failed to add rule: " << subject << " " << object << " " << permissions);
             return false;
         }
-    }
-
-    return true;
-}
-
-
-bool SmackRules::tokenizeRule(const std::string &rule, std::string tokens[], int size)
-{
-    size_t startPos;
-    size_t endPos = 0;
-    const char delimiters[] = " \t\n\r";
-
-    for (int i = 0; i < size; i++) {
-        startPos = rule.find_first_not_of(delimiters, endPos);
-        if (startPos == std::string::npos) {
-            LogError("Unexpected end of rule: " << rule);
-            return false;
-        }
-
-        endPos = rule.find_first_of(delimiters, startPos);
-        tokens[i] = rule.substr(startPos, endPos - startPos);
-    }
-
-    if (endPos != std::string::npos &&
-        rule.find_first_not_of(delimiters, endPos) != std::string::npos) {
-        LogError("Too many tokens found in rule: " << rule);
-        return false;
     }
 
     return true;

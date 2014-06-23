@@ -70,7 +70,6 @@ public:
      */
     static bool uninstallPackageRules(const std::string &pkgId);
 private:
-    static bool tokenizeRule(const std::string &rule, std::string tokens[], int size);
     static std::string getPackageRulesFilePath(const std::string &pkgId);
 
     smack_accesses *m_handle;
