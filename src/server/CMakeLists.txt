@@ -21,6 +21,7 @@ INCLUDE_DIRECTORIES(SYSTEM
 INCLUDE_DIRECTORIES(
     ${INCLUDE_PATH}
     ${COMMON_PATH}/include
+    ${SERVER_PATH}/include
     ${SERVER_PATH}/main/include
     ${SERVER_PATH}/service/include
     ${DPL_PATH}/core/include
@@ -29,6 +30,7 @@ INCLUDE_DIRECTORIES(
     )
 
 SET(SERVER_SOURCES
+    ${SERVER_PATH}/smack-check.cpp
     ${SERVER_PATH}/main/security-manager-util.cpp
     ${SERVER_PATH}/main/generic-socket-manager.cpp
     ${SERVER_PATH}/main/socket-manager.cpp
