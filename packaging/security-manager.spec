@@ -15,6 +15,9 @@ BuildRequires: libcap-devel
 BuildRequires: pkgconfig(libsmack)
 BuildRequires: pkgconfig(libprivilege-control)
 BuildRequires: pkgconfig(libsystemd-daemon)
+BuildRequires: pkgconfig(sqlite3)
+BuildRequires: pkgconfig(db-util)
+BuildRequires: boost-devel
 %{?systemd_requires}
 
 %description

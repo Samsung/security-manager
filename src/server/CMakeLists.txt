@@ -4,10 +4,18 @@ PKG_CHECK_MODULES(SERVER_DEP
     libsmack
     libprivilege-control
     libsystemd-daemon
+    sqlite3
+    db-util
+    )
+
+FIND_PACKAGE(
+    Boost
+    REQUIRED
     )
 
 INCLUDE_DIRECTORIES(SYSTEM
     ${SERVER_DEP_INCLUDE_DIRS}
+    ${Boost_INCLUDE_DIRS}
     )
 
 INCLUDE_DIRECTORIES(
@@ -17,6 +25,7 @@ INCLUDE_DIRECTORIES(
     ${SERVER_PATH}/service/include
     ${DPL_PATH}/core/include
     ${DPL_PATH}/log/include
+    ${DPL_PATH}/db/include
     )
 
 SET(SERVER_SOURCES
@@ -27,6 +36,10 @@ SET(SERVER_SOURCES
     ${SERVER_PATH}/service/smack-common.cpp
     ${SERVER_PATH}/service/smack-rules.cpp
     ${SERVER_PATH}/service/installer.cpp
+    ${DPL_PATH}/core/src/errno_string.cpp
+    ${DPL_PATH}/core/src/string.cpp
+    ${DPL_PATH}/db/src/naive_synchronization_object.cpp
+    ${DPL_PATH}/db/src/sql_connection.cpp
     )
 
 ADD_EXECUTABLE(${TARGET_SERVER} ${SERVER_SOURCES})
