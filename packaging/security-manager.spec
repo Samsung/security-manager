@@ -56,6 +56,7 @@ export FFLAGS="$FFLAGS -DTIZEN_DEBUG_ENABLE"
 export LDFLAGS+="-Wl,--rpath=%{_libdir}"
 
 %cmake . -DVERSION=%{version} \
+        -DBIN_INSTALL_DIR=%{_bindir} \
         -DCMAKE_BUILD_TYPE=%{?build_type:%build_type}%{!?build_type:RELEASE} \
         -DCMAKE_VERBOSE_MAKEFILE=ON
 make %{?jobs:-j%jobs}
@@ -69,10 +70,10 @@ mkdir -p %{buildroot}/etc/smack/
 cp app-rules-template.smack %{buildroot}/etc/smack/
 %make_install
 
-mkdir -p %{buildroot}/usr/lib/systemd/system/multi-user.target.wants
-mkdir -p %{buildroot}/usr/lib/systemd/system/sockets.target.wants
-ln -s ../security-manager.service %{buildroot}/usr/lib/systemd/system/multi-user.target.wants/security-manager.service
-ln -s ../security-manager-installer.socket %{buildroot}/usr/lib/systemd/system/sockets.target.wants/security-manager-installer.socket
+mkdir -p %{buildroot}/%{_unitdir}/multi-user.target.wants
+mkdir -p %{buildroot}/%{_unitdir}/sockets.target.wants
+ln -s ../security-manager.service %{buildroot}/%{_unitdir}/multi-user.target.wants/security-manager.service
+ln -s ../security-manager-installer.socket %{buildroot}/%{_unitdir}/sockets.target.wants/security-manager-installer.socket
 
 %clean
 rm -rf %{buildroot}
@@ -108,13 +109,13 @@ fi
 %files -n security-manager
 %manifest security-manager.manifest
 %defattr(-,root,root,-)
-%attr(755,root,root) /usr/bin/security-manager
+%attr(755,root,root) %{_bindir}/security-manager
 %{_libdir}/libsecurity-manager-commons.so.*
-%attr(-,root,root) /usr/lib/systemd/system/multi-user.target.wants/security-manager.service
-%attr(-,root,root) /usr/lib/systemd/system/security-manager.service
-%attr(-,root,root) /usr/lib/systemd/system/security-manager.target
-%attr(-,root,root) /usr/lib/systemd/system/sockets.target.wants/security-manager-installer.socket
-%attr(-,root,root) /usr/lib/systemd/system/security-manager-installer.socket
+%attr(-,root,root) %{_unitdir}/multi-user.target.wants/security-manager.service
+%attr(-,root,root) %{_unitdir}/security-manager.service
+%attr(-,root,root) %{_unitdir}/security-manager.target
+%attr(-,root,root) %{_unitdir}/sockets.target.wants/security-manager-installer.socket
+%attr(-,root,root) %{_unitdir}/security-manager-installer.socket
 %attr(-,root,root) /etc/smack/app-rules-template.smack
 %{_datadir}/license/%{name}
 
