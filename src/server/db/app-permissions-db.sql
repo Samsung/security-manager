@@ -1,3 +1,4 @@
+PRAGMA journal_mode = PERSIST;
 PRAGMA foreign_keys = ON;
 PRAGMA auto_vacuum = NONE;
 
