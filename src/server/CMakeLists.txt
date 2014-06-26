@@ -4,6 +4,7 @@ PKG_CHECK_MODULES(SERVER_DEP
     libsmack
     libprivilege-control
     libsystemd-daemon
+    libtzplatform-config
     sqlite3
     db-util
     )

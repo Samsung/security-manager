@@ -33,14 +33,14 @@
 #include <sstream>
 
 #include <dpl/log/log.h>
+#include <tzplatform_config.h>
 
 #include "smack-rules.h"
 
 namespace SecurityManager {
 
 const char *const SMACK_APP_LABEL_TEMPLATE     = "~APP~";
-const char *const APP_RULES_TEMPLATE_FILE_PATH = "/etc/smack/app-rules-template.smack";
-const char *const APP_RULES_DIRECTORY          = "/etc/smack/accesses.d/";
+const char *const APP_RULES_TEMPLATE_FILE_PATH = tzplatform_mkpath(TZ_SYS_SMACK, "app-rules-template.smack");
 
 bool SmackRules::generateAppLabel(const std::string &appPkgId, std::string &label)
 {
@@ -206,9 +206,7 @@ bool SmackRules::addFromTemplate(const std::vector<std::string> &templateRules,
 
 std::string SmackRules::getPackageRulesFilePath(const std::string &pkgId)
 {
-    std::string path(APP_RULES_DIRECTORY);
-    path.append(pkgId);
-    path.append(".smack");
+    std::string path(tzplatform_mkpath3(TZ_SYS_SMACK, "accesses.d", pkgId.c_str()));
     return path;
 }
 

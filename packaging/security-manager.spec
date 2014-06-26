@@ -15,6 +15,7 @@ BuildRequires: libcap-devel
 BuildRequires: pkgconfig(libsmack)
 BuildRequires: pkgconfig(libprivilege-control)
 BuildRequires: pkgconfig(libsystemd-daemon)
+BuildRequires: pkgconfig(libtzplatform-config)
 BuildRequires: pkgconfig(sqlite3)
 BuildRequires: pkgconfig(db-util)
 BuildRequires: boost-devel
@@ -66,8 +67,8 @@ rm -rf %{buildroot}
 mkdir -p %{buildroot}/usr/share/license
 cp LICENSE %{buildroot}/usr/share/license/%{name}
 cp LICENSE %{buildroot}/usr/share/license/libsecurity-manager-client
-mkdir -p %{buildroot}/etc/smack/
-cp app-rules-template.smack %{buildroot}/etc/smack/
+mkdir -p %{buildroot}/%{TZ_SYS_SMACK}
+cp app-rules-template.smack %{buildroot}/%{TZ_SYS_SMACK}
 %make_install
 
 mkdir -p %{buildroot}/%{_unitdir}/multi-user.target.wants
@@ -116,7 +117,7 @@ fi
 %attr(-,root,root) %{_unitdir}/security-manager.target
 %attr(-,root,root) %{_unitdir}/sockets.target.wants/security-manager-installer.socket
 %attr(-,root,root) %{_unitdir}/security-manager-installer.socket
-%attr(-,root,root) /etc/smack/app-rules-template.smack
+%attr(-,root,root) %{TZ_SYS_SMACK}/app-rules-template.smack
 %{_datadir}/license/%{name}
 
 %files -n libsecurity-manager-client
