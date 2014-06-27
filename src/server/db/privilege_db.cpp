@@ -22,6 +22,7 @@
 /*
  * @file        privilege_db.cpp
  * @author      Krzysztof Sasiak <k.sasiak@samsung.com>
+ * @author      Rafal Krypa <r.krypa@samsung.com>
  * @version     0.1
  * @brief       This file contains declaration of the API to privileges database.
  */
@@ -49,7 +50,8 @@
 
 namespace SecurityManager {
 
-PrivilegeDb::PrivilegeDb(const std::string &path) {
+PrivilegeDb::PrivilegeDb(const std::string &path)
+{
     try {
         mSqlConnection = new DB::SqlConnection(path,
                 DB::SqlConnection::Flag::None,
@@ -62,31 +64,34 @@ PrivilegeDb::PrivilegeDb(const std::string &path) {
     };
 }
 
-PrivilegeDb::~PrivilegeDb() {
+PrivilegeDb::~PrivilegeDb()
+{
     delete mSqlConnection;
 }
-;
 
-void PrivilegeDb::BeginTransaction(void) {
+void PrivilegeDb::BeginTransaction(void)
+{
     try {
         mSqlConnection->BeginTransaction();
     }CATCH_STANDARD_EXCEPTIONS;
 }
 
-void PrivilegeDb::CommitTransaction(void) {
+void PrivilegeDb::CommitTransaction(void)
+{
     try {
         mSqlConnection->CommitTransaction();
     }CATCH_STANDARD_EXCEPTIONS;
 }
 
-void PrivilegeDb::RollbackTransaction(void) {
+void PrivilegeDb::RollbackTransaction(void)
+{
     try {
         mSqlConnection->RollbackTransaction();
     }CATCH_STANDARD_EXCEPTIONS;
 }
 
-bool PrivilegeDb::PkgIdExists(const std::string &pkgId) {
-
+bool PrivilegeDb::PkgIdExists(const std::string &pkgId)
+{
     try {
         DB::SqlConnection::DataCommandAutoPtr command =
                 mSqlConnection->PrepareDataCommand(
@@ -104,8 +109,8 @@ bool PrivilegeDb::PkgIdExists(const std::string &pkgId) {
 }
 
 bool PrivilegeDb::AddApplication(const std::string &appId,
-        const std::string &pkgId, bool &pkgIdIsNew) {
-
+        const std::string &pkgId, bool &pkgIdIsNew)
+{
     pkgIdIsNew = !(this->PkgIdExists(pkgId));
 
     try {
@@ -132,8 +137,8 @@ bool PrivilegeDb::AddApplication(const std::string &appId,
 }
 
 bool PrivilegeDb::RemoveApplication(const std::string &appId,
-        const std::string &pkgId, bool &pkgIdIsNoMore) {
-
+        const std::string &pkgId, bool &pkgIdIsNoMore)
+{
     try {
         DB::SqlConnection::DataCommandAutoPtr command =
                 mSqlConnection->PrepareDataCommand(
@@ -160,7 +165,8 @@ bool PrivilegeDb::RemoveApplication(const std::string &appId,
 }
 
 bool PrivilegeDb::GetPkgPermissions(const std::string &pkgId,
-        TPermissionsList &currentPermissions) {
+        TPermissionsList &currentPermissions)
+{
     try {
         DB::SqlConnection::DataCommandAutoPtr command =
                 mSqlConnection->PrepareDataCommand(
@@ -183,8 +189,8 @@ bool PrivilegeDb::GetPkgPermissions(const std::string &pkgId,
 bool PrivilegeDb::UpdatePermissions(const std::string &appId,
         const std::string &pkgId, const TPermissionsList &permissions,
         TPermissionsList &addedPermissions,
-        TPermissionsList &removedPermissions) {
-
+        TPermissionsList &removedPermissions)
+{
     DB::SqlConnection::DataCommandAutoPtr command;
 
     TPermissionsList curPermissions = TPermissionsList();
