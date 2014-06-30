@@ -40,14 +40,14 @@
 
 namespace SecurityManager {
 
-typedef std::vector<std::string> TPermissionsList;
+typedef std::vector<std::string> TPrivilegesList;
 
 enum class QueryType {
-    EGetPkgPermissions,
+    EGetPkgPrivileges,
     EAddApplication,
     ERemoveApplication,
-    EAddAppPermissions,
-    ERemoveAppPermissions,
+    EAddAppPrivileges,
+    ERemoveAppPrivileges,
     EPkgIdExists,
 };
 
@@ -59,11 +59,11 @@ class PrivilegeDb {
 private:
     SecurityManager::DB::SqlConnection *mSqlConnection;
     const std::map<QueryType, const char * const > Queries = {
-        { QueryType::EGetPkgPermissions, "SELECT permission_name FROM app_permission_view WHERE pkg_name=?"},
+        { QueryType::EGetPkgPrivileges, "SELECT privilege_name FROM app_privilege_view WHERE pkg_name=?"},
         { QueryType::EAddApplication, "INSERT INTO app_pkg_view (app_name, pkg_name) VALUES (?, ?)" },
         { QueryType::ERemoveApplication, "DELETE FROM app_pkg_view WHERE app_name=? AND pkg_name=?" },
-        { QueryType::EAddAppPermissions, "INSERT INTO app_permission_view (app_name, pkg_name, permission_name) VALUES (?, ?, ?)" },
-        { QueryType::ERemoveAppPermissions, "DELETE FROM app_permission_view WHERE app_name=? AND pkg_name=? AND permission_name=?" },
+        { QueryType::EAddAppPrivileges, "INSERT INTO app_privilege_view (app_name, pkg_name, privilege_name) VALUES (?, ?, ?)" },
+        { QueryType::ERemoveAppPrivileges, "DELETE FROM app_privilege_view WHERE app_name=? AND pkg_name=? AND privilege_name=?" },
         { QueryType::EPkgIdExists, "SELECT * FROM pkg WHERE name=?" }
     };
 
@@ -82,11 +82,11 @@ private:
      *
      * @param appId - application identifier
      * @param pkgId - package identifier
-     * @param[out] currentPermissions - list of current permissions assigned to tuple (appId, pkgId)
+     * @param[out] currentPrivileges - list of current privileges assigned to tuple (appId, pkgId)
      * @exception DB::SqlConnection::Exception::InternalError on internal error
      */
-    void GetPkgPermissions(const std::string &pkgId,
-            TPermissionsList &currentPermission);
+    void GetPkgPrivileges(const std::string &pkgId,
+            TPrivilegesList &currentPrivileges);
 
 public:
     class Exception
@@ -149,19 +149,19 @@ public:
             bool &pkgIdIsNoMore);
 
     /**
-     * Update permissions belonging to tuple (appId, pkgId)
+     * Update privileges belonging to tuple (appId, pkgId)
      *
      * @param appId - application identifier
      * @param pkgId - package identifier
-     * @param permissions - list of permissions to assign
-     * @param[out] addedPermissions - return list of added permissions
-     * @param[out] removedPermissions - return list of removed permissions
+     * @param privileges - list of privileges to assign
+     * @param[out] addedPrivileges - return list of added privileges
+     * @param[out] removedPrivileges - return list of removed privileges
      * @exception DB::SqlConnection::Exception::InternalError on internal error
      */
-    void UpdatePermissions(const std::string &appId,
-            const std::string &pkgId, const TPermissionsList &permissions,
-            TPermissionsList &addedPermissions,
-            TPermissionsList &removedPermissions);
+    void UpdatePrivileges(const std::string &appId,
+            const std::string &pkgId, const TPrivilegesList &privileges,
+            TPrivilegesList &addedPrivileges,
+            TPrivilegesList &removedPrivileges);
 
 };
 
