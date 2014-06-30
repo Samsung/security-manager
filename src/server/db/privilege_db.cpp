@@ -37,18 +37,25 @@
 #include "privilege_db.h"
 
 #define SET_CONTAINS(set,value) set.find(value)!=set.end()
-#define CATCH_STANDARD_EXCEPTIONS  \
-    catch (DB::SqlConnection::Exception::SyntaxError &e) { \
-        LogDebug("Syntax error in command: " << e.DumpToString()); \
-        ThrowMsg(PrivilegeDb::Exception::InternalError, \
-            "Syntax error in command: " << e.DumpToString()); \
-    } catch (DB::SqlConnection::Exception::InternalError &e) { \
-        LogDebug("Mysterious internal error in SqlConnection class" << e.DumpToString()); \
-        ThrowMsg(PrivilegeDb::Exception::InternalError, \
-            "Mysterious internal error in SqlConnection class: " << e.DumpToString()); \
-    }
 
 namespace SecurityManager {
+
+/* Common code for handling SqlConnection exceptions */
+template <typename T>
+T try_catch(const std::function<T()> &func)
+{
+    try {
+        return func();
+    } catch (DB::SqlConnection::Exception::SyntaxError &e) {
+        LogError("Syntax error in command: " << e.DumpToString());
+        ThrowMsg(PrivilegeDb::Exception::InternalError,
+            "Syntax error in command: " << e.DumpToString());
+    } catch (DB::SqlConnection::Exception::InternalError &e) {
+        LogError("Mysterious internal error in SqlConnection class" << e.DumpToString());
+        ThrowMsg(PrivilegeDb::Exception::InternalError,
+            "Mysterious internal error in SqlConnection class: " << e.DumpToString());
+    }
+}
 
 PrivilegeDb::PrivilegeDb(const std::string &path)
 {
@@ -71,28 +78,28 @@ PrivilegeDb::~PrivilegeDb()
 
 void PrivilegeDb::BeginTransaction(void)
 {
-    try {
+    try_catch<void>([&] {
         mSqlConnection->BeginTransaction();
-    }CATCH_STANDARD_EXCEPTIONS;
+    });
 }
 
 void PrivilegeDb::CommitTransaction(void)
 {
-    try {
+    try_catch<void>([&] {
         mSqlConnection->CommitTransaction();
-    }CATCH_STANDARD_EXCEPTIONS;
+    });
 }
 
 void PrivilegeDb::RollbackTransaction(void)
 {
-    try {
+    try_catch<void>([&] {
         mSqlConnection->RollbackTransaction();
-    }CATCH_STANDARD_EXCEPTIONS;
+    });
 }
 
 bool PrivilegeDb::PkgIdExists(const std::string &pkgId)
 {
-    try {
+    return try_catch<bool>([&] {
         DB::SqlConnection::DataCommandAutoPtr command =
                 mSqlConnection->PrepareDataCommand(
                         Queries.at(QueryType::EPkgIdExists));
@@ -103,9 +110,8 @@ bool PrivilegeDb::PkgIdExists(const std::string &pkgId)
             return true;
         };
 
-    }CATCH_STANDARD_EXCEPTIONS;
-
-    return false;
+        return false;
+    });
 }
 
 void PrivilegeDb::AddApplication(const std::string &appId,
@@ -113,7 +119,7 @@ void PrivilegeDb::AddApplication(const std::string &appId,
 {
     pkgIdIsNew = !(this->PkgIdExists(pkgId));
 
-    try {
+    try_catch<void>([&] {
         DB::SqlConnection::DataCommandAutoPtr command =
                 mSqlConnection->PrepareDataCommand(
                         Queries.at(QueryType::EAddApplication));
@@ -128,14 +134,13 @@ void PrivilegeDb::AddApplication(const std::string &appId,
 
         command->Reset();
         LogPedantic( "Added appId: " << appId << ", pkgId: " << pkgId);
-
-    }CATCH_STANDARD_EXCEPTIONS;
+    });
 }
 
 void PrivilegeDb::RemoveApplication(const std::string &appId,
         const std::string &pkgId, bool &pkgIdIsNoMore)
 {
-    try {
+    try_catch<void>([&] {
         DB::SqlConnection::DataCommandAutoPtr command =
                 mSqlConnection->PrepareDataCommand(
                         Queries.at(QueryType::ERemoveApplication));
@@ -152,14 +157,13 @@ void PrivilegeDb::RemoveApplication(const std::string &appId,
         LogPedantic( "Removed appId: " << appId << ", pkgId: " << pkgId);
 
         pkgIdIsNoMore = !(this->PkgIdExists(pkgId));
-
-    }CATCH_STANDARD_EXCEPTIONS;
+    });
 }
 
 void PrivilegeDb::GetPkgPermissions(const std::string &pkgId,
         TPermissionsList &currentPermissions)
 {
-    try {
+    try_catch<void>([&] {
         DB::SqlConnection::DataCommandAutoPtr command =
                 mSqlConnection->PrepareDataCommand(
                         Queries.at(QueryType::EGetPkgPermissions));
@@ -170,8 +174,7 @@ void PrivilegeDb::GetPkgPermissions(const std::string &pkgId,
             LogPedantic ("Got permission: "<< permission);
             currentPermissions.push_back(permission);
         };
-
-    }CATCH_STANDARD_EXCEPTIONS;
+    });
 }
 
 void PrivilegeDb::UpdatePermissions(const std::string &appId,
@@ -179,7 +182,7 @@ void PrivilegeDb::UpdatePermissions(const std::string &appId,
         TPermissionsList &addedPermissions,
         TPermissionsList &removedPermissions)
 {
-    try {
+    try_catch<void>([&] {
         DB::SqlConnection::DataCommandAutoPtr command;
         TPermissionsList curPermissions = TPermissionsList();
         GetPkgPermissions(pkgId, curPermissions);
@@ -239,7 +242,6 @@ void PrivilegeDb::UpdatePermissions(const std::string &appId,
             LogPedantic(
                     "Removed appId: " << appId << ", pkgId: " << pkgId << ", permission: " << removedPermission);
         }
-
-    }CATCH_STANDARD_EXCEPTIONS;
+    });
 }
 } //namespace SecurityManager
