@@ -108,7 +108,7 @@ bool PrivilegeDb::PkgIdExists(const std::string &pkgId)
     return false;
 }
 
-bool PrivilegeDb::AddApplication(const std::string &appId,
+void PrivilegeDb::AddApplication(const std::string &appId,
         const std::string &pkgId, bool &pkgIdIsNew)
 {
     pkgIdIsNew = !(this->PkgIdExists(pkgId));
@@ -129,14 +129,10 @@ bool PrivilegeDb::AddApplication(const std::string &appId,
         command->Reset();
         LogPedantic( "Added appId: " << appId << ", pkgId: " << pkgId);
 
-        return true;
-
     }CATCH_STANDARD_EXCEPTIONS;
-    return false;
-
 }
 
-bool PrivilegeDb::RemoveApplication(const std::string &appId,
+void PrivilegeDb::RemoveApplication(const std::string &appId,
         const std::string &pkgId, bool &pkgIdIsNoMore)
 {
     try {
@@ -157,14 +153,10 @@ bool PrivilegeDb::RemoveApplication(const std::string &appId,
 
         pkgIdIsNoMore = !(this->PkgIdExists(pkgId));
 
-        return true;
-
     }CATCH_STANDARD_EXCEPTIONS;
-    return false;
-
 }
 
-bool PrivilegeDb::GetPkgPermissions(const std::string &pkgId,
+void PrivilegeDb::GetPkgPermissions(const std::string &pkgId,
         TPermissionsList &currentPermissions)
 {
     try {
@@ -179,25 +171,19 @@ bool PrivilegeDb::GetPkgPermissions(const std::string &pkgId,
             currentPermissions.push_back(permission);
         };
 
-        return true;
     }CATCH_STANDARD_EXCEPTIONS;
-
-    return false;
-
 }
 
-bool PrivilegeDb::UpdatePermissions(const std::string &appId,
+void PrivilegeDb::UpdatePermissions(const std::string &appId,
         const std::string &pkgId, const TPermissionsList &permissions,
         TPermissionsList &addedPermissions,
         TPermissionsList &removedPermissions)
 {
-    DB::SqlConnection::DataCommandAutoPtr command;
-
-    TPermissionsList curPermissions = TPermissionsList();
-    if (!this->GetPkgPermissions(pkgId, curPermissions))
-        return false;
-
     try {
+        DB::SqlConnection::DataCommandAutoPtr command;
+        TPermissionsList curPermissions = TPermissionsList();
+        GetPkgPermissions(pkgId, curPermissions);
+
         //Data compilation
         std::set<std::string> permissionsSet = std::set<
                 std::string>(permissions.begin(), permissions.end());
@@ -254,10 +240,6 @@ bool PrivilegeDb::UpdatePermissions(const std::string &appId,
                     "Removed appId: " << appId << ", pkgId: " << pkgId << ", permission: " << removedPermission);
         }
 
-        return true;
-
     }CATCH_STANDARD_EXCEPTIONS;
-
-    return false;
 }
 } //namespace SecurityManager

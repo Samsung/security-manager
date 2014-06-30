@@ -22,6 +22,7 @@
 /*
  * @file        privilege_db.h
  * @author      Krzysztof Sasiak <k.sasiak@samsung.com>
+ * @author      Rafal Krypa <r.krypa@samsung.com>
  * @version     1.0
  * @brief       This file contains declaration of the API to privilges database.
  */
@@ -83,9 +84,8 @@ private:
      * @param pkgId - package identifier
      * @param[out] currentPermissions - list of current permissions assigned to tuple (appId, pkgId)
      * @exception DB::SqlConnection::Exception::InternalError on internal error
-     * @return true on success, false on failure
      */
-    bool GetPkgPermissions(const std::string &pkgId,
+    void GetPkgPermissions(const std::string &pkgId,
             TPermissionsList &currentPermission);
 
 public:
@@ -133,9 +133,8 @@ public:
      * @param pkgId - package identifier
      * @param[out] pkgIdIsNew - return info if pkgId is new to the database
      * @exception DB::SqlConnection::Exception::InternalError on internal error
-     * @return true on success, false on failure
      */
-    bool AddApplication(const std::string &appId, const std::string &pkgId,
+    void AddApplication(const std::string &appId, const std::string &pkgId,
             bool &pkgIdIsNew);
 
     /**
@@ -145,9 +144,8 @@ public:
      * @param pkgId - package identifier
      * @param[out] pkgIdIsNoMore - return info if pkgId is in the database
      * @exception DB::SqlConnection::Exception::InternalError on internal error
-     * @return true on success, false on failure
      */
-    bool RemoveApplication(const std::string &appId, const std::string &pkgId,
+    void RemoveApplication(const std::string &appId, const std::string &pkgId,
             bool &pkgIdIsNoMore);
 
     /**
@@ -159,16 +157,14 @@ public:
      * @param[out] addedPermissions - return list of added permissions
      * @param[out] removedPermissions - return list of removed permissions
      * @exception DB::SqlConnection::Exception::InternalError on internal error
-     * @return - true on success, false on failure
      */
-    bool UpdatePermissions(const std::string &appId,
+    void UpdatePermissions(const std::string &appId,
             const std::string &pkgId, const TPermissionsList &permissions,
             TPermissionsList &addedPermissions,
             TPermissionsList &removedPermissions);
 
 };
-}
-;
-//namespace SecurityManager
+
+} //namespace SecurityManager
 
 #endif // PRIVILEGE_DB_H_
