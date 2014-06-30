@@ -60,7 +60,7 @@ TARGET_LINK_LIBRARIES(${TARGET_SERVER}
 
 ADD_CUSTOM_COMMAND(
     OUTPUT ${TARGET_DB} ${TARGET_DB}-journal
-    COMMAND sqlite3 ${TARGET_DB} <db/app-permissions-db.sql
+    COMMAND sqlite3 ${TARGET_DB} <db/db.sql
     )
 
 # Add a dummy build target to trigger building of ${TARGET_DB}
