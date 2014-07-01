@@ -40,8 +40,6 @@
 
 namespace SecurityManager {
 
-typedef std::vector<std::string> TPrivilegesList;
-
 enum class QueryType {
     EGetPkgPrivileges,
     EAddApplication,
@@ -123,7 +121,7 @@ public:
      * @exception DB::SqlConnection::Exception::InternalError on internal error
      */
     void GetPkgPrivileges(const std::string &pkgId,
-            TPrivilegesList &currentPrivilege);
+            std::vector<std::string> &currentPrivilege);
 
     /**
      * Add an application into the database
@@ -164,7 +162,7 @@ public:
      * @exception DB::SqlConnection::Exception::InternalError on internal error
      */
     void UpdateAppPrivileges(const std::string &appId,
-            const TPrivilegesList &privileges);
+            const std::vector<std::string> &privileges);
 
 };
 

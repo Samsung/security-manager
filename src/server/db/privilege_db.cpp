@@ -158,7 +158,7 @@ void PrivilegeDb::RemoveApplication(const std::string &appId,
 }
 
 void PrivilegeDb::GetPkgPrivileges(const std::string &pkgId,
-        TPrivilegesList &currentPrivileges)
+        std::vector<std::string> &currentPrivileges)
 {
     try_catch<void>([&] {
         DB::SqlConnection::DataCommandAutoPtr command =
@@ -186,7 +186,7 @@ void PrivilegeDb::RemoveAppPrivileges(const std::string &appId)
 }
 
 void PrivilegeDb::UpdateAppPrivileges(const std::string &appId,
-        const TPrivilegesList &privileges)
+        const std::vector<std::string> &privileges)
 {
     try_catch<void>([&] {
         DB::SqlConnection::DataCommandAutoPtr command =
