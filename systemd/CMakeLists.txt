@@ -5,5 +5,5 @@ INSTALL(FILES
     security-manager.target
     security-manager-installer.socket
     DESTINATION
-    ${LIB_INSTALL_DIR}/systemd/system
+    ${SYSTEMD_INSTALL_DIR}
 )
