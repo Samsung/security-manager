@@ -34,11 +34,14 @@
 #include <string>
 
 #include <dpl/db/sql_connection.h>
+#include <tzplatform_config.h>
 
 #ifndef PRIVILEGE_DB_H_
 #define PRIVILEGE_DB_H_
 
 namespace SecurityManager {
+
+const char *const PRIVILEGE_DB_PATH = tzplatform_mkpath(TZ_SYS_DB, ".security-manager.db");
 
 enum class QueryType {
     EGetPkgPrivileges,
@@ -91,7 +94,8 @@ public:
      * @exception DB::SqlConnection::Exception::IOError on problems with database access
      *
      */
-    PrivilegeDb(const std::string &path);
+    PrivilegeDb(const std::string &path = std::string(PRIVILEGE_DB_PATH));
+
     ~PrivilegeDb(void);
 
     /**

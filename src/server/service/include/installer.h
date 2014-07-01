@@ -17,8 +17,9 @@
  */
 /*
  * @file        installer.h
- * @author      Michal Witanowski (m.witanowski@samsung.com)
- * @brief       Implementation of installer service for libprivilege-control encapsulation.
+ * @author      Michal Witanowski <m.witanowski@samsung.com>
+ * @author      Rafal Krypa <r.krypa@samsung.com>
+ * @brief       Implementation of installer service
  */
 
 #ifndef _SECURITY_MANAGER_INSTALLER_
@@ -28,6 +29,7 @@
 #include <generic-socket-manager.h>
 #include <message-buffer.h>
 #include <connection-info.h>
+#include <privilege_db.h>
 
 namespace SecurityManager {
 
@@ -60,6 +62,7 @@ public:
 
 private:
     ConnectionInfoMap m_connectionInfoMap;
+    PrivilegeDb m_privilegeDb;
 
     /**
      * Handle request from a client

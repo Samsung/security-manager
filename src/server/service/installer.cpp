@@ -19,7 +19,8 @@
  * @file        installer.cpp
  * @author      Michal Witanowski <m.witanowski@samsung.com>
  * @author      Jacek Bukarewicz <j.bukarewicz@samsung.com>
- * @brief       Implementation of installer service for libprivilege-control encapsulation.
+ * @author      Rafal Krypa <r.krypa@samsung.com>
+ * @brief       Implementation of installer service.
  */
 
 #include <dpl/log/log.h>
@@ -39,6 +40,7 @@
 #include "protocols.h"
 #include "security-manager.h"
 #include "smack-rules.h"
+#include "privilege_db.h"
 
 namespace SecurityManager {
 
@@ -366,6 +368,10 @@ bool InstallerService::processOne(const ConnectionID &conn, MessageBuffer &buffe
 
 bool InstallerService::processAppInstall(MessageBuffer &buffer, MessageBuffer &send)
 {
+    bool pkgIdIsNew = false;
+    std::vector<std::string> addedPermissions;
+    std::vector<std::string> removedPermissions;
+
     // deserialize request data
     app_inst_req req;
     Deserialization::Deserialize(buffer, req.appId);
@@ -375,6 +381,14 @@ bool InstallerService::processAppInstall(MessageBuffer &buffer, MessageBuffer &s
 
     LogDebug("appId: " << req.appId);
     LogDebug("pkgId: " << req.pkgId);
+
+    std::string smackLabel;
+    if (!SmackRules::generateAppLabel(req.pkgId, smackLabel)) {
+        LogError("Cannot generate Smack label for package");
+        Serialization::Serialize(send, SECURITY_MANAGER_API_ERROR_SERVER_ERROR);
+        return false;
+    }
+    LogDebug("Smack label: " << smackLabel);
 
     // create null terminated array of strigns for permissions
     std::unique_ptr<const char *[]> pp_permissions(new const char* [req.privileges.size() + 1]);
@@ -393,23 +407,35 @@ bool InstallerService::processAppInstall(MessageBuffer &buffer, MessageBuffer &s
         return false;
     }
 
-    /**
-     * TODO: use pkgId.
-     * This is a temporary solution: perm_app_* requires pkgId. We assume that pkgId == appId.
-     */
-    result = perm_app_install(req.appId.c_str());
+    result = perm_app_install(smackLabel.c_str());
     LogDebug("perm_app_install() returned " << result);
     if (PC_OPERATION_SUCCESS != result) {
         // libprivilege error
         goto error_label;
     }
 
-    // TODO: use pkgId.
-    result = perm_app_enable_permissions(req.appId.c_str(), APP_TYPE_WGT,
+    result = perm_app_enable_permissions(smackLabel.c_str(), APP_TYPE_WGT,
                                          pp_permissions.get(), true);
     LogDebug("perm_app_enable_permissions() returned " << result);
     if (PC_OPERATION_SUCCESS != result) {
         // libprivilege error
+        goto error_label;
+    }
+
+    try {
+        std::vector<std::string> oldPkgPrivileges, newPkgPrivileges;
+
+        m_privilegeDb.BeginTransaction();
+        m_privilegeDb.GetPkgPrivileges(req.pkgId, oldPkgPrivileges);
+        m_privilegeDb.AddApplication(req.appId, req.pkgId, pkgIdIsNew);
+        m_privilegeDb.UpdateAppPrivileges(req.appId, req.privileges);
+        m_privilegeDb.GetPkgPrivileges(req.pkgId, newPkgPrivileges);
+        // TODO: configure Cynara rules based on oldPkgPrivileges and newPkgPrivileges
+        m_privilegeDb.CommitTransaction();
+        LogDebug("Application installation commited to database");
+    } catch (const PrivilegeDb::Exception::InternalError &e) {
+        m_privilegeDb.RollbackTransaction();
+        LogError("Error while saving application info to database: " << e.DumpToString());
         goto error_label;
     }
 
@@ -422,19 +448,21 @@ bool InstallerService::processAppInstall(MessageBuffer &buffer, MessageBuffer &s
         }
     }
 
-    // TODO: This should be done only for the first application in the package
-    if (!SecurityManager::SmackRules::installPackageRules(req.pkgId)) {
-        LogError("Failed to apply package-specific smack rules");
-        goto error_label;
+    if (pkgIdIsNew) {
+        LogDebug("Adding Smack rules for new pkgId " << req.pkgId);
+        if (!SmackRules::installPackageRules(req.pkgId)) {
+            LogError("Failed to apply package-specific smack rules");
+            goto error_label;
+        }
     }
 
     // finish database transaction
     result = perm_end();
     LogDebug("perm_end() returned " << result);
     if (PC_OPERATION_SUCCESS != result) {
-        // TODO: Uncomment once proper pkgId -> smack label mapping is implemented (currently all
-        //       applications are mapped to user label and removal of such rules would be harmful)
-        //SecurityManager::SmackRules::uninstallPackageRules(req.pkgId);
+        if (pkgIdIsNew)
+            if (!SmackRules::uninstallPackageRules(req.pkgId))
+                LogWarning("Failed to rollback package-specific smack rules");
 
         // error in libprivilege-control
         Serialization::Serialize(send, SECURITY_MANAGER_API_ERROR_SERVER_ERROR);
@@ -457,40 +485,69 @@ bool InstallerService::processAppUninstall(MessageBuffer &buffer, MessageBuffer 
 {
     // deserialize request data
     std::string appId;
+    std::string pkgId;
+    std::string smackLabel;
+    bool appExists = true;
+    bool removePkg = false;
+
     Deserialization::Deserialize(buffer, appId);
     LogDebug("appId: " << appId);
 
     int result = perm_begin();
     LogDebug("perm_begin() returned " << result);
     if (PC_OPERATION_SUCCESS != result) {
-        // libprivilege is locked
         Serialization::Serialize(send, SECURITY_MANAGER_API_ERROR_SERVER_ERROR);
         return false;
     }
 
-    // TODO: use pkgId.
-    result = perm_app_uninstall(appId.c_str());
-    LogDebug("perm_app_uninstall() returned " << result);
+    try {
+        std::vector<std::string> oldPkgPrivileges, newPkgPrivileges;
 
-    if (PC_OPERATION_SUCCESS != result) {
-        // error in libprivilege-control
-        result = perm_rollback();
-        LogDebug("perm_rollback() returned " << result);
-        Serialization::Serialize(send, SECURITY_MANAGER_API_ERROR_SERVER_ERROR);
-        return false;
+        m_privilegeDb.BeginTransaction();
+        if (!m_privilegeDb.GetAppPkgId(appId, pkgId)) {
+            LogWarning("Application " << appId <<
+                " not found in database while uninstalling");
+            m_privilegeDb.RollbackTransaction();
+            appExists = false;
+        } else {
+            LogDebug("pkgId: " << pkgId);
+
+            if (!SmackRules::generateAppLabel(pkgId, smackLabel)) {
+                LogError("Cannot generate Smack label for package");
+                goto error_label;
+            }
+            LogDebug("Smack label: " << smackLabel);
+
+            m_privilegeDb.GetPkgPrivileges(pkgId, oldPkgPrivileges);
+            m_privilegeDb.UpdateAppPrivileges(appId, std::vector<std::string>());
+            m_privilegeDb.RemoveApplication(appId, removePkg);
+            m_privilegeDb.GetPkgPrivileges(pkgId, newPkgPrivileges);
+            // TODO: configure Cynara rules based on oldPkgPrivileges and newPkgPrivileges
+            m_privilegeDb.CommitTransaction();
+            LogDebug("Application uninstallation commited to database");
+        }
+    } catch (const PrivilegeDb::Exception::InternalError &e) {
+        m_privilegeDb.RollbackTransaction();
+        LogError("Error while removing application info from database: " << e.DumpToString());
+        goto error_label;
     }
 
-    // TODO: Uncomment once proper pkgId -> smack label mapping is implemented (currently all
-    //       applications are mapped to user label and removal of such rules would be harmful)
-    // TODO: This should be performed only for the last application in the package
-    // TODO: retrieve pkgId as it's not available in the request
-    //if (!SecurityManager::SmackRules::uninstallPackageRules(pkgId)) {
-    //    LogError("Error on uninstallation of package-specific smack rules");
-    //    result = perm_rollback();
-    //    LogDebug("perm_rollback() returned " << result);
-    //    Serialization::Serialize(send, SECURITY_MANAGER_API_ERROR_SERVER_ERROR);
-    //    return false;
-    //}
+    if (appExists) {
+        result = perm_app_uninstall(smackLabel.c_str());
+        LogDebug("perm_app_uninstall() returned " << result);
+        if (PC_OPERATION_SUCCESS != result) {
+            // error in libprivilege-control
+            goto error_label;
+        }
+
+        if (removePkg) {
+            LogDebug("Removing Smack rules for deleted pkgId " << pkgId);
+            if (!SmackRules::uninstallPackageRules(pkgId)) {
+                LogError("Error on uninstallation of package-specific smack rules");
+                goto error_label;
+            }
+        }
+    }
 
     // finish database transaction
     result = perm_end();
@@ -504,6 +561,13 @@ bool InstallerService::processAppUninstall(MessageBuffer &buffer, MessageBuffer 
     // success
     Serialization::Serialize(send, SECURITY_MANAGER_API_SUCCESS);
     return true;
+
+error_label:
+    // rollback failed transaction before exiting
+    result = perm_rollback();
+    LogDebug("perm_rollback() returned " << result);
+    Serialization::Serialize(send, SECURITY_MANAGER_API_ERROR_SERVER_ERROR);
+    return false;
 }
 
 } // namespace SecurityManager
