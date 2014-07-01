@@ -69,11 +69,10 @@ DROP TRIGGER IF EXISTS app_privilege_view_insert_trigger;
 CREATE TRIGGER app_privilege_view_insert_trigger
 INSTEAD OF INSERT ON app_privilege_view
 BEGIN
-	INSERT OR IGNORE INTO pkg(name) VALUES (NEW.pkg_name);
 	INSERT OR IGNORE INTO privilege(name) VALUES (NEW.privilege_name);
-	INSERT OR IGNORE INTO app(pkg_id, name) VALUES ((SELECT pkg_id FROM pkg WHERE name=NEW.pkg_name), NEW.app_name);
 	INSERT OR IGNORE INTO app_privilege(app_id, privilege_id) VALUES
-		((SELECT app_id FROM app WHERE name=NEW.app_name), (SELECT privilege_id FROM privilege WHERE name=NEW.privilege_name));
+		((SELECT app_id FROM app WHERE name=NEW.app_name),
+		 (SELECT privilege_id FROM privilege WHERE name=NEW.privilege_name));
 END;
 
 DROP TRIGGER IF EXISTS app_privilege_view_delete_trigger;

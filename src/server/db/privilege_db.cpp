@@ -28,15 +28,12 @@
  */
 
 #include <cstdio>
-#include <set>
 #include <list>
 #include <string>
 #include <iostream>
 
 #include <dpl/log/log.h>
 #include "privilege_db.h"
-
-#define SET_CONTAINS(set,value) set.find(value)!=set.end()
 
 namespace SecurityManager {
 
@@ -177,70 +174,31 @@ void PrivilegeDb::GetPkgPrivileges(const std::string &pkgId,
     });
 }
 
-void PrivilegeDb::UpdatePrivileges(const std::string &appId,
-        const std::string &pkgId, const TPrivilegesList &privileges,
-        TPrivilegesList &addedPrivileges,
-        TPrivilegesList &removedPrivileges)
+void PrivilegeDb::RemoveAppPrivileges(const std::string &appId)
 {
     try_catch<void>([&] {
-        DB::SqlConnection::DataCommandAutoPtr command;
-        TPrivilegesList curPrivileges = TPrivilegesList();
-        GetPkgPrivileges(pkgId, curPrivileges);
+        DB::SqlConnection::DataCommandAutoPtr command =
+            mSqlConnection->PrepareDataCommand(Queries.at(QueryType::ERemoveAppPrivileges));
 
-        //Data compilation
-        std::set<std::string> privilegesSet = std::set<
-                std::string>(privileges.begin(), privileges.end());
-        std::set<std::string> curPrivilegesSet = std::set<
-                std::string>(curPrivileges.begin(), curPrivileges.end());
+        command->BindString(1, appId.c_str());
+        command->Step();
+    });
+}
 
-        std::list < std::string > tmpPrivileges = std::list < std::string
-                > (privileges.begin(), privileges.end());
-        tmpPrivileges.merge (std::list < std::string
-                >(curPrivileges.begin(), curPrivileges.end()));
-        tmpPrivileges.unique ();
+void PrivilegeDb::UpdateAppPrivileges(const std::string &appId,
+        const TPrivilegesList &privileges)
+{
+    try_catch<void>([&] {
+        DB::SqlConnection::DataCommandAutoPtr command =
+            mSqlConnection->PrepareDataCommand(Queries.at(QueryType::EAddAppPrivileges));
+        command->BindString(1, appId.c_str());
 
-        for (auto privilege : tmpPrivileges) {
-            if ((SET_CONTAINS(privilegesSet, privilege)) && !(SET_CONTAINS(curPrivilegesSet, privilege))) {
-                addedPrivileges.push_back(privilege);
-            }
-            if (!(SET_CONTAINS(privilegesSet, privilege)) && (SET_CONTAINS(curPrivilegesSet, privilege))) {
-                removedPrivileges.push_back(privilege);
-            }
+        RemoveAppPrivileges(appId);
 
-        }
-
-        //adding missing privileges
-        for (auto addedPrivilege : addedPrivileges) {
-            command = mSqlConnection->PrepareDataCommand(
-                    Queries.at(QueryType::EAddAppPrivileges));
-            command->BindString(1, appId.c_str());
-            command->BindString(2, pkgId.c_str());
-            command->BindString(3, addedPrivilege.c_str());
-
-            if (command->Step())
-                LogPedantic("Unexpected SQLITE_ROW answer to query: " <<
-                        Queries.at(QueryType::EAddAppPrivileges));
-
+        for (const auto &privilege : privileges) {
+            command->BindString(2, privilege.c_str());
+            command->Step();
             command->Reset();
-            LogPedantic(
-                    "Added appId: " << appId << ", pkgId: " << pkgId << ", privilege: " << addedPrivilege);
-
-        }
-
-        //removing unwanted privileges
-        for (auto removedPrivilege : removedPrivileges) {
-            command = mSqlConnection->PrepareDataCommand(
-                    Queries.at(QueryType::ERemoveAppPrivileges));
-            command->BindString(1, appId.c_str());
-            command->BindString(2, pkgId.c_str());
-            command->BindString(3, removedPrivilege.c_str());
-
-            if (command->Step())
-                LogPedantic("Unexpected SQLITE_ROW answer to query: " <<
-                        Queries.at(QueryType::EAddAppPrivileges));
-
-            LogPedantic(
-                    "Removed appId: " << appId << ", pkgId: " << pkgId << ", privilege: " << removedPrivilege);
         }
     });
 }
