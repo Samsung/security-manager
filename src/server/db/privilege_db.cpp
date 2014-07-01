@@ -111,6 +111,23 @@ bool PrivilegeDb::PkgIdExists(const std::string &pkgId)
     });
 }
 
+bool PrivilegeDb::GetAppPkgId(const std::string &appId, std::string &pkgId)
+{
+    return try_catch<bool>([&] {
+        DB::SqlConnection::DataCommandAutoPtr command =
+            mSqlConnection->PrepareDataCommand(Queries.at(QueryType::EGetPkgId));
+        command->BindString(1, appId.c_str());
+
+        if (!command->Step()) {
+            // No application with such appId
+            return false;
+        }
+
+        pkgId = command->GetColumnString(0);
+        return true;
+    });
+}
+
 void PrivilegeDb::AddApplication(const std::string &appId,
         const std::string &pkgId, bool &pkgIdIsNew)
 {
@@ -135,15 +152,20 @@ void PrivilegeDb::AddApplication(const std::string &appId,
 }
 
 void PrivilegeDb::RemoveApplication(const std::string &appId,
-        const std::string &pkgId, bool &pkgIdIsNoMore)
+        bool &pkgIdIsNoMore)
 {
     try_catch<void>([&] {
+        std::string pkgId;
+        if (!GetAppPkgId(appId, pkgId)) {
+            pkgIdIsNoMore = false;
+            return;
+        }
+
         DB::SqlConnection::DataCommandAutoPtr command =
                 mSqlConnection->PrepareDataCommand(
                         Queries.at(QueryType::ERemoveApplication));
 
         command->BindString(1, appId.c_str());
-        command->BindString(2, pkgId.c_str());
 
         if (command->Step()) {
             LogPedantic("Unexpected SQLITE_ROW answer to query: " <<
@@ -151,7 +173,7 @@ void PrivilegeDb::RemoveApplication(const std::string &appId,
         };
 
         command->Reset();
-        LogPedantic( "Removed appId: " << appId << ", pkgId: " << pkgId);
+        LogPedantic( "Removed appId: " << appId);
 
         pkgIdIsNoMore = !(this->PkgIdExists(pkgId));
     });

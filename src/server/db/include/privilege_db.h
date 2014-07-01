@@ -47,6 +47,7 @@ enum class QueryType {
     EAddAppPrivileges,
     ERemoveAppPrivileges,
     EPkgIdExists,
+    EGetPkgId,
 };
 
 class PrivilegeDb {
@@ -59,10 +60,11 @@ private:
     const std::map<QueryType, const char * const > Queries = {
         { QueryType::EGetPkgPrivileges, "SELECT privilege_name FROM app_privilege_view WHERE pkg_name=?"},
         { QueryType::EAddApplication, "INSERT INTO app_pkg_view (app_name, pkg_name) VALUES (?, ?)" },
-        { QueryType::ERemoveApplication, "DELETE FROM app_pkg_view WHERE app_name=? AND pkg_name=?" },
+        { QueryType::ERemoveApplication, "DELETE FROM app_pkg_view WHERE app_name=?" },
         { QueryType::EAddAppPrivileges, "INSERT INTO app_privilege_view (app_name, privilege_name) VALUES (?, ?)" },
         { QueryType::ERemoveAppPrivileges, "DELETE FROM app_privilege_view WHERE app_name=?" },
-        { QueryType::EPkgIdExists, "SELECT * FROM pkg WHERE name=?" }
+        { QueryType::EPkgIdExists, "SELECT * FROM pkg WHERE name=?" },
+        { QueryType::EGetPkgId, " SELECT pkg_name FROM app_pkg_view WHERE app_name = ?" },
     };
 
     /**
@@ -114,6 +116,16 @@ public:
     void RollbackTransaction(void);
 
     /**
+     * Return package id associated with a given application id
+     *
+     * @param appId - application identifier
+     * @param[out] pkgId - return application's pkgId
+     * @return true is application exists, false otherwise
+     * @exception DB::SqlConnection::Exception::InternalError on internal error
+     */
+    bool GetAppPkgId(const std::string &appId, std::string &pkgId);
+
+    /**
      * Retrieve list of privileges assigned to a pkgId
      *
      * @param pkgId - package identifier
@@ -138,12 +150,10 @@ public:
      * Remove an application from the database
      *
      * @param appId - application identifier
-     * @param pkgId - package identifier
      * @param[out] pkgIdIsNoMore - return info if pkgId is in the database
      * @exception DB::SqlConnection::Exception::InternalError on internal error
      */
-    void RemoveApplication(const std::string &appId, const std::string &pkgId,
-            bool &pkgIdIsNoMore);
+    void RemoveApplication(const std::string &appId, bool &pkgIdIsNoMore);
 
     /**
      * Remove privileges assigned to application

@@ -94,7 +94,7 @@ DROP TRIGGER IF EXISTS app_pkg_view_delete_trigger;
 CREATE TRIGGER app_pkg_view_delete_trigger
 INSTEAD OF DELETE ON app_pkg_view
 BEGIN
-    DELETE FROM app WHERE app_id=OLD.app_id AND pkg_id=OLD.pkg_id;
+    DELETE FROM app WHERE app_id=OLD.app_id;
     DELETE FROM pkg WHERE pkg_id NOT IN (SELECT DISTINCT pkg_id from app);
 END;
 
