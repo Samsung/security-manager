@@ -83,6 +83,7 @@ ln -s ../security-manager-installer.socket %{buildroot}/%{_unitdir}/sockets.targ
 rm -rf %{buildroot}
 
 %post
+/sbin/ldconfig
 systemctl daemon-reload
 if [ $1 = 1 ]; then
     # installation
@@ -103,6 +104,7 @@ if [ $1 = 0 ]; then
 fi
 
 %postun
+/sbin/ldconfig
 if [ $1 = 0 ]; then
     # unistall
     systemctl daemon-reload
