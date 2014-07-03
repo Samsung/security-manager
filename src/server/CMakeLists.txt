@@ -7,6 +7,7 @@ PKG_CHECK_MODULES(SERVER_DEP
     libtzplatform-config
     sqlite3
     db-util
+    cynara-admin
     )
 
 FIND_PACKAGE(
@@ -40,6 +41,7 @@ SET(SERVER_SOURCES
     ${SERVER_PATH}/service/smack-rules.cpp
     ${SERVER_PATH}/service/smack-labels.cpp
     ${SERVER_PATH}/service/installer.cpp
+    ${SERVER_PATH}/service/cynara.cpp
     ${SERVER_PATH}/db/privilege_db.cpp
     ${DPL_PATH}/core/src/errno_string.cpp
     ${DPL_PATH}/core/src/string.cpp
