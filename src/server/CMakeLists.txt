@@ -37,7 +37,6 @@ SET(SERVER_SOURCES
     ${SERVER_PATH}/main/generic-socket-manager.cpp
     ${SERVER_PATH}/main/socket-manager.cpp
     ${SERVER_PATH}/main/server-main.cpp
-    ${SERVER_PATH}/service/smack-common.cpp
     ${SERVER_PATH}/service/smack-rules.cpp
     ${SERVER_PATH}/service/installer.cpp
     ${SERVER_PATH}/db/privilege_db.cpp
