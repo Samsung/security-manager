@@ -10,7 +10,7 @@ Source3:    libsecurity-manager-client.manifest
 Requires(post): smack
 BuildRequires: cmake
 BuildRequires: zip
-BuildRequires: pkgconfig(dlog)
+# BuildRequires: pkgconfig(dlog)
 BuildRequires: libattr-devel
 BuildRequires: libcap-devel
 BuildRequires: pkgconfig(libsmack)

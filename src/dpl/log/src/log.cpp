@@ -24,7 +24,7 @@
 
 #include <dpl/log/log.h>
 #include <dpl/singleton_impl.h>
-#include <dpl/log/dlog_log_provider.h>
+#include <dpl/log/sd_journal_provider.h>
 #include <dpl/log/old_style_log_provider.h>
 
 IMPLEMENT_SINGLETON(SecurityManager::Log::LogSystem)
@@ -109,7 +109,7 @@ LogSystem::LogSystem() :
         }
     }
 
-    // Setup default DLOG and old style logging
+    // Setup default systemd journal and old style logging
     if (oldStyleLogs) {
         // Old style
         AddProvider(new OldStyleLogProvider(oldStyleDebugLogs,
@@ -118,11 +118,11 @@ LogSystem::LogSystem() :
                                             oldStyleErrorLogs,
                                             oldStylePedanticLogs));
     } else {
-        // DLOG
-        AddProvider(new DLOGLogProvider());
+        // Systemd Journal
+        AddProvider(new SdJournalProvider());
     }
 #else // BUILD_TYPE_DEBUG
-    AddProvider(new DLOGLogProvider());
+    AddProvider(new SdJournalProvider());
 #endif // BUILD_TYPE_DEBUG
 }
 

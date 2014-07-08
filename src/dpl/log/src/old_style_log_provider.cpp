@@ -27,7 +27,6 @@
 #include <sstream>
 #include <sys/time.h>
 #include <unistd.h>
-#include <dlog.h>
 
 namespace SecurityManager {
 namespace Log {

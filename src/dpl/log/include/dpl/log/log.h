@@ -90,9 +90,6 @@ class LogSystem :
                   int line,
                   const char *function);
 
-    /**
-     * Set default's DLOG provider Tag
-     */
     void SetTag(const char *tag);
 
     /**
