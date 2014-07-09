@@ -68,14 +68,14 @@ typedef std::function<FileDecision(const FTSENT*)> LabelDecisionFn;
 
 FileDecision labelAll(const FTSENT *ftsent __attribute__((unused)))
 {
-    LogSecureDebug("Entering function: " << __func__);
+    LogDebug("Entering function: " << __func__);
 
     return FileDecision::LABEL;
 }
 
 FileDecision labelDirs(const FTSENT *ftsent)
 {
-    LogSecureDebug("Entering function: " << __func__);
+    LogDebug("Entering function: " << __func__);
 
     // label only directories
     if (S_ISDIR(ftsent->fts_statp->st_mode))
@@ -85,7 +85,7 @@ FileDecision labelDirs(const FTSENT *ftsent)
 
 FileDecision labelExecs(const FTSENT *ftsent)
 {
-    LogSecureDebug("Entering function: " << __func__);
+    LogDebug("Entering function: " << __func__);
 
     LogDebug("Mode = " << ftsent->fts_statp->st_mode);
     // label only regular executable files
@@ -97,7 +97,7 @@ FileDecision labelExecs(const FTSENT *ftsent)
 
 FileDecision labelLinksToExecs(const FTSENT *ftsent)
 {
-    LogSecureDebug("Entering function: " << __func__);
+    LogDebug("Entering function: " << __func__);
 
     struct stat buf;
 
@@ -108,17 +108,17 @@ FileDecision labelLinksToExecs(const FTSENT *ftsent)
     std::unique_ptr<char, std::function<void(void*)>> target(realpath(ftsent->fts_path, NULL), free);
 
     if (!target.get()) {
-        LogSecureError("Getting link target for " << ftsent->fts_path << " failed (Error = " << strerror(errno) << ")");
+        LogError("Getting link target for " << ftsent->fts_path << " failed (Error = " << strerror(errno) << ")");
         return FileDecision::ERROR;
     }
 
     if (-1 == stat(target.get(), &buf)) {
-        LogSecureError("stat failed for " << target.get() << " (Error = " << strerror(errno) << ")");
+        LogError("stat failed for " << target.get() << " (Error = " << strerror(errno) << ")");
         return FileDecision::ERROR;
     }
     // skip if link target is not a regular executable file
     if (buf.st_mode != (buf.st_mode | S_IXUSR | S_IFREG)) {
-        LogSecureDebug(target.get() << "is not a regular executable file. Skipping.");
+        LogDebug(target.get() << "is not a regular executable file. Skipping.");
         return FileDecision::SKIP;
     }
 
@@ -128,7 +128,7 @@ FileDecision labelLinksToExecs(const FTSENT *ftsent)
 bool dirSetSmack(const std::string &path, const std::string &label,
         const char *xattr_name, LabelDecisionFn fn)
 {
-    LogSecureDebug("Entering function: "<< __func__ <<". Params:"
+    LogDebug("Entering function: "<< __func__ <<". Params:"
             " path=" << path << ", label=" << label << ", xattr=" << xattr_name);
 
 
@@ -179,7 +179,7 @@ bool dirSetSmack(const std::string &path, const std::string &label,
 bool labelDir(const std::string &path, const std::string &label,
         bool set_transmutable, bool set_executables)
 {
-    LogSecureDebug("Entering function: "<< __func__ <<". Params:"
+    LogDebug("Entering function: "<< __func__ <<". Params:"
             " path=" << path << " label= " << label
             << " set_transmutable= " << set_transmutable
             << " set_executables= " << set_executables);
