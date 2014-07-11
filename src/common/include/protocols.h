@@ -42,7 +42,8 @@ extern char const * const SERVICE_SOCKET_INSTALLER;
 enum class SecurityModuleCall
 {
     APP_INSTALL,
-    APP_UNINSTALL
+    APP_UNINSTALL,
+    APP_GET_PKGID
 };
 
 } // namespace SecurityManager

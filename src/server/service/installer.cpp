@@ -115,6 +115,9 @@ bool InstallerService::processOne(const ConnectionID &conn, MessageBuffer &buffe
                 case SecurityModuleCall::APP_UNINSTALL:
                     processAppUninstall(buffer, send);
                     break;
+                case SecurityModuleCall::APP_GET_PKGID:
+                    processGetPkgId(buffer, send);
+                    break;
                 default:
                     LogError("Invalid call: " << call_type_int);
                     Throw(InstallerException::InvalidAction);
@@ -351,6 +354,35 @@ error_label:
     LogDebug("perm_rollback() returned " << result);
     Serialization::Serialize(send, SECURITY_MANAGER_API_ERROR_SERVER_ERROR);
     return false;
+}
+
+bool InstallerService::processGetPkgId(MessageBuffer &buffer, MessageBuffer &send)
+{
+    // deserialize request data
+    std::string appId;
+    std::string pkgId;
+
+    Deserialization::Deserialize(buffer, appId);
+    LogDebug("appId: " << appId);
+
+    try {
+        if (!m_privilegeDb.GetAppPkgId(appId, pkgId)) {
+            LogWarning("Application " << appId << " not found in database");
+            Serialization::Serialize(send, SECURITY_MANAGER_API_ERROR_NO_SUCH_OBJECT);
+            return false;
+        } else {
+            LogDebug("pkgId: " << pkgId);
+        }
+    } catch (const PrivilegeDb::Exception::InternalError &e) {
+        LogError("Error while getting pkgId from database: " << e.DumpToString());
+        Serialization::Serialize(send, SECURITY_MANAGER_API_ERROR_SERVER_ERROR);
+        return false;
+    }
+
+     // success
+    Serialization::Serialize(send, SECURITY_MANAGER_API_SUCCESS);
+    Serialization::Serialize(send, pkgId);
+    return true;
 }
 
 } // namespace SecurityManager

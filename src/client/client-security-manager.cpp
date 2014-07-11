@@ -177,4 +177,59 @@ int security_manager_app_uninstall(const app_inst_req *p_req)
     });
 }
 
+SECURITY_MANAGER_API
+int security_manager_get_app_pkgid(char **pkg_id, const char *app_id)
+{
+    using namespace SecurityManager;
+    MessageBuffer send, recv;
+
+    LogDebug("security_manager_get_app_pkgid() called");
+
+    return try_catch([&] {
+        //checking parameters
+
+        if (app_id == NULL) {
+            LogError("security_manager_app_get_pkgid: app_id is NULL");
+            return SECURITY_MANAGER_ERROR_INPUT_PARAM;
+        }
+
+        if (pkg_id == NULL) {
+            LogError("security_manager_app_get_pkgid: pkg_id is NULL");
+            return SECURITY_MANAGER_ERROR_INPUT_PARAM;
+        }
+
+        //put data into buffer
+        Serialization::Serialize(send, static_cast<int>(SecurityModuleCall::APP_GET_PKGID));
+        Serialization::Serialize(send, std::string(app_id));
+
+        //send buffer to server
+        int retval = sendToServer(SERVICE_SOCKET_INSTALLER, send.Pop(), recv);
+        if (retval != SECURITY_MANAGER_API_SUCCESS) {
+            LogDebug("Error in sendToServer. Error code: " << retval);
+            return SECURITY_MANAGER_ERROR_UNKNOWN;
+        }
+
+        //receive response from server
+        Deserialization::Deserialize(recv, retval);
+        if (retval != SECURITY_MANAGER_API_SUCCESS)
+            return SECURITY_MANAGER_ERROR_UNKNOWN;
+
+        std::string pkgIdString;
+        Deserialization::Deserialize(recv, pkgIdString);
+        if (pkgIdString.empty()) {
+            LogError("Unexpected empty pkgId");
+            return SECURITY_MANAGER_ERROR_UNKNOWN;
+        }
+
+        *pkg_id = strdup(pkgIdString.c_str());
+        if (*pkg_id == NULL) {
+            LogError("Failed to allocate memory for pkgId");
+            return SECURITY_MANAGER_ERROR_MEMORY;
+        }
+
+        return SECURITY_MANAGER_SUCCESS;
+    });
+
+}
+
 

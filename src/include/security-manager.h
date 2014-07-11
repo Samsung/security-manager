@@ -201,6 +201,16 @@ int security_manager_app_install(const app_inst_req *p_req);
  */
 int security_manager_app_uninstall(const app_inst_req *p_req);
 
+/**
+ * Get package id of a given application
+ *
+ * On successful call pkg_id should be freed by the caller using free() function
+ *
+ * \param[out] Pointer to package identifier string
+ * \param[in]  Application identifier
+ * \return API return code or error code
+ */
+int security_manager_get_app_pkgid(char **pkg_id, const char *app_id);
 
 #ifdef __cplusplus
 }

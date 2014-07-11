@@ -89,6 +89,15 @@ private:
      * @return        true on success
      */
     bool processAppUninstall(MessageBuffer &buffer, MessageBuffer &send);
+
+    /**
+     * Process getting package id from app id
+     *
+     * @param  buffer Raw received data buffer
+     * @param  send   Raw data buffer to be sent
+     * @return        true on success
+     */
+    bool processGetPkgId(MessageBuffer &buffer, MessageBuffer &send);
 };
 
 } // namespace SecurityManager
