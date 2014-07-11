@@ -26,6 +26,7 @@
 
 #include <cynara-admin.h>
 #include <dpl/exception.h>
+#include <string>
 
 namespace SecurityManager {
 
@@ -39,11 +40,39 @@ public:
     DECLARE_EXCEPTION_TYPE(Base, UnknownError)
 };
 
+struct CynaraAdminPolicy : cynara_admin_policy
+{
+    enum class Operation {
+        Deny = CYNARA_ADMIN_DENY,
+        Allow = CYNARA_ADMIN_ALLOW,
+        Delete = CYNARA_ADMIN_DELETE,
+        Bucket = CYNARA_ADMIN_BUCKET,
+    };
+
+    CynaraAdminPolicy(const std::string &client, const std::string &user,
+        const std::string &privilege, Operation operation,
+        const std::string &bucket = std::string(CYNARA_ADMIN_DEFAULT_BUCKET));
+
+    CynaraAdminPolicy(const std::string &client, const std::string &user,
+        const std::string &privilege, const std::string &goToBucket,
+        const std::string &bucket = std::string(CYNARA_ADMIN_DEFAULT_BUCKET));
+
+    ~CynaraAdminPolicy();
+};
+
 class CynaraAdmin
 {
 public:
     CynaraAdmin();
     virtual ~CynaraAdmin();
+
+    /**
+     * Update Cynara policies.
+     * Caller must have permission to access Cynara administrative socket.
+     *
+     * @param policies vector of CynaraAdminPolicy objects to send to Cynara
+     */
+    void SetPolicies(const std::vector<CynaraAdminPolicy> &policies);
 
 private:
     struct cynara_admin *m_CynaraAdmin;

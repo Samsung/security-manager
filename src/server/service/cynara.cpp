@@ -21,10 +21,67 @@
  * @brief       Wrapper class for Cynara interface
  */
 
+#include <cstring>
 #include <string>
+#include <vector>
 #include "cynara.h"
 
 namespace SecurityManager {
+
+
+CynaraAdminPolicy::CynaraAdminPolicy(const std::string &client, const std::string &user,
+        const std::string &privilege, Operation operation,
+        const std::string &bucket)
+{
+    this->client = strdup(client.c_str());
+    this->user = strdup(user.c_str());
+    this->privilege = strdup(privilege.c_str());
+    this->bucket = strdup(bucket.c_str());
+
+    if (this->bucket == nullptr || this->client == nullptr ||
+        this->user == nullptr || this->privilege == nullptr) {
+        free(this->bucket);
+        free(this->client);
+        free(this->user);
+        free(this->privilege);
+        throw std::bad_alloc();
+    }
+
+    this->result = static_cast<int>(operation);
+    this->result_extra = nullptr;
+}
+
+CynaraAdminPolicy::CynaraAdminPolicy(const std::string &client, const std::string &user,
+    const std::string &privilege, const std::string &goToBucket,
+    const std::string &bucket)
+{
+    this->bucket = strdup(bucket.c_str());
+    this->client = strdup(client.c_str());
+    this->user = strdup(user.c_str());
+    this->privilege = strdup(privilege.c_str());
+    this->result_extra = strdup(goToBucket.c_str());
+    this->result = CYNARA_ADMIN_BUCKET;
+
+    if (this->bucket == nullptr || this->client == nullptr ||
+        this->user == nullptr || this->privilege == nullptr ||
+        this->result_extra == nullptr) {
+        free(this->bucket);
+        free(this->client);
+        free(this->user);
+        free(this->privilege);
+        free(this->result_extra);
+        throw std::bad_alloc();
+    }
+}
+
+CynaraAdminPolicy::~CynaraAdminPolicy()
+{
+    free(this->bucket);
+    free(this->client);
+    free(this->user);
+    free(this->privilege);
+    free(this->result_extra);
+}
 
 static void checkCynaraAdminError(int result, const std::string &msg)
 {
@@ -52,6 +109,20 @@ CynaraAdmin::CynaraAdmin()
 CynaraAdmin::~CynaraAdmin()
 {
     cynara_admin_finish(m_CynaraAdmin);
+}
+
+void CynaraAdmin::SetPolicies(const std::vector<CynaraAdminPolicy> &policies)
+{
+    std::vector<const struct cynara_admin_policy *> pp_policies(policies.size() + 1);
+
+    for (std::size_t i = 0; i < policies.size(); ++i)
+        pp_policies[i] = static_cast<const struct cynara_admin_policy *>(&policies[i]);
+
+    pp_policies[policies.size()] = nullptr;
+
+    checkCynaraAdminError(
+        cynara_admin_set_policies(m_CynaraAdmin, pp_policies.data()),
+        "Error while updating Cynara policy.");
 }
 
 } // namespace SecurityManager
