@@ -35,6 +35,7 @@
 #include <dpl/log/log.h>
 #include <tzplatform_config.h>
 
+#include <smack-common.h>
 #include "smack-labels.h"
 #include "smack-rules.h"
 

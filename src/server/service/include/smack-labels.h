@@ -34,16 +34,6 @@
 namespace SecurityManager {
 
 /**
- * Generates label for application with package identifier
- * read from @ref pkgId and assigns it to @ref label.
- * @param[in] pkgId application's package identifier.
- * @param[out] label string into which application's label will be stored into.
- *
- * @return true on success, false on error.
-*/
-bool generateAppLabel(const std::string &pkgId, std::string &label);
-
-/**
  * Sets Smack labels on a directory and its contents, recursively.
  *
  * @param pkgId[in] application's package identifier

@@ -31,6 +31,7 @@
 #include "installer.h"
 #include "protocols.h"
 #include "security-manager.h"
+#include "smack-common.h"
 #include "smack-rules.h"
 #include "smack-labels.h"
 #include "privilege_db.h"

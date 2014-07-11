@@ -34,14 +34,12 @@
 #include <string>
 
 #include <dpl/log/log.h>
+#include <smack-common.h>
 
 #include "security-manager.h"
 #include "smack-labels.h"
 
 namespace SecurityManager {
-
-/* Const defined below is used to label links to executables */
-const char *const XATTR_NAME_TIZENEXEC = XATTR_SECURITY_PREFIX "TIZEN_EXEC_LABEL";
 
 /* Const defined below is used to label links to executables */
 const char *const LABEL_FOR_PUBLIC_APP_PATH = "User";
@@ -53,14 +51,6 @@ enum class FileDecision {
 };
 
 typedef std::function<FileDecision(const FTSENT*)> LabelDecisionFn;
-
-
-bool generateAppLabel(const std::string &appPkgId, std::string &label)
-{
-    (void) appPkgId; // TODO use pkgId to generate label
-    label = "User";
-    return true;
-}
 
 static FileDecision labelAll(const FTSENT *ftsent __attribute__((unused)))
 {

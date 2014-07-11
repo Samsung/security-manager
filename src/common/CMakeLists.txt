@@ -20,6 +20,7 @@ INCLUDE_DIRECTORIES(
 SET(COMMON_SOURCES
     ${COMMON_PATH}/protocols.cpp
     ${COMMON_PATH}/message-buffer.cpp
+    ${COMMON_PATH}/smack-common.cpp
     ${DPL_PATH}/log/src/abstract_log_provider.cpp
 #    ${DPL_PATH}/log/src/dlog_log_provider.cpp
     ${DPL_PATH}/log/src/sd_journal_provider.cpp
