@@ -35,19 +35,13 @@
 #include <dpl/log/log.h>
 #include <tzplatform_config.h>
 
+#include "smack-labels.h"
 #include "smack-rules.h"
 
 namespace SecurityManager {
 
 const char *const SMACK_APP_LABEL_TEMPLATE     = "~APP~";
 const char *const APP_RULES_TEMPLATE_FILE_PATH = tzplatform_mkpath(TZ_SYS_SMACK, "app-rules-template.smack");
-
-bool SmackRules::generateAppLabel(const std::string &appPkgId, std::string &label)
-{
-    (void) appPkgId; //todo use pkgId to generate label
-    label = "User";
-    return true;
-}
 
 SmackRules::SmackRules()
 {

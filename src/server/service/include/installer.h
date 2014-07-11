@@ -58,8 +58,6 @@ public:
     void process(const ReadEvent &event);
     void close(const CloseEvent &event);
 
-    static const char *const LABEL_FOR_PUBLIC_APP_PATH;
-
 private:
     ConnectionInfoMap m_connectionInfoMap;
     PrivilegeDb m_privilegeDb;
