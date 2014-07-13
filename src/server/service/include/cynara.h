@@ -80,6 +80,28 @@ public:
      */
     void SetPolicies(const std::vector<CynaraAdminPolicy> &policies);
 
+    /**
+     * Update Cynara policies for the package and the user, using two vectors
+     * of privileges: privileges set before (and already enabled in Cynara)
+     * and new privileges, to be set in Cynara.
+     * Difference will be calculated, removing old unneeded privileges and
+     * adding new, previously not enabled privileges.
+     * Caller must have permission to access Cynara administrative socket.
+     *
+     * @param pkg package identifier
+     * @param user user identifier
+     * @param oldPrivileges previously enabled privileges for the package.
+     *        Must be sorted and without duplicates.
+     * @param newPrivileges currently enabled privileges for the package.
+     *        Must be sorted and without duplicates.
+     *
+     * TODO: drop oldPrivileges argument and get them directly from Cynara.
+     * Appropriate Cynara interface is needed first.
+     */
+    static void UpdatePackagePolicy(const std::string &pkg, const std::string &user,
+        const std::vector<std::string> &oldPrivileges,
+        const std::vector<std::string> &newPrivileges);
+
 private:
     struct cynara_admin *m_CynaraAdmin;
 };

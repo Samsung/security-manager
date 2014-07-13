@@ -26,6 +26,8 @@
 #include <vector>
 #include "cynara.h"
 
+#include <dpl/log/log.h>
+
 namespace SecurityManager {
 
 
@@ -133,8 +135,17 @@ void CynaraAdmin::SetPolicies(const std::vector<CynaraAdminPolicy> &policies)
 {
     std::vector<const struct cynara_admin_policy *> pp_policies(policies.size() + 1);
 
-    for (std::size_t i = 0; i < policies.size(); ++i)
+    LogDebug("Sending " << policies.size() << " policies to Cynara");
+    for (std::size_t i = 0; i < policies.size(); ++i) {
         pp_policies[i] = static_cast<const struct cynara_admin_policy *>(&policies[i]);
+        LogDebug("policies[" << i << "] = {" <<
+            ".bucket = " << pp_policies[i]->bucket << ", " <<
+            ".client = " << pp_policies[i]->client << ", " <<
+            ".user = " << pp_policies[i]->user << ", " <<
+            ".privilege = " << pp_policies[i]->privilege << ", " <<
+            ".result = " << pp_policies[i]->result << ", " <<
+            ".result_extra = " << pp_policies[i]->result_extra << "}");
+    }
 
     pp_policies[policies.size()] = nullptr;
 
@@ -142,5 +153,60 @@ void CynaraAdmin::SetPolicies(const std::vector<CynaraAdminPolicy> &policies)
         cynara_admin_set_policies(m_CynaraAdmin, pp_policies.data()),
         "Error while updating Cynara policy.");
 }
+
+void CynaraAdmin::UpdatePackagePolicy(
+    const std::string &pkg,
+    const std::string &user,
+    const std::vector<std::string> &oldPrivileges,
+    const std::vector<std::string> &newPrivileges)
+{
+    CynaraAdmin cynaraAdmin;
+    std::vector<CynaraAdminPolicy> policies;
+
+    // Perform sort-merge join on oldPrivileges and newPrivileges.
+    // Assume that they are already sorted and without duplicates.
+    auto oldIter = oldPrivileges.begin();
+    auto newIter = newPrivileges.begin();
+
+    while (oldIter != oldPrivileges.end() && newIter != newPrivileges.end()) {
+        int compare = oldIter->compare(*newIter);
+        if (compare == 0) {
+            LogDebug("(user = " << user << " pkg = " << pkg << ") " <<
+                "keeping privilege " << *newIter);
+            ++oldIter;
+            ++newIter;
+            continue;
+        } else if (compare < 0) {
+            LogDebug("(user = " << user << " pkg = " << pkg << ") " <<
+                "removing privilege " << *oldIter);
+            policies.push_back(CynaraAdminPolicy(pkg, user, *oldIter,
+                    CynaraAdminPolicy::Operation::Delete));
+            ++oldIter;
+        } else {
+            LogDebug("(user = " << user << " pkg = " << pkg << ") " <<
+                "adding privilege " << *newIter);
+            policies.push_back(CynaraAdminPolicy(pkg, user, *newIter,
+                    CynaraAdminPolicy::Operation::Allow));
+            ++newIter;
+        }
+    }
+
+    for (; oldIter != oldPrivileges.end(); ++oldIter) {
+        LogDebug("(user = " << user << " pkg = " << pkg << ") " <<
+            "removing privilege " << *oldIter);
+        policies.push_back(CynaraAdminPolicy(pkg, user, *oldIter,
+                    CynaraAdminPolicy::Operation::Delete));
+    }
+
+    for (; newIter != newPrivileges.end(); ++newIter) {
+        LogDebug("(user = " << user << " pkg = " << pkg << ") " <<
+            "adding privilege " << *newIter);
+        policies.push_back(CynaraAdminPolicy(pkg, user, *newIter,
+                    CynaraAdminPolicy::Operation::Allow));
+    }
+
+    cynaraAdmin.SetPolicies(policies);
+}
+
 
 } // namespace SecurityManager
