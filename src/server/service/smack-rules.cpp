@@ -79,12 +79,12 @@ bool SmackRules::loadFromFile(const std::string &path)
 
     fd = TEMP_FAILURE_RETRY(open(path.c_str(), O_RDONLY));
     if (fd == -1) {
-        LogError("Failed to open file: %s" << path);
+        LogError("Failed to open file: " << path);
         return false;
     }
 
     if (smack_accesses_add_from_file(m_handle, fd)) {
-        LogError("Failed to load smack rules from file: %s" << path);
+        LogError("Failed to load smack rules from file: " << path);
         ret = false;
     }
 
@@ -103,12 +103,12 @@ bool SmackRules::saveToFile(const std::string &path) const
 
     fd = TEMP_FAILURE_RETRY(open(path.c_str(), O_CREAT | O_WRONLY | O_TRUNC, 0644));
     if (fd == -1) {
-        LogError("Failed to create file: %s" << path);
+        LogError("Failed to create file: " << path);
         return false;
     }
 
     if (smack_accesses_save(m_handle, fd)) {
-        LogError("Failed to save rules to file: %s" << path);
+        LogError("Failed to save rules to file: " << path);
         unlink(path.c_str());
         ret = false;
     }

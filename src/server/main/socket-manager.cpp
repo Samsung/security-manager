@@ -199,7 +199,7 @@ void SocketManager::ReadyForAccept(int sock) {
 //    LogInfo("Accept on sock: " << sock << " Socket opended: " << client);
     if (-1 == client) {
         int err = errno;
-        LogDebug("Error in accept: " << strerror(err));
+        LogError("Error in accept: " << strerror(err));
         return;
     }
 
@@ -243,7 +243,7 @@ void SocketManager::ReadyForRead(int sock) {
             case EINTR:
                 break;
             default:
-                LogDebug("Reading sock error: " << strerror(err));
+                LogError("Reading sock error: " << strerror(err));
                 CloseSocket(sock);
         }
     }
@@ -268,7 +268,7 @@ void SocketManager::ReadyForSendMsg(int sock) {
             break;
         case EPIPE:
         default:
-            LogDebug("Error during send: " << strerror(err));
+            LogError("Error during send: " << strerror(err));
             CloseSocket(sock);
             break;
         }
@@ -305,7 +305,7 @@ void SocketManager::ReadyForWriteBuffer(int sock) {
             break;
         case EPIPE:
         default:
-            LogDebug("Error during write: " << strerror(err));
+            LogError("Error during write: " << strerror(err));
             CloseSocket(sock);
             break;
         }

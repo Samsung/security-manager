@@ -111,9 +111,11 @@ bool InstallerService::processOne(const ConnectionID &conn, MessageBuffer &buffe
 
             switch (call_type) {
                 case SecurityModuleCall::APP_INSTALL:
+                    LogDebug("call_type: SecurityModuleCall::APP_INSTALL");
                     processAppInstall(buffer, send);
                     break;
                 case SecurityModuleCall::APP_UNINSTALL:
+                    LogDebug("call_type: SecurityModuleCall::APP_UNINSTALL");
                     processAppUninstall(buffer, send);
                     break;
                 case SecurityModuleCall::APP_GET_PKGID:
@@ -163,46 +165,45 @@ bool InstallerService::processAppInstall(MessageBuffer &buffer, MessageBuffer &s
     Deserialization::Deserialize(buffer, req.privileges);
     Deserialization::Deserialize(buffer, req.appPaths);
 
-    LogDebug("appId: " << req.appId);
-    LogDebug("pkgId: " << req.pkgId);
-
     std::string smackLabel;
     if (!generateAppLabel(req.pkgId, smackLabel)) {
-        LogError("Cannot generate Smack label for package");
+        LogError("Cannot generate Smack label for package: " << req.pkgId);
         Serialization::Serialize(send, SECURITY_MANAGER_API_ERROR_SERVER_ERROR);
         return false;
     }
-    LogDebug("Smack label: " << smackLabel);
 
-    // create null terminated array of strigns for permissions
+    LogDebug("Install parameters: appId: " << req.appId << ", pkgId: " << req.pkgId
+            << ", generated smack label: " << smackLabel);
+
+    // create null terminated array of strings for permissions
     std::unique_ptr<const char *[]> pp_permissions(new const char* [req.privileges.size() + 1]);
     for (size_t i = 0; i < req.privileges.size(); ++i) {
-        LogDebug("Permission = " << req.privileges[i]);
+        LogDebug("  Permission = " << req.privileges[i]);
         pp_permissions[i] = req.privileges[i].c_str();
     }
     pp_permissions[req.privileges.size()] = nullptr;
 
     // start database transaction
     int result = perm_begin();
-    LogDebug("perm_begin() returned " << result);
     if (PC_OPERATION_SUCCESS != result) {
         // libprivilege is locked
+        LogError("perm_begin() returned " << result);
         Serialization::Serialize(send, SECURITY_MANAGER_API_ERROR_SERVER_ERROR);
         return false;
     }
 
     result = perm_app_install(smackLabel.c_str());
-    LogDebug("perm_app_install() returned " << result);
     if (PC_OPERATION_SUCCESS != result) {
         // libprivilege error
+        LogError("perm_app_install() returned " << result);
         goto error_label;
     }
 
     result = perm_app_enable_permissions(smackLabel.c_str(), APP_TYPE_WGT,
                                          pp_permissions.get(), true);
-    LogDebug("perm_app_enable_permissions() returned " << result);
     if (PC_OPERATION_SUCCESS != result) {
         // libprivilege error
+        LogError("perm_app_enable_permissions() returned " << result);
         goto error_label;
     }
 
@@ -230,7 +231,7 @@ bool InstallerService::processAppInstall(MessageBuffer &buffer, MessageBuffer &s
         result = setupPath(req.pkgId, path, pathType);
 
         if (!result) {
-            LogDebug("setupPath() failed ");
+            LogError("setupPath() failed");
             goto error_label;
         }
     }
@@ -245,8 +246,8 @@ bool InstallerService::processAppInstall(MessageBuffer &buffer, MessageBuffer &s
 
     // finish database transaction
     result = perm_end();
-    LogDebug("perm_end() returned " << result);
     if (PC_OPERATION_SUCCESS != result) {
+        LogError("perm_end() returned " << result);
         if (pkgIdIsNew)
             if (!SmackRules::uninstallPackageRules(req.pkgId))
                 LogWarning("Failed to rollback package-specific smack rules");
@@ -263,7 +264,8 @@ bool InstallerService::processAppInstall(MessageBuffer &buffer, MessageBuffer &s
 error_label:
     // rollback failed transaction before exiting
     result = perm_rollback();
-    LogDebug("perm_rollback() returned " << result);
+    if (PC_OPERATION_SUCCESS != result)
+        LogError("perm_rollback() returned " << result);
     Serialization::Serialize(send, SECURITY_MANAGER_API_ERROR_SERVER_ERROR);
     return false;
 }
@@ -278,11 +280,11 @@ bool InstallerService::processAppUninstall(MessageBuffer &buffer, MessageBuffer 
     bool removePkg = false;
 
     Deserialization::Deserialize(buffer, appId);
-    LogDebug("appId: " << appId);
 
     int result = perm_begin();
-    LogDebug("perm_begin() returned " << result);
     if (PC_OPERATION_SUCCESS != result) {
+        // libprivilege is locked
+        LogError("perm_begin() returned " << result);
         Serialization::Serialize(send, SECURITY_MANAGER_API_ERROR_SERVER_ERROR);
         return false;
     }
@@ -297,13 +299,13 @@ bool InstallerService::processAppUninstall(MessageBuffer &buffer, MessageBuffer 
             m_privilegeDb.RollbackTransaction();
             appExists = false;
         } else {
-            LogDebug("pkgId: " << pkgId);
-
             if (!generateAppLabel(pkgId, smackLabel)) {
-                LogError("Cannot generate Smack label for package");
+                LogError("Cannot generate Smack label for package: " << pkgId);
                 goto error_label;
             }
-            LogDebug("Smack label: " << smackLabel);
+
+            LogDebug("Unnstall parameters: appId: " << appId << ", pkgId: " << pkgId
+                    << ", generated smack label: " << smackLabel);
 
             m_privilegeDb.GetPkgPrivileges(pkgId, oldPkgPrivileges);
             m_privilegeDb.UpdateAppPrivileges(appId, std::vector<std::string>());
@@ -321,9 +323,9 @@ bool InstallerService::processAppUninstall(MessageBuffer &buffer, MessageBuffer 
 
     if (appExists) {
         result = perm_app_uninstall(smackLabel.c_str());
-        LogDebug("perm_app_uninstall() returned " << result);
         if (PC_OPERATION_SUCCESS != result) {
             // error in libprivilege-control
+            LogError("perm_app_uninstall() returned " << result);
             goto error_label;
         }
 
@@ -338,9 +340,9 @@ bool InstallerService::processAppUninstall(MessageBuffer &buffer, MessageBuffer 
 
     // finish database transaction
     result = perm_end();
-    LogDebug("perm_end() returned " << result);
     if (PC_OPERATION_SUCCESS != result) {
         // error in libprivilege-control
+        LogError("perm_end() returned " << result);
         Serialization::Serialize(send, SECURITY_MANAGER_API_ERROR_SERVER_ERROR);
         return false;
     }
@@ -352,7 +354,8 @@ bool InstallerService::processAppUninstall(MessageBuffer &buffer, MessageBuffer 
 error_label:
     // rollback failed transaction before exiting
     result = perm_rollback();
-    LogDebug("perm_rollback() returned " << result);
+    if (PC_OPERATION_SUCCESS != result)
+        LogError("perm_rollback() returned " << result);
     Serialization::Serialize(send, SECURITY_MANAGER_API_ERROR_SERVER_ERROR);
     return false;
 }

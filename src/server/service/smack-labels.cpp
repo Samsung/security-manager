@@ -54,15 +54,11 @@ typedef std::function<FileDecision(const FTSENT*)> LabelDecisionFn;
 
 static FileDecision labelAll(const FTSENT *ftsent __attribute__((unused)))
 {
-    LogDebug("Entering function: " << __func__);
-
     return FileDecision::LABEL;
 }
 
 static FileDecision labelDirs(const FTSENT *ftsent)
 {
-    LogDebug("Entering function: " << __func__);
-
     // label only directories
     if (S_ISDIR(ftsent->fts_statp->st_mode))
         return FileDecision::LABEL;
@@ -71,9 +67,7 @@ static FileDecision labelDirs(const FTSENT *ftsent)
 
 static FileDecision labelExecs(const FTSENT *ftsent)
 {
-    LogDebug("Entering function: " << __func__);
-
-    LogDebug("Mode = " << ftsent->fts_statp->st_mode);
+    // LogDebug("Mode = " << ftsent->fts_statp->st_mode); // this could be helpfull in debugging
     // label only regular executable files
     if (S_ISREG(ftsent->fts_statp->st_mode) && (ftsent->fts_statp->st_mode & S_IXUSR))
         return FileDecision::LABEL;
@@ -82,8 +76,6 @@ static FileDecision labelExecs(const FTSENT *ftsent)
 
 static FileDecision labelLinksToExecs(const FTSENT *ftsent)
 {
-    LogDebug("Entering function: " << __func__);
-
     struct stat buf;
 
     // check if it's a link
@@ -103,7 +95,7 @@ static FileDecision labelLinksToExecs(const FTSENT *ftsent)
     }
     // skip if link target is not a regular executable file
     if (buf.st_mode != (buf.st_mode | S_IXUSR | S_IFREG)) {
-        LogDebug(target.get() << "is not a regular executable file. Skipping.");
+        // LogDebug(target.get() << "is not a regular executable file. Skipping.");
         return FileDecision::SKIP;
     }
 
@@ -113,10 +105,6 @@ static FileDecision labelLinksToExecs(const FTSENT *ftsent)
 static bool dirSetSmack(const std::string &path, const std::string &label,
         const char *xattr_name, LabelDecisionFn fn)
 {
-    LogDebug("Entering function: "<< __func__ <<". Params:"
-            " path=" << path << ", label=" << label << ", xattr=" << xattr_name);
-
-
     char *const path_argv[] = {const_cast<char *>(path.c_str()), NULL};
     FTSENT *ftsent;
     FileDecision ret;
@@ -164,10 +152,6 @@ static bool dirSetSmack(const std::string &path, const std::string &label,
 static bool labelDir(const std::string &path, const std::string &label,
         bool set_transmutable, bool set_executables)
 {
-    LogDebug("Entering function: "<< __func__ <<". Params:"
-            " path=" << path << " label= " << label
-            << " set_transmutable= " << set_transmutable
-            << " set_executables= " << set_executables);
     bool ret = true;
 
     // setting access label on everything in given directory and below

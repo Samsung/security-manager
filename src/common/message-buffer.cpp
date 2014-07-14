@@ -53,7 +53,7 @@ bool MessageBuffer::Ready() {
 void MessageBuffer::Read(size_t num, void *bytes) {
     CountBytesLeft();
     if (num > m_bytesLeft) {
-        LogDebug("Protocol broken. OutOfData. Asked for: " << num << " Ready: " << m_bytesLeft << " Buffer.size(): " << m_buffer.Size());
+        LogError("Protocol broken. OutOfData. Asked for: " << num << " Ready: " << m_bytesLeft << " Buffer.size(): " << m_buffer.Size());
         Throw(Exception::OutOfData);
     }
 
