@@ -60,7 +60,7 @@ void SdJournalProvider::Debug(const char *message,
                             const char *function)
 {
     // sd-journal imports LOG priorities from the syslog, see syslog(3) for details
-    sd_journal_print(LOG_DEBUG, "%s: %s", m_tag.c_str(),
+    sd_journal_print(LOG_DEBUG, "%s",
                      (FormatMessage(message, filename, line, function)).c_str());
 }
 
@@ -69,7 +69,7 @@ void SdJournalProvider::Info(const char *message,
                            int line,
                            const char *function)
 {
-    sd_journal_print(LOG_INFO, "%s: %s", m_tag.c_str(),
+    sd_journal_print(LOG_INFO, "%s",
                      (FormatMessage(message, filename, line, function)).c_str());
 }
 
@@ -78,7 +78,7 @@ void SdJournalProvider::Warning(const char *message,
                               int line,
                               const char *function)
 {
-    sd_journal_print(LOG_WARNING, "%s: %s", m_tag.c_str(),
+    sd_journal_print(LOG_WARNING, "%s",
                      (FormatMessage(message, filename, line, function)).c_str());
 }
 
@@ -87,7 +87,7 @@ void SdJournalProvider::Error(const char *message,
                             int line,
                             const char *function)
 {
-    sd_journal_print(LOG_ERR, "%s: %s", m_tag.c_str(),
+    sd_journal_print(LOG_ERR, "%s",
                      (FormatMessage(message, filename, line, function)).c_str());
 }
 
