@@ -44,7 +44,8 @@ CynaraAdminPolicy::CynaraAdminPolicy(const std::string &client, const std::strin
         free(this->client);
         free(this->user);
         free(this->privilege);
-        throw std::bad_alloc();
+        ThrowMsg(CynaraException::OutOfMemory,
+                std::string("Error in CynaraAdminPolicy allocation."));
     }
 
     this->result = static_cast<int>(operation);
@@ -70,7 +71,8 @@ CynaraAdminPolicy::CynaraAdminPolicy(const std::string &client, const std::strin
         free(this->user);
         free(this->privilege);
         free(this->result_extra);
-        throw std::bad_alloc();
+        ThrowMsg(CynaraException::OutOfMemory,
+                std::string("Error in CynaraAdminPolicy allocation."));
     }
 }
 
