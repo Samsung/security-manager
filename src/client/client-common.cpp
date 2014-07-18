@@ -40,7 +40,7 @@
 #include <message-buffer.h>
 #include <smack-common.h>
 
-#include <security-manager.h>
+#include <protocols.h>
 
 IMPLEMENT_SAFE_SINGLETON(SecurityManager::Log::LogSystem);
 
