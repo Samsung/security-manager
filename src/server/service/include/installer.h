@@ -77,18 +77,20 @@ private:
      *
      * @param  buffer Raw received data buffer
      * @param  send   Raw data buffer to be sent
+     * @param  uid    User's identifier for whom application will be installed
      * @return        true on success
      */
-    bool processAppInstall(MessageBuffer &buffer, MessageBuffer &send);
+    bool processAppInstall(MessageBuffer &buffer, MessageBuffer &send, uid_t uid);
 
     /**
-     * Process libprivilege-control action and store result in a bufer
+     * Process application uninstallation
      *
      * @param  buffer Raw received data buffer
      * @param  send   Raw data buffer to be sent
+     * @param  uid    User's identifier for whom application will be uninstalled
      * @return        true on success
      */
-    bool processAppUninstall(MessageBuffer &buffer, MessageBuffer &send);
+    bool processAppUninstall(MessageBuffer &buffer, MessageBuffer &send, uid_t uid);
 
     /**
      * Process getting package id from app id

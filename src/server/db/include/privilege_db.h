@@ -61,11 +61,11 @@ class PrivilegeDb {
 private:
     SecurityManager::DB::SqlConnection *mSqlConnection;
     const std::map<QueryType, const char * const > Queries = {
-        { QueryType::EGetPkgPrivileges, "SELECT privilege_name FROM app_privilege_view WHERE pkg_name=?"},
-        { QueryType::EAddApplication, "INSERT INTO app_pkg_view (app_name, pkg_name) VALUES (?, ?)" },
-        { QueryType::ERemoveApplication, "DELETE FROM app_pkg_view WHERE app_name=?" },
-        { QueryType::EAddAppPrivileges, "INSERT INTO app_privilege_view (app_name, privilege_name) VALUES (?, ?)" },
-        { QueryType::ERemoveAppPrivileges, "DELETE FROM app_privilege_view WHERE app_name=?" },
+        { QueryType::EGetPkgPrivileges, "SELECT privilege_name FROM app_privilege_view WHERE pkg_name=? AND uid=?"},
+        { QueryType::EAddApplication, "INSERT INTO app_pkg_view (app_name, pkg_name, uid) VALUES (?, ?, ?)" },
+        { QueryType::ERemoveApplication, "DELETE FROM app_pkg_view WHERE app_name=? AND uid=?" },
+        { QueryType::EAddAppPrivileges, "INSERT INTO app_privilege_view (app_name, uid, privilege_name) VALUES (?, ?, ?)" },
+        { QueryType::ERemoveAppPrivileges, "DELETE FROM app_privilege_view WHERE app_name=? AND uid=?" },
         { QueryType::EPkgIdExists, "SELECT * FROM pkg WHERE name=?" },
         { QueryType::EGetPkgId, " SELECT pkg_name FROM app_pkg_view WHERE app_name = ?" },
     };
@@ -133,10 +133,11 @@ public:
      * Retrieve list of privileges assigned to a pkgId
      *
      * @param pkgId - package identifier
+     * @param uid - user identifier for whom privileges will be retrieved
      * @param[out] currentPrivileges - list of current privileges assigned to pkgId
      * @exception DB::SqlConnection::Exception::InternalError on internal error
      */
-    void GetPkgPrivileges(const std::string &pkgId,
+    void GetPkgPrivileges(const std::string &pkgId, uid_t uid,
             std::vector<std::string> &currentPrivilege);
 
     /**
@@ -144,38 +145,42 @@ public:
      *
      * @param appId - application identifier
      * @param pkgId - package identifier
+     * @param uid - user identifier for whom application is going to be installed
      * @param[out] pkgIdIsNew - return info if pkgId is new to the database
      * @exception DB::SqlConnection::Exception::InternalError on internal error
      */
     void AddApplication(const std::string &appId, const std::string &pkgId,
-            bool &pkgIdIsNew);
+            uid_t uid, bool &pkgIdIsNew);
 
     /**
      * Remove an application from the database
      *
      * @param appId - application identifier
+     * @param uid - user identifier whose application is going to be uninstalled
      * @param[out] pkgIdIsNoMore - return info if pkgId is in the database
      * @exception DB::SqlConnection::Exception::InternalError on internal error
      */
-    void RemoveApplication(const std::string &appId, bool &pkgIdIsNoMore);
+    void RemoveApplication(const std::string &appId, uid_t uid, bool &pkgIdIsNoMore);
 
     /**
      * Remove privileges assigned to application
      *
      * @param appId - application identifier
+     * @param uid - user identifier for whom privileges will be removed
      * @exception DB::SqlConnection::Exception::InternalError on internal error
      */
-    void RemoveAppPrivileges(const std::string &appId);
+    void RemoveAppPrivileges(const std::string &appId, uid_t uid);
 
     /**
      * Update privileges assigned to application
      * To assure data integrity this method must be called inside db transaction.
      *
      * @param appId - application identifier
+     * @param uid - user identifier for whom privileges will be updated
      * @param privileges - list of privileges to assign
      * @exception DB::SqlConnection::Exception::InternalError on internal error
      */
-    void UpdateAppPrivileges(const std::string &appId,
+    void UpdateAppPrivileges(const std::string &appId, uid_t uid,
             const std::vector<std::string> &privileges);
 
 };

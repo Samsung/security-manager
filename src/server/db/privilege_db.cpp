@@ -132,7 +132,7 @@ bool PrivilegeDb::GetAppPkgId(const std::string &appId, std::string &pkgId)
 }
 
 void PrivilegeDb::AddApplication(const std::string &appId,
-        const std::string &pkgId, bool &pkgIdIsNew)
+        const std::string &pkgId, uid_t uid, bool &pkgIdIsNew)
 {
     pkgIdIsNew = !(this->PkgIdExists(pkgId));
 
@@ -143,6 +143,7 @@ void PrivilegeDb::AddApplication(const std::string &appId,
 
         command->BindString(1, appId.c_str());
         command->BindString(2, pkgId.c_str());
+        command->BindInteger(3, static_cast<unsigned int>(uid));
 
         if (command->Step()) {
             LogDebug("Unexpected SQLITE_ROW answer to query: " <<
@@ -154,7 +155,7 @@ void PrivilegeDb::AddApplication(const std::string &appId,
     });
 }
 
-void PrivilegeDb::RemoveApplication(const std::string &appId,
+void PrivilegeDb::RemoveApplication(const std::string &appId, uid_t uid,
         bool &pkgIdIsNoMore)
 {
     try_catch<void>([&] {
@@ -169,6 +170,7 @@ void PrivilegeDb::RemoveApplication(const std::string &appId,
                         Queries.at(QueryType::ERemoveApplication));
 
         command->BindString(1, appId.c_str());
+        command->BindInteger(2, static_cast<unsigned int>(uid));
 
         if (command->Step()) {
             LogDebug("Unexpected SQLITE_ROW answer to query: " <<
@@ -182,7 +184,7 @@ void PrivilegeDb::RemoveApplication(const std::string &appId,
     });
 }
 
-void PrivilegeDb::GetPkgPrivileges(const std::string &pkgId,
+void PrivilegeDb::GetPkgPrivileges(const std::string &pkgId, uid_t uid,
         std::vector<std::string> &currentPrivileges)
 {
     try_catch<void>([&] {
@@ -190,6 +192,7 @@ void PrivilegeDb::GetPkgPrivileges(const std::string &pkgId,
                 mSqlConnection->PrepareDataCommand(
                         Queries.at(QueryType::EGetPkgPrivileges));
         command->BindString(1, pkgId.c_str());
+        command->BindInteger(2, static_cast<unsigned int>(uid));
 
         while (command->Step()) {
             std::string privilege = command->GetColumnString(0);
@@ -199,13 +202,14 @@ void PrivilegeDb::GetPkgPrivileges(const std::string &pkgId,
     });
 }
 
-void PrivilegeDb::RemoveAppPrivileges(const std::string &appId)
+void PrivilegeDb::RemoveAppPrivileges(const std::string &appId, uid_t uid)
 {
     try_catch<void>([&] {
         DB::SqlConnection::DataCommandAutoPtr command =
             mSqlConnection->PrepareDataCommand(Queries.at(QueryType::ERemoveAppPrivileges));
 
         command->BindString(1, appId.c_str());
+        command->BindInteger(2, static_cast<unsigned int>(uid));
         if (command->Step()) {
             LogDebug("Unexpected SQLITE_ROW answer to query: " <<
                     Queries.at(QueryType::ERemoveAppPrivileges));
@@ -215,18 +219,19 @@ void PrivilegeDb::RemoveAppPrivileges(const std::string &appId)
     });
 }
 
-void PrivilegeDb::UpdateAppPrivileges(const std::string &appId,
+void PrivilegeDb::UpdateAppPrivileges(const std::string &appId, uid_t uid,
         const std::vector<std::string> &privileges)
 {
     try_catch<void>([&] {
         DB::SqlConnection::DataCommandAutoPtr command =
             mSqlConnection->PrepareDataCommand(Queries.at(QueryType::EAddAppPrivileges));
         command->BindString(1, appId.c_str());
+        command->BindInteger(2, static_cast<unsigned int>(uid));
 
-        RemoveAppPrivileges(appId);
+        RemoveAppPrivileges(appId, uid);
 
         for (const auto &privilege : privileges) {
-            command->BindString(2, privilege.c_str());
+            command->BindString(3, privilege.c_str());
             command->Step();
             command->Reset();
             LogDebug("Added privilege: " << privilege << " to appId: " << appId);
