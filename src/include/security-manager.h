@@ -108,7 +108,8 @@ enum lib_retcode {
     SECURITY_MANAGER_ERROR_UNKNOWN,
     SECURITY_MANAGER_ERROR_INPUT_PARAM,
     SECURITY_MANAGER_ERROR_MEMORY,
-    SECURITY_MANAGER_ERROR_REQ_NOT_COMPLETE
+    SECURITY_MANAGER_ERROR_REQ_NOT_COMPLETE,
+    SECURITY_MANAGER_ERROR_AUTHENTICATION_FAILED
 };
 
 /*! \brief accesses types for application installation paths*/
@@ -188,7 +189,11 @@ int security_manager_app_inst_req_add_path(app_inst_req *p_req, const char *path
  * using filled up app_inst_req data structure
  *
  * \param[in] Pointer handling app_inst_req structure
- * \return API return code or error code
+ * \return API return code or error code: it would be
+ * - SECURITY_MANAGER_SUCCESS on success,
+ * - SECURITY_MANAGER_ERROR_AUTHENTICATION_FAILED when user does not
+ * have rights to install requested directories,
+ * - SECURITY_MANAGER_ERROR_UNKNOWN on other errors.
  */
 int security_manager_app_install(const app_inst_req *p_req);
 

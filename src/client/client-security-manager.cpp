@@ -136,10 +136,15 @@ int security_manager_app_install(const app_inst_req *p_req)
 
         //receive response from server
         Deserialization::Deserialize(recv, retval);
-        if (retval != SECURITY_MANAGER_API_SUCCESS)
-            return SECURITY_MANAGER_ERROR_UNKNOWN;
+        switch(retval) {
+            case SECURITY_MANAGER_API_SUCCESS:
+                return SECURITY_MANAGER_SUCCESS;
+            case SECURITY_MANAGER_API_ERROR_AUTHENTICATION_FAILED:
+                return SECURITY_MANAGER_ERROR_AUTHENTICATION_FAILED;
+            default:
+                return SECURITY_MANAGER_ERROR_UNKNOWN;
+        }
 
-        return SECURITY_MANAGER_SUCCESS;;
     });
 }
 
