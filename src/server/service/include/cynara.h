@@ -57,6 +57,12 @@ struct CynaraAdminPolicy : cynara_admin_policy
         const std::string &privilege, const std::string &goToBucket,
         const std::string &bucket = std::string(CYNARA_ADMIN_DEFAULT_BUCKET));
 
+    /* Don't provide copy constructor, it would cause pointer trouble. */
+    CynaraAdminPolicy(const CynaraAdminPolicy &that) = delete;
+
+    /* Move constructor is the way to go. */
+    CynaraAdminPolicy(CynaraAdminPolicy &&that);
+
     ~CynaraAdminPolicy();
 };
 
