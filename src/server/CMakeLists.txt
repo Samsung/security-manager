@@ -2,7 +2,6 @@ PKG_CHECK_MODULES(SERVER_DEP
     REQUIRED
     libcap
     libsmack
-    libprivilege-control
     libsystemd-daemon
     libtzplatform-config
     sqlite3

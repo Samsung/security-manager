@@ -14,7 +14,6 @@ BuildRequires: zip
 BuildRequires: libattr-devel
 BuildRequires: libcap-devel
 BuildRequires: pkgconfig(libsmack)
-BuildRequires: pkgconfig(libprivilege-control)
 BuildRequires: pkgconfig(libsystemd-daemon)
 BuildRequires: pkgconfig(libsystemd-journal)
 BuildRequires: pkgconfig(libtzplatform-config)

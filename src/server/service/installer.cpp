@@ -26,7 +26,6 @@
 #include <dpl/log/log.h>
 #include <dpl/serialization.h>
 
-#include <privilege-control.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <pwd.h>
@@ -255,30 +254,6 @@ bool InstallerService::processAppInstall(MessageBuffer &buffer, MessageBuffer &s
     }
     pp_permissions[req.privileges.size()] = nullptr;
 
-    // start database transaction
-    int result = perm_begin();
-    if (PC_OPERATION_SUCCESS != result) {
-        // libprivilege is locked
-        LogError("perm_begin() returned " << result);
-        Serialization::Serialize(send, SECURITY_MANAGER_API_ERROR_SERVER_ERROR);
-        return false;
-    }
-
-    result = perm_app_install(smackLabel.c_str());
-    if (PC_OPERATION_SUCCESS != result) {
-        // libprivilege error
-        LogError("perm_app_install() returned " << result);
-        goto error_label;
-    }
-
-    result = perm_app_enable_permissions(smackLabel.c_str(), APP_TYPE_WGT,
-                                         pp_permissions.get(), true);
-    if (PC_OPERATION_SUCCESS != result) {
-        // libprivilege error
-        LogError("perm_app_enable_permissions() returned " << result);
-        goto error_label;
-    }
-
     try {
         std::vector<std::string> oldPkgPrivileges, newPkgPrivileges;
         std::string uidstr = uid ? std::to_string(static_cast<unsigned int>(uid))
@@ -314,7 +289,7 @@ bool InstallerService::processAppInstall(MessageBuffer &buffer, MessageBuffer &s
     for (const auto &appPath : req.appPaths) {
         const std::string &path = appPath.first;
         app_install_path_type pathType = static_cast<app_install_path_type>(appPath.second);
-        result = setupPath(req.pkgId, path, pathType);
+        int result = setupPath(req.pkgId, path, pathType);
 
         if (!result) {
             LogError("setupPath() failed");
@@ -330,28 +305,11 @@ bool InstallerService::processAppInstall(MessageBuffer &buffer, MessageBuffer &s
         }
     }
 
-    // finish database transaction
-    result = perm_end();
-    if (PC_OPERATION_SUCCESS != result) {
-        LogError("perm_end() returned " << result);
-        if (pkgIdIsNew)
-            if (!SmackRules::uninstallPackageRules(req.pkgId))
-                LogWarning("Failed to rollback package-specific smack rules");
-
-        // error in libprivilege-control
-        Serialization::Serialize(send, SECURITY_MANAGER_API_ERROR_SERVER_ERROR);
-        return false;
-    }
-
     // success
     Serialization::Serialize(send, SECURITY_MANAGER_API_SUCCESS);
     return true;
 
 error_label:
-    // rollback failed transaction before exiting
-    result = perm_rollback();
-    if (PC_OPERATION_SUCCESS != result)
-        LogError("perm_rollback() returned " << result);
     Serialization::Serialize(send, SECURITY_MANAGER_API_ERROR_SERVER_ERROR);
     return false;
 }
@@ -366,14 +324,6 @@ bool InstallerService::processAppUninstall(MessageBuffer &buffer, MessageBuffer 
     bool removePkg = false;
 
     Deserialization::Deserialize(buffer, appId);
-
-    int result = perm_begin();
-    if (PC_OPERATION_SUCCESS != result) {
-        // libprivilege is locked
-        LogError("perm_begin() returned " << result);
-        Serialization::Serialize(send, SECURITY_MANAGER_API_ERROR_SERVER_ERROR);
-        return false;
-    }
 
     try {
         std::vector<std::string> oldPkgPrivileges, newPkgPrivileges;
@@ -421,12 +371,6 @@ bool InstallerService::processAppUninstall(MessageBuffer &buffer, MessageBuffer 
     }
 
     if (appExists) {
-        result = perm_app_uninstall(smackLabel.c_str());
-        if (PC_OPERATION_SUCCESS != result) {
-            // error in libprivilege-control
-            LogError("perm_app_uninstall() returned " << result);
-            goto error_label;
-        }
 
         if (removePkg) {
             LogDebug("Removing Smack rules for deleted pkgId " << pkgId);
@@ -437,24 +381,11 @@ bool InstallerService::processAppUninstall(MessageBuffer &buffer, MessageBuffer 
         }
     }
 
-    // finish database transaction
-    result = perm_end();
-    if (PC_OPERATION_SUCCESS != result) {
-        // error in libprivilege-control
-        LogError("perm_end() returned " << result);
-        Serialization::Serialize(send, SECURITY_MANAGER_API_ERROR_SERVER_ERROR);
-        return false;
-    }
-
     // success
     Serialization::Serialize(send, SECURITY_MANAGER_API_SUCCESS);
     return true;
 
 error_label:
-    // rollback failed transaction before exiting
-    result = perm_rollback();
-    if (PC_OPERATION_SUCCESS != result)
-        LogError("perm_rollback() returned " << result);
     Serialization::Serialize(send, SECURITY_MANAGER_API_ERROR_SERVER_ERROR);
     return false;
 }
