@@ -178,40 +178,58 @@ bool InstallerService::processOne(const ConnectionID &conn, MessageBuffer &buffe
     return retval;
 }
 
+static inline bool isSubDir(const char *parent, const char *subdir)
+{
+    while (*parent && *subdir)
+        if (*parent++ != *subdir++)
+            return false;
+
+    return (*subdir == '/');
+}
+
 static inline bool installRequestAuthCheck(const app_inst_req &req, uid_t uid)
 {
+    if (uid == 0)
+        return true;
+
     struct passwd *pwd;
-    char buffer[PATH_MAX];
     do {
         errno = 0;
         pwd = getpwuid(uid);
         if (!pwd && errno != EINTR) {
-            LogError("getpwuid failed with '" << uid << "' as paramter: " << strerror(errno));
+            LogError("getpwuid failed with '" << uid
+                    << "' as paramter: " << strerror(errno));
             return false;
         }
     } while (!pwd);
 
+    std::unique_ptr<char, std::function<void(void*)>> home(
+        realpath(pwd->pw_dir, NULL), free);
+    if (!home.get()) {
+            LogError("realpath failed with '" << pwd->pw_dir
+                    << "' as paramter: " << strerror(errno));
+            return false;
+    }
+
     for (const auto &appPath : req.appPaths) {
+        std::unique_ptr<char, std::function<void(void*)>> real_path(
+            realpath(appPath.first.c_str(), NULL), free);
+        if (!real_path.get()) {
+            LogError("realpath failed with '" << appPath.first.c_str()
+                    << "' as paramter: " << strerror(errno));
+            return false;
+        }
+        LogDebug("Requested path is '" << appPath.first.c_str()
+                << "'. User's HOME is '" << pwd->pw_dir << "'");
+        if (!isSubDir(home.get(), real_path.get())) {
+            LogWarning("User's apps may have registered folders only in user's home dir");
+            return false;
+        }
 
-        if (uid != 0) {
-            char *real_path = realpath(appPath.first.c_str(), buffer);
-            if (!real_path) {
-                LogError("realpath failed with '" << appPath.first.c_str()
-                        << "' as paramter: " << strerror(errno));
-                return false;
-            }
-            LogDebug("Requested path is '" << appPath.first.c_str()
-                    << "'. User's HOME is '" << pwd->pw_dir << "'");
-            if (strncmp(pwd->pw_dir, real_path, strlen(pwd->pw_dir))!=0) {
-                LogWarning("User's apps may have registered folders only in user's home dir");
-                return false;
-            }
-
-            app_install_path_type pathType = static_cast<app_install_path_type>(appPath.second);
-            if (pathType == SECURITY_MANAGER_PATH_PUBLIC) {
-                LogWarning("Only root can register SECURITY_MANAGER_PATH_PUBLIC path");
-                return false;
-            }
+        app_install_path_type pathType = static_cast<app_install_path_type>(appPath.second);
+        if (pathType == SECURITY_MANAGER_PATH_PUBLIC) {
+            LogWarning("Only root can register SECURITY_MANAGER_PATH_PUBLIC path");
+            return false;
         }
     }
     return true;
