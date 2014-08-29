@@ -16,11 +16,11 @@
  *  limitations under the License
  */
 /*
- * @file        installer.cpp
+ * @file        service.cpp
  * @author      Michal Witanowski <m.witanowski@samsung.com>
  * @author      Jacek Bukarewicz <j.bukarewicz@samsung.com>
  * @author      Rafal Krypa <r.krypa@samsung.com>
- * @brief       Implementation of installer service.
+ * @brief       Implementation of security-manager service.
  */
 
 #include <dpl/log/log.h>
@@ -32,7 +32,7 @@
 #include <limits.h>
 #include <cstring>
 
-#include "installer.h"
+#include "service.h"
 #include "protocols.h"
 #include "security-manager.h"
 #include "smack-common.h"
@@ -43,21 +43,21 @@
 
 namespace SecurityManager {
 
-const InterfaceID INSTALLER_IFACE = 0;
+const InterfaceID IFACE = 1;
 
 
-InstallerService::InstallerService()
+Service::Service()
 {
 }
 
-GenericSocketService::ServiceDescriptionVector InstallerService::GetServiceDescription()
+GenericSocketService::ServiceDescriptionVector Service::GetServiceDescription()
 {
     return ServiceDescriptionVector {
-        {SERVICE_SOCKET_INSTALLER, "security-manager::installer", INSTALLER_IFACE},
+        {SERVICE_SOCKET, "security-manager", IFACE},
     };
 }
 
-void InstallerService::accept(const AcceptEvent &event)
+void Service::accept(const AcceptEvent &event)
 {
     LogDebug("Accept event. ConnectionID.sock: " << event.connectionID.sock <<
              " ConnectionID.counter: " << event.connectionID.counter <<
@@ -67,7 +67,7 @@ void InstallerService::accept(const AcceptEvent &event)
     info.interfaceID = event.interfaceID;
 }
 
-void InstallerService::write(const WriteEvent &event)
+void Service::write(const WriteEvent &event)
 {
     LogDebug("WriteEvent. ConnectionID: " << event.connectionID.sock <<
              " Size: " << event.size <<
@@ -77,7 +77,7 @@ void InstallerService::write(const WriteEvent &event)
         m_serviceManager->Close(event.connectionID);
 }
 
-void InstallerService::process(const ReadEvent &event)
+void Service::process(const ReadEvent &event)
 {
     LogDebug("Read event for counter: " << event.connectionID.counter);
     auto &info = m_connectionInfoMap[event.connectionID.counter];
@@ -88,7 +88,7 @@ void InstallerService::process(const ReadEvent &event)
     while (processOne(event.connectionID, info.buffer, info.interfaceID));
 }
 
-void InstallerService::close(const CloseEvent &event)
+void Service::close(const CloseEvent &event)
 {
     LogDebug("CloseEvent. ConnectionID: " << event.connectionID.sock);
     m_connectionInfoMap.erase(event.connectionID.counter);
@@ -107,7 +107,7 @@ static bool getPeerUserID(int sock, uid_t *uid) {
     return false;
 }
 
-bool InstallerService::processOne(const ConnectionID &conn, MessageBuffer &buffer,
+bool Service::processOne(const ConnectionID &conn, MessageBuffer &buffer,
                                   InterfaceID interfaceID)
 {
     LogDebug("Iteration begin. Interface = " << interfaceID);
@@ -128,7 +128,7 @@ bool InstallerService::processOne(const ConnectionID &conn, MessageBuffer &buffe
         return false;
     }
 
-    if (INSTALLER_IFACE == interfaceID) {
+    if (IFACE == interfaceID) {
         Try {
             // deserialize API call type
             int call_type_int;
@@ -149,13 +149,13 @@ bool InstallerService::processOne(const ConnectionID &conn, MessageBuffer &buffe
                     break;
                 default:
                     LogError("Invalid call: " << call_type_int);
-                    Throw(InstallerException::InvalidAction);
+                    Throw(ServiceException::InvalidAction);
             }
             // if we reach this point, the protocol is OK
             retval = true;
         } Catch (MessageBuffer::Exception::Base) {
             LogError("Broken protocol.");
-        } Catch (InstallerException::Base) {
+        } Catch (ServiceException::Base) {
             LogError("Broken protocol.");
         } catch (std::exception &e) {
             LogError("STD exception " << e.what());
@@ -235,7 +235,7 @@ static inline bool installRequestAuthCheck(const app_inst_req &req, uid_t uid)
     return true;
 }
 
-bool InstallerService::processAppInstall(MessageBuffer &buffer, MessageBuffer &send, uid_t uid)
+bool Service::processAppInstall(MessageBuffer &buffer, MessageBuffer &send, uid_t uid)
 {
     bool pkgIdIsNew = false;
     std::vector<std::string> addedPermissions;
@@ -332,7 +332,7 @@ error_label:
     return false;
 }
 
-bool InstallerService::processAppUninstall(MessageBuffer &buffer, MessageBuffer &send, uid_t uid)
+bool Service::processAppUninstall(MessageBuffer &buffer, MessageBuffer &send, uid_t uid)
 {
     // deserialize request data
     std::string appId;
@@ -408,7 +408,7 @@ error_label:
     return false;
 }
 
-bool InstallerService::processGetPkgId(MessageBuffer &buffer, MessageBuffer &send)
+bool Service::processGetPkgId(MessageBuffer &buffer, MessageBuffer &send)
 {
     // deserialize request data
     std::string appId;

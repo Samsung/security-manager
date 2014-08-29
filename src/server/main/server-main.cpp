@@ -30,7 +30,7 @@
 
 #include <socket-manager.h>
 
-#include <installer.h>
+#include <service.h>
 
 IMPLEMENT_SAFE_SINGLETON(SecurityManager::Log::LogSystem);
 
@@ -78,7 +78,7 @@ int main(void) {
         LogInfo("Start!");
         SecurityManager::SocketManager manager;
 
-        REGISTER_SOCKET_SERVICE(manager, SecurityManager::InstallerService);
+        REGISTER_SOCKET_SERVICE(manager, SecurityManager::Service);
 
         manager.MainLoop();
     }

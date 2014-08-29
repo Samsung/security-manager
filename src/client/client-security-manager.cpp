@@ -128,7 +128,7 @@ int security_manager_app_install(const app_inst_req *p_req)
         Serialization::Serialize(send, p_req->appPaths);
 
         //send buffer to server
-        int retval = sendToServer(SERVICE_SOCKET_INSTALLER, send.Pop(), recv);
+        int retval = sendToServer(SERVICE_SOCKET, send.Pop(), recv);
         if (retval != SECURITY_MANAGER_API_SUCCESS) {
             LogError("Error in sendToServer. Error code: " << retval);
             return SECURITY_MANAGER_ERROR_UNKNOWN;
@@ -166,7 +166,7 @@ int security_manager_app_uninstall(const app_inst_req *p_req)
         Serialization::Serialize(send, p_req->appId);
 
         //send buffer to server
-        int retval = sendToServer(SERVICE_SOCKET_INSTALLER, send.Pop(), recv);
+        int retval = sendToServer(SERVICE_SOCKET, send.Pop(), recv);
         if (retval != SECURITY_MANAGER_API_SUCCESS) {
             LogError("Error in sendToServer. Error code: " << retval);
             return SECURITY_MANAGER_ERROR_UNKNOWN;
@@ -207,7 +207,7 @@ int security_manager_get_app_pkgid(char **pkg_id, const char *app_id)
         Serialization::Serialize(send, std::string(app_id));
 
         //send buffer to server
-        int retval = sendToServer(SERVICE_SOCKET_INSTALLER, send.Pop(), recv);
+        int retval = sendToServer(SERVICE_SOCKET, send.Pop(), recv);
         if (retval != SECURITY_MANAGER_API_SUCCESS) {
             LogDebug("Error in sendToServer. Error code: " << retval);
             return SECURITY_MANAGER_ERROR_UNKNOWN;

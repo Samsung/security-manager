@@ -16,14 +16,14 @@
  *  limitations under the License
  */
 /*
- * @file        installer.h
+ * @file        service.h
  * @author      Michal Witanowski <m.witanowski@samsung.com>
  * @author      Rafal Krypa <r.krypa@samsung.com>
- * @brief       Implementation of installer service
+ * @brief       Implementation of security-manager service
  */
 
-#ifndef _SECURITY_MANAGER_INSTALLER_
-#define _SECURITY_MANAGER_INSTALLER_
+#ifndef _SECURITY_MANAGER_SERVICE_
+#define _SECURITY_MANAGER_SERVICE_
 
 #include <service-thread.h>
 #include <generic-socket-manager.h>
@@ -33,19 +33,19 @@
 
 namespace SecurityManager {
 
-class InstallerException
+class ServiceException
 {
 public:
     DECLARE_EXCEPTION_TYPE(SecurityManager::Exception, Base)
     DECLARE_EXCEPTION_TYPE(Base, InvalidAction)
 };
 
-class InstallerService :
+class Service :
     public SecurityManager::GenericSocketService,
-    public SecurityManager::ServiceThread<InstallerService>
+    public SecurityManager::ServiceThread<Service>
 {
 public:
-    InstallerService();
+    Service();
     ServiceDescriptionVector GetServiceDescription();
 
     DECLARE_THREAD_EVENT(AcceptEvent, accept)
@@ -104,4 +104,4 @@ private:
 
 } // namespace SecurityManager
 
-#endif // _SECURITY_MANAGER_INSTALLER_
+#endif // _SECURITY_MANAGER_SERVICE_

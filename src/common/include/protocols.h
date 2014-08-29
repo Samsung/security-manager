@@ -109,7 +109,7 @@ struct app_inst_req {
 
 namespace SecurityManager {
 
-extern char const * const SERVICE_SOCKET_INSTALLER;
+extern char const * const SERVICE_SOCKET;
 
 enum class SecurityModuleCall
 {

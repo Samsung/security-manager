@@ -5,7 +5,7 @@ Description=Start the security manager
 Type=notify
 ExecStart=@BIN_INSTALL_DIR@/security-manager
 
-Sockets=security-manager-installer.socket
+Sockets=security-manager.socket
 
 [Install]
 WantedBy=multi-user.target

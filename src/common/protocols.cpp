@@ -29,10 +29,9 @@
 namespace SecurityManager {
 
 #define SOCKET_PATH_PREFIX "/run/"
-#define SOCKET_PATH_PREFIX_SECURITY_MANAGER SOCKET_PATH_PREFIX "security-manager/"
 
-char const * const SERVICE_SOCKET_INSTALLER =
-        SOCKET_PATH_PREFIX_SECURITY_MANAGER "security-manager-installer.socket";
+char const * const SERVICE_SOCKET =
+        SOCKET_PATH_PREFIX "security-manager.socket";
 
 } // namespace SecurityManager
 
