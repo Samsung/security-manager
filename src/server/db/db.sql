@@ -101,4 +101,13 @@ BEGIN
     DELETE FROM pkg WHERE pkg_id NOT IN (SELECT DISTINCT pkg_id from app);
 END;
 
+DROP VIEW IF EXISTS privilege_gid_view;
+CREATE VIEW privilege_gid_view AS
+SELECT
+    privilege_id,
+    privilege.name as privilege_name,
+    privilege_gid.gid
+FROM privilege_gid
+LEFT JOIN privilege USING (privilege_id);
+
 COMMIT TRANSACTION;
