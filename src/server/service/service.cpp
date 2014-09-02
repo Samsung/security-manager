@@ -499,7 +499,7 @@ bool Service::processGetAppGroups(MessageBuffer &buffer, MessageBuffer &send, ui
 
     // success
     Serialization::Serialize(send, SECURITY_MANAGER_API_SUCCESS);
-    Serialization::Serialize(send, gids.size());
+    Serialization::Serialize(send, static_cast<int>(gids.size()));
     for (const auto &gid : gids) {
         Serialization::Serialize(send, gid);
     }
