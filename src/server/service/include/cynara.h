@@ -88,7 +88,7 @@ public:
      * adding new, previously not enabled privileges.
      * Caller must have permission to access Cynara administrative socket.
      *
-     * @param pkg package identifier
+     * @param label application Smack label
      * @param user user identifier
      * @param oldPrivileges previously enabled privileges for the package.
      *        Must be sorted and without duplicates.
@@ -98,7 +98,7 @@ public:
      * TODO: drop oldPrivileges argument and get them directly from Cynara.
      * Appropriate Cynara interface is needed first.
      */
-    static void UpdatePackagePolicy(const std::string &pkg, const std::string &user,
+    static void UpdatePackagePolicy(const std::string &label, const std::string &user,
         const std::vector<std::string> &oldPrivileges,
         const std::vector<std::string> &newPrivileges);
 

@@ -155,7 +155,7 @@ void CynaraAdmin::SetPolicies(const std::vector<CynaraAdminPolicy> &policies)
 }
 
 void CynaraAdmin::UpdatePackagePolicy(
-    const std::string &pkg,
+    const std::string &label,
     const std::string &user,
     const std::vector<std::string> &oldPrivileges,
     const std::vector<std::string> &newPrivileges)
@@ -171,37 +171,37 @@ void CynaraAdmin::UpdatePackagePolicy(
     while (oldIter != oldPrivileges.end() && newIter != newPrivileges.end()) {
         int compare = oldIter->compare(*newIter);
         if (compare == 0) {
-            LogDebug("(user = " << user << " pkg = " << pkg << ") " <<
+            LogDebug("(user = " << user << " label = " << label << ") " <<
                 "keeping privilege " << *newIter);
             ++oldIter;
             ++newIter;
             continue;
         } else if (compare < 0) {
-            LogDebug("(user = " << user << " pkg = " << pkg << ") " <<
+            LogDebug("(user = " << user << " label = " << label << ") " <<
                 "removing privilege " << *oldIter);
-            policies.push_back(CynaraAdminPolicy(pkg, user, *oldIter,
+            policies.push_back(CynaraAdminPolicy(label, user, *oldIter,
                     CynaraAdminPolicy::Operation::Delete));
             ++oldIter;
         } else {
-            LogDebug("(user = " << user << " pkg = " << pkg << ") " <<
+            LogDebug("(user = " << user << " label = " << label << ") " <<
                 "adding privilege " << *newIter);
-            policies.push_back(CynaraAdminPolicy(pkg, user, *newIter,
+            policies.push_back(CynaraAdminPolicy(label, user, *newIter,
                     CynaraAdminPolicy::Operation::Allow));
             ++newIter;
         }
     }
 
     for (; oldIter != oldPrivileges.end(); ++oldIter) {
-        LogDebug("(user = " << user << " pkg = " << pkg << ") " <<
+        LogDebug("(user = " << user << " label = " << label << ") " <<
             "removing privilege " << *oldIter);
-        policies.push_back(CynaraAdminPolicy(pkg, user, *oldIter,
+        policies.push_back(CynaraAdminPolicy(label, user, *oldIter,
                     CynaraAdminPolicy::Operation::Delete));
     }
 
     for (; newIter != newPrivileges.end(); ++newIter) {
-        LogDebug("(user = " << user << " pkg = " << pkg << ") " <<
+        LogDebug("(user = " << user << " label = " << label << ") " <<
             "adding privilege " << *newIter);
-        policies.push_back(CynaraAdminPolicy(pkg, user, *newIter,
+        policies.push_back(CynaraAdminPolicy(label, user, *newIter,
                     CynaraAdminPolicy::Operation::Allow));
     }
 

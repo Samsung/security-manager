@@ -285,7 +285,7 @@ bool Service::processAppInstall(MessageBuffer &buffer, MessageBuffer &send, uid_
         m_privilegeDb.AddApplication(req.appId, req.pkgId, uid, pkgIdIsNew);
         m_privilegeDb.UpdateAppPrivileges(req.appId, uid, req.privileges);
         m_privilegeDb.GetPkgPrivileges(req.pkgId, uid, newPkgPrivileges);
-        CynaraAdmin::UpdatePackagePolicy(req.pkgId, uidstr, oldPkgPrivileges,
+        CynaraAdmin::UpdatePackagePolicy(smackLabel, uidstr, oldPkgPrivileges,
                                          newPkgPrivileges);
         m_privilegeDb.CommitTransaction();
         LogDebug("Application installation commited to database");
@@ -356,7 +356,6 @@ bool Service::processAppUninstall(MessageBuffer &buffer, MessageBuffer &send, ui
             if (!generateAppLabel(pkgId, smackLabel)) {
                 LogError("Cannot generate Smack label for package: " << pkgId);
                 goto error_label;
-
             }
 
             std::string uidstr = uid ? std::to_string(static_cast<unsigned int>(uid))
@@ -369,7 +368,7 @@ bool Service::processAppUninstall(MessageBuffer &buffer, MessageBuffer &send, ui
             m_privilegeDb.UpdateAppPrivileges(appId, uid, std::vector<std::string>());
             m_privilegeDb.RemoveApplication(appId, uid, removePkg);
             m_privilegeDb.GetPkgPrivileges(pkgId, uid, newPkgPrivileges);
-            CynaraAdmin::UpdatePackagePolicy(pkgId, uidstr, oldPkgPrivileges,
+            CynaraAdmin::UpdatePackagePolicy(smackLabel, uidstr, oldPkgPrivileges,
                                              newPkgPrivileges);
             m_privilegeDb.CommitTransaction();
             LogDebug("Application uninstallation commited to database");
