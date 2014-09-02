@@ -125,6 +125,10 @@ static bool dirSetSmack(const std::string &path, const std::string &label,
             return false;
         }
 
+        /* avoid to tag directories two times */
+        if (ftsent->fts_info == FTS_D)
+            continue;
+
         ret = fn(ftsent);
         if (ret == FileDecision::ERROR) {
             LogError("fn(ftsent) failed.");
