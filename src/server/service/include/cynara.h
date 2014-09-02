@@ -24,6 +24,7 @@
 #ifndef _SECURITY_MANAGER_CYNARA_
 #define _SECURITY_MANAGER_CYNARA_
 
+#include <cynara-client.h>
 #include <cynara-admin.h>
 #include <dpl/exception.h>
 #include <string>
@@ -105,6 +106,29 @@ public:
 private:
     struct cynara_admin *m_CynaraAdmin;
 };
+
+class Cynara
+{
+public:
+    Cynara();
+    virtual ~Cynara();
+
+    /**
+     * Ask Cynara for permission.
+     *
+     * @param label application Smack label
+     * @param privilege privilege identifier
+     * @param user user identifier (uid)
+     * @param session session identifier
+     * @return true if access is permitted, false if denied
+     */
+    bool check(const std::string &label, const std::string &privilege,
+        const std::string &user, const std::string &session);
+
+private:
+    struct cynara *m_Cynara;
+};
+
 
 } // namespace SecurityManager
 

@@ -7,6 +7,7 @@ PKG_CHECK_MODULES(SERVER_DEP
     sqlite3
     db-util
     cynara-admin
+    cynara-client
     )
 
 FIND_PACKAGE(Boost REQUIRED)
