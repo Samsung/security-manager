@@ -149,15 +149,6 @@ int security_manager_app_uninstall(const app_inst_req *p_req);
 int security_manager_get_app_pkgid(char **pkg_id, const char *app_id);
 
 /**
- * Extract smack label from a given binary and set it for
- * currently running process
- *
- * \param[in] Path to binary
- * \return API return code or error code
- */
-int security_manager_set_process_label_from_binary(const char *path);
-
-/**
  * Compute smack label for given application id and set it for
  * currently running process
  *

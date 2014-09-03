@@ -74,34 +74,6 @@ static FileDecision labelExecs(const FTSENT *ftsent)
     return FileDecision::SKIP;
 }
 
-static FileDecision labelLinksToExecs(const FTSENT *ftsent)
-{
-    struct stat buf;
-
-    // check if it's a link
-    if ( !S_ISLNK(ftsent->fts_statp->st_mode))
-        return FileDecision::SKIP;
-
-    std::unique_ptr<char, std::function<void(void*)>> target(realpath(ftsent->fts_path, NULL), free);
-
-    if (!target.get()) {
-        LogError("Getting link target for " << ftsent->fts_path << " failed (Error = " << strerror(errno) << ")");
-        return FileDecision::ERROR;
-    }
-
-    if (-1 == stat(target.get(), &buf)) {
-        LogError("stat failed for " << target.get() << " (Error = " << strerror(errno) << ")");
-        return FileDecision::ERROR;
-    }
-    // skip if link target is not a regular executable file
-    if (buf.st_mode != (buf.st_mode | S_IXUSR | S_IFREG)) {
-        // LogDebug(target.get() << "is not a regular executable file. Skipping.");
-        return FileDecision::SKIP;
-    }
-
-    return FileDecision::LABEL;
-}
-
 static bool dirSetSmack(const std::string &path, const std::string &label,
         const char *xattr_name, LabelDecisionFn fn)
 {
@@ -179,14 +151,6 @@ static bool labelDir(const std::string &path, const std::string &label,
         if (!ret)
         {
             LogError("dirSetSmack failed (execs).");
-            return ret;
-        }
-
-        //setting execute label for everything with permission to execute
-        ret = dirSetSmack(path, label, XATTR_NAME_TIZENEXEC, &labelLinksToExecs);
-        if (!ret)
-        {
-            LogError("dirSetSmack failed (link to execs).");
             return ret;
         }
     }

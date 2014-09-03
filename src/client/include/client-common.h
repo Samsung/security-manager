@@ -60,24 +60,6 @@ int sendToManagerAncData(char const * const interface, const RawBuffer &send, st
  */
 int try_catch(const std::function<int()>& func);
 
-/**
- * Get SMACK label from EXEC labels of a file.
- *
- * Function attempts to get xattrs from given file in following order
- *   1) XATTR_NAME_SMACKEXEC
- *   2) XATTR_NAME_TIZENEXEC
- *   3) XATTR_NAME_TIZENEXEC (read from symlink, not the file it points to)
- *
- * If neither of above exists, error is returned.
- *
- * SMACK label should be freed by caller using free() function.
- *
- * @param[out] smackLabel pointer that will hold label read from given file
- * @param[in] path file path to take label from
- * @return SECURITY_MANAGER_API_SUCCESS on success, error code otherwise
- */
-int getSmackLabelFromBinary(char **smackLabel, const char *path);
-
 } // namespace SecurityManager
 
 #endif // _SECURITY_MANAGER_CLIENT_

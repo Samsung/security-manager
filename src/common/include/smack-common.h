@@ -29,9 +29,6 @@
 #include <linux/xattr.h>
 
 namespace SecurityManager {
-    /* Const defined below is used to label links to executables */
-    const char *const XATTR_NAME_TIZENEXEC =  XATTR_SECURITY_PREFIX "TIZEN_EXEC_LABEL";
-
     /**
      * Generates label for application with package identifier
      * read from @ref pkgId and assigns it to @ref label.

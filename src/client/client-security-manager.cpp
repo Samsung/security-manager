@@ -305,34 +305,6 @@ static bool setup_smack(const char *label)
 }
 
 SECURITY_MANAGER_API
-int security_manager_set_process_label_from_binary(const char *path)
-{
-    char *smack_label;
-    int ret;
-
-    LogDebug("security_manager_set_process_label_from_binary() called");
-
-    if (smack_smackfs_path() == NULL)
-        return SECURITY_MANAGER_SUCCESS;
-
-    if (path == NULL) {
-        LogError("security_manager_set_process_label_from_binary: path is NULL");
-        return SECURITY_MANAGER_ERROR_INPUT_PARAM;
-    }
-
-    ret = SecurityManager::getSmackLabelFromBinary(&smack_label, path);
-    if (ret == SECURITY_MANAGER_SUCCESS && smack_label != NULL) {
-        ret = setup_smack(smack_label);
-        if (ret != SECURITY_MANAGER_SUCCESS) {
-            LogError("Failed to set smack label " << smack_label << " for current process");
-        }
-        free(smack_label);
-    }
-
-    return ret;
-}
-
-SECURITY_MANAGER_API
 int security_manager_set_process_label_from_appid(const char *app_id)
 {
     char *pkg_id;

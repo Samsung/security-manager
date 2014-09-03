@@ -172,44 +172,6 @@ private:
 
 namespace SecurityManager {
 
-int getSmackLabelFromBinary(char **smackLabel, const char *path)
-{
-    int ret;
-    struct LabelInfo {
-        const char *xattr;
-        int followSymlinks;
-    };
-    const LabelInfo labels[] = {
-            { XATTR_NAME_SMACKEXEC, 1 },
-            { XATTR_NAME_TIZENEXEC, 1 },
-            { XATTR_NAME_TIZENEXEC, 0 }
-    };
-
-    LogDebug("Entering function: " << __func__ << ". Params: smackLabel=" << smackLabel <<
-            " path=" << path);
-
-    if (smackLabel == NULL) {
-        LogError("getSmackLabelFromBinary: smackLabel is NULL");
-        return SECURITY_MANAGER_API_ERROR_INPUT_PARAM;
-    }
-
-    if (path == NULL) {
-        LogError("getSmackLabelFromBinary: path is NULL");
-        return SECURITY_MANAGER_API_ERROR_INPUT_PARAM;
-    }
-
-    for (const auto &l : labels) {
-        ret = smack_new_label_from_path(path, l.xattr, l.followSymlinks, smackLabel);
-        if (ret > 0) {
-            return SECURITY_MANAGER_API_SUCCESS;
-        }
-    }
-
-    LogError("Getting exec label from " << path << " failed");
-    return SECURITY_MANAGER_API_ERROR_GETTING_FILE_LABEL_FAILED;
-}
-
-
 int sendToServer(char const * const interface, const RawBuffer &send, MessageBuffer &recv) {
     int ret;
     SockRAII sock;
