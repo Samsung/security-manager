@@ -4,7 +4,6 @@ SET(COMMON_VERSION ${COMMON_VERSION_MAJOR}.1.0)
 PKG_CHECK_MODULES(COMMON_DEP
     REQUIRED
     libsystemd-journal
-#    dlog
     )
 
 INCLUDE_DIRECTORIES(SYSTEM
@@ -22,7 +21,6 @@ SET(COMMON_SOURCES
     ${COMMON_PATH}/message-buffer.cpp
     ${COMMON_PATH}/smack-common.cpp
     ${DPL_PATH}/log/src/abstract_log_provider.cpp
-#    ${DPL_PATH}/log/src/dlog_log_provider.cpp
     ${DPL_PATH}/log/src/sd_journal_provider.cpp
     ${DPL_PATH}/log/src/log.cpp
     ${DPL_PATH}/log/src/old_style_log_provider.cpp
