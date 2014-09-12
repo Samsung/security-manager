@@ -115,7 +115,8 @@ enum class SecurityModuleCall
 {
     APP_INSTALL,
     APP_UNINSTALL,
-    APP_GET_PKGID
+    APP_GET_PKGID,
+    APP_GET_GROUPS,
 };
 
 } // namespace SecurityManager

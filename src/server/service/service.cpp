@@ -26,6 +26,7 @@
 #include <dpl/log/log.h>
 #include <dpl/serialization.h>
 
+#include <unordered_set>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <pwd.h>
@@ -39,7 +40,6 @@
 #include "smack-rules.h"
 #include "smack-labels.h"
 #include "privilege_db.h"
-#include "cynara.h"
 
 namespace SecurityManager {
 
@@ -94,16 +94,16 @@ void Service::close(const CloseEvent &event)
     m_connectionInfoMap.erase(event.connectionID.counter);
 }
 
-static bool getPeerUserID(int sock, uid_t *uid) {
+static bool getPeerID(int sock, uid_t &uid, pid_t &pid) {
     struct ucred cr;
-    socklen_t len = sizeof (cr);
-    if (!uid) {
-        return false;
-    }
+    socklen_t len = sizeof(cr);
+
     if (!getsockopt(sock, SOL_SOCKET, SO_PEERCRED, &cr, &len)) {
-        *uid = cr.uid;
+        uid = cr.uid;
+        pid = cr.pid;
         return true;
     }
+
     return false;
 }
 
@@ -121,9 +121,10 @@ bool Service::processOne(const ConnectionID &conn, MessageBuffer &buffer,
     bool retval = false;
 
     uid_t uid;
+    pid_t pid;
 
-    if(!getPeerUserID(conn.sock, &uid)) {
-        LogError("Closing socket because of error: unable to get peer's uid");
+    if(!getPeerID(conn.sock, uid, pid)) {
+        LogError("Closing socket because of error: unable to get peer's uid and pid");
         m_serviceManager->Close(conn);
         return false;
     }
@@ -146,6 +147,9 @@ bool Service::processOne(const ConnectionID &conn, MessageBuffer &buffer,
                     break;
                 case SecurityModuleCall::APP_GET_PKGID:
                     processGetPkgId(buffer, send);
+                    break;
+                case SecurityModuleCall::APP_GET_GROUPS:
+                    processGetAppGroups(buffer, send, uid, pid);
                     break;
                 default:
                     LogError("Invalid call: " << call_type_int);
@@ -435,5 +439,72 @@ bool Service::processGetPkgId(MessageBuffer &buffer, MessageBuffer &send)
     Serialization::Serialize(send, pkgId);
     return true;
 }
+
+bool Service::processGetAppGroups(MessageBuffer &buffer, MessageBuffer &send, uid_t uid, pid_t pid)
+{
+    std::unordered_set<gid_t> gids;
+
+    try {
+        std::string appId;
+        std::string pkgId;
+        std::string smackLabel;
+        std::string uidStr = std::to_string(uid);
+        std::string pidStr = std::to_string(pid);
+
+        Deserialization::Deserialize(buffer, appId);
+        LogDebug("appId: " << appId);
+
+        if (!m_privilegeDb.GetAppPkgId(appId, pkgId)) {
+            LogWarning("Application " << appId << " not found in database");
+            Serialization::Serialize(send, SECURITY_MANAGER_API_ERROR_NO_SUCH_OBJECT);
+            return false;
+        }
+        LogDebug("pkgId: " << pkgId);
+
+        if (!generateAppLabel(pkgId, smackLabel)) {
+             LogError("Cannot generate Smack label for package: " << pkgId);
+            Serialization::Serialize(send, SECURITY_MANAGER_API_ERROR_NO_SUCH_OBJECT);
+            return false;
+        }
+        LogDebug("smack label: " << smackLabel);
+
+        std::vector<std::string> privileges;
+        m_privilegeDb.GetPkgPrivileges(pkgId, uid, privileges);
+        for (const auto &privilege : privileges) {
+            std::vector<gid_t> gidsTmp;
+            m_privilegeDb.GetPrivilegeGids(privilege, gidsTmp);
+            if (!gidsTmp.empty()) {
+                LogDebug("Considering privilege " << privilege << " with " <<
+                    gidsTmp.size() << " groups assigned");
+                if (m_cynara.check(smackLabel, privilege, uidStr, pidStr)) {
+                    gids.insert(gidsTmp.begin(), gidsTmp.end());
+                    LogDebug("Cynara allowed, adding groups");
+                } else
+                    LogDebug("Cynara denied, not adding groups");
+            }
+        }
+    } catch (const PrivilegeDb::Exception::InternalError &e) {
+        LogError("Database error: " << e.DumpToString());
+        Serialization::Serialize(send, SECURITY_MANAGER_API_ERROR_SERVER_ERROR);
+        return false;
+    } catch (const CynaraException::Base &e) {
+        LogError("Error while querying Cynara for permissions: " << e.DumpToString());
+        Serialization::Serialize(send, SECURITY_MANAGER_API_ERROR_SERVER_ERROR);
+        return false;
+    } catch (const std::bad_alloc &e) {
+        LogError("Memory allocation failed: " << e.what());
+        Serialization::Serialize(send, SECURITY_MANAGER_API_ERROR_OUT_OF_MEMORY);
+        return false;
+    }
+
+    // success
+    Serialization::Serialize(send, SECURITY_MANAGER_API_SUCCESS);
+    Serialization::Serialize(send, gids.size());
+    for (const auto &gid : gids) {
+        Serialization::Serialize(send, gid);
+    }
+    return true;
+}
+
 
 } // namespace SecurityManager

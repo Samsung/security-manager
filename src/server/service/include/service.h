@@ -30,6 +30,7 @@
 #include <message-buffer.h>
 #include <connection-info.h>
 #include <privilege_db.h>
+#include <cynara.h>
 
 namespace SecurityManager {
 
@@ -61,6 +62,7 @@ public:
 private:
     ConnectionInfoMap m_connectionInfoMap;
     PrivilegeDb m_privilegeDb;
+    Cynara m_cynara;
 
     /**
      * Handle request from a client
@@ -100,6 +102,17 @@ private:
      * @return        true on success
      */
     bool processGetPkgId(MessageBuffer &buffer, MessageBuffer &send);
+
+    /**
+     * Process getting permitted group ids for app id
+     *
+     * @param  buffer Raw received data buffer
+     * @param  send   Raw data buffer to be sent
+     * @param  uid    User's identifier for whom application will be launched
+     * @param  pid    Process id in which application will be launched
+     * @return        true on success
+     */
+    bool processGetAppGroups(MessageBuffer &buffer, MessageBuffer &send, uid_t uid, pid_t pid);
 };
 
 } // namespace SecurityManager

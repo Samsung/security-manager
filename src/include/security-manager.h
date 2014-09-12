@@ -166,6 +166,22 @@ int security_manager_set_process_label_from_binary(const char *path);
  */
 int security_manager_set_process_label_from_appid(const char *app_id);
 
+/**
+ * For given app_id and current user, calculate allowed privileges that give
+ * direct access to file system resources. Then add current process to
+ * supplementary groups that are assigned to these resources.
+ *
+ * In Tizen some sensitive resources are being accessed by applications directly.
+ * The resources, being file system objects, are owned by dedicated GIDs and only
+ * processes in those UNIX groups can access them. This function is used for
+ * adding application process to all permitted groups that are assigned to such
+ * privileges.
+ *
+ * \param[in] Application identifier
+ * \return API return code or error code
+ */
+int security_manager_set_process_groups_from_appid(const char *app_id);
+
 
 #ifdef __cplusplus
 }

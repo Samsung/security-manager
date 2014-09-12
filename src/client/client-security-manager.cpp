@@ -19,7 +19,8 @@
  */
 /*
  * @file        client-security-manager.cpp
- * @author      Pawel Polawski (p.polawski@samsung.com)
+ * @author      Pawel Polawski <p.polawski@samsung.com>
+ * @author      Rafal Krypa <r.krypa@samsung.com>
  * @version     1.0
  * @brief       This file contain client side implementation of security-manager API
  */
@@ -27,6 +28,9 @@
 #include <cstdio>
 #include <utility>
 
+#include <unistd.h>
+#include <grp.h>
+#include <sys/types.h>
 #include <sys/smack.h>
 
 #include <dpl/log/log.h>
@@ -294,4 +298,84 @@ int security_manager_set_process_label_from_appid(const char *app_id)
     return ret;
 }
 
+SECURITY_MANAGER_API
+int security_manager_set_process_groups_from_appid(const char *app_id)
+{
+    using namespace SecurityManager;
+    MessageBuffer send, recv;
+    int ret;
 
+    LogDebug("security_manager_set_process_groups_from_appid() called");
+
+    return try_catch([&] {
+        //checking parameters
+
+        if (app_id == nullptr) {
+            LogError("app_id is NULL");
+            return SECURITY_MANAGER_ERROR_INPUT_PARAM;
+        }
+
+        //put data into buffer
+        Serialization::Serialize(send, static_cast<int>(SecurityModuleCall::APP_GET_GROUPS));
+        Serialization::Serialize(send, std::string(app_id));
+
+        //send buffer to server
+        int retval = sendToServer(SERVICE_SOCKET, send.Pop(), recv);
+        if (retval != SECURITY_MANAGER_API_SUCCESS) {
+            LogDebug("Error in sendToServer. Error code: " << retval);
+            return SECURITY_MANAGER_ERROR_UNKNOWN;
+        }
+
+        //receive response from server
+        Deserialization::Deserialize(recv, retval);
+        if (retval != SECURITY_MANAGER_API_SUCCESS)
+            return SECURITY_MANAGER_ERROR_UNKNOWN;
+
+        //How many new groups?
+        int newGroupsCnt;
+        Deserialization::Deserialize(recv, newGroupsCnt);
+
+        //And how many groups do we belong to already?
+        int oldGroupsCnt;
+        ret = getgroups(0, nullptr);
+        if (ret == -1) {
+            LogError("Unable to get list of current supplementary groups: " <<
+                strerror(errno));
+            return SECURITY_MANAGER_ERROR_UNKNOWN;
+        }
+        oldGroupsCnt = ret;
+
+        //Allocate an array for both old and new groups gids
+        std::unique_ptr<gid_t[]> groups(new gid_t[oldGroupsCnt + newGroupsCnt]);
+        if (!groups.get()) {
+            LogError("Memory allocation failed.");
+            return SECURITY_MANAGER_ERROR_MEMORY;
+        }
+
+        //Get the old groups from process
+        ret = getgroups(oldGroupsCnt, groups.get());
+        if (ret == -1) {
+            LogError("Unable to get list of current supplementary groups: " <<
+                strerror(errno));
+            return SECURITY_MANAGER_ERROR_UNKNOWN;
+        }
+
+        //Get the new groups from server response
+        for (int i = 0; i < newGroupsCnt; ++i) {
+            gid_t gid;
+            Deserialization::Deserialize(recv, gid);
+            groups.get()[oldGroupsCnt + i] = gid;
+            LogDebug("Adding process to group " << gid);
+        }
+
+        //Apply the modified groups list
+        ret = setgroups(oldGroupsCnt + newGroupsCnt, groups.get());
+        if (ret == -1) {
+            LogError("Unable to get list of current supplementary groups: " <<
+                strerror(errno));
+            return SECURITY_MANAGER_ERROR_UNKNOWN;
+        }
+
+        return SECURITY_MANAGER_SUCCESS;
+    });
+}
