@@ -33,7 +33,6 @@ INCLUDE_DIRECTORIES(
 
 SET(SERVER_SOURCES
     ${SERVER_PATH}/smack-check.cpp
-    ${SERVER_PATH}/main/security-manager-util.cpp
     ${SERVER_PATH}/main/generic-socket-manager.cpp
     ${SERVER_PATH}/main/socket-manager.cpp
     ${SERVER_PATH}/main/server-main.cpp
