@@ -25,6 +25,7 @@
 
 #include <dpl/log/log.h>
 #include <dpl/serialization.h>
+#include <tzplatform_config.h>
 
 #include <unordered_set>
 #include <sys/types.h>
@@ -45,6 +46,16 @@ namespace SecurityManager {
 
 const InterfaceID IFACE = 1;
 
+static inline bool isGlobalUser(uid_t uid) {
+    static uid_t uidGlobalApp = 0;
+    if (!uidGlobalApp) {
+        // As long as the recorded global user id is root, recheck.
+        uid_t id = tzplatform_getuid(TZ_SYS_GLOBALAPP_USER);
+        if (id != (uid_t)-1)
+            uidGlobalApp = id;
+    }
+    return uidGlobalApp == uid || !uid; // FIXME: is root authorized?
+}
 
 Service::Service()
 {
@@ -278,8 +289,8 @@ bool Service::processAppInstall(MessageBuffer &buffer, MessageBuffer &send, uid_
 
     try {
         std::vector<std::string> oldPkgPrivileges, newPkgPrivileges;
-        std::string uidstr = uid ? std::to_string(static_cast<unsigned int>(uid))
-                             : CYNARA_ADMIN_WILDCARD;
+        std::string uidstr = isGlobalUser(uid) ? CYNARA_ADMIN_WILDCARD
+                             : std::to_string(static_cast<unsigned int>(uid));
 
         LogDebug("Install parameters: appId: " << req.appId << ", pkgId: " << req.pkgId
                  << ", uidstr " << uidstr << ", generated smack label: " << smackLabel);
@@ -362,8 +373,8 @@ bool Service::processAppUninstall(MessageBuffer &buffer, MessageBuffer &send, ui
                 goto error_label;
             }
 
-            std::string uidstr = uid ? std::to_string(static_cast<unsigned int>(uid))
-                                 : CYNARA_ADMIN_WILDCARD;
+            std::string uidstr = isGlobalUser(uid) ? CYNARA_ADMIN_WILDCARD
+                                 : std::to_string(static_cast<unsigned int>(uid));
 
             LogDebug("Uninstall parameters: appId: " << appId << ", pkgId: " << pkgId
                      << ", uidstr " << uidstr << ", generated smack label: " << smackLabel);
