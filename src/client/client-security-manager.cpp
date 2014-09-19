@@ -30,7 +30,10 @@
 
 #include <unistd.h>
 #include <grp.h>
+#include <dirent.h>
 #include <sys/types.h>
+#include <sys/stat.h>
+#include <sys/xattr.h>
 #include <sys/smack.h>
 #include <sys/capability.h>
 
@@ -240,6 +243,67 @@ int security_manager_get_app_pkgid(char **pkg_id, const char *app_id)
     });
 }
 
+static bool setup_smack(const char *label)
+{
+    int labelSize = strlen(label);
+
+    // Set Smack label for open socket file descriptors
+
+    std::unique_ptr<DIR, std::function<int(DIR*)>> dir(
+        opendir("/proc/self/fd"), closedir);
+    if (!dir.get()) {
+        LogError("Unable to read list of open file descriptors: " <<
+            strerror(errno));
+        return SECURITY_MANAGER_ERROR_UNKNOWN;
+    }
+
+    do {
+        errno = 0;
+        struct dirent *dirEntry = readdir(dir.get());
+        if (dirEntry == nullptr) {
+            if (errno == 0) // NULL return value also signals end of directory
+                break;
+
+            LogError("Unable to read list of open file descriptors: " <<
+                strerror(errno));
+            return SECURITY_MANAGER_ERROR_UNKNOWN;
+        }
+
+        // Entries with numerical names specify file descriptors, ignore the rest
+        if (!isdigit(dirEntry->d_name[0]))
+            continue;
+
+        struct stat statBuf;
+        int fd = atoi(dirEntry->d_name);
+        int ret = fstat(fd, &statBuf);
+        if (ret != 0) {
+            LogWarning("fstat failed on file descriptor " << fd << ": " <<
+                strerror(errno));
+            continue;
+        }
+        if (S_ISSOCK(statBuf.st_mode)) {
+            ret = fsetxattr(fd, XATTR_NAME_SMACKIPIN, label, labelSize, 0);
+            if (ret != 0) {
+                LogError("Setting Smack label failed on file descriptor " <<
+                    fd << ": " << strerror(errno));
+                return SECURITY_MANAGER_ERROR_UNKNOWN;
+            }
+
+            ret = fsetxattr(fd, XATTR_NAME_SMACKIPOUT, label, labelSize, 0);
+            if (ret != 0) {
+                LogError("Setting Smack label failed on file descriptor " <<
+                    fd << ": " << strerror(errno));
+                return SECURITY_MANAGER_ERROR_UNKNOWN;
+            }
+        }
+    } while (true);
+
+    // Set Smack label of current process
+    smack_set_label_for_self(label);
+
+    return SECURITY_MANAGER_SUCCESS;
+}
+
 SECURITY_MANAGER_API
 int security_manager_set_process_label_from_binary(const char *path)
 {
@@ -258,8 +322,8 @@ int security_manager_set_process_label_from_binary(const char *path)
 
     ret = SecurityManager::getSmackLabelFromBinary(&smack_label, path);
     if (ret == SECURITY_MANAGER_SUCCESS && smack_label != NULL) {
-        if (smack_set_label_for_self(smack_label) != 0) {
-            ret = SECURITY_MANAGER_ERROR_UNKNOWN;
+        ret = setup_smack(smack_label);
+        if (ret != SECURITY_MANAGER_SUCCESS) {
             LogError("Failed to set smack label " << smack_label << " for current process");
         }
         free(smack_label);
@@ -286,9 +350,9 @@ int security_manager_set_process_label_from_appid(const char *app_id)
     }
 
     if (SecurityManager::generateAppLabel(std::string(pkg_id), appLabel)) {
-        if (smack_set_label_for_self(appLabel.c_str()) != 0) {
+        ret = setup_smack(appLabel.c_str());
+        if (ret != SECURITY_MANAGER_SUCCESS) {
             LogError("Failed to set smack label " << appLabel << " for current process");
-            ret = SECURITY_MANAGER_ERROR_UNKNOWN;
         }
     }
     else {
