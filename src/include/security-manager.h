@@ -193,6 +193,22 @@ int security_manager_set_process_groups_from_appid(const char *app_id);
  */
 int security_manager_drop_process_privileges(void);
 
+/**
+ * A convenience function for launchers for preparing security context for an
+ * application process. It should be called after fork in the new process, before
+ * running the application in it.
+ * It is aimed to cover most common cases and will internally call other, more
+ * specialized security-manager functions for launchers.
+ * Currently it just calls:
+ * - security_manager_set_process_label_from_appid
+ * - security_manager_set_process_groups_from_appid
+ * - security_manager_drop_process_privileges
+ *
+ * \param[in] Application identifier
+ * \return API return code or error code
+ */
+int security_manager_prepare_app(const char *app_id);
+
 
 #ifdef __cplusplus
 }

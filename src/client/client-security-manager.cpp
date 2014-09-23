@@ -474,3 +474,21 @@ int security_manager_drop_process_privileges(void)
     cap_free(cap);
     return SECURITY_MANAGER_SUCCESS;
 }
+
+SECURITY_MANAGER_API
+int security_manager_prepare_app(const char *app_id)
+{
+    LogDebug("security_manager_prepare_app() called");
+    int ret;
+
+    ret = security_manager_set_process_label_from_appid(app_id);
+    if (ret != SECURITY_MANAGER_SUCCESS)
+        return ret;
+
+    ret = security_manager_set_process_groups_from_appid(app_id);
+    if (ret != SECURITY_MANAGER_SUCCESS)
+        return ret;
+
+    ret = security_manager_drop_process_privileges();
+    return ret;
+}
