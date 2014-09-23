@@ -182,6 +182,17 @@ int security_manager_set_process_label_from_appid(const char *app_id);
  */
 int security_manager_set_process_groups_from_appid(const char *app_id);
 
+/**
+ * The above launcher functions, manipulating process Smack label and group,
+ * require elevated privileges. Since they will be called by launcher after fork,
+ * in the process for the application, privileges should be dropped before
+ * running an actual application. This function is a helper for that purpose -
+ * it drops capabilities from the process.
+ *
+ * \return API return code or error code
+ */
+int security_manager_drop_process_privileges(void);
+
 
 #ifdef __cplusplus
 }

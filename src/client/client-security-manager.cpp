@@ -32,6 +32,7 @@
 #include <grp.h>
 #include <sys/types.h>
 #include <sys/smack.h>
+#include <sys/capability.h>
 
 #include <dpl/log/log.h>
 #include <dpl/exception.h>
@@ -378,4 +379,34 @@ int security_manager_set_process_groups_from_appid(const char *app_id)
 
         return SECURITY_MANAGER_SUCCESS;
     });
+}
+
+SECURITY_MANAGER_API
+int security_manager_drop_process_privileges(void)
+{
+    LogDebug("security_manager_drop_process_privileges() called");
+
+    int ret;
+    cap_t cap = cap_init();
+    if (!cap) {
+        LogError("Unable to allocate capability object");
+        return SECURITY_MANAGER_ERROR_MEMORY;
+    }
+
+    ret = cap_clear(cap);
+    if (ret) {
+        LogError("Unable to initialize capability object");
+        cap_free(cap);
+        return SECURITY_MANAGER_ERROR_UNKNOWN;
+    }
+
+    ret = cap_set_proc(cap);
+    if (ret) {
+        LogError("Unable to drop process capabilities");
+        cap_free(cap);
+        return SECURITY_MANAGER_ERROR_UNKNOWN;
+    }
+
+    cap_free(cap);
+    return SECURITY_MANAGER_SUCCESS;
 }

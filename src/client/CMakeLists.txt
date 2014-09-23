@@ -1,6 +1,7 @@
 PKG_CHECK_MODULES(CLIENT_DEP
     REQUIRED
     libsmack
+    libcap
     )
 
 SET(CLIENT_VERSION_MAJOR 0)
