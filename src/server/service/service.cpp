@@ -23,24 +23,26 @@
  * @brief       Implementation of security-manager service.
  */
 
+#include <grp.h>
+#include <limits.h>
+#include <pwd.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+
+#include <cstring>
+#include <unordered_set>
+
 #include <dpl/log/log.h>
 #include <dpl/serialization.h>
 #include <tzplatform_config.h>
 
-#include <unordered_set>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <pwd.h>
-#include <limits.h>
-#include <cstring>
-
-#include "service.h"
+#include "privilege_db.h"
 #include "protocols.h"
 #include "security-manager.h"
+#include "service.h"
 #include "smack-common.h"
 #include "smack-rules.h"
 #include "smack-labels.h"
-#include "privilege_db.h"
 
 namespace SecurityManager {
 
@@ -482,13 +484,21 @@ bool Service::processGetAppGroups(MessageBuffer &buffer, MessageBuffer &send, ui
         std::vector<std::string> privileges;
         m_privilegeDb.GetPkgPrivileges(pkgId, uid, privileges);
         for (const auto &privilege : privileges) {
-            std::vector<gid_t> gidsTmp;
-            m_privilegeDb.GetPrivilegeGids(privilege, gidsTmp);
+            std::vector<std::string> gidsTmp;
+            m_privilegeDb.GetPrivilegeGroups(privilege, gidsTmp);
             if (!gidsTmp.empty()) {
                 LogDebug("Considering privilege " << privilege << " with " <<
                     gidsTmp.size() << " groups assigned");
                 if (m_cynara.check(smackLabel, privilege, uidStr, pidStr)) {
-                    gids.insert(gidsTmp.begin(), gidsTmp.end());
+                    for_each(gidsTmp.begin(), gidsTmp.end(), [&] (std::string group)
+                    {
+                        struct group *grp = getgrnam(group.c_str());
+                        if (grp == NULL) {
+                                LogError("No such group: " << group.c_str());
+                                return;
+                        }
+                        gids.insert(grp->gr_gid);
+                    });
                     LogDebug("Cynara allowed, adding groups");
                 } else
                     LogDebug("Cynara denied, not adding groups");

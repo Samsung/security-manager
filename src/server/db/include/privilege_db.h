@@ -51,7 +51,7 @@ enum class QueryType {
     ERemoveAppPrivileges,
     EPkgIdExists,
     EGetPkgId,
-    EGetPrivilegeGids,
+    EGetPrivilegeGroups,
 };
 
 class PrivilegeDb {
@@ -69,7 +69,7 @@ private:
         { QueryType::ERemoveAppPrivileges, "DELETE FROM app_privilege_view WHERE app_name=? AND uid=?" },
         { QueryType::EPkgIdExists, "SELECT * FROM pkg WHERE name=?" },
         { QueryType::EGetPkgId, " SELECT pkg_name FROM app_pkg_view WHERE app_name = ?" },
-        { QueryType::EGetPrivilegeGids, " SELECT gid FROM privilege_gid_view WHERE privilege_name = ?" },
+        { QueryType::EGetPrivilegeGroups, " SELECT name FROM privilege_group_view WHERE privilege_name = ?" },
     };
 
     /**
@@ -189,11 +189,11 @@ public:
      * Retrieve list of group ids assigned to a privilege
      *
      * @param privilege - privilege identifier
-     * @param[out] gids - list of group ids assigned to the privilege
+     * @param[out] grp_names - list of group names assigned to the privilege
      * @exception DB::SqlConnection::Exception::InternalError on internal error
      */
-    void GetPrivilegeGids(const std::string &privilege,
-        std::vector<gid_t> &gids);
+    void GetPrivilegeGroups(const std::string &privilege,
+        std::vector<std::string> &grp_names);
 
 };
 

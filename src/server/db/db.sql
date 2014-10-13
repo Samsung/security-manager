@@ -35,10 +35,10 @@ FOREIGN KEY (app_id) REFERENCES app (app_id)
 FOREIGN KEY (privilege_id) REFERENCES privilege (privilege_id)
 );
 
-CREATE TABLE IF NOT EXISTS privilege_gid (
+CREATE TABLE IF NOT EXISTS privilege_group (
 privilege_id INTEGER NOT NULL,
-gid INTEGER NOT NULL,
-PRIMARY KEY (privilege_id, gid),
+name VARCHAR NOT NULL,
+PRIMARY KEY (privilege_id, name),
 FOREIGN KEY (privilege_id) REFERENCES privilege (privilege_id)
 );
 
@@ -101,13 +101,13 @@ BEGIN
     DELETE FROM pkg WHERE pkg_id NOT IN (SELECT DISTINCT pkg_id from app);
 END;
 
-DROP VIEW IF EXISTS privilege_gid_view;
-CREATE VIEW privilege_gid_view AS
+DROP VIEW IF EXISTS privilege_group_view;
+CREATE VIEW privilege_group_view AS
 SELECT
     privilege_id,
     privilege.name as privilege_name,
-    privilege_gid.gid
-FROM privilege_gid
+    privilege_group.name
+FROM privilege_group
 LEFT JOIN privilege USING (privilege_id);
 
 COMMIT TRANSACTION;

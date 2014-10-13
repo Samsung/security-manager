@@ -239,19 +239,19 @@ void PrivilegeDb::UpdateAppPrivileges(const std::string &appId, uid_t uid,
     });
 }
 
-void PrivilegeDb::GetPrivilegeGids(const std::string &privilege,
-        std::vector<gid_t> &gids)
+void PrivilegeDb::GetPrivilegeGroups(const std::string &privilege,
+        std::vector<std::string> &groups)
 {
    try_catch<void>([&] {
         DB::SqlConnection::DataCommandAutoPtr command =
                 mSqlConnection->PrepareDataCommand(
-                        Queries.at(QueryType::EGetPrivilegeGids));
+                        Queries.at(QueryType::EGetPrivilegeGroups));
         command->BindString(1, privilege.c_str());
 
         while (command->Step()) {
-            gid_t gid = static_cast<gid_t>(command->GetColumnInteger(0));
-            LogDebug("Privilege " << privilege << " gives access to gid " << gid);
-            gids.push_back(gid);
+            std::string groupName = command->GetColumnString(0);
+            LogDebug("Privilege " << privilege << " gives access to group: " << groupName);
+            groups.push_back(groupName);
         };
     });
 }
