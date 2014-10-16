@@ -103,16 +103,19 @@ CynaraAdminPolicy::~CynaraAdminPolicy()
     free(this->result_extra);
 }
 
-static void checkCynaraAdminError(int result, const std::string &msg)
+static bool checkCynaraError(int result, const std::string &msg)
 {
     switch (result) {
-        case CYNARA_ADMIN_API_SUCCESS:
-            return;
-        case CYNARA_ADMIN_API_OUT_OF_MEMORY:
+        case CYNARA_API_SUCCESS:
+        case CYNARA_API_ACCESS_ALLOWED:
+            return true;
+        case CYNARA_API_ACCESS_DENIED:
+            return false;
+        case CYNARA_API_OUT_OF_MEMORY:
             ThrowMsg(CynaraException::OutOfMemory, msg);
-        case CYNARA_ADMIN_API_INVALID_PARAM:
+        case CYNARA_API_INVALID_PARAM:
             ThrowMsg(CynaraException::InvalidParam, msg);
-        case CYNARA_ADMIN_API_SERVICE_NOT_AVAILABLE:
+        case CYNARA_API_SERVICE_NOT_AVAILABLE:
             ThrowMsg(CynaraException::ServiceNotAvailable, msg);
         default:
             ThrowMsg(CynaraException::UnknownError, msg);
@@ -121,7 +124,7 @@ static void checkCynaraAdminError(int result, const std::string &msg)
 
 CynaraAdmin::CynaraAdmin()
 {
-    checkCynaraAdminError(
+    checkCynaraError(
         cynara_admin_initialize(&m_CynaraAdmin),
         "Cannot connect to Cynara administrative interface.");
 }
@@ -149,7 +152,7 @@ void CynaraAdmin::SetPolicies(const std::vector<CynaraAdminPolicy> &policies)
 
     pp_policies[policies.size()] = nullptr;
 
-    checkCynaraAdminError(
+    checkCynaraError(
         cynara_admin_set_policies(m_CynaraAdmin, pp_policies.data()),
         "Error while updating Cynara policy.");
 }
@@ -206,26 +209,6 @@ void CynaraAdmin::UpdatePackagePolicy(
     }
 
     cynaraAdmin.SetPolicies(policies);
-}
-
-static bool checkCynaraError(int result, const std::string &msg)
-{
-    // TODO: Cynara client error codes are being currently refactored
-    // This function must be updated when the refactor is finished.
-    switch (result) {
-        case CYNARA_API_SUCCESS:
-            return true;
-        case CYNARA_API_ACCESS_DENIED:
-            return false;
-        case CYNARA_API_OUT_OF_MEMORY:
-            ThrowMsg(CynaraException::OutOfMemory, msg);
-        case CYNARA_API_INVALID_PARAM:
-            ThrowMsg(CynaraException::InvalidParam, msg);
-        case CYNARA_API_SERVICE_NOT_AVAILABLE:
-            ThrowMsg(CynaraException::ServiceNotAvailable, msg);
-        default:
-            ThrowMsg(CynaraException::UnknownError, msg);
-    }
 }
 
 Cynara::Cynara()
