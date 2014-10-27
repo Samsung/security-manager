@@ -274,7 +274,11 @@ bool Service::processAppInstall(MessageBuffer &buffer, MessageBuffer &send, uid_
     Deserialization::Deserialize(buffer, req.pkgId);
     Deserialization::Deserialize(buffer, req.privileges);
     Deserialization::Deserialize(buffer, req.appPaths);
+    Deserialization::Deserialize(buffer, req.uid);
+
     std::string uidstr;
+    if ((!uid) && (req.uid))
+        uid = req.uid;
     checkGlobalUser(uid, uidstr);
 
     if(!installRequestAuthCheck(req, uid)) {

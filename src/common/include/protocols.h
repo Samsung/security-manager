@@ -25,6 +25,7 @@
 #ifndef _SECURITY_MANAGER_PROTOCOLS_
 #define _SECURITY_MANAGER_PROTOCOLS_
 
+#include <sys/types.h>
 #include <vector>
 #include <string>
 
@@ -105,6 +106,7 @@ struct app_inst_req {
     std::string pkgId;
     std::vector<std::string> privileges;
     std::vector<std::pair<std::string, int>> appPaths;
+    uid_t uid;
 };
 
 namespace SecurityManager {

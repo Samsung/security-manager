@@ -116,6 +116,17 @@ int security_manager_app_inst_req_add_privilege(app_inst_req *p_req, const char 
 int security_manager_app_inst_req_add_path(app_inst_req *p_req, const char *path, const int path_type);
 
 /*
+ * This function is used to set up user identifier in app_inst_req structure.
+ * This field simplifies support for online and offline modes.
+ *
+ * \param[in] Pointer handling app_inst_req structure
+ * \param[in] User identifier (UID)
+ * \return API return code or error code
+ */
+int security_manager_app_inst_req_set_uid(app_inst_req *p_req,
+                                          const uid_t uid);
+
+/*
  * This function is used to install application based on
  * using filled up app_inst_req data structure
  *

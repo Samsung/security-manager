@@ -60,7 +60,7 @@ int security_manager_app_inst_req_new(app_inst_req **pp_req)
     } catch (std::bad_alloc& ex) {
         return SECURITY_MANAGER_ERROR_MEMORY;
     }
-
+    (*pp_req)->uid = 0;
 
     return SECURITY_MANAGER_SUCCESS;
 }
@@ -69,6 +69,18 @@ SECURITY_MANAGER_API
 void security_manager_app_inst_req_free(app_inst_req *p_req)
 {
     delete p_req;
+}
+
+SECURITY_MANAGER_API
+int security_manager_app_inst_req_set_uid(app_inst_req *p_req,
+                                          const uid_t uid)
+{
+    if (!p_req)
+        return SECURITY_MANAGER_ERROR_INPUT_PARAM;
+
+    p_req->uid = uid;
+
+    return SECURITY_MANAGER_SUCCESS;
 }
 
 SECURITY_MANAGER_API
@@ -134,6 +146,7 @@ int security_manager_app_install(const app_inst_req *p_req)
         Serialization::Serialize(send, p_req->pkgId);
         Serialization::Serialize(send, p_req->privileges);
         Serialization::Serialize(send, p_req->appPaths);
+        Serialization::Serialize(send, p_req->uid);
 
         //send buffer to server
         int retval = sendToServer(SERVICE_SOCKET, send.Pop(), recv);
