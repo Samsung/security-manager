@@ -11,7 +11,6 @@ Requires(post): smack
 BuildRequires: cmake
 BuildRequires: zip
 BuildRequires: libattr-devel
-BuildRequires: libcap-devel
 BuildRequires: pkgconfig(libsmack)
 BuildRequires: pkgconfig(libcap)
 BuildRequires: pkgconfig(libsystemd-daemon)
