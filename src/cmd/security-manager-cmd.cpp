@@ -1,0 +1,304 @@
+/*
+ *  Copyright (c) 2000 - 2014 Samsung Electronics Co., Ltd All Rights Reserved
+ *
+ *  Contact: Rafal Krypa <r.krypa@samsung.com>
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License
+ */
+/*
+ * @file        service-manager-cmd.cpp
+ * @author      Sebastian Grabowski (s.grabowski@samsung.com)
+ * @version     1.0
+ * @brief       Implementation of security-manager-cmd tool for offline mode
+ */
+/* vim: set ts=4 et sw=4 tw=78 : */
+
+#include <iostream>
+#include <utility>
+#include <vector>
+#include <map>
+
+#include <dpl/log/log.h>
+#include <dpl/singleton.h>
+#include <dpl/singleton_safe_impl.h>
+#include <dpl/exception.h>
+#include <protocols.h>
+#include <security-manager.h>
+
+#include <boost/program_options.hpp>
+namespace po = boost::program_options;
+
+IMPLEMENT_SAFE_SINGLETON(SecurityManager::Log::LogSystem);
+
+static std::map <std::string, enum app_install_path_type> app_install_path_type_map = {
+    {"private", SECURITY_MANAGER_PATH_PRIVATE},
+    {"public", SECURITY_MANAGER_PATH_PUBLIC},
+    {"public_ro", SECURITY_MANAGER_PATH_PUBLIC_RO}
+};
+
+static po::options_description getGenericOptions()
+{
+    po::options_description opts("Generic options");
+    opts.add_options()
+         ("help,h", "produce help message")
+         ("install,i", "install an application")
+         ;
+    return opts;
+}
+
+static po::options_description getInstallOptions()
+{
+    po::options_description opts("Install options");
+    opts.add_options()
+         ("app,a", po::value<std::string>()->required(),
+          "application name (required)")
+         ("pkg,g", po::value<std::string>()->required(),
+          "package name for the application (required)")
+         /*
+          * multitoken: Specifies that the value can span multiple tokens.
+          *             So it is possible to pass values to an option like
+          *             this:
+          *             --path=/home/user dirtype
+          *             --path /home/user dirtype
+          *             --path="/home/user" dirtype
+          */
+         ("path,p", po::value< std::vector<std::string> >()->multitoken(),
+          "path for setting smack labels (may occur more than once).\n"
+          "Format: --path <path> <path type>\n"
+          "  where <path type> is: \tprivate, public, public_ro\n"
+          "example:\n"
+          "        \t--path=/home/user/app private")
+         ("privilege,s", po::value< std::vector<std::string> >(),
+          "privilege for the application (may occur more than once)")
+         ("uid,u", po::value<uid_t>()->required(),
+          "user identifier number (required)")
+         ;
+    return opts;
+}
+
+static po::options_description getAllOptions()
+{
+    po::options_description opts("Allowed options");
+    opts.add(getGenericOptions()).add(getInstallOptions());
+    return opts;
+}
+
+static void usage(std::string name)
+{
+    using namespace std;
+
+    cout << endl << name << " usage:" << endl;
+    cout << endl << getAllOptions() << endl << endl;
+}
+
+static bool parseCommandOptions(int argc, char *argv[], std::string cmd,
+                                po::options_description opts,
+                                po::variables_map &vm)
+{
+    bool ret = false;
+
+    try {
+        const po::positional_options_description p;
+        /* style options:
+         * unix_style: The more-or-less traditional unix style. It looks as
+         *     follows: unix_style = (allow_short | short_allow_adjacent |
+         *                            short_allow_next | allow_long |
+         *                            long_allow_adjacent | long_allow_next |
+         *                            allow_sticky | allow_guessing |
+         *                            allow_dash_for_short)
+         * allow_long_disguise: Allow long options with single option starting
+         *     character, e.g -foo=10
+         * allow_guessing: Allow abbreviated spellings for long options, if
+         *     they unambiguously identify long option. No long
+         *     option name should be prefix of other long option name if
+         *     guessing is in effect.
+         * allow_short: Alow "-<single character" style.
+         * short_allow_adjacent: Allow option parameter in the same token for
+         *     short options.
+         * short_allow_next: Allow option parameter in the next token for
+         *     short options.
+         * allow_long: Allow "--long_name" style.
+         * long_allow_adjacent: Allow option parameter in the same token for
+         *     long option, like in --foo=10
+         * long_allow_next: Allow option parameter in the next token for long
+         *     options.
+         * allow_sticky: Allow to merge several short options together, so
+         *     that "-s -k" become "-sk". All of the options but
+         *     last should accept no parameter. For example, if "-s" accept a
+         *     parameter, then "k" will be taken as
+         *     parameter, not another short option. Dos-style short options
+         *     cannot be sticky.
+         * allow_dash_for_short: Allow "-" in short options.
+         */
+        po::store(po::command_line_parser(argc, argv).
+                      options(getGenericOptions().add(opts)).positional(p).
+                      style((po::command_line_style::unix_style |
+                            po::command_line_style::allow_long_disguise) &
+                            ~po::command_line_style::allow_guessing).
+                      run(),
+                  vm);
+        po::notify(vm);
+        ret = true;
+    } catch (const po::error &e) {
+        std::cout << "Error parsing " << cmd << " command arguments: " <<
+                  e.what() << std::endl;
+        LogError("Error parsing " << cmd << " command arguments: " << e.what());
+    } catch (const std::exception &e) {
+        std::cout << "Unknown error while parsing " << cmd <<
+                  " command arguments: " << e.what() << std::endl;
+        LogError("Unknown error while parsing " << cmd <<
+                 " command arguments: " << e.what());
+    }
+
+    return ret;
+}
+
+static bool loadPaths(const std::vector<std::string> &paths,
+                      struct app_inst_req &req)
+{
+    if (paths.size() & 1) {
+        std::cout << "Wrong number of tokens was given for path option." <<
+                     std::endl;
+        LogDebug("Wrong paths size: " << paths.size());
+        return false;
+    }
+    req.appPaths.clear();
+    for (std::vector<std::string>::size_type i = 1; i < paths.size(); i += 2) {
+        app_install_path_type pathType;
+        LogDebug("path: " << paths[i - 1]);
+        try {
+            pathType = app_install_path_type_map.at(paths[i]);
+        } catch (const std::out_of_range &e) {
+            std::cout << "Invalid path type found." << std::endl;
+            LogError("Invalid path type found.");
+            req.appPaths.clear();
+            return false;
+        }
+        LogDebug("path type: " << pathType << " (" << paths[i] << ")");
+        req.appPaths.push_back(std::make_pair(paths[i - 1], pathType));
+    }
+    return (!req.appPaths.empty());
+}
+
+static bool parseInstallOptions(int argc, char *argv[],
+                                struct app_inst_req &req,
+                                po::variables_map &vm)
+{
+    bool ret;
+    ret = parseCommandOptions(argc, argv, "install", getInstallOptions(), vm);
+    if (!ret)
+        return ret;
+    try {
+        if (vm.count("app"))
+            req.appId = vm["app"].as<std::string>();
+        if (vm.count("pkg"))
+            req.pkgId = vm["pkg"].as<std::string>();
+        if (vm.count("path")) {
+            const std::vector<std::string> paths =
+                vm["path"].as<std::vector<std::string> >();
+            if (!loadPaths(paths, req)) {
+                std::cout << "Error in parsing path arguments." << std::endl;
+                LogError("Error in parsing path arguments.");
+                return false;
+            }
+        }
+        if (vm.count("privilege")) {
+            req.privileges = vm["privilege"].as<std::vector<std::string> >();
+            if (req.privileges.empty()) {
+                std::cout << "Error in parsing privilege arguments." << std::endl;
+                LogError("Error in parsing privilege arguments.");
+                return false;
+            }
+#ifdef BUILD_TYPE_DEBUG
+            LogDebug("Passed privileges:");
+            for (const auto &p : req.privileges) {
+                LogDebug("    " << p);
+            }
+#endif
+        }
+        if (vm.count("uid"))
+            req.uid = vm["uid"].as<uid_t>();
+    } catch (const std::exception &e) {
+        std::cout << "Error while parsing install arguments: " << e.what() <<
+                  std::endl;
+        LogError("Error while parsing install arguments: " << e.what());
+        ret = false;
+    }
+    return ret;
+}
+
+static int installApp(const struct app_inst_req &req)
+{
+    int ret = EXIT_FAILURE;
+
+    ret = security_manager_app_install(&req);
+    if (SECURITY_MANAGER_SUCCESS == ret) {
+        std::cout << "Application " << req.appId <<
+                  " installed successfully." << std::endl;
+        LogDebug("Application " << req.appId <<
+                 " installed successfully.");
+    } else {
+        std::cout << "Failed to install " << req.appId <<
+                  " application. Return code: " << ret <<
+                  std::endl;
+        LogDebug("Failed to install " << req.appId <<
+                 " application. Return code: " << ret);
+    }
+    return ret;
+}
+
+int main(int argc, char *argv[])
+{
+    po::variables_map vm;
+
+    UNHANDLED_EXCEPTION_HANDLER_BEGIN
+    {
+        SecurityManager::Singleton<SecurityManager::Log::LogSystem>::Instance().SetTag("SECURITY_MANAGER_INSTALLER");
+
+        LogDebug("argc: " << argc);
+        for (int i = 0; i < argc; ++i)
+            LogDebug("argv [" << i << "]: " << argv[i]);
+        if (argc < 2) {
+            std::cout << "Missing arguments." << std::endl;
+            usage(std::string(argv[0]));
+            return EXIT_FAILURE;
+        }
+        po::store(po::command_line_parser(argc, argv).
+                  options(getGenericOptions()).allow_unregistered().run(),
+                  vm);
+        if (vm.count("help")) {
+            usage(std::string(argv[0]));
+            return EXIT_SUCCESS;
+        }
+        LogDebug("Generic arguments has been parsed.");
+
+        if (vm.count("install")) {
+            struct app_inst_req *req = nullptr;
+            LogDebug("Install command.");
+            if (security_manager_app_inst_req_new(&req) != SECURITY_MANAGER_SUCCESS)
+                return EXIT_FAILURE;
+            if (parseInstallOptions(argc, argv, *req, vm))
+                return installApp(*req);
+            else
+                return EXIT_FAILURE;
+        } else {
+            std::cout << "No command argument was given." << std::endl;
+            usage(std::string(argv[0]));
+            return EXIT_FAILURE;
+        }
+    }
+    UNHANDLED_EXCEPTION_HANDLER_END
+
+    return EXIT_FAILURE;
+}
+
