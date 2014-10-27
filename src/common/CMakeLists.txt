@@ -10,6 +10,8 @@ PKG_CHECK_MODULES(COMMON_DEP
     cynara-client
     )
 
+FIND_PACKAGE(Boost REQUIRED)
+
 INCLUDE_DIRECTORIES(SYSTEM
     ${COMMON_DEP_INCLUDE_DIRS}
     )
@@ -20,6 +22,7 @@ INCLUDE_DIRECTORIES(
     ${DPL_PATH}/core/include
     ${DPL_PATH}/log/include
     ${DPL_PATH}/db/include
+    ${Boost_INCLUDE_DIRS}
     )
 
 SET(COMMON_SOURCES
@@ -39,6 +42,7 @@ SET(COMMON_SOURCES
     ${DPL_PATH}/db/src/naive_synchronization_object.cpp
     ${DPL_PATH}/db/src/sql_connection.cpp
     ${COMMON_PATH}/cynara.cpp
+    ${COMMON_PATH}/file-lock.cpp
     ${COMMON_PATH}/protocols.cpp
     ${COMMON_PATH}/message-buffer.cpp
     ${COMMON_PATH}/privilege_db.cpp
