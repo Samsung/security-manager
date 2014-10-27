@@ -70,6 +70,10 @@ public:
      */
     static bool uninstallPackageRules(const std::string &pkgId);
 
+    /* FIXME: Remove this function if real pkgId instead of "User" label will be used
+     * in generateAppLabel(). */
+    static bool addMissingRulesFix();
+
 private:
     static std::string getPackageRulesFilePath(const std::string &pkgId);
 
