@@ -29,6 +29,7 @@
 #include <dpl/singleton_safe_impl.h>
 
 #include <socket-manager.h>
+#include <file-lock.h>
 
 #include <service.h>
 
@@ -66,6 +67,9 @@ int main(void) {
     {
         SecurityManager::Singleton<SecurityManager::Log::LogSystem>::Instance().SetTag("SECURITY_MANAGER");
 
+        SecurityManager::FileLocker serviceLock(SecurityManager::SERVICE_LOCK_FILE,
+                                                true);
+
         sigset_t mask;
         sigemptyset(&mask);
         sigaddset(&mask, SIGTERM);
@@ -81,6 +85,9 @@ int main(void) {
         REGISTER_SOCKET_SERVICE(manager, SecurityManager::Service);
 
         manager.MainLoop();
+    } catch (const SecurityManager::FileLocker::Exception::Base &e) {
+        LogError("Unable to get a file lock. Exiting.");
+        return EXIT_FAILURE;
     }
     UNHANDLED_EXCEPTION_HANDLER_END
     return 0;
