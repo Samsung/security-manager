@@ -127,8 +127,16 @@ int appInstall(const app_inst_req &req, uid_t uid)
     std::vector<std::string> removedPermissions;
 
     std::string uidstr;
-    if ((!uid) && (req.uid))
-        uid = req.uid;
+    if (uid) {
+        if (uid != req.uid) {
+            LogError("User " << uid <<
+                     " is denied to install application for user " << req.uid);
+            return SECURITY_MANAGER_API_ERROR_ACCESS_DENIED;
+        }
+    } else {
+        if (req.uid)
+            uid = req.uid;
+    }
     checkGlobalUser(uid, uidstr);
 
     if (!installRequestAuthCheck(req, uid)) {

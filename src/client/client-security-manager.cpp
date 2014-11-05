@@ -44,6 +44,8 @@
 #include <client-common.h>
 #include <protocols.h>
 #include <smack-common.h>
+#include <service_impl.h>
+#include <file-lock.h>
 
 #include <security-manager.h>
 
@@ -60,7 +62,7 @@ int security_manager_app_inst_req_new(app_inst_req **pp_req)
     } catch (std::bad_alloc& ex) {
         return SECURITY_MANAGER_ERROR_MEMORY;
     }
-    (*pp_req)->uid = 0;
+    (*pp_req)->uid = geteuid();
 
     return SECURITY_MANAGER_SUCCESS;
 }
@@ -131,7 +133,6 @@ SECURITY_MANAGER_API
 int security_manager_app_install(const app_inst_req *p_req)
 {
     using namespace SecurityManager;
-    MessageBuffer send, recv;
 
     return try_catch([&] {
         //checking parameters
@@ -140,23 +141,39 @@ int security_manager_app_install(const app_inst_req *p_req)
         if (p_req->appId.empty() || p_req->pkgId.empty())
             return SECURITY_MANAGER_ERROR_REQ_NOT_COMPLETE;
 
-        //put data into buffer
-        Serialization::Serialize(send, (int)SecurityModuleCall::APP_INSTALL);
-        Serialization::Serialize(send, p_req->appId);
-        Serialization::Serialize(send, p_req->pkgId);
-        Serialization::Serialize(send, p_req->privileges);
-        Serialization::Serialize(send, p_req->appPaths);
-        Serialization::Serialize(send, p_req->uid);
+        bool offlineMode;
+        int retval;
 
-        //send buffer to server
-        int retval = sendToServer(SERVICE_SOCKET, send.Pop(), recv);
-        if (retval != SECURITY_MANAGER_API_SUCCESS) {
-            LogError("Error in sendToServer. Error code: " << retval);
-            return SECURITY_MANAGER_ERROR_UNKNOWN;
+        try {
+            SecurityManager::FileLocker serviceLock(SecurityManager::SERVICE_LOCK_FILE);
+            if ((offlineMode = serviceLock.Locked())) {
+                LogInfo("Working in offline mode.");
+                retval = SecurityManager::ServiceImpl::appInstall(*p_req, geteuid());
+            }
+        } catch (const SecurityManager::FileLocker::Exception::Base &e) {
+            offlineMode = false;
         }
+        if (!offlineMode) {
+            MessageBuffer send, recv;
 
-        //receive response from server
-        Deserialization::Deserialize(recv, retval);
+            //put data into buffer
+            Serialization::Serialize(send, (int)SecurityModuleCall::APP_INSTALL);
+            Serialization::Serialize(send, p_req->appId);
+            Serialization::Serialize(send, p_req->pkgId);
+            Serialization::Serialize(send, p_req->privileges);
+            Serialization::Serialize(send, p_req->appPaths);
+            Serialization::Serialize(send, p_req->uid);
+
+            //send buffer to server
+            retval = sendToServer(SERVICE_SOCKET, send.Pop(), recv);
+            if (retval != SECURITY_MANAGER_API_SUCCESS) {
+                LogError("Error in sendToServer. Error code: " << retval);
+                return SECURITY_MANAGER_ERROR_UNKNOWN;
+            }
+
+            //receive response from server
+            Deserialization::Deserialize(recv, retval);
+        }
         switch(retval) {
             case SECURITY_MANAGER_API_SUCCESS:
                 return SECURITY_MANAGER_SUCCESS;
