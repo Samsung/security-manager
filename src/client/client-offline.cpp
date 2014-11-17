@@ -22,12 +22,13 @@
  * @brief       Helper class for client "off-line" mode detection
  */
 
+#include <client-offline.h>
 #include <client-common.h>
 #include <message-buffer.h>
 #include <protocols.h>
+#include <connection.h>
 #include <dpl/serialization.h>
 #include <dpl/log/log.h>
-#include "client-offline.h"
 
 namespace SecurityManager {
 

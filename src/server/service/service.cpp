@@ -29,6 +29,7 @@
 #include <dpl/serialization.h>
 #include <sys/smack.h>
 
+#include "connection.h"
 #include "protocols.h"
 #include "service.h"
 #include "service_impl.h"

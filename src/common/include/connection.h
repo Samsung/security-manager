@@ -16,29 +16,42 @@
  *  limitations under the License
  */
 /*
- * @file        client-common.h
+ * @file        sock-raii.h
  * @author      Bartlomiej Grzelewski (b.grzelewski@samsung.com)
+ * @author      Lukasz Kostyra (l.kostyra@samsung.com)
  * @version     1.0
- * @brief       This file constains implementation of common types
+ * @brief       This file constains declarations of connection-related functions
  *              used in security manager.
  */
 
-#ifndef _SECURITY_MANAGER_CLIENT_
-#define _SECURITY_MANAGER_CLIENT_
+#ifndef _SECURITY_MANAGER_CONNECTION_
+#define _SECURITY_MANAGER_CONNECTION_
 
+#include <vector>
 #include <functional>
 
-#define SECURITY_MANAGER_API __attribute__((visibility("default")))
-#define SECURITY_MANAGER_UNUSED __attribute__((unused))
+#include <message-buffer.h>
+
+extern "C" {
+    struct msghdr;
+}
 
 namespace SecurityManager {
 
+typedef std::vector<unsigned char> RawBuffer;
+
+int sendToServer(char const * const interface, const RawBuffer &send, MessageBuffer &recv);
+
 /*
- * Decorator function that performs frequently repeated exception handling in
- * SS client API functions. Accepts lambda expression as an argument.
+ * sendToServerAncData is special case when we want to receive file descriptor
+ * passed by Security Manager on behalf of calling process. We can't get it with
+ * MessageBuffer.
+ *
+ * This function should be called _ONLY_ in this particular case.
+ *
  */
-int try_catch(const std::function<int()>& func);
+int sendToManagerAncData(char const * const interface, const RawBuffer &send, struct msghdr &hdr);
 
 } // namespace SecurityManager
 
-#endif // _SECURITY_MANAGER_CLIENT_
+#endif // _SECURITY_MANAGER_CONNECTION_
