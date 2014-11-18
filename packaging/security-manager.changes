@@ -1,0 +1,19 @@
+* Tue Sep 18 2014 Rafal Krypa <r.krypa@samsung.com>
+- Version 0.2.0
+- No longer use libprivilege-control
+- Set Cynara policies during installation
+- Support group-mapped privileges
+- Use designated user for global app installation instead of root
+
+* Fri Jul 25 2014 Stephane Desneux <stephane.desneux@open.eurogiciel.org>
+- Keep information about installed applications in private data base
+- Complete support for uninstallation
+- Support per user installation of applications
+- Properly handle multiple applications with the same pkgId
+- Add API for launchers setting Smack label during application start
+- Systemd integration
+- Log to systemd journal instead of dlog
+
+* Wed Jun 18 2014 Rafal Krypa <r.krypa@samsung.com>
+- Version 0.1.0
+- Initial release of standalone security-manager, splitting from security-server
