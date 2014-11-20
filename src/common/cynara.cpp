@@ -134,6 +134,12 @@ CynaraAdmin::~CynaraAdmin()
     cynara_admin_finish(m_CynaraAdmin);
 }
 
+CynaraAdmin &CynaraAdmin::getInstance()
+{
+    static CynaraAdmin cynaraAdmin;
+    return cynaraAdmin;
+}
+
 void CynaraAdmin::SetPolicies(const std::vector<CynaraAdminPolicy> &policies)
 {
     std::vector<const struct cynara_admin_policy *> pp_policies(policies.size() + 1);
@@ -221,6 +227,12 @@ Cynara::Cynara()
 Cynara::~Cynara()
 {
     cynara_finish(m_Cynara);
+}
+
+Cynara &Cynara::getInstance()
+{
+    static Cynara cynara;
+    return cynara;
 }
 
 bool Cynara::check(const std::string &label, const std::string &privilege,

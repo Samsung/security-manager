@@ -311,25 +311,28 @@ bool Service::processAppInstall(MessageBuffer &buffer, MessageBuffer &send, uid_
         LogDebug("Install parameters: appId: " << req.appId << ", pkgId: " << req.pkgId
                  << ", uidstr " << uidstr << ", generated smack label: " << smackLabel);
 
-        m_privilegeDb.BeginTransaction();
-        m_privilegeDb.GetPkgPrivileges(req.pkgId, uid, oldPkgPrivileges);
-        m_privilegeDb.AddApplication(req.appId, req.pkgId, uid, pkgIdIsNew);
-        m_privilegeDb.UpdateAppPrivileges(req.appId, uid, req.privileges);
-        m_privilegeDb.GetPkgPrivileges(req.pkgId, uid, newPkgPrivileges);
+        PrivilegeDb::getInstance().BeginTransaction();
+        PrivilegeDb::getInstance().GetPkgPrivileges(req.pkgId, uid, oldPkgPrivileges);
+        PrivilegeDb::getInstance().AddApplication(req.appId, req.pkgId, uid, pkgIdIsNew);
+        PrivilegeDb::getInstance().UpdateAppPrivileges(req.appId, uid, req.privileges);
+        PrivilegeDb::getInstance().GetPkgPrivileges(req.pkgId, uid, newPkgPrivileges);
         CynaraAdmin::UpdatePackagePolicy(smackLabel, uidstr, oldPkgPrivileges,
                                          newPkgPrivileges);
-        m_privilegeDb.CommitTransaction();
+        PrivilegeDb::getInstance().CommitTransaction();
         LogDebug("Application installation commited to database");
+    } catch (const PrivilegeDb::Exception::IOError &e) {
+        LogError("Cannot access application database: " << e.DumpToString());
+        goto error_label;
     } catch (const PrivilegeDb::Exception::InternalError &e) {
-        m_privilegeDb.RollbackTransaction();
+        PrivilegeDb::getInstance().RollbackTransaction();
         LogError("Error while saving application info to database: " << e.DumpToString());
         goto error_label;
     } catch (const CynaraException::Base &e) {
-        m_privilegeDb.RollbackTransaction();
+        PrivilegeDb::getInstance().RollbackTransaction();
         LogError("Error while setting Cynara rules for application: " << e.DumpToString());
         goto error_label;
     } catch (const std::bad_alloc &e) {
-        m_privilegeDb.RollbackTransaction();
+        PrivilegeDb::getInstance().RollbackTransaction();
         LogError("Memory allocation while setting Cynara rules for application: " << e.what());
         goto error_label;
     }
@@ -379,11 +382,11 @@ bool Service::processAppUninstall(MessageBuffer &buffer, MessageBuffer &send, ui
     try {
         std::vector<std::string> oldPkgPrivileges, newPkgPrivileges;
 
-        m_privilegeDb.BeginTransaction();
-        if (!m_privilegeDb.GetAppPkgId(appId, pkgId)) {
+        PrivilegeDb::getInstance().BeginTransaction();
+        if (!PrivilegeDb::getInstance().GetAppPkgId(appId, pkgId)) {
             LogWarning("Application " << appId <<
                 " not found in database while uninstalling");
-            m_privilegeDb.RollbackTransaction();
+            PrivilegeDb::getInstance().RollbackTransaction();
             appExists = false;
         } else {
 
@@ -395,25 +398,28 @@ bool Service::processAppUninstall(MessageBuffer &buffer, MessageBuffer &send, ui
                 goto error_label;
             }
 
-            m_privilegeDb.GetPkgPrivileges(pkgId, uid, oldPkgPrivileges);
-            m_privilegeDb.UpdateAppPrivileges(appId, uid, std::vector<std::string>());
-            m_privilegeDb.RemoveApplication(appId, uid, removePkg);
-            m_privilegeDb.GetPkgPrivileges(pkgId, uid, newPkgPrivileges);
+            PrivilegeDb::getInstance().GetPkgPrivileges(pkgId, uid, oldPkgPrivileges);
+            PrivilegeDb::getInstance().UpdateAppPrivileges(appId, uid, std::vector<std::string>());
+            PrivilegeDb::getInstance().RemoveApplication(appId, uid, removePkg);
+            PrivilegeDb::getInstance().GetPkgPrivileges(pkgId, uid, newPkgPrivileges);
             CynaraAdmin::UpdatePackagePolicy(smackLabel, uidstr, oldPkgPrivileges,
                                              newPkgPrivileges);
-            m_privilegeDb.CommitTransaction();
+            PrivilegeDb::getInstance().CommitTransaction();
             LogDebug("Application uninstallation commited to database");
         }
+    } catch (const PrivilegeDb::Exception::IOError &e) {
+        LogError("Cannot access application database: " << e.DumpToString());
+        goto error_label;
     } catch (const PrivilegeDb::Exception::InternalError &e) {
-        m_privilegeDb.RollbackTransaction();
+        PrivilegeDb::getInstance().RollbackTransaction();
         LogError("Error while removing application info from database: " << e.DumpToString());
         goto error_label;
     } catch (const CynaraException::Base &e) {
-        m_privilegeDb.RollbackTransaction();
+        PrivilegeDb::getInstance().RollbackTransaction();
         LogError("Error while setting Cynara rules for application: " << e.DumpToString());
         goto error_label;
     } catch (const std::bad_alloc &e) {
-        m_privilegeDb.RollbackTransaction();
+        PrivilegeDb::getInstance().RollbackTransaction();
         LogError("Memory allocation while setting Cynara rules for application: " << e.what());
         goto error_label;
     }
@@ -448,14 +454,14 @@ bool Service::processGetPkgId(MessageBuffer &buffer, MessageBuffer &send)
     LogDebug("appId: " << appId);
 
     try {
-        if (!m_privilegeDb.GetAppPkgId(appId, pkgId)) {
+        if (!PrivilegeDb::getInstance().GetAppPkgId(appId, pkgId)) {
             LogWarning("Application " << appId << " not found in database");
             Serialization::Serialize(send, SECURITY_MANAGER_API_ERROR_NO_SUCH_OBJECT);
             return false;
         } else {
             LogDebug("pkgId: " << pkgId);
         }
-    } catch (const PrivilegeDb::Exception::InternalError &e) {
+    } catch (const PrivilegeDb::Exception::Base &e) {
         LogError("Error while getting pkgId from database: " << e.DumpToString());
         Serialization::Serialize(send, SECURITY_MANAGER_API_ERROR_SERVER_ERROR);
         return false;
@@ -481,7 +487,7 @@ bool Service::processGetAppGroups(MessageBuffer &buffer, MessageBuffer &send, ui
         Deserialization::Deserialize(buffer, appId);
         LogDebug("appId: " << appId);
 
-        if (!m_privilegeDb.GetAppPkgId(appId, pkgId)) {
+        if (!PrivilegeDb::getInstance().GetAppPkgId(appId, pkgId)) {
             LogWarning("Application " << appId << " not found in database");
             Serialization::Serialize(send, SECURITY_MANAGER_API_ERROR_NO_SUCH_OBJECT);
             return false;
@@ -496,21 +502,21 @@ bool Service::processGetAppGroups(MessageBuffer &buffer, MessageBuffer &send, ui
         LogDebug("smack label: " << smackLabel);
 
         std::vector<std::string> privileges;
-        m_privilegeDb.GetPkgPrivileges(pkgId, uid, privileges);
+        PrivilegeDb::getInstance().GetPkgPrivileges(pkgId, uid, privileges);
         /*there is also a need of checking, if privilege is granted to all users*/
         size_t tmp = privileges.size();
-        m_privilegeDb.GetPkgPrivileges(pkgId, getGlobalUserId(), privileges);
+        PrivilegeDb::getInstance().GetPkgPrivileges(pkgId, getGlobalUserId(), privileges);
         /*privileges needs to be sorted and with no duplications - for cynara sake*/
         std::inplace_merge(privileges.begin(), privileges.begin() + tmp, privileges.end());
         privileges.erase( unique( privileges.begin(), privileges.end() ), privileges.end() );
 
         for (const auto &privilege : privileges) {
             std::vector<std::string> gidsTmp;
-            m_privilegeDb.GetPrivilegeGroups(privilege, gidsTmp);
+            PrivilegeDb::getInstance().GetPrivilegeGroups(privilege, gidsTmp);
             if (!gidsTmp.empty()) {
                 LogDebug("Considering privilege " << privilege << " with " <<
                     gidsTmp.size() << " groups assigned");
-                if (m_cynara.check(smackLabel, privilege, uidStr, pidStr)) {
+                if (Cynara::getInstance().check(smackLabel, privilege, uidStr, pidStr)) {
                     for_each(gidsTmp.begin(), gidsTmp.end(), [&] (std::string group)
                     {
                         struct group *grp = getgrnam(group.c_str());
@@ -525,7 +531,7 @@ bool Service::processGetAppGroups(MessageBuffer &buffer, MessageBuffer &send, ui
                     LogDebug("Cynara denied, not adding groups");
             }
         }
-    } catch (const PrivilegeDb::Exception::InternalError &e) {
+    } catch (const PrivilegeDb::Exception::Base &e) {
         LogError("Database error: " << e.DumpToString());
         Serialization::Serialize(send, SECURITY_MANAGER_API_ERROR_SERVER_ERROR);
         return false;

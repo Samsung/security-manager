@@ -61,8 +61,6 @@ public:
 
 private:
     ConnectionInfoMap m_connectionInfoMap;
-    PrivilegeDb m_privilegeDb;
-    Cynara m_cynara;
 
     /**
      * Handle request from a client

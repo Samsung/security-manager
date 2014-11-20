@@ -73,6 +73,12 @@ PrivilegeDb::~PrivilegeDb()
     delete mSqlConnection;
 }
 
+PrivilegeDb &PrivilegeDb::getInstance()
+{
+    static PrivilegeDb privilegeDb;
+    return privilegeDb;
+}
+
 void PrivilegeDb::BeginTransaction(void)
 {
     try_catch<void>([&] {

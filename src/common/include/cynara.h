@@ -70,8 +70,9 @@ struct CynaraAdminPolicy : cynara_admin_policy
 class CynaraAdmin
 {
 public:
-    CynaraAdmin();
     virtual ~CynaraAdmin();
+
+    static CynaraAdmin &getInstance();
 
     /**
      * Update Cynara policies.
@@ -104,14 +105,16 @@ public:
         const std::vector<std::string> &newPrivileges);
 
 private:
+    CynaraAdmin();
     struct cynara_admin *m_CynaraAdmin;
 };
 
 class Cynara
 {
 public:
-    Cynara();
     virtual ~Cynara();
+
+    static Cynara &getInstance();
 
     /**
      * Ask Cynara for permission.
@@ -126,6 +129,7 @@ public:
         const std::string &user, const std::string &session);
 
 private:
+    Cynara();
     struct cynara *m_Cynara;
 };
 

@@ -60,6 +60,13 @@ class PrivilegeDb {
      */
 
 private:
+    /**
+     * Constructor
+     * @exception DB::SqlConnection::Exception::IOError on problems with database access
+     *
+     */
+    PrivilegeDb(const std::string &path = std::string(PRIVILEGE_DB_PATH));
+
     SecurityManager::DB::SqlConnection *mSqlConnection;
     const std::map<QueryType, const char * const > Queries = {
         { QueryType::EGetPkgPrivileges, "SELECT DISTINCT privilege_name FROM app_privilege_view WHERE pkg_name=? AND uid=? ORDER BY privilege_name"},
@@ -91,14 +98,9 @@ public:
         DECLARE_EXCEPTION_TYPE(Base, InternalError)
     };
 
-    /**
-     * Constructor
-     * @exception DB::SqlConnection::Exception::IOError on problems with database access
-     *
-     */
-    PrivilegeDb(const std::string &path = std::string(PRIVILEGE_DB_PATH));
-
     ~PrivilegeDb(void);
+
+    static PrivilegeDb &getInstance();
 
     /**
      * Begin transaction
