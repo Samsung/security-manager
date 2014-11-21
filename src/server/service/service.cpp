@@ -23,54 +23,18 @@
  * @brief       Implementation of security-manager service.
  */
 
-#include <grp.h>
-#include <limits.h>
-#include <pwd.h>
 #include <sys/socket.h>
-#include <sys/types.h>
-
-#include <cstring>
-#include <unordered_set>
-#include <algorithm>
 
 #include <dpl/log/log.h>
 #include <dpl/serialization.h>
-#include <tzplatform_config.h>
 
-#include "privilege_db.h"
 #include "protocols.h"
-#include "security-manager.h"
 #include "service.h"
-#include "smack-common.h"
-#include "smack-rules.h"
-#include "smack-labels.h"
+#include "service_impl.h"
 
 namespace SecurityManager {
 
 const InterfaceID IFACE = 1;
-
-
-
-static uid_t getGlobalUserId(void) {
-    static uid_t globaluid = tzplatform_getuid(TZ_SYS_GLOBALAPP_USER);
-    return globaluid;
-}
-
-/**
- * Unifies user data of apps installed for all users
- * @param  uid            peer's uid - may be changed during process
- * @param  cynaraUserStr  string to which cynara user parameter will be put
- */
-static void checkGlobalUser(uid_t &uid, std::string &cynaraUserStr)
-{
-    static uid_t globaluid = getGlobalUserId();
-    if (uid == 0 || uid == globaluid) {
-        uid = globaluid;
-        cynaraUserStr = CYNARA_ADMIN_WILDCARD;
-    } else {
-        cynaraUserStr = std::to_string(static_cast<unsigned int>(uid));
-    }
-}
 
 Service::Service()
 {
@@ -208,350 +172,54 @@ bool Service::processOne(const ConnectionID &conn, MessageBuffer &buffer,
     return retval;
 }
 
-static inline bool isSubDir(const char *parent, const char *subdir)
+void Service::processAppInstall(MessageBuffer &buffer, MessageBuffer &send, uid_t uid)
 {
-    while (*parent && *subdir)
-        if (*parent++ != *subdir++)
-            return false;
-
-    return (*subdir == '/');
-}
-
-static inline bool installRequestAuthCheck(const app_inst_req &req, uid_t uid)
-{
-    struct passwd *pwd;
-    do {
-        errno = 0;
-        pwd = getpwuid(uid);
-        if (!pwd && errno != EINTR) {
-            LogError("getpwuid failed with '" << uid
-                    << "' as paramter: " << strerror(errno));
-            return false;
-        }
-    } while (!pwd);
-
-    std::unique_ptr<char, std::function<void(void*)>> home(
-        realpath(pwd->pw_dir, NULL), free);
-    if (!home.get()) {
-            LogError("realpath failed with '" << pwd->pw_dir
-                    << "' as paramter: " << strerror(errno));
-            return false;
-    }
-
-    for (const auto &appPath : req.appPaths) {
-        std::unique_ptr<char, std::function<void(void*)>> real_path(
-            realpath(appPath.first.c_str(), NULL), free);
-        if (!real_path.get()) {
-            LogError("realpath failed with '" << appPath.first.c_str()
-                    << "' as paramter: " << strerror(errno));
-            return false;
-        }
-        LogDebug("Requested path is '" << appPath.first.c_str()
-                << "'. User's HOME is '" << pwd->pw_dir << "'");
-        if (!isSubDir(home.get(), real_path.get())) {
-            LogWarning("User's apps may have registered folders only in user's home dir");
-            return false;
-        }
-
-        app_install_path_type pathType = static_cast<app_install_path_type>(appPath.second);
-        if (pathType == SECURITY_MANAGER_PATH_PUBLIC) {
-            LogWarning("Only root can register SECURITY_MANAGER_PATH_PUBLIC path");
-            return false;
-        }
-    }
-    return true;
-}
-
-bool Service::processAppInstall(MessageBuffer &buffer, MessageBuffer &send, uid_t uid)
-{
-    bool pkgIdIsNew = false;
-    std::vector<std::string> addedPermissions;
-    std::vector<std::string> removedPermissions;
-
-    // deserialize request data
     app_inst_req req;
+
     Deserialization::Deserialize(buffer, req.appId);
     Deserialization::Deserialize(buffer, req.pkgId);
     Deserialization::Deserialize(buffer, req.privileges);
     Deserialization::Deserialize(buffer, req.appPaths);
     Deserialization::Deserialize(buffer, req.uid);
-
-    std::string uidstr;
-    if ((!uid) && (req.uid))
-        uid = req.uid;
-    checkGlobalUser(uid, uidstr);
-
-    if(!installRequestAuthCheck(req, uid)) {
-        LogError("Request from uid " << uid << " for app installation denied");
-        Serialization::Serialize(send, SECURITY_MANAGER_API_ERROR_AUTHENTICATION_FAILED);
-        return false;
-    }
-
-    std::string smackLabel;
-    if (!generateAppLabel(req.pkgId, smackLabel)) {
-        LogError("Cannot generate Smack label for package: " << req.pkgId);
-        Serialization::Serialize(send, SECURITY_MANAGER_API_ERROR_SERVER_ERROR);
-        return false;
-    }
-
-    LogDebug("Install parameters: appId: " << req.appId << ", pkgId: " << req.pkgId
-            << ", generated smack label: " << smackLabel);
-
-    // create null terminated array of strings for permissions
-    std::unique_ptr<const char *[]> pp_permissions(new const char* [req.privileges.size() + 1]);
-    for (size_t i = 0; i < req.privileges.size(); ++i) {
-        LogDebug("  Permission = " << req.privileges[i]);
-        pp_permissions[i] = req.privileges[i].c_str();
-    }
-    pp_permissions[req.privileges.size()] = nullptr;
-
-    try {
-        std::vector<std::string> oldPkgPrivileges, newPkgPrivileges;
-
-        LogDebug("Install parameters: appId: " << req.appId << ", pkgId: " << req.pkgId
-                 << ", uidstr " << uidstr << ", generated smack label: " << smackLabel);
-
-        PrivilegeDb::getInstance().BeginTransaction();
-        PrivilegeDb::getInstance().GetPkgPrivileges(req.pkgId, uid, oldPkgPrivileges);
-        PrivilegeDb::getInstance().AddApplication(req.appId, req.pkgId, uid, pkgIdIsNew);
-        PrivilegeDb::getInstance().UpdateAppPrivileges(req.appId, uid, req.privileges);
-        PrivilegeDb::getInstance().GetPkgPrivileges(req.pkgId, uid, newPkgPrivileges);
-        CynaraAdmin::UpdatePackagePolicy(smackLabel, uidstr, oldPkgPrivileges,
-                                         newPkgPrivileges);
-        PrivilegeDb::getInstance().CommitTransaction();
-        LogDebug("Application installation commited to database");
-    } catch (const PrivilegeDb::Exception::IOError &e) {
-        LogError("Cannot access application database: " << e.DumpToString());
-        goto error_label;
-    } catch (const PrivilegeDb::Exception::InternalError &e) {
-        PrivilegeDb::getInstance().RollbackTransaction();
-        LogError("Error while saving application info to database: " << e.DumpToString());
-        goto error_label;
-    } catch (const CynaraException::Base &e) {
-        PrivilegeDb::getInstance().RollbackTransaction();
-        LogError("Error while setting Cynara rules for application: " << e.DumpToString());
-        goto error_label;
-    } catch (const std::bad_alloc &e) {
-        PrivilegeDb::getInstance().RollbackTransaction();
-        LogError("Memory allocation while setting Cynara rules for application: " << e.what());
-        goto error_label;
-    }
-
-    // register paths
-    for (const auto &appPath : req.appPaths) {
-        const std::string &path = appPath.first;
-        app_install_path_type pathType = static_cast<app_install_path_type>(appPath.second);
-        int result = setupPath(req.pkgId, path, pathType);
-
-        if (!result) {
-            LogError("setupPath() failed");
-            goto error_label;
-        }
-    }
-
-    if (pkgIdIsNew) {
-        LogDebug("Adding Smack rules for new pkgId " << req.pkgId);
-        if (!SmackRules::installPackageRules(req.pkgId)) {
-            LogError("Failed to apply package-specific smack rules");
-            goto error_label;
-        }
-    }
-
-    // success
-    Serialization::Serialize(send, SECURITY_MANAGER_API_SUCCESS);
-    return true;
-
-error_label:
-    Serialization::Serialize(send, SECURITY_MANAGER_API_ERROR_SERVER_ERROR);
-    return false;
+    Serialization::Serialize(send, ServiceImpl::appInstall(req, uid));
 }
 
-bool Service::processAppUninstall(MessageBuffer &buffer, MessageBuffer &send, uid_t uid)
+void Service::processAppUninstall(MessageBuffer &buffer, MessageBuffer &send, uid_t uid)
 {
-    // deserialize request data
     std::string appId;
-    std::string pkgId;
-    std::string smackLabel;
-    bool appExists = true;
-    bool removePkg = false;
 
     Deserialization::Deserialize(buffer, appId);
-    std::string uidstr;
-    checkGlobalUser(uid, uidstr);
-
-    try {
-        std::vector<std::string> oldPkgPrivileges, newPkgPrivileges;
-
-        PrivilegeDb::getInstance().BeginTransaction();
-        if (!PrivilegeDb::getInstance().GetAppPkgId(appId, pkgId)) {
-            LogWarning("Application " << appId <<
-                " not found in database while uninstalling");
-            PrivilegeDb::getInstance().RollbackTransaction();
-            appExists = false;
-        } else {
-
-            LogDebug("Uninstall parameters: appId: " << appId << ", pkgId: " << pkgId
-                     << ", uidstr " << uidstr << ", generated smack label: " << smackLabel);
-
-            if (!generateAppLabel(pkgId, smackLabel)) {
-                LogError("Cannot generate Smack label for package: " << pkgId);
-                goto error_label;
-            }
-
-            PrivilegeDb::getInstance().GetPkgPrivileges(pkgId, uid, oldPkgPrivileges);
-            PrivilegeDb::getInstance().UpdateAppPrivileges(appId, uid, std::vector<std::string>());
-            PrivilegeDb::getInstance().RemoveApplication(appId, uid, removePkg);
-            PrivilegeDb::getInstance().GetPkgPrivileges(pkgId, uid, newPkgPrivileges);
-            CynaraAdmin::UpdatePackagePolicy(smackLabel, uidstr, oldPkgPrivileges,
-                                             newPkgPrivileges);
-            PrivilegeDb::getInstance().CommitTransaction();
-            LogDebug("Application uninstallation commited to database");
-        }
-    } catch (const PrivilegeDb::Exception::IOError &e) {
-        LogError("Cannot access application database: " << e.DumpToString());
-        goto error_label;
-    } catch (const PrivilegeDb::Exception::InternalError &e) {
-        PrivilegeDb::getInstance().RollbackTransaction();
-        LogError("Error while removing application info from database: " << e.DumpToString());
-        goto error_label;
-    } catch (const CynaraException::Base &e) {
-        PrivilegeDb::getInstance().RollbackTransaction();
-        LogError("Error while setting Cynara rules for application: " << e.DumpToString());
-        goto error_label;
-    } catch (const std::bad_alloc &e) {
-        PrivilegeDb::getInstance().RollbackTransaction();
-        LogError("Memory allocation while setting Cynara rules for application: " << e.what());
-        goto error_label;
-    }
-
-    if (appExists) {
-
-        if (removePkg) {
-            LogDebug("Removing Smack rules for deleted pkgId " << pkgId);
-            if (!SmackRules::uninstallPackageRules(pkgId)) {
-                LogError("Error on uninstallation of package-specific smack rules");
-                goto error_label;
-            }
-        }
-    }
-
-    // success
-    Serialization::Serialize(send, SECURITY_MANAGER_API_SUCCESS);
-    return true;
-
-error_label:
-    Serialization::Serialize(send, SECURITY_MANAGER_API_ERROR_SERVER_ERROR);
-    return false;
+    Serialization::Serialize(send, ServiceImpl::appUninstall(appId, uid));
 }
 
-bool Service::processGetPkgId(MessageBuffer &buffer, MessageBuffer &send)
+void Service::processGetPkgId(MessageBuffer &buffer, MessageBuffer &send)
 {
-    // deserialize request data
     std::string appId;
     std::string pkgId;
+    int ret;
 
     Deserialization::Deserialize(buffer, appId);
-    LogDebug("appId: " << appId);
-
-    try {
-        if (!PrivilegeDb::getInstance().GetAppPkgId(appId, pkgId)) {
-            LogWarning("Application " << appId << " not found in database");
-            Serialization::Serialize(send, SECURITY_MANAGER_API_ERROR_NO_SUCH_OBJECT);
-            return false;
-        } else {
-            LogDebug("pkgId: " << pkgId);
-        }
-    } catch (const PrivilegeDb::Exception::Base &e) {
-        LogError("Error while getting pkgId from database: " << e.DumpToString());
-        Serialization::Serialize(send, SECURITY_MANAGER_API_ERROR_SERVER_ERROR);
-        return false;
-    }
-
-     // success
-    Serialization::Serialize(send, SECURITY_MANAGER_API_SUCCESS);
-    Serialization::Serialize(send, pkgId);
-    return true;
+    ret = ServiceImpl::getPkgId(appId, pkgId);
+    Serialization::Serialize(send, ret);
+    if (ret == SECURITY_MANAGER_API_SUCCESS)
+        Serialization::Serialize(send, pkgId);
 }
 
-bool Service::processGetAppGroups(MessageBuffer &buffer, MessageBuffer &send, uid_t uid, pid_t pid)
+void Service::processGetAppGroups(MessageBuffer &buffer, MessageBuffer &send, uid_t uid, pid_t pid)
 {
+    std::string appId;
     std::unordered_set<gid_t> gids;
+    int ret;
 
-    try {
-        std::string appId;
-        std::string pkgId;
-        std::string smackLabel;
-        std::string uidStr = std::to_string(uid);
-        std::string pidStr = std::to_string(pid);
-
-        Deserialization::Deserialize(buffer, appId);
-        LogDebug("appId: " << appId);
-
-        if (!PrivilegeDb::getInstance().GetAppPkgId(appId, pkgId)) {
-            LogWarning("Application " << appId << " not found in database");
-            Serialization::Serialize(send, SECURITY_MANAGER_API_ERROR_NO_SUCH_OBJECT);
-            return false;
+    Deserialization::Deserialize(buffer, appId);
+    ret = ServiceImpl::getAppGroups(appId, uid, pid, gids);
+    Serialization::Serialize(send, ret);
+    if (ret == SECURITY_MANAGER_API_SUCCESS) {
+        Serialization::Serialize(send, static_cast<int>(gids.size()));
+        for (const auto &gid : gids) {
+            Serialization::Serialize(send, gid);
         }
-        LogDebug("pkgId: " << pkgId);
-
-        if (!generateAppLabel(pkgId, smackLabel)) {
-             LogError("Cannot generate Smack label for package: " << pkgId);
-            Serialization::Serialize(send, SECURITY_MANAGER_API_ERROR_NO_SUCH_OBJECT);
-            return false;
-        }
-        LogDebug("smack label: " << smackLabel);
-
-        std::vector<std::string> privileges;
-        PrivilegeDb::getInstance().GetPkgPrivileges(pkgId, uid, privileges);
-        /*there is also a need of checking, if privilege is granted to all users*/
-        size_t tmp = privileges.size();
-        PrivilegeDb::getInstance().GetPkgPrivileges(pkgId, getGlobalUserId(), privileges);
-        /*privileges needs to be sorted and with no duplications - for cynara sake*/
-        std::inplace_merge(privileges.begin(), privileges.begin() + tmp, privileges.end());
-        privileges.erase( unique( privileges.begin(), privileges.end() ), privileges.end() );
-
-        for (const auto &privilege : privileges) {
-            std::vector<std::string> gidsTmp;
-            PrivilegeDb::getInstance().GetPrivilegeGroups(privilege, gidsTmp);
-            if (!gidsTmp.empty()) {
-                LogDebug("Considering privilege " << privilege << " with " <<
-                    gidsTmp.size() << " groups assigned");
-                if (Cynara::getInstance().check(smackLabel, privilege, uidStr, pidStr)) {
-                    for_each(gidsTmp.begin(), gidsTmp.end(), [&] (std::string group)
-                    {
-                        struct group *grp = getgrnam(group.c_str());
-                        if (grp == NULL) {
-                                LogError("No such group: " << group.c_str());
-                                return;
-                        }
-                        gids.insert(grp->gr_gid);
-                    });
-                    LogDebug("Cynara allowed, adding groups");
-                } else
-                    LogDebug("Cynara denied, not adding groups");
-            }
-        }
-    } catch (const PrivilegeDb::Exception::Base &e) {
-        LogError("Database error: " << e.DumpToString());
-        Serialization::Serialize(send, SECURITY_MANAGER_API_ERROR_SERVER_ERROR);
-        return false;
-    } catch (const CynaraException::Base &e) {
-        LogError("Error while querying Cynara for permissions: " << e.DumpToString());
-        Serialization::Serialize(send, SECURITY_MANAGER_API_ERROR_SERVER_ERROR);
-        return false;
-    } catch (const std::bad_alloc &e) {
-        LogError("Memory allocation failed: " << e.what());
-        Serialization::Serialize(send, SECURITY_MANAGER_API_ERROR_OUT_OF_MEMORY);
-        return false;
     }
-
-    // success
-    Serialization::Serialize(send, SECURITY_MANAGER_API_SUCCESS);
-    Serialization::Serialize(send, static_cast<int>(gids.size()));
-    for (const auto &gid : gids) {
-        Serialization::Serialize(send, gid);
-    }
-    return true;
 }
 
 

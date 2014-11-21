@@ -50,6 +50,7 @@ SET(COMMON_SOURCES
     ${COMMON_PATH}/smack-labels.cpp
     ${COMMON_PATH}/smack-rules.cpp
     ${COMMON_PATH}/smack-check.cpp
+    ${COMMON_PATH}/service_impl.cpp
     )
 
 ADD_LIBRARY(${TARGET_COMMON} SHARED ${COMMON_SOURCES})
