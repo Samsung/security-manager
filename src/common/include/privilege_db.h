@@ -52,6 +52,7 @@ enum class QueryType {
     EPkgIdExists,
     EGetPkgId,
     EGetPrivilegeGroups,
+    EGetUserApps,
 };
 
 class PrivilegeDb {
@@ -77,6 +78,7 @@ private:
         { QueryType::EPkgIdExists, "SELECT * FROM pkg WHERE name=?" },
         { QueryType::EGetPkgId, " SELECT pkg_name FROM app_pkg_view WHERE app_name = ?" },
         { QueryType::EGetPrivilegeGroups, " SELECT name FROM privilege_group_view WHERE privilege_name = ?" },
+        { QueryType::EGetUserApps, "SELECT name FROM app WHERE uid=?" },
     };
 
     /**
@@ -197,6 +199,16 @@ public:
     void GetPrivilegeGroups(const std::string &privilege,
         std::vector<std::string> &grp_names);
 
+    /**
+     * Retrieve list of apps assigned to user
+     *
+     * @param uid - user identifier
+     * @param[out] apps - list of apps assigned to user,
+     *                    this parameter do not need to be empty, but
+     *                    it is being overwritten during function call.
+     * @exception DB::SqlConnection::Exception::InternalError on internal error
+     */
+    void GetUserApps(uid_t uid, std::vector<std::string> &apps);
 };
 
 } //namespace SecurityManager

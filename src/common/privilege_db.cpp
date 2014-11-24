@@ -262,5 +262,21 @@ void PrivilegeDb::GetPrivilegeGroups(const std::string &privilege,
     });
 }
 
+void PrivilegeDb::GetUserApps(uid_t uid, std::vector<std::string> &apps)
+{
+   try_catch<void>([&] {
+        DB::SqlConnection::DataCommandAutoPtr command =
+                mSqlConnection->PrepareDataCommand(
+                        Queries.at(QueryType::EGetUserApps));
+        command->BindInteger(1, static_cast<unsigned int>(uid));
+        apps.clear();
+        while (command->Step()) {
+            std::string app = command->GetColumnString(0);
+            LogDebug("User " << uid << " has app " << app << " installed");
+            apps.push_back(app);
+        };
+    });
+}
+
 
 } //namespace SecurityManager
