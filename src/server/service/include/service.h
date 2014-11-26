@@ -25,10 +25,7 @@
 #ifndef _SECURITY_MANAGER_SERVICE_
 #define _SECURITY_MANAGER_SERVICE_
 
-#include <service-thread.h>
-#include <generic-socket-manager.h>
-#include <message-buffer.h>
-#include <connection-info.h>
+#include "base-service.h"
 
 namespace SecurityManager {
 
@@ -40,26 +37,13 @@ public:
 };
 
 class Service :
-    public SecurityManager::GenericSocketService,
-    public SecurityManager::ServiceThread<Service>
+    public SecurityManager::BaseService
 {
 public:
     Service();
     ServiceDescriptionVector GetServiceDescription();
 
-    DECLARE_THREAD_EVENT(AcceptEvent, accept)
-    DECLARE_THREAD_EVENT(WriteEvent, write)
-    DECLARE_THREAD_EVENT(ReadEvent, process)
-    DECLARE_THREAD_EVENT(CloseEvent, close)
-
-    void accept(const AcceptEvent &event);
-    void write(const WriteEvent &event);
-    void process(const ReadEvent &event);
-    void close(const CloseEvent &event);
-
 private:
-    ConnectionInfoMap m_connectionInfoMap;
-
     /**
      * Handle request from a client
      *

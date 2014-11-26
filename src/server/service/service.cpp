@@ -47,43 +47,6 @@ GenericSocketService::ServiceDescriptionVector Service::GetServiceDescription()
     };
 }
 
-void Service::accept(const AcceptEvent &event)
-{
-    LogDebug("Accept event. ConnectionID.sock: " << event.connectionID.sock <<
-             " ConnectionID.counter: " << event.connectionID.counter <<
-             " ServiceID: " << event.interfaceID);
-
-    auto &info = m_connectionInfoMap[event.connectionID.counter];
-    info.interfaceID = event.interfaceID;
-}
-
-void Service::write(const WriteEvent &event)
-{
-    LogDebug("WriteEvent. ConnectionID: " << event.connectionID.sock <<
-             " Size: " << event.size <<
-             " Left: " << event.left);
-
-    if (event.left == 0)
-        m_serviceManager->Close(event.connectionID);
-}
-
-void Service::process(const ReadEvent &event)
-{
-    LogDebug("Read event for counter: " << event.connectionID.counter);
-    auto &info = m_connectionInfoMap[event.connectionID.counter];
-    info.buffer.Push(event.rawBuffer);
-
-    // We can get several requests in one package.
-    // Extract and process them all
-    while (processOne(event.connectionID, info.buffer, info.interfaceID));
-}
-
-void Service::close(const CloseEvent &event)
-{
-    LogDebug("CloseEvent. ConnectionID: " << event.connectionID.sock);
-    m_connectionInfoMap.erase(event.connectionID.counter);
-}
-
 static bool getPeerID(int sock, uid_t &uid, pid_t &pid) {
     struct ucred cr;
     socklen_t len = sizeof(cr);
@@ -113,7 +76,7 @@ bool Service::processOne(const ConnectionID &conn, MessageBuffer &buffer,
     uid_t uid;
     pid_t pid;
 
-    if(!getPeerID(conn.sock, uid, pid)) {
+    if (!getPeerID(conn.sock, uid, pid)) {
         LogError("Closing socket because of error: unable to get peer's uid and pid");
         m_serviceManager->Close(conn);
         return false;
@@ -157,7 +120,7 @@ bool Service::processOne(const ConnectionID &conn, MessageBuffer &buffer,
             LogError("Broken protocol.");
         } Catch (ServiceException::Base) {
             LogError("Broken protocol.");
-        } catch (std::exception &e) {
+        } catch (const std::exception &e) {
             LogError("STD exception " << e.what());
         } catch (...) {
             LogError("Unknown exception");

@@ -25,6 +25,7 @@ SET(SERVER_SOURCES
     ${SERVER_PATH}/main/generic-socket-manager.cpp
     ${SERVER_PATH}/main/socket-manager.cpp
     ${SERVER_PATH}/main/server-main.cpp
+    ${SERVER_PATH}/service/base-service.cpp
     ${SERVER_PATH}/service/service.cpp
     )
 
