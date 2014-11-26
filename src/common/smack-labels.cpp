@@ -34,7 +34,6 @@
 #include <string>
 
 #include <dpl/log/log.h>
-#include <smack-common.h>
 
 #include "security-manager.h"
 #include "smack-labels.h"
@@ -166,7 +165,7 @@ bool setupPath(const std::string &pkgId, const std::string &path,
 
     switch (pathType) {
     case SECURITY_MANAGER_PATH_PRIVATE:
-        if (!generateAppLabel(pkgId, label))
+        if (!generatePkgLabel(pkgId, label))
             return false;
         label_executables = true;
         label_transmute = false;
@@ -186,6 +185,20 @@ bool setupPath(const std::string &pkgId, const std::string &path,
         return false;
     }
     return labelDir(path, label, label_transmute, label_executables);
+}
+
+bool generateAppLabel(const std::string &appId, std::string &label)
+{
+    (void) appId;
+    label = "User";
+    return true;
+}
+
+bool generatePkgLabel(const std::string &pkgId, std::string &label)
+{
+    (void) pkgId;
+    label = "User";
+    return (true);
 }
 
 } // namespace SecurityManager

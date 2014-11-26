@@ -46,7 +46,6 @@ SET(COMMON_SOURCES
     ${COMMON_PATH}/protocols.cpp
     ${COMMON_PATH}/message-buffer.cpp
     ${COMMON_PATH}/privilege_db.cpp
-    ${COMMON_PATH}/smack-common.cpp
     ${COMMON_PATH}/smack-labels.cpp
     ${COMMON_PATH}/smack-rules.cpp
     ${COMMON_PATH}/smack-check.cpp

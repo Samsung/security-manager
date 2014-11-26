@@ -39,11 +39,10 @@
 
 #include <dpl/log/log.h>
 #include <dpl/exception.h>
-
+#include <smack-labels.h>
 #include <message-buffer.h>
 #include <client-common.h>
 #include <protocols.h>
-#include <smack-common.h>
 #include <service_impl.h>
 #include <file-lock.h>
 
@@ -360,7 +359,6 @@ static bool setup_smack(const char *label)
 SECURITY_MANAGER_API
 int security_manager_set_process_label_from_appid(const char *app_id)
 {
-    char *pkg_id;
     int ret;
     std::string appLabel;
 
@@ -369,23 +367,17 @@ int security_manager_set_process_label_from_appid(const char *app_id)
     if (smack_smackfs_path() == NULL)
         return SECURITY_MANAGER_SUCCESS;
 
-    ret = security_manager_get_app_pkgid(&pkg_id, app_id);
-    if (ret != SECURITY_MANAGER_SUCCESS) {
+    if (SecurityManager::generateAppLabel(std::string(app_id), appLabel) == false) {
+        LogError("Failed to generate smack label for appId: " << app_id);
+        return SECURITY_MANAGER_API_ERROR_NO_SUCH_OBJECT;
+    }
+
+    if ((ret = setup_smack(appLabel.c_str())) != SECURITY_MANAGER_SUCCESS) {
+        LogError("Failed to set smack label " << appLabel << " for current process");
         return ret;
     }
 
-    if (SecurityManager::generateAppLabel(std::string(pkg_id), appLabel)) {
-        ret = setup_smack(appLabel.c_str());
-        if (ret != SECURITY_MANAGER_SUCCESS) {
-            LogError("Failed to set smack label " << appLabel << " for current process");
-        }
-    }
-    else {
-        ret = SECURITY_MANAGER_ERROR_UNKNOWN;
-    }
-
-    free(pkg_id);
-    return ret;
+    return SECURITY_MANAGER_SUCCESS;
 }
 
 SECURITY_MANAGER_API

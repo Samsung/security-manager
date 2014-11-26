@@ -45,6 +45,7 @@ const char *const PRIVILEGE_DB_PATH = tzplatform_mkpath(TZ_SYS_DB, ".security-ma
 
 enum class QueryType {
     EGetPkgPrivileges,
+    EGetAppPrivileges,
     EAddApplication,
     ERemoveApplication,
     EAddAppPrivileges,
@@ -53,6 +54,7 @@ enum class QueryType {
     EGetPkgId,
     EGetPrivilegeGroups,
     EGetUserApps,
+    EGetAppsInPkg
 };
 
 class PrivilegeDb {
@@ -71,6 +73,7 @@ private:
     SecurityManager::DB::SqlConnection *mSqlConnection;
     const std::map<QueryType, const char * const > Queries = {
         { QueryType::EGetPkgPrivileges, "SELECT DISTINCT privilege_name FROM app_privilege_view WHERE pkg_name=? AND uid=? ORDER BY privilege_name"},
+        { QueryType::EGetAppPrivileges, "SELECT DISTINCT privilege_name FROM app_privilege_view WHERE app_name=? AND uid=? ORDER BY privilege_name"},
         { QueryType::EAddApplication, "INSERT INTO app_pkg_view (app_name, pkg_name, uid) VALUES (?, ?, ?)" },
         { QueryType::ERemoveApplication, "DELETE FROM app_pkg_view WHERE app_name=? AND uid=?" },
         { QueryType::EAddAppPrivileges, "INSERT INTO app_privilege_view (app_name, uid, privilege_name) VALUES (?, ?, ?)" },
@@ -79,6 +82,7 @@ private:
         { QueryType::EGetPkgId, " SELECT pkg_name FROM app_pkg_view WHERE app_name = ?" },
         { QueryType::EGetPrivilegeGroups, " SELECT name FROM privilege_group_view WHERE privilege_name = ?" },
         { QueryType::EGetUserApps, "SELECT name FROM app WHERE uid=?" },
+        { QueryType::EGetAppsInPkg, " SELECT app_name FROM app_pkg_view WHERE pkg_name = ?" },
     };
 
     /**
@@ -170,16 +174,26 @@ public:
             std::vector<std::string> &currentPrivilege);
 
     /**
+     * Retrieve list of privileges assigned to an appId
+     *
+     * @param appId - application identifier
+     * @param uid - user identifier for whom privileges will be retrieved
+     * @param[out] currentPrivileges - list of current privileges assigned to appId
+     * @exception DB::SqlConnection::Exception::InternalError on internal error
+     */
+    void GetAppPrivileges(const std::string &appId, uid_t uid,
+        std::vector<std::string> &currentPrivileges);
+
+    /**
      * Add an application into the database
      *
      * @param appId - application identifier
      * @param pkgId - package identifier
      * @param uid - user identifier for whom application is going to be installed
-     * @param[out] pkgIdIsNew - return info if pkgId is new to the database
      * @exception DB::SqlConnection::Exception::InternalError on internal error
      */
     void AddApplication(const std::string &appId, const std::string &pkgId,
-            uid_t uid, bool &pkgIdIsNew);
+            uid_t uid);
 
     /**
      * Remove an application from the database
@@ -232,6 +246,15 @@ public:
      * @exception DB::SqlConnection::Exception::InternalError on internal error
      */
     void GetUserApps(uid_t uid, std::vector<std::string> &apps);
+    /**
+     * Retrieve a list of all application ids for a package id
+     *
+     * @param pkgId - package id
+     * @param[out] appIds - list of application ids for the package id
+     * @exception DB::SqlConnection::Exception::InternalError on internal error
+     */
+    void GetAppIdsForPkgId (const std::string &pkgId,
+        std::vector<std::string> &appIds);
 };
 
 } //namespace SecurityManager

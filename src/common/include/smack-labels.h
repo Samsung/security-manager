@@ -46,6 +46,24 @@ namespace SecurityManager {
 bool setupPath(const std::string &pkgId, const std::string &path,
     app_install_path_type pathType);
 
+/**
+ * Generates label for an application with a specific application ID
+ * read from @ref appId and assigns it to @ref label.
+ *
+ * @param[in] appId application's identifier
+ * @param[out] label string in which application's label will be stored
+ * @return true on success, false on error.
+*/
+bool generateAppLabel(const std::string &appId, std::string &label);
+/**
+ * Generates label for an application with a package ID
+ * read from @ref appPkgId and assigns it to @ref label.
+ *
+ * @param[in] pkgId
+ * @param[out] label
+ * @return true on success, false on error.
+ */
+bool generatePkgLabel(const std::string &pkgId, std::string &label);
 } // namespace SecurityManager
 
 #endif /* _SMACK_LABELS_H_ */

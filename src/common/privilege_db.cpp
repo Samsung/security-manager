@@ -143,10 +143,8 @@ bool PrivilegeDb::GetAppPkgId(const std::string &appId, std::string &pkgId)
 }
 
 void PrivilegeDb::AddApplication(const std::string &appId,
-        const std::string &pkgId, uid_t uid, bool &pkgIdIsNew)
+        const std::string &pkgId, uid_t uid)
 {
-    pkgIdIsNew = !(this->PkgIdExists(pkgId));
-
     try_catch<void>([&] {
         auto &command = getQuery(QueryType::EAddApplication);
         command->BindString(1, appId.c_str());
@@ -194,6 +192,26 @@ void PrivilegeDb::GetPkgPrivileges(const std::string &pkgId, uid_t uid,
         auto &command = getQuery(QueryType::EGetPkgPrivileges);
         command->BindString(1, pkgId.c_str());
         command->BindInteger(2, static_cast<unsigned int>(uid));
+
+        while (command->Step()) {
+            std::string privilege = command->GetColumnString(0);
+            LogDebug("Got privilege: " << privilege);
+            currentPrivileges.push_back(privilege);
+        };
+    });
+}
+
+void PrivilegeDb::GetAppPrivileges(const std::string &appId, uid_t uid,
+        std::vector<std::string> &currentPrivileges)
+{
+    try_catch<void>([&] {
+        DB::SqlConnection::DataCommandAutoPtr &command =
+                m_commands.at(static_cast<size_t>(QueryType::EGetAppPrivileges));
+
+        command->Reset();
+        command->BindString(1, appId.c_str());
+        command->BindInteger(2, static_cast<unsigned int>(uid));
+        currentPrivileges.clear();
 
         while (command->Step()) {
             std::string privilege = command->GetColumnString(0);
@@ -266,5 +284,23 @@ void PrivilegeDb::GetUserApps(uid_t uid, std::vector<std::string> &apps)
     });
 }
 
+void PrivilegeDb::GetAppIdsForPkgId(const std::string &pkgId,
+        std::vector<std::string> &appIds)
+{
+    try_catch<void>([&] {
+        DB::SqlConnection::DataCommandAutoPtr &command =
+                m_commands.at(static_cast<size_t>(QueryType::EGetAppsInPkg));
+
+        command->Reset();
+        command->BindString(1, pkgId.c_str());
+        appIds.clear();
+
+        while (command->Step()) {
+            std::string appId = command->GetColumnString (0);
+            LogDebug ("Got appid: " << appId << " for pkgId " << pkgId);
+            appIds.push_back(appId);
+        };
+    });
+}
 
 } //namespace SecurityManager

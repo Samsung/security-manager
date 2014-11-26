@@ -161,7 +161,7 @@ void CynaraAdmin::SetPolicies(const std::vector<CynaraAdminPolicy> &policies)
         "Error while updating Cynara policy.");
 }
 
-void CynaraAdmin::UpdatePackagePolicy(
+void CynaraAdmin::UpdateAppPolicy(
     const std::string &label,
     const std::string &user,
     const std::vector<std::string> &oldPrivileges,

@@ -38,7 +38,6 @@
 #include <dpl/singleton_safe_impl.h>
 
 #include <message-buffer.h>
-#include <smack-common.h>
 
 #include <protocols.h>
 
