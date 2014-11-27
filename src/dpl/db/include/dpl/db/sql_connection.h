@@ -364,7 +364,7 @@ class SqlConnection
     };
 
     // Move on copy semantics
-    typedef std::auto_ptr<DataCommand> DataCommandAutoPtr;
+    typedef std::unique_ptr<DataCommand> DataCommandAutoPtr;
 
     // Open flags
     class Flag

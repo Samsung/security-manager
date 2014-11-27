@@ -82,6 +82,20 @@ private:
     };
 
     /**
+     * Container for initialized DataCommands, prepared for binding.
+     */
+    std::vector<DB::SqlConnection::DataCommandAutoPtr> m_commands;
+
+    /**
+     * Fills empty m_commands map with sql commands prepared for binding.
+     *
+     * Because the "sqlite3_prepare_v2" function takes many cpu cycles, the PrivilegeDb
+     * is optimized to call it only once for one query type.
+     * Designed to be used in the singleton contructor.
+     */
+    void initDataCommands();
+
+    /**
      * Check if pkgId is already registered in database
      *
      * @param pkgId - package identifier
