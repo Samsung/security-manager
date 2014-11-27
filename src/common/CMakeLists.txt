@@ -46,11 +46,13 @@ SET(COMMON_SOURCES
     ${COMMON_PATH}/file-lock.cpp
     ${COMMON_PATH}/protocols.cpp
     ${COMMON_PATH}/message-buffer.cpp
+    ${COMMON_PATH}/master-req.cpp
     ${COMMON_PATH}/privilege_db.cpp
     ${COMMON_PATH}/smack-labels.cpp
     ${COMMON_PATH}/smack-rules.cpp
     ${COMMON_PATH}/smack-check.cpp
     ${COMMON_PATH}/service_impl.cpp
+    ${COMMON_PATH}/zone-utils.cpp
     )
 
 ADD_LIBRARY(${TARGET_COMMON} SHARED ${COMMON_SOURCES})

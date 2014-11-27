@@ -54,6 +54,84 @@ private:
      * @return             true on success
      */
     bool processOne(const ConnectionID &conn, MessageBuffer &buffer, InterfaceID interfaceID);
+
+    /**
+     * Process Cynara policy update during app installation/uninstallation
+     *
+     * @param  buffer Raw received data buffer
+     * @param  send   Raw data buffer to be sent
+     * @param  zoneId ID of zone which requested the call
+     */
+    void processCynaraUpdatePolicy(MessageBuffer &buffer, MessageBuffer &send,
+                                   const std::string &zoneId);
+
+    /**
+     * Process Cynara user initialization
+     *
+     * @param  buffer Raw received data buffer
+     * @param  send   Raw data buffer to be sent
+     */
+    void processCynaraUserInit(MessageBuffer &buffer, MessageBuffer &send);
+
+    /**
+     * Process Cynara user removal
+     *
+     * @param  buffer Raw received data buffer
+     * @param  send   Raw data buffer to be sent
+     */
+    void processCynaraUserRemove(MessageBuffer &buffer, MessageBuffer &send);
+
+    /**
+     * Process policy update
+     *
+     * @param  buffer Raw received data buffer
+     * @param  send   Raw data buffer to be sent
+     */
+    void processPolicyUpdate(MessageBuffer &buffer, MessageBuffer &send);
+
+    /**
+     * Process configured policy acquisition
+     *
+     * @param  buffer Raw received data buffer
+     * @param  send   Raw data buffer to be sent
+     */
+    void processGetConfiguredPolicy(MessageBuffer &buffer, MessageBuffer &send);
+
+    /**
+     * Process policy acquisition from Master
+     *
+     * @param  buffer Raw received data buffer
+     * @param  send   Raw data buffer to be sent
+     */
+    // FIXME this function is not yet implemented.
+    void processGetPolicy(MessageBuffer &buffer, MessageBuffer &send);
+
+    /**
+     * Process policy descriptions list acquisition
+     *
+     * @param  send   Raw data buffer to be sent
+     */
+    void processPolicyGetDesc(MessageBuffer &send);
+
+    /**
+     * Process SMACK rules installation for package. Map rules using Smack Namespaces.
+     *
+     * @param  buffer Raw received data buffer
+     * @param  send   Raw data buffer to be sent
+     * @param  zoneId ID of zone which requested the call
+     */
+    void processSmackInstallRules(MessageBuffer &buffer, MessageBuffer &send,
+                                  const std::string &zoneId);
+
+    /**
+     * Process SMACK rules uninstallation
+     *
+     * @param  buffer Raw received data buffer
+     * @param  send   Raw data buffer to be sent
+     * @param  zoneId ID of zone which requested the call
+     */
+    void processSmackUninstallRules(MessageBuffer &buffer, MessageBuffer &send,
+                                    const std::string &zoneId);
 };
 
 } // namespace SecurityManager

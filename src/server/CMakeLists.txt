@@ -1,6 +1,7 @@
 PKG_CHECK_MODULES(SERVER_DEP
     REQUIRED
     libsystemd-daemon
+    cynara-client
     )
 
 FIND_PACKAGE(Boost REQUIRED COMPONENTS program_options)

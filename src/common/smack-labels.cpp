@@ -37,6 +37,7 @@
 
 #include "security-manager.h"
 #include "smack-labels.h"
+#include "zone-utils.h"
 
 namespace SecurityManager {
 namespace SmackLabels {
@@ -125,8 +126,13 @@ static void labelDir(const std::string &path, const std::string &label,
         dirSetSmack(path, label, XATTR_NAME_SMACKEXEC, &labelExecs);
 }
 
-void setupPath(const std::string &appId, const std::string &path,
-    app_install_path_type pathType)
+void setupPath(const std::string &appId, const std::string &path, app_install_path_type pathType)
+{
+    setupPath(appId, path, pathType, std::string());
+}
+
+void setupPath(const std::string &appId, const std::string &path, app_install_path_type pathType,
+        const std::string &zoneId)
 {
     std::string label;
     bool label_executables, label_transmute;
@@ -134,7 +140,7 @@ void setupPath(const std::string &appId, const std::string &path,
     switch (pathType) {
     case SECURITY_MANAGER_PATH_PRIVATE:
     case SECURITY_MANAGER_PATH_RW:
-        label = generateAppLabel(appId);
+        label = zoneSmackLabelGenerate(generateAppLabel(appId), zoneId);
         label_executables = true;
         label_transmute = false;
         break;
@@ -158,11 +164,17 @@ void setupPath(const std::string &appId, const std::string &path,
 
 void setupCorrectPath(const std::string &pkgId, const std::string &appId, const std::string &basePath)
 {
+    setupCorrectPath(pkgId, appId, basePath, std::string());
+}
+
+void setupCorrectPath(const std::string &pkgId, const std::string &appId, const std::string &basePath,
+        const std::string& zoneId)
+{
     std::string pkgPath = basePath + "/" + pkgId;
     std::string appPath = pkgPath + "/" + appId;
 
-    pathSetSmack(pkgPath.c_str(), generatePkgLabel(pkgId), XATTR_NAME_SMACK);
-    pathSetSmack(appPath.c_str(), generateAppLabel(appId), XATTR_NAME_SMACK);
+    pathSetSmack(pkgPath.c_str(), zoneSmackLabelGenerate(generatePkgLabel(pkgId), zoneId), XATTR_NAME_SMACK);
+    pathSetSmack(appPath.c_str(), zoneSmackLabelGenerate(generateAppLabel(appId), zoneId), XATTR_NAME_SMACK);
     pathSetSmack(appPath.c_str(), "TRUE", XATTR_NAME_SMACKTRANSMUTE);
 }
 

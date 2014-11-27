@@ -33,6 +33,7 @@
 #include "protocols.h"
 #include "service.h"
 #include "service_impl.h"
+#include "master-req.h"
 
 namespace SecurityManager {
 
@@ -193,7 +194,7 @@ void Service::processAppInstall(MessageBuffer &buffer, MessageBuffer &send, uid_
     Deserialization::Deserialize(buffer, req.privileges);
     Deserialization::Deserialize(buffer, req.appPaths);
     Deserialization::Deserialize(buffer, req.uid);
-    Serialization::Serialize(send, ServiceImpl::appInstall(req, uid));
+    Serialization::Serialize(send, ServiceImpl::appInstall(req, uid, m_isSlave));
 }
 
 void Service::processAppUninstall(MessageBuffer &buffer, MessageBuffer &send, uid_t uid)
@@ -201,7 +202,7 @@ void Service::processAppUninstall(MessageBuffer &buffer, MessageBuffer &send, ui
     std::string appId;
 
     Deserialization::Deserialize(buffer, appId);
-    Serialization::Serialize(send, ServiceImpl::appUninstall(appId, uid));
+    Serialization::Serialize(send, ServiceImpl::appUninstall(appId, uid, m_isSlave));
 }
 
 void Service::processGetPkgId(MessageBuffer &buffer, MessageBuffer &send)
@@ -224,7 +225,7 @@ void Service::processGetAppGroups(MessageBuffer &buffer, MessageBuffer &send, ui
     int ret;
 
     Deserialization::Deserialize(buffer, appId);
-    ret = ServiceImpl::getAppGroups(appId, uid, pid, gids);
+    ret = ServiceImpl::getAppGroups(appId, uid, pid, m_isSlave, gids);
     Serialization::Serialize(send, ret);
     if (ret == SECURITY_MANAGER_API_SUCCESS) {
         Serialization::Serialize(send, static_cast<int>(gids.size()));
@@ -243,7 +244,7 @@ void Service::processUserAdd(MessageBuffer &buffer, MessageBuffer &send, uid_t u
     Deserialization::Deserialize(buffer, uidAdded);
     Deserialization::Deserialize(buffer, userType);
 
-    ret = ServiceImpl::userAdd(uidAdded, userType, uid);
+    ret = ServiceImpl::userAdd(uidAdded, userType, uid, m_isSlave);
     Serialization::Serialize(send, ret);
 }
 
@@ -254,7 +255,7 @@ void Service::processUserDelete(MessageBuffer &buffer, MessageBuffer &send, uid_
 
     Deserialization::Deserialize(buffer, uidRemoved);
 
-    ret = ServiceImpl::userDelete(uidRemoved, uid);
+    ret = ServiceImpl::userDelete(uidRemoved, uid, m_isSlave);
     Serialization::Serialize(send, ret);
 }
 
@@ -265,7 +266,11 @@ void Service::processPolicyUpdate(MessageBuffer &buffer, MessageBuffer &send, ui
 
     Deserialization::Deserialize(buffer, policyEntries);
 
-    ret = ServiceImpl::policyUpdate(policyEntries, uid, pid, smackLabel);
+    if (m_isSlave) {
+        ret = MasterReq::PolicyUpdate(policyEntries, uid, pid, smackLabel);
+    } else {
+        ret = ServiceImpl::policyUpdate(policyEntries, uid, pid, smackLabel);
+    }
     Serialization::Serialize(send, ret);
 }
 
@@ -275,7 +280,14 @@ void Service::processGetConfiguredPolicy(MessageBuffer &buffer, MessageBuffer &s
     policy_entry filter;
     Deserialization::Deserialize(buffer, filter);
     std::vector<policy_entry> policyEntries;
-    ret = ServiceImpl::getConfiguredPolicy(forAdmin, filter, uid, pid, smackLabel, policyEntries);
+
+    if (m_isSlave) {
+        ret = MasterReq::GetConfiguredPolicy(forAdmin, filter, uid, pid, smackLabel, policyEntries);
+    } else {
+        ret = ServiceImpl::getConfiguredPolicy(forAdmin, filter, uid, pid, smackLabel,
+                                               policyEntries);
+    }
+
     Serialization::Serialize(send, ret);
     Serialization::Serialize(send, static_cast<int>(policyEntries.size()));
     for (const auto &policyEntry : policyEntries) {
@@ -289,7 +301,13 @@ void Service::processGetPolicy(MessageBuffer &buffer, MessageBuffer &send, uid_t
     policy_entry filter;
     Deserialization::Deserialize(buffer, filter);
     std::vector<policy_entry> policyEntries;
-    ret = ServiceImpl::getPolicy(filter, uid, pid, smackLabel, policyEntries);
+
+    if (m_isSlave) {
+        ret = MasterReq::GetPolicy(filter, uid, pid, smackLabel, policyEntries);
+    } else {
+        ret = ServiceImpl::getPolicy(filter, uid, pid, smackLabel, policyEntries);
+    }
+
     Serialization::Serialize(send, ret);
     Serialization::Serialize(send, static_cast<int>(policyEntries.size()));
     for (const auto &policyEntry : policyEntries) {
@@ -302,7 +320,11 @@ void Service::processPolicyGetDesc(MessageBuffer &send)
     int ret;
     std::vector<std::string> descriptions;
 
-    ret = ServiceImpl::policyGetDesc(descriptions);
+    if (m_isSlave) {
+        ret = MasterReq::PolicyGetDesc(descriptions);
+    } else {
+        ret = ServiceImpl::policyGetDesc(descriptions);
+    }
     Serialization::Serialize(send, ret);
     if (ret == SECURITY_MANAGER_API_SUCCESS) {
         Serialization::Serialize(send, static_cast<int>(descriptions.size()));

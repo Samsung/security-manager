@@ -41,8 +41,10 @@
 #include "smack-rules.h"
 #include "smack-labels.h"
 #include "security-manager.h"
+#include "zone-utils.h"
 
 #include "service_impl.h"
+#include "master-req.h"
 
 namespace SecurityManager {
 namespace ServiceImpl {
@@ -255,7 +257,23 @@ static inline bool installRequestAuthCheck(const app_inst_req &req, uid_t uid, b
     return true;
 }
 
-int appInstall(const app_inst_req &req, uid_t uid)
+static inline bool getZoneId(std::string &zoneId)
+{
+    if (!getZoneIdFromPid(getpid(), zoneId)) {
+        LogError("Failed to get zone ID from current PID");
+        return false;
+    }
+
+    // This function should be called under slave mode only - assumes, that we work inside zone
+    if (zoneId == ZONE_HOST) {
+        LogError("We should not run in host - refusing request");
+        return false;
+    }
+
+    return true;
+}
+
+int appInstall(const app_inst_req &req, uid_t uid, bool isSlave)
 {
     std::vector<std::string> addedPermissions;
     std::vector<std::string> removedPermissions;
@@ -265,6 +283,14 @@ int appInstall(const app_inst_req &req, uid_t uid)
     std::string appPath;
     std::string appLabel;
     std::string pkgLabel;
+
+    std::string zoneId;
+    if (isSlave) {
+        if (!getZoneId(zoneId)) {
+            LogError("Failed to get Zone ID.");
+            return SECURITY_MANAGER_API_ERROR_SERVER_ERROR;
+        }
+    }
 
     if (uid) {
         if (uid != req.uid) {
@@ -294,9 +320,9 @@ int appInstall(const app_inst_req &req, uid_t uid)
     try {
         std::vector<std::string> oldAppPrivileges;
 
-        appLabel = SmackLabels::generateAppLabel(req.appId);
+        appLabel = zoneSmackLabelGenerate(SmackLabels::generateAppLabel(req.appId), zoneId);
         /* NOTE: we don't use pkgLabel here, but generate it for pkgId validation */
-        pkgLabel = SmackLabels::generatePkgLabel(req.pkgId);
+        pkgLabel = zoneSmackLabelGenerate(SmackLabels::generatePkgLabel(req.pkgId), zoneId);
         LogDebug("Install parameters: appId: " << req.appId << ", pkgId: " << req.pkgId
                  << ", uidstr " << uidstr
                  << ", app label: " << appLabel << ", pkg label: " << pkgLabel);
@@ -314,8 +340,20 @@ int appInstall(const app_inst_req &req, uid_t uid)
         PrivilegeDb::getInstance().UpdateAppPrivileges(req.appId, uid, req.privileges);
         /* Get all application ids in the package to generate rules withing the package */
         PrivilegeDb::getInstance().GetAppIdsForPkgId(req.pkgId, pkgContents);
-        CynaraAdmin::getInstance().UpdateAppPolicy(appLabel, uidstr, oldAppPrivileges,
-                                         req.privileges);
+
+        if (isSlave) {
+            int ret = MasterReq::CynaraPolicyUpdate(req.appId, uidstr, oldAppPrivileges,
+                                                    req.privileges);
+            if (ret != SECURITY_MANAGER_API_SUCCESS) {
+                PrivilegeDb::getInstance().RollbackTransaction();
+                LogError("Error while processing request on master: " << ret);
+                return ret;
+            }
+        } else {
+            CynaraAdmin::getInstance().UpdateAppPolicy(appLabel, uidstr, oldAppPrivileges,
+                                                       req.privileges);
+        }
+
         PrivilegeDb::getInstance().CommitTransaction();
         LogDebug("Application installation commited to database");
     } catch (const PrivilegeDb::Exception::IOError &e) {
@@ -341,22 +379,35 @@ int appInstall(const app_inst_req &req, uid_t uid)
 
     try {
         if (isCorrectPath)
-            SmackLabels::setupCorrectPath(req.pkgId, req.appId, appPath);
+            SmackLabels::setupCorrectPath(req.pkgId, req.appId, appPath, zoneId);
 
         // register paths
         for (const auto &appPath : req.appPaths) {
             const std::string &path = appPath.first;
             app_install_path_type pathType = static_cast<app_install_path_type>(appPath.second);
-            SmackLabels::setupPath(req.appId, path, pathType);
+            SmackLabels::setupPath(req.appId, path, pathType, zoneId);
         }
 
-        LogDebug("Adding Smack rules for new appId: " << req.appId << " with pkgId: "
-                << req.pkgId << ". Applications in package: " << pkgContents.size());
-        SmackRules::installApplicationRules(req.appId, req.pkgId, pkgContents);
+        if (isSlave) {
+            LogDebug("Requesting master to add rules for new appId: " << req.appId << " with pkgId: "
+                    << req.pkgId << ". Applications in package: " << pkgContents.size());
+            int ret = MasterReq::SmackInstallRules(req.appId, req.pkgId, pkgContents);
+            if (ret != SECURITY_MANAGER_API_SUCCESS) {
+                LogError("Master failed to apply package-specific smack rules: " << ret);
+                return ret;
+            }
+        } else {
+            LogDebug("Adding Smack rules for new appId: " << req.appId << " with pkgId: "
+                    << req.pkgId << ". Applications in package: " << pkgContents.size());
+            SmackRules::installApplicationRules(req.appId, req.pkgId, pkgContents);
+        }
     } catch (const SmackException::Base &e) {
         LogError("Error while applying Smack policy for application: " << e.DumpToString());
         return SECURITY_MANAGER_API_ERROR_SETTING_FILE_LABEL_FAILED;
-    } catch (const std::bad_alloc &e) {
+    } catch (const SecurityManager::Exception &e) {
+        LogError("Security Manager exception: " << e.DumpToString());
+        return SECURITY_MANAGER_API_ERROR_SERVER_ERROR;
+    }catch (const std::bad_alloc &e) {
         LogError("Memory allocation error: " << e.what());
         return SECURITY_MANAGER_API_ERROR_OUT_OF_MEMORY;
     }
@@ -364,7 +415,7 @@ int appInstall(const app_inst_req &req, uid_t uid)
     return SECURITY_MANAGER_API_SUCCESS;
 }
 
-int appUninstall(const std::string &appId, uid_t uid)
+int appUninstall(const std::string &appId, uid_t uid, bool isSlave)
 {
     std::string pkgId;
     std::string smackLabel;
@@ -373,6 +424,14 @@ int appUninstall(const std::string &appId, uid_t uid)
     bool removePkg = false;
     std::string uidstr;
     checkGlobalUser(uid, uidstr);
+
+    std::string zoneId;
+    if (isSlave) {
+        if (!getZoneId(zoneId)) {
+            LogError("Failed to get Zone ID.");
+            return SECURITY_MANAGER_API_ERROR_SERVER_ERROR;
+        }
+    }
 
     try {
         std::vector<std::string> oldAppPrivileges;
@@ -384,7 +443,7 @@ int appUninstall(const std::string &appId, uid_t uid)
             PrivilegeDb::getInstance().RollbackTransaction();
             appExists = false;
         } else {
-            smackLabel = SmackLabels::generateAppLabel(appId);
+            smackLabel = zoneSmackLabelGenerate(SmackLabels::generateAppLabel(appId), zoneId);
             LogDebug("Uninstall parameters: appId: " << appId << ", pkgId: " << pkgId
                      << ", uidstr " << uidstr << ", generated smack label: " << smackLabel);
 
@@ -395,8 +454,20 @@ int appUninstall(const std::string &appId, uid_t uid)
             PrivilegeDb::getInstance().GetAppPrivileges(appId, uid, oldAppPrivileges);
             PrivilegeDb::getInstance().UpdateAppPrivileges(appId, uid, std::vector<std::string>());
             PrivilegeDb::getInstance().RemoveApplication(appId, uid, removePkg);
-            CynaraAdmin::getInstance().UpdateAppPolicy(smackLabel, uidstr, oldAppPrivileges,
-                                             std::vector<std::string>());
+
+            if (isSlave) {
+                int ret = MasterReq::CynaraPolicyUpdate(appId, uidstr, oldAppPrivileges,
+                                                        std::vector<std::string>());
+                if (ret != SECURITY_MANAGER_API_SUCCESS) {
+                    PrivilegeDb::getInstance().RollbackTransaction();
+                    LogError("Error while processing request on master: " << ret);
+                    return ret;
+                }
+            } else {
+                CynaraAdmin::getInstance().UpdateAppPolicy(smackLabel, uidstr, oldAppPrivileges,
+                                                           std::vector<std::string>());
+            }
+
             PrivilegeDb::getInstance().CommitTransaction();
             LogDebug("Application uninstallation commited to database");
         }
@@ -421,22 +492,35 @@ int appUninstall(const std::string &appId, uid_t uid)
         return SECURITY_MANAGER_API_ERROR_OUT_OF_MEMORY;
     }
 
-    try {
-        if (appExists) {
-            if (removePkg) {
-                LogDebug("Removing Smack rules for deleted pkgId " << pkgId);
-                SmackRules::uninstallPackageRules(pkgId);
-            }
+    if (appExists) {
+        try {
+            if (isSlave) {
+                LogDebug("Delegating Smack rules removal for deleted pkgId " << pkgId <<
+                         " to master");
+                int ret = MasterReq::SmackUninstallRules(appId, pkgId, pkgContents, removePkg);
+                if (ret != SECURITY_MANAGER_API_SUCCESS) {
+                    LogError("Error while processing uninstall request on master: " << ret);
+                    return ret;
+                }
+            } else {
+                if (removePkg) {
+                    LogDebug("Removing Smack rules for deleted pkgId " << pkgId);
+                    SmackRules::uninstallPackageRules(pkgId);
+                }
 
-            LogDebug("Removing smack rules for deleted appId " << appId);
-            SmackRules::uninstallApplicationRules(appId, pkgId, pkgContents);
+                LogDebug ("Removing smack rules for deleted appId " << appId);
+                SmackRules::uninstallApplicationRules(appId, pkgId, pkgContents, zoneId);
+            }
+        } catch (const SmackException::Base &e) {
+            LogError("Error while removing Smack rules for application: " << e.DumpToString());
+            return SECURITY_MANAGER_API_ERROR_SETTING_FILE_LABEL_FAILED;
+        } catch (const SecurityManager::Exception &e) {
+            LogError("Security Manager error: " << e.DumpToString());
+            return SECURITY_MANAGER_API_ERROR_SERVER_ERROR;
+        } catch (const std::bad_alloc &e) {
+            LogError("Memory allocation error: " << e.what());
+            return SECURITY_MANAGER_API_ERROR_OUT_OF_MEMORY;
         }
-    } catch (const SmackException::Base &e) {
-        LogError("Error while removing Smack rules for application: " << e.DumpToString());
-        return SECURITY_MANAGER_API_ERROR_SETTING_FILE_LABEL_FAILED;
-    } catch (const std::bad_alloc &e) {
-        LogError("Memory allocation error: " << e.what());
-        return SECURITY_MANAGER_API_ERROR_OUT_OF_MEMORY;
     }
 
     return SECURITY_MANAGER_API_SUCCESS;
@@ -461,8 +545,18 @@ int getPkgId(const std::string &appId, std::string &pkgId)
     return SECURITY_MANAGER_API_SUCCESS;
 }
 
-int getAppGroups(const std::string &appId, uid_t uid, pid_t pid, std::unordered_set<gid_t> &gids)
+int getAppGroups(const std::string &appId, uid_t uid, pid_t pid, bool isSlave,
+        std::unordered_set<gid_t> &gids)
 {
+    // FIXME Temporary solution, see below
+    std::string zoneId;
+    if (isSlave) {
+        if (!getZoneId(zoneId)) {
+            LogError("Failed to get Zone ID.");
+            return SECURITY_MANAGER_API_ERROR_SERVER_ERROR;
+        }
+    }
+
     try {
         std::string pkgId;
         std::string smackLabel;
@@ -477,7 +571,9 @@ int getAppGroups(const std::string &appId, uid_t uid, pid_t pid, std::unordered_
         }
         LogDebug("pkgId: " << pkgId);
 
-        smackLabel = SmackLabels::generateAppLabel(appId);
+        // FIXME getAppGroups should work without generating zone-specific labels when
+        //       Smack Namespaces will work
+        smackLabel = zoneSmackLabelGenerate(SmackLabels::generateAppLabel(appId), zoneId);
         LogDebug("smack label: " << smackLabel);
 
         std::vector<std::string> privileges;
@@ -527,20 +623,30 @@ int getAppGroups(const std::string &appId, uid_t uid, pid_t pid, std::unordered_
     return SECURITY_MANAGER_API_SUCCESS;
 }
 
-int userAdd(uid_t uidAdded, int userType, uid_t uid)
+int userAdd(uid_t uidAdded, int userType, uid_t uid, bool isSlave)
 {
     if (uid != 0)
         return SECURITY_MANAGER_API_ERROR_AUTHENTICATION_FAILED;
 
-    try {
-        CynaraAdmin::getInstance().UserInit(uidAdded, static_cast<security_manager_user_type>(userType));
-    } catch (CynaraException::InvalidParam &e) {
-        return SECURITY_MANAGER_API_ERROR_INPUT_PARAM;
+    if (isSlave) {
+        int ret = MasterReq::CynaraUserInit(uidAdded,
+                                            static_cast<security_manager_user_type>(userType));
+        if (ret != SECURITY_MANAGER_API_SUCCESS) {
+            LogError("Master failed to initialize user " << uidAdded << " of type " << userType);
+            return ret;
+        }
+    } else {
+        try {
+            CynaraAdmin::getInstance().UserInit(uidAdded, static_cast<security_manager_user_type>(userType));
+        } catch (CynaraException::InvalidParam &e) {
+            return SECURITY_MANAGER_API_ERROR_INPUT_PARAM;
+        }
     }
+
     return SECURITY_MANAGER_API_SUCCESS;
 }
 
-int userDelete(uid_t uidDeleted, uid_t uid)
+int userDelete(uid_t uidDeleted, uid_t uid, bool isSlave)
 {
     int ret = SECURITY_MANAGER_API_SUCCESS;
     if (uid != 0)
@@ -556,14 +662,22 @@ int userDelete(uid_t uidDeleted, uid_t uid)
     }
 
     for (auto &app: userApps) {
-        if (appUninstall(app, uidDeleted) != SECURITY_MANAGER_API_SUCCESS) {
+        if (appUninstall(app, uidDeleted, isSlave) != SECURITY_MANAGER_API_SUCCESS) {
         /*if uninstallation of this app fails, just go on trying to uninstall another ones.
         we do not have anything special to do about that matter - user will be deleted anyway.*/
             ret = SECURITY_MANAGER_API_ERROR_SERVER_ERROR;
         }
     }
 
-    CynaraAdmin::getInstance().UserRemove(uidDeleted);
+    if (isSlave) {
+        int ret = MasterReq::CynaraUserRemove(uidDeleted);
+        if (ret) {
+            LogError("Master failed to delete user " << uidDeleted);
+            return ret;
+        }
+    } else {
+        CynaraAdmin::getInstance().UserRemove(uidDeleted);
+    }
 
     return ret;
 }

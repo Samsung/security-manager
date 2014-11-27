@@ -38,6 +38,7 @@
 
 #include "smack-labels.h"
 #include "smack-rules.h"
+#include "zone-utils.h"
 
 namespace SecurityManager {
 
@@ -136,8 +137,8 @@ void SmackRules::saveToFile(const std::string &path) const
 }
 
 
-void SmackRules::addFromTemplateFile(const std::string &appId,
-        const std::string &pkgId)
+void SmackRules::addFromTemplateFile(const std::string &appId, const std::string &pkgId,
+        const std::string &zoneId)
 {
     std::vector<std::string> templateRules;
     std::string line;
@@ -157,11 +158,11 @@ void SmackRules::addFromTemplateFile(const std::string &appId,
         ThrowMsg(SmackException::FileError, "Error reading template file: " << APP_RULES_TEMPLATE_FILE_PATH);
     }
 
-    addFromTemplate(templateRules, appId, pkgId);
+    addFromTemplate(templateRules, appId, pkgId, zoneId);
 }
 
 void SmackRules::addFromTemplate(const std::vector<std::string> &templateRules,
-        const std::string &appId, const std::string &pkgId)
+        const std::string &appId, const std::string &pkgId, const std::string &zoneId)
 {
     for (auto rule : templateRules) {
         if (rule.empty())
@@ -180,7 +181,7 @@ void SmackRules::addFromTemplate(const std::vector<std::string> &templateRules,
             subject = SmackLabels::generateAppLabel(appId);
 
         if (subject == SMACK_PKG_LABEL_TEMPLATE)
-             subject = SmackLabels::generatePkgLabel(pkgId);
+            subject = SmackLabels::generatePkgLabel(pkgId);
 
         if (object == SMACK_APP_LABEL_TEMPLATE)
             object = SmackLabels::generateAppLabel(appId);
@@ -188,11 +189,18 @@ void SmackRules::addFromTemplate(const std::vector<std::string> &templateRules,
         if (object == SMACK_PKG_LABEL_TEMPLATE)
             object = SmackLabels::generatePkgLabel(pkgId);
 
+        if (!zoneId.empty()) {
+            // FIXME replace with vasum calls. See zone-utils.h
+            subject = zoneSmackLabelGenerate(subject, zoneId);
+            object = zoneSmackLabelGenerate(object, zoneId);
+        }
+
         add(subject, object, permissions);
     }
 }
 
-void SmackRules::generatePackageCrossDeps(const std::vector<std::string> &pkgContents)
+void SmackRules::generatePackageCrossDeps(const std::vector<std::string> &pkgContents,
+        const std::string &zoneId)
 {
     LogDebug ("Generating cross-package rules");
 
@@ -204,8 +212,8 @@ void SmackRules::generatePackageCrossDeps(const std::vector<std::string> &pkgCon
             if (object == subject)
                 continue;
 
-            subjectLabel = SmackLabels::generateAppLabel(subject);
-            objectLabel = SmackLabels::generateAppLabel(object);
+            subjectLabel = zoneSmackLabelGenerate(SmackLabels::generateAppLabel(subject), zoneId);
+            objectLabel = zoneSmackLabelGenerate(SmackLabels::generateAppLabel(object), zoneId);
             LogDebug ("Trying to add rule subject: " << subjectLabel << " object: " << objectLabel << " perms: " << appsInPackagePerms);
             add(subjectLabel, objectLabel, appsInPackagePerms);
         }
@@ -227,24 +235,31 @@ std::string SmackRules::getApplicationRulesFilePath(const std::string &appId)
 void SmackRules::installApplicationRules(const std::string &appId, const std::string &pkgId,
         const std::vector<std::string> &pkgContents)
 {
+    installApplicationRules(appId, pkgId, pkgContents, std::string());
+}
+
+void SmackRules::installApplicationRules(const std::string &appId, const std::string &pkgId,
+        const std::vector<std::string> &pkgContents, const std::string &zoneId)
+{
     SmackRules smackRules;
     std::string appPath = getApplicationRulesFilePath(appId);
 
-    smackRules.addFromTemplateFile(appId, pkgId);
+    smackRules.addFromTemplateFile(appId, pkgId, zoneId);
 
     if (smack_smackfs_path() != NULL)
         smackRules.apply();
 
     smackRules.saveToFile(appPath);
-    updatePackageRules(pkgId, pkgContents);
+    updatePackageRules(pkgId, pkgContents, zoneId);
 }
 
-void SmackRules::updatePackageRules(const std::string &pkgId, const std::vector<std::string> &pkgContents)
+void SmackRules::updatePackageRules(const std::string &pkgId,
+        const std::vector<std::string> &pkgContents, const std::string &zoneId)
 {
     SmackRules smackRules;
     std::string pkgPath = getPackageRulesFilePath(pkgId);
 
-    smackRules.generatePackageCrossDeps(pkgContents);
+    smackRules.generatePackageCrossDeps(pkgContents, zoneId);
 
     if (smack_smackfs_path() != NULL)
         smackRules.apply();
@@ -258,10 +273,10 @@ void SmackRules::uninstallPackageRules(const std::string &pkgId)
 }
 
 void SmackRules::uninstallApplicationRules(const std::string &appId,
-        const std::string &pkgId, std::vector<std::string> pkgContents)
+        const std::string &pkgId, std::vector<std::string> pkgContents, const std::string &zoneId)
 {
     uninstallRules(getApplicationRulesFilePath(appId));
-    updatePackageRules(pkgId, pkgContents);
+    updatePackageRules(pkgId, pkgContents, zoneId);
 }
 
 void SmackRules::uninstallRules(const std::string &path)

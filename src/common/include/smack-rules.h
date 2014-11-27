@@ -45,8 +45,9 @@ public:
             const std::string &allowPermissions, const std::string &denyPermissions);
     void loadFromFile(const std::string &path);
     void addFromTemplate(const std::vector<std::string> &templateRules,
-        const std::string &appId, const std::string &pkgId);
-    void addFromTemplateFile(const std::string &appId, const std::string &pkgId);
+        const std::string &appId, const std::string &pkgId, const std::string &zoneId);
+    void addFromTemplateFile(const std::string &appId, const std::string &pkgId,
+            const std::string &zoneId);
 
     void apply() const;
     void clear() const;
@@ -59,8 +60,10 @@ public:
      * correct permissions to shared data.
      *
      * @param[in] pkgContents - a list of all applications inside this package
+     * @param[in] zoneId - ID of zone which requested application install
      */
-    void generatePackageCrossDeps(const std::vector<std::string> &pkgContents);
+    void generatePackageCrossDeps(const std::vector<std::string> &pkgContents,
+            const std::string &zoneId);
 
     /**
      * Install package-specific smack rules.
@@ -74,6 +77,20 @@ public:
      */
     static void installApplicationRules(const std::string &appId, const std::string &pkgId,
         const std::vector<std::string> &pkgContents);
+
+    /**
+     * Install package-specific smack rules.
+     *
+     * Function creates smack rules using predefined template. Rules are applied
+     * to the kernel and saved on persistent storage so they are loaded on system boot.
+     *
+     * @param[in] appId - application id that is beeing installed
+     * @param[in] pkgId - package id that the application is in
+     * @param[in] pkgContents - a list of all applications in the package
+     * @param[in] zoneId - ID of zone which requested application install
+     */
+    static void installApplicationRules(const std::string &appId, const std::string &pkgId,
+        const std::vector<std::string> &pkgContents, const std::string &zoneId);
     /**
      * Uninstall package-specific smack rules.
      *
@@ -97,9 +114,10 @@ public:
     * @param[in] appId - application id
     * @param[in] pkgId - package id that the application belongs to
     * @param[in] appsInPkg - a list of other applications in the same package id that the application belongs to
+    * @param[in] zoneId - ID of zone which requested application uninstall
     */
     static void uninstallApplicationRules(const std::string &appId, const std::string &pkgId,
-            std::vector<std::string> appsInPkg);
+            std::vector<std::string> appsInPkg, const std::string &zoneId);
 
     /**
      * Update package specific rules
@@ -110,8 +128,10 @@ public:
      *
      * @param[in] pkgId - id of the package to update
      * @param[in] pkgContents - a list of all applications in the package
+     * @param[in] zoneId - ID of zone which requested application uninstall
      */
-    static void updatePackageRules(const std::string &pkgId, const std::vector<std::string> &pkgContents);
+    static void updatePackageRules(const std::string &pkgId,
+            const std::vector<std::string> &pkgContents, const std::string &zoneId);
 
 private:
     /**

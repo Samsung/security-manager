@@ -45,6 +45,7 @@
 #include <protocols.h>
 #include <service_impl.h>
 #include <connection.h>
+#include <zone-utils.h>
 
 #include <security-manager.h>
 #include <client-offline.h>
@@ -168,7 +169,7 @@ int security_manager_app_install(const app_inst_req *p_req)
         int retval;
         ClientOffline offlineMode;
         if (offlineMode.isOffline()) {
-            retval = SecurityManager::ServiceImpl::appInstall(*p_req, geteuid());
+            retval = SecurityManager::ServiceImpl::appInstall(*p_req, geteuid(), false);
         } else {
             MessageBuffer send, recv;
 
@@ -365,8 +366,18 @@ int security_manager_set_process_label_from_appid(const char *app_id)
     if (smack_smackfs_path() == NULL)
         return SECURITY_MANAGER_SUCCESS;
 
+    // FIXME Below modifications related to zones are temporary. Remove when Smack Namespaces
+    //       are implemented.
+    std::string zoneId;
+    if (!getZoneIdFromPid(getpid(), zoneId)) {
+        LogError("Failed to get ID of zone");
+        return SECURITY_MANAGER_ERROR_REQ_NOT_COMPLETE;
+    }
+
     try {
-        appLabel = SecurityManager::SmackLabels::generateAppLabel(app_id);
+        appLabel = SecurityManager::zoneSmackLabelGenerate(
+                SecurityManager::SmackLabels::generateAppLabel(app_id), zoneId);
+
     } catch (...) {
         LogError("Failed to generate smack label for appId: " << app_id);
         return SECURITY_MANAGER_API_ERROR_NO_SUCH_OBJECT;
@@ -566,7 +577,8 @@ int security_manager_user_add(const user_req *p_req)
         int retval;
         ClientOffline offlineMode;
         if (offlineMode.isOffline()) {
-            retval = SecurityManager::ServiceImpl::userAdd(p_req->uid, p_req->utype, geteuid());
+            retval = SecurityManager::ServiceImpl::userAdd(p_req->uid, p_req->utype, geteuid(),
+                                                           false);
         } else {
             MessageBuffer send, recv;
             //server is working
