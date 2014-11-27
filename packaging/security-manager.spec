@@ -44,6 +44,14 @@ Requires:   libsecurity-manager-client = %{version}-%{release}
 %description -n libsecurity-manager-client-devel
 Development files needed for using the security manager client
 
+%package -n security-manager-policy
+Summary:    Security manager policy
+Group:      Security/Development
+Requires:   security-manager = %{version}-%{release}
+
+%description -n security-manager-policy
+Set of security rules that constitute security policy in the system
+
 %prep
 %setup -q
 cp %{SOURCE1} .
@@ -73,6 +81,8 @@ cp LICENSE %{buildroot}/usr/share/license/%{name}
 cp LICENSE %{buildroot}/usr/share/license/libsecurity-manager-client
 mkdir -p %{buildroot}/%{TZ_SYS_SMACK}
 cp app-rules-template.smack %{buildroot}/%{TZ_SYS_SMACK}
+mkdir -p %{buildroot}/usr/share/security-manager
+cp -rf policy %{buildroot}/usr/share/security-manager
 %make_install
 
 mkdir -p %{buildroot}/%{_unitdir}/multi-user.target.wants
@@ -144,3 +154,7 @@ fi
 %{_libdir}/libsecurity-manager-commons.so
 %{_includedir}/security-manager/security-manager.h
 %{_libdir}/pkgconfig/security-manager.pc
+
+%files -n security-manager-policy
+%manifest %{name}.manifest
+/usr/share/security-manager/policy
