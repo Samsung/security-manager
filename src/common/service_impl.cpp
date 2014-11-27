@@ -83,7 +83,7 @@ static inline bool installRequestAuthCheck(const app_inst_req &req, uid_t uid)
         pwd = getpwuid(uid);
         if (!pwd && errno != EINTR) {
             LogError("getpwuid failed with '" << uid
-                    << "' as paramter: " << strerror(errno));
+                    << "' as parameter: " << strerror(errno));
             return false;
         }
     } while (!pwd);
@@ -92,7 +92,7 @@ static inline bool installRequestAuthCheck(const app_inst_req &req, uid_t uid)
         realpath(pwd->pw_dir, NULL), free);
     if (!home.get()) {
             LogError("realpath failed with '" << pwd->pw_dir
-                    << "' as paramter: " << strerror(errno));
+                    << "' as parameter: " << strerror(errno));
             return false;
     }
 
@@ -101,7 +101,7 @@ static inline bool installRequestAuthCheck(const app_inst_req &req, uid_t uid)
             realpath(appPath.first.c_str(), NULL), free);
         if (!real_path.get()) {
             LogError("realpath failed with '" << appPath.first.c_str()
-                    << "' as paramter: " << strerror(errno));
+                    << "' as parameter: " << strerror(errno));
             return false;
         }
         LogDebug("Requested path is '" << appPath.first.c_str()
