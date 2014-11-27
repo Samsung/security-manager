@@ -141,6 +141,12 @@ bool Service::processOne(const ConnectionID &conn, MessageBuffer &buffer,
                 case SecurityModuleCall::APP_GET_GROUPS:
                     processGetAppGroups(buffer, send, uid, pid);
                     break;
+                case SecurityModuleCall::USER_ADD:
+                    processUserAdd(buffer, send, uid);
+                    break;
+                case SecurityModuleCall::USER_DELETE:
+                    processUserDelete(buffer, send, uid);
+                    break;
                 default:
                     LogError("Invalid call: " << call_type_int);
                     Throw(ServiceException::InvalidAction);
@@ -220,6 +226,30 @@ void Service::processGetAppGroups(MessageBuffer &buffer, MessageBuffer &send, ui
             Serialization::Serialize(send, gid);
         }
     }
+}
+
+void Service::processUserAdd(MessageBuffer &buffer, MessageBuffer &send, uid_t uid)
+{
+    int ret;
+    uid_t uidAdded;
+    int userType;
+
+    Deserialization::Deserialize(buffer, uidAdded);
+    Deserialization::Deserialize(buffer, userType);
+
+    ret = ServiceImpl::userAdd(uidAdded, userType, uid);
+    Serialization::Serialize(send, ret);
+}
+
+void Service::processUserDelete(MessageBuffer &buffer, MessageBuffer &send, uid_t uid)
+{
+    int ret;
+    uid_t uidRemoved;
+
+    Deserialization::Deserialize(buffer, uidRemoved);
+
+    ret = ServiceImpl::userDelete(uidRemoved, uid);
+    Serialization::Serialize(send, ret);
 }
 
 

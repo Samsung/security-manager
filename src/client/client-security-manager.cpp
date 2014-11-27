@@ -562,15 +562,69 @@ int security_manager_user_req_set_user_type(user_req *p_req, security_manager_us
 SECURITY_MANAGER_API
 int security_manager_user_add(const user_req *p_req)
 {
-    //TODO
-    (void) p_req;
-    return SECURITY_MANAGER_ERROR_UNKNOWN;
+    using namespace SecurityManager;
+    MessageBuffer send, recv;
+    if (!p_req)
+        return SECURITY_MANAGER_ERROR_INPUT_PARAM;
+    return try_catch([&] {
+
+        //put data into buffer
+        Serialization::Serialize(send, static_cast<int>(SecurityModuleCall::USER_ADD));
+
+        Serialization::Serialize(send, p_req->uid);
+        Serialization::Serialize(send, p_req->utype);
+
+        //send buffer to server
+        int retval = sendToServer(SERVICE_SOCKET, send.Pop(), recv);
+        if (retval != SECURITY_MANAGER_API_SUCCESS) {
+            LogError("Error in sendToServer. Error code: " << retval);
+            return SECURITY_MANAGER_ERROR_UNKNOWN;
+        }
+
+        //receive response from server
+        Deserialization::Deserialize(recv, retval);
+        switch(retval) {
+        case SECURITY_MANAGER_API_SUCCESS:
+            return SECURITY_MANAGER_SUCCESS;
+        case SECURITY_MANAGER_API_ERROR_AUTHENTICATION_FAILED:
+            return SECURITY_MANAGER_ERROR_AUTHENTICATION_FAILED;
+        default:
+            return SECURITY_MANAGER_ERROR_UNKNOWN;
+        }
+    });
 }
 
 SECURITY_MANAGER_API
 int security_manager_user_delete(const user_req *p_req)
 {
-    //TODO
-    (void) p_req;
-    return SECURITY_MANAGER_ERROR_UNKNOWN;
+    using namespace SecurityManager;
+    MessageBuffer send, recv;
+    if (!p_req)
+        return SECURITY_MANAGER_ERROR_INPUT_PARAM;
+    return try_catch([&] {
+
+        //put data into buffer
+        Serialization::Serialize(send, static_cast<int>(SecurityModuleCall::USER_DELETE));
+
+        Serialization::Serialize(send, p_req->uid);
+
+
+        //send buffer to server
+        int retval = sendToServer(SERVICE_SOCKET, send.Pop(), recv);
+        if (retval != SECURITY_MANAGER_API_SUCCESS) {
+            LogError("Error in sendToServer. Error code: " << retval);
+            return SECURITY_MANAGER_ERROR_UNKNOWN;
+        }
+
+        //receive response from server
+        Deserialization::Deserialize(recv, retval);
+        switch(retval) {
+        case SECURITY_MANAGER_API_SUCCESS:
+            return SECURITY_MANAGER_SUCCESS;
+        case SECURITY_MANAGER_API_ERROR_AUTHENTICATION_FAILED:
+            return SECURITY_MANAGER_ERROR_AUTHENTICATION_FAILED;
+        default:
+            return SECURITY_MANAGER_ERROR_UNKNOWN;
+        }
+    });
 }

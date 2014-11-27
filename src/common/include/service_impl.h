@@ -81,6 +81,27 @@ int getPkgId(const std::string &appId, std::string &pkgId);
  */
 int getAppGroups(const std::string &appId, uid_t uid, pid_t pid, std::unordered_set<gid_t> &gids);
 
+/**
+ * Process user adding request.
+ *
+ * @param[in] uidAdded uid of newly created user
+ * @param[in] userType type of newly created user
+ * @param[in] uid uid of requesting user
+ *
+ * @return API return code, as defined in protocols.h
+ */
+int userAdd(uid_t uidAdded, int userType, uid_t uid);
+
+/**
+ * Process user deletion request.
+ *
+ * @param[in] uidDeleted uid of removed user
+ * @param[in] uid uid of requesting user
+ *
+ * @return API return code, as defined in protocols.h
+ */
+int userDelete(uid_t uidDeleted, uid_t uid);
+
 } /* namespace ServiceImpl */
 } /* namespace SecurityManager */
 
