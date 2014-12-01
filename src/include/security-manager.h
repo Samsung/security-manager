@@ -60,6 +60,14 @@ enum app_install_path_type {
 struct app_inst_req;
 typedef struct app_inst_req app_inst_req;
 
+/**
+ * This function translates lib_retcode error codes to strings describing
+ * errors.
+ * @param[in] rc error code of lib_retcode type
+ * @return string describing error for error code
+ */
+const char *security_manager_strerror(enum lib_retcode rc);
+
 /*
  * This function is responsible for initialize app_inst_req data structure
  * It uses dynamic allocation inside and user responsibility is to call

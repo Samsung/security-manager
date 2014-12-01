@@ -49,7 +49,28 @@
 
 #include <security-manager.h>
 
+/**
+ * Mapping of lib_retcode error codes to theirs strings equivalents
+ */
+static std::map<enum lib_retcode, std::string> lib_retcode_string_map = {
+    {SECURITY_MANAGER_SUCCESS, "Success"},
+    {SECURITY_MANAGER_ERROR_UNKNOWN, "Unknown error"},
+    {SECURITY_MANAGER_ERROR_INPUT_PARAM, "Invalid function parameter was given"},
+    {SECURITY_MANAGER_ERROR_MEMORY, "Memory allocation error"},
+    {SECURITY_MANAGER_ERROR_REQ_NOT_COMPLETE, "Incomplete data in application request"},
+    {SECURITY_MANAGER_ERROR_AUTHENTICATION_FAILED, "User does not have sufficient "
+                                                   "rigths to perform an operation"}
+};
 
+SECURITY_MANAGER_API
+const char *security_manager_strerror(enum lib_retcode rc)
+{
+    try {
+        return lib_retcode_string_map.at(rc).c_str();
+    } catch (const std::out_of_range &e) {
+        return "Unknown error code";
+    }
+}
 
 SECURITY_MANAGER_API
 int security_manager_app_inst_req_new(app_inst_req **pp_req)

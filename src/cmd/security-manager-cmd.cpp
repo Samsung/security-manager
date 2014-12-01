@@ -248,11 +248,12 @@ static int installApp(const struct app_inst_req &req)
         LogDebug("Application " << req.appId <<
                  " installed successfully.");
     } else {
-        std::cout << "Failed to install " << req.appId <<
-                  " application. Return code: " << ret <<
-                  std::endl;
-        LogDebug("Failed to install " << req.appId <<
-                 " application. Return code: " << ret);
+        std::cout << "Failed to install " << req.appId << " application: " <<
+                  security_manager_strerror(static_cast<lib_retcode>(ret)) <<
+                  " (" << ret << ")." << std::endl;
+        LogError("Failed to install " << req.appId << " application: " <<
+                 security_manager_strerror(static_cast<lib_retcode>(ret)) <<
+                 " (" << ret << ")." << std::endl);
     }
     return ret;
 }
