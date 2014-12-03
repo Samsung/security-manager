@@ -168,6 +168,14 @@ int appInstall(const app_inst_req &req, uid_t uid)
                  << ", uidstr " << uidstr << ", generated smack label: " << smackLabel);
 
         PrivilegeDb::getInstance().BeginTransaction();
+
+        std::string pkg;
+        bool ret = PrivilegeDb::getInstance().GetAppPkgId(req.appId, pkg);
+        if (ret == true && pkg != req.pkgId) {
+            LogError("Application already installed with different package id");
+            PrivilegeDb::getInstance().RollbackTransaction();
+            return SECURITY_MANAGER_API_ERROR_INPUT_PARAM;
+        }
         PrivilegeDb::getInstance().GetPkgPrivileges(req.pkgId, uid, oldPkgPrivileges);
         PrivilegeDb::getInstance().AddApplication(req.appId, req.pkgId, uid, pkgIdIsNew);
         PrivilegeDb::getInstance().UpdateAppPrivileges(req.appId, uid, req.privileges);

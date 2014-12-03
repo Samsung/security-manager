@@ -200,6 +200,8 @@ int security_manager_app_install(const app_inst_req *p_req)
                 return SECURITY_MANAGER_SUCCESS;
             case SECURITY_MANAGER_API_ERROR_AUTHENTICATION_FAILED:
                 return SECURITY_MANAGER_ERROR_AUTHENTICATION_FAILED;
+            case SECURITY_MANAGER_API_ERROR_INPUT_PARAM:
+                return SECURITY_MANAGER_ERROR_INPUT_PARAM;
             default:
                 return SECURITY_MANAGER_ERROR_UNKNOWN;
         }
