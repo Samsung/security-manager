@@ -1,7 +1,6 @@
 PKG_CHECK_MODULES(SERVER_DEP
     REQUIRED
     libsystemd-daemon
-    cynara-client
     )
 
 FIND_PACKAGE(Boost REQUIRED)
@@ -20,7 +19,6 @@ INCLUDE_DIRECTORIES(
     ${SERVER_PATH}/service/include
     ${DPL_PATH}/core/include
     ${DPL_PATH}/log/include
-    ${DPL_PATH}/db/include
     )
 
 SET(SERVER_SOURCES

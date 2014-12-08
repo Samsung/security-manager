@@ -29,8 +29,6 @@
 #include <generic-socket-manager.h>
 #include <message-buffer.h>
 #include <connection-info.h>
-#include <privilege_db.h>
-#include <cynara.h>
 
 namespace SecurityManager {
 
