@@ -76,6 +76,13 @@ void PrivilegeDb::initDataCommands()
     }
 }
 
+DB::SqlConnection::DataCommandAutoPtr & PrivilegeDb::getQuery(QueryType queryType)
+{
+    auto &command = m_commands.at(static_cast<size_t>(queryType));
+    command->Reset();
+    return command;
+}
+
 PrivilegeDb::~PrivilegeDb()
 {
     delete mSqlConnection;
@@ -111,10 +118,7 @@ void PrivilegeDb::RollbackTransaction(void)
 bool PrivilegeDb::PkgIdExists(const std::string &pkgId)
 {
     return try_catch<bool>([&] {
-        DB::SqlConnection::DataCommandAutoPtr &command =
-            m_commands.at(static_cast<size_t>(QueryType::EPkgIdExists));
-
-        command->Reset();
+        auto &command = getQuery(QueryType::EPkgIdExists);
         command->BindString(1, pkgId.c_str());
         return command->Step();
     });
@@ -123,10 +127,7 @@ bool PrivilegeDb::PkgIdExists(const std::string &pkgId)
 bool PrivilegeDb::GetAppPkgId(const std::string &appId, std::string &pkgId)
 {
     return try_catch<bool>([&] {
-        DB::SqlConnection::DataCommandAutoPtr &command =
-            m_commands.at(static_cast<size_t>(QueryType::EGetPkgId));
-
-        command->Reset();
+        auto &command = getQuery(QueryType::EGetPkgId);
         command->BindString(1, appId.c_str());
 
         if (!command->Step()) {
@@ -147,10 +148,7 @@ void PrivilegeDb::AddApplication(const std::string &appId,
     pkgIdIsNew = !(this->PkgIdExists(pkgId));
 
     try_catch<void>([&] {
-        DB::SqlConnection::DataCommandAutoPtr &command =
-                m_commands.at(static_cast<size_t>(QueryType::EAddApplication));
-
-        command->Reset();
+        auto &command = getQuery(QueryType::EAddApplication);
         command->BindString(1, appId.c_str());
         command->BindString(2, pkgId.c_str());
         command->BindInteger(3, static_cast<unsigned int>(uid));
@@ -174,10 +172,7 @@ void PrivilegeDb::RemoveApplication(const std::string &appId, uid_t uid,
             return;
         }
 
-        DB::SqlConnection::DataCommandAutoPtr &command =
-                m_commands.at(static_cast<size_t>(QueryType::ERemoveApplication));
-
-        command->Reset();
+        auto &command = getQuery(QueryType::ERemoveApplication);
         command->BindString(1, appId.c_str());
         command->BindInteger(2, static_cast<unsigned int>(uid));
 
@@ -196,10 +191,7 @@ void PrivilegeDb::GetPkgPrivileges(const std::string &pkgId, uid_t uid,
         std::vector<std::string> &currentPrivileges)
 {
     try_catch<void>([&] {
-        DB::SqlConnection::DataCommandAutoPtr &command =
-                m_commands.at(static_cast<size_t>(QueryType::EGetPkgPrivileges));
-
-        command->Reset();
+        auto &command = getQuery(QueryType::EGetPkgPrivileges);
         command->BindString(1, pkgId.c_str());
         command->BindInteger(2, static_cast<unsigned int>(uid));
 
@@ -214,10 +206,7 @@ void PrivilegeDb::GetPkgPrivileges(const std::string &pkgId, uid_t uid,
 void PrivilegeDb::RemoveAppPrivileges(const std::string &appId, uid_t uid)
 {
     try_catch<void>([&] {
-        DB::SqlConnection::DataCommandAutoPtr &command =
-            m_commands.at(static_cast<size_t>(QueryType::ERemoveAppPrivileges));
-
-        command->Reset();
+        auto &command = getQuery(QueryType::ERemoveAppPrivileges);
         command->BindString(1, appId.c_str());
         command->BindInteger(2, static_cast<unsigned int>(uid));
         if (command->Step()) {
@@ -233,10 +222,7 @@ void PrivilegeDb::UpdateAppPrivileges(const std::string &appId, uid_t uid,
         const std::vector<std::string> &privileges)
 {
     try_catch<void>([&] {
-        DB::SqlConnection::DataCommandAutoPtr &command =
-            m_commands.at(static_cast<size_t>(QueryType::EAddAppPrivileges));
-
-        command->Reset();
+        auto &command = getQuery(QueryType::EAddAppPrivileges);
         command->BindString(1, appId.c_str());
         command->BindInteger(2, static_cast<unsigned int>(uid));
 
@@ -255,10 +241,7 @@ void PrivilegeDb::GetPrivilegeGroups(const std::string &privilege,
         std::vector<std::string> &groups)
 {
    try_catch<void>([&] {
-        DB::SqlConnection::DataCommandAutoPtr &command =
-                m_commands.at(static_cast<size_t>(QueryType::EGetPrivilegeGroups));
-
-        command->Reset();
+        auto &command = getQuery(QueryType::EGetPrivilegeGroups);
         command->BindString(1, privilege.c_str());
 
         while (command->Step()) {
@@ -272,10 +255,7 @@ void PrivilegeDb::GetPrivilegeGroups(const std::string &privilege,
 void PrivilegeDb::GetUserApps(uid_t uid, std::vector<std::string> &apps)
 {
    try_catch<void>([&] {
-        DB::SqlConnection::DataCommandAutoPtr &command =
-                m_commands.at(static_cast<size_t>(QueryType::EGetUserApps));
-
-        command->Reset();
+        auto &command = getQuery(QueryType::EGetUserApps);
         command->BindInteger(1, static_cast<unsigned int>(uid));
         apps.clear();
         while (command->Step()) {

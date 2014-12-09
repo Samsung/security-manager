@@ -96,6 +96,15 @@ private:
     void initDataCommands();
 
     /**
+     * Return prepared query for given query type.
+     * The query will be reset before returning.
+     *
+     * @param queryType query identifier
+     * @return reference to prepared, reset query
+     */
+    DB::SqlConnection::DataCommandAutoPtr & getQuery(QueryType queryType);
+
+    /**
      * Check if pkgId is already registered in database
      *
      * @param pkgId - package identifier
