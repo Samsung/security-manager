@@ -517,3 +517,60 @@ int security_manager_prepare_app(const char *app_id)
     ret = security_manager_drop_process_privileges();
     return ret;
 }
+
+SECURITY_MANAGER_API
+int security_manager_user_req_new(user_req **pp_req)
+{
+    if (!pp_req)
+        return SECURITY_MANAGER_ERROR_INPUT_PARAM;
+    try {
+        *pp_req = new user_req;
+    } catch (std::bad_alloc& ex) {
+        return SECURITY_MANAGER_ERROR_MEMORY;
+    }
+    return SECURITY_MANAGER_SUCCESS;
+}
+
+SECURITY_MANAGER_API
+void security_manager_user_req_free(user_req *p_req)
+{
+    delete p_req;
+}
+
+SECURITY_MANAGER_API
+int security_manager_user_req_set_uid(user_req *p_req, uid_t uid)
+{
+    if (!p_req)
+        return SECURITY_MANAGER_ERROR_INPUT_PARAM;
+
+    p_req->uid = uid;
+
+    return SECURITY_MANAGER_SUCCESS;
+}
+
+SECURITY_MANAGER_API
+int security_manager_user_req_set_user_type(user_req *p_req, security_manager_user_type utype)
+{
+    if (!p_req)
+        return SECURITY_MANAGER_ERROR_INPUT_PARAM;
+
+    p_req->utype = static_cast<int>(utype);
+
+    return SECURITY_MANAGER_SUCCESS;
+}
+
+SECURITY_MANAGER_API
+int security_manager_user_add(const user_req *p_req)
+{
+    //TODO
+    (void) p_req;
+    return SECURITY_MANAGER_ERROR_UNKNOWN;
+}
+
+SECURITY_MANAGER_API
+int security_manager_user_delete(const user_req *p_req)
+{
+    //TODO
+    (void) p_req;
+    return SECURITY_MANAGER_ERROR_UNKNOWN;
+}

@@ -109,6 +109,11 @@ struct app_inst_req {
     uid_t uid;
 };
 
+struct user_req {
+    uid_t uid;
+    int utype;
+};
+
 namespace SecurityManager {
 
 extern char const * const SERVICE_SOCKET;
