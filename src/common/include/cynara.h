@@ -28,6 +28,7 @@
 #include <cynara-admin.h>
 #include <dpl/exception.h>
 #include <string>
+#include <vector>
 
 namespace SecurityManager {
 

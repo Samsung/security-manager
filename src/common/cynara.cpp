@@ -22,8 +22,6 @@
  */
 
 #include <cstring>
-#include <string>
-#include <vector>
 #include "cynara.h"
 
 #include <dpl/log/log.h>
