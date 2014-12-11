@@ -335,6 +335,30 @@ void CynaraAdmin::UserInit(uid_t uid, security_manager_user_type userType)
     CynaraAdmin::getInstance().SetPolicies(policies);
 }
 
+void CynaraAdmin::ListPolicies(
+    const std::string &bucketName,
+    const std::string &appId,
+    const std::string &user,
+    const std::string &privilege,
+    std::vector<CynaraAdminPolicy> &policies)
+{
+    struct cynara_admin_policy ** pp_policies = nullptr;
+
+    checkCynaraError(
+        cynara_admin_list_policies(m_CynaraAdmin, bucketName.c_str(), appId.c_str(),
+            user.c_str(), privilege.c_str(), &pp_policies),
+        "Error while getting list of policies for bucket: " + bucketName);
+
+    for (std::size_t i = 0; pp_policies[i] != nullptr; i++) {
+        policies.push_back(std::move(*static_cast<CynaraAdminPolicy*>(pp_policies[i])));
+
+        free(pp_policies[i]);
+    }
+
+    free(pp_policies);
+
+}
+
 Cynara::Cynara()
 {
     checkCynaraError(
