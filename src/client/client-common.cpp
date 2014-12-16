@@ -45,7 +45,7 @@ IMPLEMENT_SAFE_SINGLETON(SecurityManager::Log::LogSystem);
 
 namespace {
 
-const int POLL_TIMEOUT = 2000;
+const int POLL_TIMEOUT = -1;
 
 void securityClientEnableLogSystem(void) {
     SecurityManager::Singleton<SecurityManager::Log::LogSystem>::Instance().SetTag("SECURITY_MANAGER_CLIENT");
