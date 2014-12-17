@@ -76,13 +76,13 @@ make %{?jobs:-j%jobs}
 
 %install
 rm -rf %{buildroot}
-mkdir -p %{buildroot}/usr/share/license
-cp LICENSE %{buildroot}/usr/share/license/%{name}
-cp LICENSE %{buildroot}/usr/share/license/libsecurity-manager-client
+mkdir -p %{buildroot}%{_datadir}/license
+cp LICENSE %{buildroot}%{_datadir}/license/%{name}
+cp LICENSE %{buildroot}%{_datadir}/license/libsecurity-manager-client
 mkdir -p %{buildroot}/%{TZ_SYS_SMACK}
 cp app-rules-template.smack %{buildroot}/%{TZ_SYS_SMACK}
-mkdir -p %{buildroot}/usr/share/security-manager
-cp -rf policy %{buildroot}/usr/share/security-manager
+mkdir -p %{buildroot}%{_datadir}/security-manager
+cp -rf policy %{buildroot}%{_datadir}/security-manager
 %make_install
 
 mkdir -p %{buildroot}/%{_unitdir}/multi-user.target.wants
@@ -160,4 +160,4 @@ fi
 
 %files -n security-manager-policy
 %manifest %{name}.manifest
-/usr/share/security-manager/policy
+%{_datadir}/security-manager/policy
