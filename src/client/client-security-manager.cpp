@@ -555,26 +555,40 @@ SECURITY_MANAGER_API
 int security_manager_user_add(const user_req *p_req)
 {
     using namespace SecurityManager;
+    bool offlineMode;
     MessageBuffer send, recv;
     if (!p_req)
         return SECURITY_MANAGER_ERROR_INPUT_PARAM;
     return try_catch([&] {
-
-        //put data into buffer
-        Serialization::Serialize(send, static_cast<int>(SecurityModuleCall::USER_ADD));
-
-        Serialization::Serialize(send, p_req->uid);
-        Serialization::Serialize(send, p_req->utype);
-
-        //send buffer to server
-        int retval = sendToServer(SERVICE_SOCKET, send.Pop(), recv);
-        if (retval != SECURITY_MANAGER_API_SUCCESS) {
-            LogError("Error in sendToServer. Error code: " << retval);
-            return SECURITY_MANAGER_ERROR_UNKNOWN;
+        int retval;
+        try {
+            SecurityManager::FileLocker serviceLock(SecurityManager::SERVICE_LOCK_FILE);
+            if ((offlineMode = serviceLock.Locked())) {
+                LogInfo("Working in offline mode.");
+                retval = SecurityManager::ServiceImpl::userAdd(p_req->uid, p_req->utype, geteuid());
+            }
+        } catch (const SecurityManager::FileLocker::Exception::Base &e) {
+            offlineMode = false;
         }
+        if (!offlineMode) {
+            //server is working
 
-        //receive response from server
-        Deserialization::Deserialize(recv, retval);
+            //put data into buffer
+            Serialization::Serialize(send, static_cast<int>(SecurityModuleCall::USER_ADD));
+
+            Serialization::Serialize(send, p_req->uid);
+            Serialization::Serialize(send, p_req->utype);
+
+            //send buffer to server
+            retval = sendToServer(SERVICE_SOCKET, send.Pop(), recv);
+            if (retval != SECURITY_MANAGER_API_SUCCESS) {
+                LogError("Error in sendToServer. Error code: " << retval);
+                return SECURITY_MANAGER_ERROR_UNKNOWN;
+            }
+
+            //receive response from server
+            Deserialization::Deserialize(recv, retval);
+        }
         switch(retval) {
         case SECURITY_MANAGER_API_SUCCESS:
             return SECURITY_MANAGER_SUCCESS;
