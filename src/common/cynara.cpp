@@ -28,6 +28,89 @@
 
 namespace SecurityManager {
 
+/**
+ * Rules for apps and users are organized into set of buckets stored in Cynara.
+ * Bucket is set of rules (app, uid, privilege) -> (DENY, ALLOW, BUCKET, ...).
+ *  |------------------------|
+ *  |      <<allow>>         |
+ *  |   PRIVACY_MANAGER      |
+ *  |------------------------|
+ *  |  A    U   P      policy|
+ *  |------------------------|
+ *  | app1 uid1 priv1  DENY  |
+ *  |  *   uid2 priv2  DENY  |
+ *  |  * * *      Bucket:MAIN|
+ *  |------------------------|
+ *
+ * For details about buckets see Cynara documentation.
+ *
+ * Security Manager currently defines 8 buckets:
+ * - PRIVACY_MANAGER - first bucket during search (which is actually default bucket
+ *   with empty string as id). If user specifies his preference then required rule
+ *   is created here.
+ * - MAIN            - holds rules denied by manufacturer, redirects to MANIFESTS
+ *   bucket and holds entries for each user pointing to User Type
+ *   specific buckets
+ * - MANIFESTS       - stores rules needed by installed apps (from package
+ *   manifest)
+ * - USER_TYPE_ADMIN
+ * - USER_TYPE_SYSTEM
+ * - USER_TYPE_NORMAL
+ * - USER_TYPE_GUEST - they store privileges from templates for apropriate
+ *   user type. ALLOW rules only.
+ * - ADMIN           - stores custom rules introduced by device administrator.
+ *   Ignored if no matching rule found.
+ *
+ * Below is basic layout of buckets:
+ *
+ *  |------------------------|
+ *  |      <<allow>>         |
+ *  |   PRIVACY_MANAGER      |
+ *  |                        |
+ *  |  * * *      Bucket:MAIN|                         |------------------|
+ *  |------------------------|                         |      <<deny>>    |
+ *             |                                    |->|     MANIFESTS    |
+ *             -----------------                    |  |                  |
+ *                             |                    |  |------------------|
+ *                             V                    |
+ *                     |------------------------|   |
+ *                     |       <<deny>>         |---|
+ *                     |         MAIN           |
+ * |---------------|   |                        |     |-------------------|
+ * |    <<deny>>   |<--| * * *  Bucket:MANIFESTS|---->|      <<deny>>     |
+ * | USER_TYPE_SYST|   |------------------------|     |  USER_TYPE_NORMAL |
+ * |               |        |              |          |                   |
+ * |---------------|        |              |          |-------------------|
+ *        |                 |              |                    |
+ *        |                 V              V                    |
+ *        |      |---------------|      |---------------|       |
+ *        |      |    <<deny>>   |      |    <<deny>>   |       |
+ *        |      |USER_TYPE_GUEST|      |USER_TYPE_ADMIN|       |
+ *        |      |               |      |               |       |
+ *        |      |---------------|      |---------------|       |
+ *        |              |                      |               |
+ *        |              |----             -----|               |
+ *        |                  |             |                    |
+ *        |                  V             V                    |
+ *        |                |------------------|                 |
+ *        |------------->  |     <<none>>     | <---------------|
+ *                         |       ADMIN      |
+ *                         |                  |
+ *                         |------------------|
+ *
+ */
+CynaraAdmin::BucketsMap CynaraAdmin::Buckets =
+{
+    { Bucket::PRIVACY_MANAGER, std::string(CYNARA_ADMIN_DEFAULT_BUCKET)},
+    { Bucket::MAIN, std::string("MAIN")},
+    { Bucket::USER_TYPE_ADMIN, std::string("USER_TYPE_ADMIN")},
+    { Bucket::USER_TYPE_NORMAL, std::string("USER_TYPE_NORMAL")},
+    { Bucket::USER_TYPE_GUEST, std::string("USER_TYPE_GUEST") },
+    { Bucket::USER_TYPE_SYSTEM, std::string("USER_TYPE_SYSTEM")},
+    { Bucket::ADMIN, std::string("ADMIN")},
+    { Bucket::MANIFESTS, std::string("MANIFESTS")},
+};
+
 
 CynaraAdminPolicy::CynaraAdminPolicy(const std::string &client, const std::string &user,
         const std::string &privilege, Operation operation,
