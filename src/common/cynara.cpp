@@ -198,6 +198,8 @@ static bool checkCynaraError(int result, const std::string &msg)
             ThrowMsg(CynaraException::InvalidParam, msg);
         case CYNARA_API_SERVICE_NOT_AVAILABLE:
             ThrowMsg(CynaraException::ServiceNotAvailable, msg);
+        case CYNARA_API_BUCKET_NOT_FOUND:
+            ThrowMsg(CynaraException::BucketNotFound, msg);
         default:
             ThrowMsg(CynaraException::UnknownError, msg);
     }
@@ -357,6 +359,16 @@ void CynaraAdmin::ListPolicies(
 
     free(pp_policies);
 
+}
+
+void CynaraAdmin::EmptyBucket(const std::string &bucketName, bool recursive, const std::string &client,
+    const std::string &user, const std::string &privilege)
+{
+    checkCynaraError(
+        cynara_admin_erase(m_CynaraAdmin, bucketName.c_str(), static_cast<int>(recursive),
+            client.c_str(), user.c_str(), privilege.c_str()),
+        "Error while emptying bucket: " + bucketName + ", filter (C, U, P): " +
+            client + ", " + user + ", " + privilege);
 }
 
 Cynara::Cynara()

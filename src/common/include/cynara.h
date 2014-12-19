@@ -55,6 +55,7 @@ public:
     DECLARE_EXCEPTION_TYPE(Base, InvalidParam)
     DECLARE_EXCEPTION_TYPE(Base, ServiceNotAvailable)
     DECLARE_EXCEPTION_TYPE(Base, UnknownError)
+    DECLARE_EXCEPTION_TYPE(Base, BucketNotFound)
 };
 
 struct CynaraAdminPolicy : cynara_admin_policy
@@ -153,6 +154,19 @@ public:
 
 private:
     CynaraAdmin();
+
+    /**
+     * Empty bucket using filter - matching rules will be removed
+     *
+     * @param bucketName name of the bucket to be emptied
+     * @param recursive flag to remove privileges recursively
+     * @param client client name
+     * @param user user name
+     * @param privilege privilege name
+     */
+    void EmptyBucket(const std::string &bucketName, bool recursive,
+        const std::string &client, const std::string &user, const std::string &privilege);
+
     struct cynara_admin *m_CynaraAdmin;
 };
 
