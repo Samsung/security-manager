@@ -113,7 +113,7 @@ CynaraAdmin::BucketsMap CynaraAdmin::Buckets =
 
 
 CynaraAdminPolicy::CynaraAdminPolicy(const std::string &client, const std::string &user,
-        const std::string &privilege, Operation operation,
+        const std::string &privilege, int operation,
         const std::string &bucket)
 {
     this->client = strdup(client.c_str());
@@ -131,7 +131,7 @@ CynaraAdminPolicy::CynaraAdminPolicy(const std::string &client, const std::strin
                 std::string("Error in CynaraAdminPolicy allocation."));
     }
 
-    this->result = static_cast<int>(operation);
+    this->result = operation;
     this->result_extra = nullptr;
 }
 
@@ -271,14 +271,14 @@ void CynaraAdmin::UpdateAppPolicy(
             LogDebug("(user = " << user << " label = " << label << ") " <<
                 "removing privilege " << *oldIter);
             policies.push_back(CynaraAdminPolicy(label, user, *oldIter,
-                    CynaraAdminPolicy::Operation::Delete,
+                    static_cast<int>(CynaraAdminPolicy::Operation::Delete),
                     Buckets.at(Bucket::MANIFESTS)));
             ++oldIter;
         } else {
             LogDebug("(user = " << user << " label = " << label << ") " <<
                 "adding privilege " << *newIter);
             policies.push_back(CynaraAdminPolicy(label, user, *newIter,
-                    CynaraAdminPolicy::Operation::Allow,
+                    static_cast<int>(CynaraAdminPolicy::Operation::Allow),
                     Buckets.at(Bucket::MANIFESTS)));
             ++newIter;
         }
@@ -288,7 +288,7 @@ void CynaraAdmin::UpdateAppPolicy(
         LogDebug("(user = " << user << " label = " << label << ") " <<
             "removing privilege " << *oldIter);
         policies.push_back(CynaraAdminPolicy(label, user, *oldIter,
-                    CynaraAdminPolicy::Operation::Delete,
+                    static_cast<int>(CynaraAdminPolicy::Operation::Delete),
                     Buckets.at(Bucket::MANIFESTS)));
     }
 
@@ -296,7 +296,7 @@ void CynaraAdmin::UpdateAppPolicy(
         LogDebug("(user = " << user << " label = " << label << ") " <<
             "adding privilege " << *newIter);
         policies.push_back(CynaraAdminPolicy(label, user, *newIter,
-                    CynaraAdminPolicy::Operation::Allow,
+                    static_cast<int>(CynaraAdminPolicy::Operation::Allow),
                     Buckets.at(Bucket::MANIFESTS)));
     }
 

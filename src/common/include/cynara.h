@@ -68,7 +68,7 @@ struct CynaraAdminPolicy : cynara_admin_policy
     };
 
     CynaraAdminPolicy(const std::string &client, const std::string &user,
-        const std::string &privilege, Operation operation,
+        const std::string &privilege, int operation,
         const std::string &bucket = std::string(CYNARA_ADMIN_DEFAULT_BUCKET));
 
     CynaraAdminPolicy(const std::string &client, const std::string &user,
