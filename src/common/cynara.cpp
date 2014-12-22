@@ -301,6 +301,40 @@ void CynaraAdmin::UpdateAppPolicy(
     SetPolicies(policies);
 }
 
+void CynaraAdmin::UserInit(uid_t uid, security_manager_user_type userType)
+{
+    Bucket bucket;
+    std::vector<CynaraAdminPolicy> policies;
+
+    switch (userType) {
+        case SM_USER_TYPE_SYSTEM:
+            bucket = Bucket::USER_TYPE_SYSTEM;
+            break;
+        case SM_USER_TYPE_ADMIN:
+            bucket = Bucket::USER_TYPE_ADMIN;
+            break;
+        case SM_USER_TYPE_GUEST:
+            bucket = Bucket::USER_TYPE_GUEST;
+            break;
+        case SM_USER_TYPE_NORMAL:
+            bucket = Bucket::USER_TYPE_NORMAL;
+            break;
+        case SM_USER_TYPE_ANY:
+        case SM_USER_TYPE_NONE:
+        case SM_USER_TYPE_END:
+        default:
+            ThrowMsg(CynaraException::InvalidParam, "User type incorrect");
+    }
+
+    policies.push_back(CynaraAdminPolicy(CYNARA_ADMIN_WILDCARD,
+                                            std::to_string(static_cast<unsigned int>(uid)),
+                                            CYNARA_ADMIN_WILDCARD,
+                                            Buckets.at(bucket),
+                                            Buckets.at(Bucket::MAIN)));
+
+    CynaraAdmin::getInstance().SetPolicies(policies);
+}
+
 Cynara::Cynara()
 {
     checkCynaraError(
