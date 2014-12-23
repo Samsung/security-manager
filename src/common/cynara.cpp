@@ -175,6 +175,26 @@ CynaraAdminPolicy::CynaraAdminPolicy(CynaraAdminPolicy &&that)
     that.result_extra = nullptr;
 }
 
+CynaraAdminPolicy& CynaraAdminPolicy::operator=(CynaraAdminPolicy &&that)
+{
+    if (this != &that) {
+        bucket = that.bucket;
+        client = that.client;
+        user = that.user;
+        privilege = that.privilege;
+        result_extra = that.result_extra;
+        result = that.result;
+
+        that.bucket = nullptr;
+        that.client = nullptr;
+        that.user = nullptr;
+        that.privilege = nullptr;
+        that.result_extra = nullptr;
+    };
+
+    return *this;
+}
+
 CynaraAdminPolicy::~CynaraAdminPolicy()
 {
     free(this->bucket);

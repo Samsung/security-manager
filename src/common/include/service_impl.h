@@ -102,6 +102,18 @@ int userAdd(uid_t uidAdded, int userType, uid_t uid);
  */
 int userDelete(uid_t uidDeleted, uid_t uid);
 
+/**
+ * Update policy in Cynara - proper privilege: http://tizen.org/privilege/systemsettings.admin
+ * is needed for this to succeed
+ *
+ * @param[in] policyEntries vector of policy chunks with instructions
+ * @param[in] uid identifier of requesting user
+ * @param[in] pid PID of requesting process
+ * @param[in] smackLabel smack label of requesting app
+ *
+ * @return API return code, as defined in protocols.h
+ */
+int policyUpdate(const std::vector<policy_entry> &policyEntries, uid_t uid, pid_t pid, const std::string &smackLabel);
 } /* namespace ServiceImpl */
 } /* namespace SecurityManager */
 

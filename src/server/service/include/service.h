@@ -94,6 +94,17 @@ private:
 
     void processUserDelete(MessageBuffer &buffer, MessageBuffer &send, uid_t uid);
 
+
+    /**
+     * Process policy update request
+     *
+     * @param  buffer Raw received data buffer
+     * @param  send   Raw data buffer to be sent
+     * @param  uid    Identifier of the user who sent the request
+     * @param  pid    PID of the process which sent the request
+     * @param  smackLabel smack label of requesting app
+     */
+    void processPolicyUpdate(MessageBuffer &buffer, MessageBuffer &send, uid_t uid, pid_t pid, const std::string &smackLabel);
 };
 
 } // namespace SecurityManager
