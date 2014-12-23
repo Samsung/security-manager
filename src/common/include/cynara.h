@@ -200,6 +200,29 @@ public:
      */
     int convertToPolicyType(const std::string &policy, bool forceRefresh = false);
 
+    /**
+     * Ask Cynara for permission starting the search at specified bucket.
+     * Essentialy a wrapper on cynara_admin_check.
+     *
+     * @param label application Smack label
+     * @param privilege privilege string to match in search
+     * @param user user string to match in search
+     * @param bucket name of the bucket to search policies in
+     * @param result integer to return policy result
+     * @param resultExtra string to return additional information about policy
+     *        result. If result is Bucket then resultExtra is the name of
+     *        bucket.
+     * @param recursive flag to indicate if check should be done recursively in
+     *        all buckets linked with bucket provided
+     */
+    void Check(const std::string &label,
+        const std::string &privilege,
+        const std::string &user,
+        const std::string &bucket,
+        int &result,
+        std::string &resultExtra,
+        const bool recursive);
+
 private:
     CynaraAdmin();
 

@@ -464,6 +464,24 @@ int CynaraAdmin::convertToPolicyType(const std::string &policy, bool forceRefres
 
     return DescriptionToType.at(policy);
 }
+void CynaraAdmin::Check(const std::string &label, const std::string &privilege, const std::string &user,
+    const std::string &bucket, int &result, std::string &resultExtra, const bool recursive)
+{
+    char *resultExtraCstr = nullptr;
+
+    checkCynaraError(
+        cynara_admin_check(m_CynaraAdmin, bucket.c_str(), recursive, label.c_str(),
+            user.c_str(), privilege.c_str(), &result, &resultExtraCstr),
+        "Error while asking cynara admin API for permission for app label: " + label + ", user: "
+            + user + " privilege: " + privilege + " bucket: " + bucket);
+
+    if (resultExtraCstr == nullptr)
+        resultExtra = "";
+    else {
+        resultExtra = std::string(resultExtraCstr);
+        free(resultExtraCstr);
+    }
+}
 
 Cynara::Cynara()
 {
