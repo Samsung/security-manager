@@ -85,6 +85,7 @@ DB::SqlConnection::DataCommandAutoPtr & PrivilegeDb::getQuery(QueryType queryTyp
 
 PrivilegeDb::~PrivilegeDb()
 {
+    m_commands.clear();
     delete mSqlConnection;
 }
 
