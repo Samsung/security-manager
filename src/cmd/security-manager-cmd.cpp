@@ -46,12 +46,20 @@ static std::map <std::string, enum app_install_path_type> app_install_path_type_
     {"public_ro", SECURITY_MANAGER_PATH_PUBLIC_RO}
 };
 
+static std::map <std::string, enum security_manager_user_type> user_type_map = {
+    {"system", SM_USER_TYPE_SYSTEM},
+    {"admin", SM_USER_TYPE_ADMIN},
+    {"guest", SM_USER_TYPE_GUEST},
+    {"normal", SM_USER_TYPE_NORMAL}
+};
+
 static po::options_description getGenericOptions()
 {
     po::options_description opts("Generic options");
     opts.add_options()
          ("help,h", "produce help message")
          ("install,i", "install an application")
+         ("manage-users,m", po::value<std::string>()->required(), "add or remove user, parameter is 'a' or 'add' (for add) and 'r' or 'remove' (for remove)")
          ;
     return opts;
 }
@@ -86,10 +94,25 @@ static po::options_description getInstallOptions()
     return opts;
 }
 
+static po::options_description getUserOptions()
+{
+    po::options_description opts("User management options");
+    opts.add_options()
+        ("uid,u", po::value<uid_t>()->required(), "user identifier number (required)")
+        ("usertype,t", po::value<std::string>(), "user type:"
+                "one of system, admin, guest, normal. Set to 'normal' by default,"
+                "ignored on user removal")
+         ;
+    return opts;
+}
+
 static po::options_description getAllOptions()
 {
     po::options_description opts("Allowed options");
-    opts.add(getGenericOptions()).add(getInstallOptions());
+    opts.add(getGenericOptions());
+    opts.add(getInstallOptions());
+    opts.add(getUserOptions());
+
     return opts;
 }
 
@@ -237,6 +260,34 @@ static bool parseInstallOptions(int argc, char *argv[],
     return ret;
 }
 
+static bool parseUserOptions(int argc, char *argv[],
+                             struct user_req &req,
+                             po::variables_map &vm)
+{
+    bool ret;
+    ret = parseCommandOptions(argc, argv, "manage-users", getUserOptions(), vm);
+    if (!ret)
+        return ret;
+    try {
+        if (vm.count("uid"))
+            req.uid = vm["uid"].as<uid_t>();
+        if (vm.count("usertype")){
+            req.utype = user_type_map.at(vm["usertype"].as<std::string>());
+        } else
+            req.utype = SM_USER_TYPE_NORMAL;
+    } catch (const std::out_of_range &e) {
+        std::cout << "Invalid user type found." << std::endl;
+        LogError("Invalid path type found.");
+        return false;
+    } catch (const std::exception &e) {
+        std::cout << "Error while parsing user management arguments: " << e.what() <<
+                  std::endl;
+        LogError("Error while parsing user management arguments: " << e.what());
+        ret = false;
+    }
+    return ret;
+}
+
 static int installApp(const struct app_inst_req &req)
 {
     int ret = EXIT_FAILURE;
@@ -258,6 +309,40 @@ static int installApp(const struct app_inst_req &req)
     return ret;
 }
 
+static int manageUserOperation(const struct user_req &req, std::string operation)
+{
+    int ret = EXIT_FAILURE;
+    if (operation == "a" || operation == "add") {
+        ret = security_manager_user_add(&req);
+        operation = "add";
+    }
+    else if (operation == "r" || operation == "remove") {
+        ret = security_manager_user_delete(&req);
+        operation = "remove";
+    } else {
+        std::cout << "Manage user option requires argument:"
+                "\n\t'a' or 'add' (for adding user)"
+                "\n\t'r' or 'remove' (for removing user)" << std::endl;
+        LogError("Manage user option wrong argument");
+        return EXIT_FAILURE;
+    }
+
+    if (SECURITY_MANAGER_SUCCESS == ret) {
+        std::cout << "User " << operation << " operation successfully finished (uid: "
+                << req.uid << ")" << std::endl;
+        LogDebug("User " << operation << " operation successfully finished (uid: "
+                << req.uid << ")");
+    } else {
+        std::cout << "Failed to "<< operation << " user of uid " << req.uid << ". " <<
+                  security_manager_strerror(static_cast<lib_retcode>(ret)) <<
+                  " (" << ret << ")." << std::endl;
+        LogError("Failed to "<< operation << " user of uid " << req.uid << "." <<
+                 security_manager_strerror(static_cast<lib_retcode>(ret)) <<
+                 " (" << ret << ").");
+    }
+    return ret;
+}
+
 int main(int argc, char *argv[])
 {
     po::variables_map vm;
@@ -274,9 +359,14 @@ int main(int argc, char *argv[])
             usage(std::string(argv[0]));
             return EXIT_FAILURE;
         }
-        po::store(po::command_line_parser(argc, argv).
-                  options(getGenericOptions()).allow_unregistered().run(),
-                  vm);
+        try{
+            po::store(po::command_line_parser(argc, argv).
+                      options(getGenericOptions()).allow_unregistered().run(),
+                      vm);
+        }catch (po::error& e) {
+            std::cout << e.what() << std::endl;
+            return EXIT_FAILURE;
+        }
         if (vm.count("help")) {
             usage(std::string(argv[0]));
             return EXIT_SUCCESS;
@@ -290,6 +380,16 @@ int main(int argc, char *argv[])
                 return EXIT_FAILURE;
             if (parseInstallOptions(argc, argv, *req, vm))
                 return installApp(*req);
+            else
+                return EXIT_FAILURE;
+        } else if (vm.count("manage-users")) {
+            std::string operation = vm["manage-users"].as<std::string>();
+            struct user_req *req = nullptr;
+            LogDebug("Manage users command.");
+            if (security_manager_user_req_new(&req) != SECURITY_MANAGER_SUCCESS)
+                return EXIT_FAILURE;
+            if (parseUserOptions(argc, argv, *req, vm))
+                return manageUserOperation(*req, operation);
             else
                 return EXIT_FAILURE;
         } else {
