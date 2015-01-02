@@ -40,8 +40,8 @@
 
 namespace SecurityManager {
 
-/* Const defined below is used to label links to executables */
-const char *const LABEL_FOR_PUBLIC_APP_PATH = "User";
+/* Const defined below is used to label files accessible to apps only for reading */
+const char *const LABEL_FOR_APP_RO_PATH = "User::Home";
 
 enum class FileDecision {
     SKIP = 0,
@@ -157,7 +157,7 @@ static bool labelDir(const std::string &path, const std::string &label,
     return ret;
 }
 
-bool setupPath(const std::string &pkgId, const std::string &path,
+bool setupPath(const std::string &appId, const std::string &path,
     app_install_path_type pathType)
 {
     std::string label;
@@ -165,13 +165,15 @@ bool setupPath(const std::string &pkgId, const std::string &path,
 
     switch (pathType) {
     case SECURITY_MANAGER_PATH_PRIVATE:
-        if (!generatePkgLabel(pkgId, label))
+    case SECURITY_MANAGER_PATH_RW:
+        if (!generateAppLabel(appId, label))
             return false;
         label_executables = true;
         label_transmute = false;
         break;
     case SECURITY_MANAGER_PATH_PUBLIC:
-        label.assign(LABEL_FOR_PUBLIC_APP_PATH);
+    case SECURITY_MANAGER_PATH_RO:
+        label.assign(LABEL_FOR_APP_RO_PATH);
         label_executables = false;
         label_transmute = true;
         break;

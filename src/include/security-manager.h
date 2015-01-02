@@ -52,6 +52,10 @@ enum app_install_path_type {
     SECURITY_MANAGER_PATH_PUBLIC,
     //read only access for all applications
     SECURITY_MANAGER_PATH_PUBLIC_RO,
+    //accessible for writing to all apps within its package
+    SECURITY_MANAGER_PATH_RW,
+    //accessible to apps for reading
+    SECURITY_MANAGER_PATH_RO,
     //this is only for range limit
     SECURITY_MANAGER_ENUM_END
 };

@@ -291,7 +291,7 @@ int appInstall(const app_inst_req &req, uid_t uid)
     for (const auto &appPath : req.appPaths) {
         const std::string &path = appPath.first;
         app_install_path_type pathType = static_cast<app_install_path_type>(appPath.second);
-        int result = setupPath(req.pkgId, path, pathType);
+        int result = setupPath(req.appId, path, pathType);
 
         if (!result) {
             LogError("setupPath() failed");

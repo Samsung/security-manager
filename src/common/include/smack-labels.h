@@ -36,14 +36,14 @@ namespace SecurityManager {
 /**
  * Sets Smack labels on a directory and its contents, recursively.
  *
- * @param pkgId[in] application's package identifier
+ * @param appId[in] application's identifier
  * @param path[in] path to a file or directory to setup
  * @param pathType[in] type of path to setup. See description of
  *         app_install_path_type in security-manager.h for details
  *
  * @return true on success, false on error.
  */
-bool setupPath(const std::string &pkgId, const std::string &path,
+bool setupPath(const std::string &appId, const std::string &path,
     app_install_path_type pathType);
 
 /**
