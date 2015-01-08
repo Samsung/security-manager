@@ -4,3 +4,7 @@ System ~APP~ rwx
 ~APP~ System::Run rwxat
 ~APP~ System::Log rwxa
 ~APP~ _ l
+User ~APP~ rwxa
+~APP~ User wx
+~APP~ User::Home rxl
+~APP~ User::App::Shared rwxat
