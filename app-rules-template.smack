@@ -5,6 +5,8 @@ System ~APP~ rwx
 ~APP~ System::Log rwxa
 ~APP~ _ l
 User ~APP~ rwxa
+User ~PKG~ rwxat
 ~APP~ User wx
 ~APP~ User::Home rxl
 ~APP~ User::App::Shared rwxat
+~APP~ ~PKG~ rwxat
