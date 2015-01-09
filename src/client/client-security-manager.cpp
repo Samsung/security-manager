@@ -402,8 +402,10 @@ int security_manager_set_process_groups_from_appid(const char *app_id)
 
         //receive response from server
         Deserialization::Deserialize(recv, retval);
-        if (retval != SECURITY_MANAGER_API_SUCCESS)
+        if (retval != SECURITY_MANAGER_API_SUCCESS) {
+            LogError("Failed to get list of groups from security-manager service. Error code: " << retval);
             return SECURITY_MANAGER_ERROR_UNKNOWN;
+        }
 
         //How many new groups?
         int newGroupsCnt;
@@ -495,8 +497,10 @@ int security_manager_prepare_app(const char *app_id)
         return ret;
 
     ret = security_manager_set_process_groups_from_appid(app_id);
-    if (ret != SECURITY_MANAGER_SUCCESS)
-        return ret;
+    if (ret != SECURITY_MANAGER_SUCCESS) {
+        LogWarning("Unable to setup process groups for application. Privileges with direct access to resources will not work.");
+        ret = SECURITY_MANAGER_SUCCESS;
+    }
 
     ret = security_manager_drop_process_privileges();
     return ret;
