@@ -40,7 +40,7 @@ namespace ServiceImpl {
  * @param[in] req installation request
  * @param[in] uid id of the requesting user
  *
- * @return API return code, as defined in security-manager.h
+ * @return API return code, as defined in protocols.h
  */
 int appInstall(const app_inst_req &req, uid_t uid);
 
@@ -50,7 +50,7 @@ int appInstall(const app_inst_req &req, uid_t uid);
  * @param[in] req uninstallation request
  * @param[in] uid id of the requesting user
  *
- * @return API return code, as defined in security-manager.h
+ * @return API return code, as defined in protocols.h
  */
 int appUninstall(const std::string &appId, uid_t uid);
 
@@ -61,7 +61,7 @@ int appUninstall(const std::string &appId, uid_t uid);
  * @param[in] appId application identifier
  * @param[out] pkgId returned package identifier
  *
- * @return API return code, as defined in security-manager.h
+ * @return API return code, as defined in protocols.h
  */
 int getPkgId(const std::string &appId, std::string &pkgId);
 
@@ -77,7 +77,7 @@ int getPkgId(const std::string &appId, std::string &pkgId);
  * @param[in]  pid id of the requesting process (to construct Cynara session id)
  * @param[out] gids returned set of allowed group ids
  *
- * @return API return code, as defined in security-manager.h
+ * @return API return code, as defined in protocols.h
  */
 int getAppGroups(const std::string &appId, uid_t uid, pid_t pid, std::unordered_set<gid_t> &gids);
 
