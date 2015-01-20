@@ -101,7 +101,7 @@ public:
      * TODO: drop oldPrivileges argument and get them directly from Cynara.
      * Appropriate Cynara interface is needed first.
      */
-    static void UpdateAppPolicy(const std::string &label, const std::string &user,
+    void UpdateAppPolicy(const std::string &label, const std::string &user,
         const std::vector<std::string> &oldPrivileges,
         const std::vector<std::string> &newPrivileges);
 

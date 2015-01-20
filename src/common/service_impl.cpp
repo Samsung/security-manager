@@ -177,7 +177,7 @@ int appInstall(const app_inst_req &req, uid_t uid)
         PrivilegeDb::getInstance().UpdateAppPrivileges(req.appId, uid, req.privileges);
         /* Get all application ids in the package to generate rules withing the package */
         PrivilegeDb::getInstance().GetAppIdsForPkgId(req.pkgId, pkgContents);
-        CynaraAdmin::UpdateAppPolicy(smackLabel, uidstr, oldAppPrivileges,
+        CynaraAdmin::getInstance().UpdateAppPolicy(smackLabel, uidstr, oldAppPrivileges,
                                          req.privileges);
         PrivilegeDb::getInstance().CommitTransaction();
         LogDebug("Application installation commited to database");
@@ -256,7 +256,7 @@ int appUninstall(const std::string &appId, uid_t uid)
             PrivilegeDb::getInstance().GetAppPrivileges(appId, uid, oldAppPrivileges);
             PrivilegeDb::getInstance().UpdateAppPrivileges(appId, uid, std::vector<std::string>());
             PrivilegeDb::getInstance().RemoveApplication(appId, uid, removePkg);
-            CynaraAdmin::UpdateAppPolicy(smackLabel, uidstr, oldAppPrivileges,
+            CynaraAdmin::getInstance().UpdateAppPolicy(smackLabel, uidstr, oldAppPrivileges,
                                              std::vector<std::string>());
             PrivilegeDb::getInstance().CommitTransaction();
             LogDebug("Application uninstallation commited to database");
