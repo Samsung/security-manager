@@ -1,0 +1,1 @@
+security-manager-cmd --manage-users=remove --uid=$2

@@ -1,0 +1,1 @@
+security-manager-cmd --manage-users=add --uid=$2 --usertype=$5

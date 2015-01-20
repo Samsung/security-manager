@@ -28,3 +28,15 @@ TARGET_LINK_LIBRARIES(${TARGET_CMD}
     )
 
 INSTALL(TARGETS ${TARGET_CMD} DESTINATION ${BIN_INSTALL_DIR})
+
+INSTALL(FILES
+    50_security-manager-add.post
+    DESTINATION
+    /etc/gumd/useradd.d
+)
+
+INSTALL(FILES
+    50_security-manager-remove.pre
+    DESTINATION
+    /etc/gumd/userdel.d
+)
