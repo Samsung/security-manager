@@ -1,0 +1,52 @@
+#!/bin/sh -e
+
+USERTYPE_POLICY_PATH=/usr/share/security-manager/policy
+
+# Create default buckets
+while read bucket default_policy
+do
+    # Reuse the main bucket for PRIVACY_MANAGER bucket
+    [ "$bucket" = "PRIVACY_MANAGER" ] && bucket=""
+    cyad --set-bucket="$bucket" --type="$default_policy"
+done <<END
+PRIVACY_MANAGER DENY
+ADMIN NONE
+MAIN DENY
+MANIFESTS DENY
+END
+
+# Link buckets together
+while read bucket_src bucket_dst
+do
+    # Reuse the main bucket for PRIVACY_MANAGER bucket
+    [ "$bucket_src" = "PRIVACY_MANAGER" ] && bucket_src=""
+    cyad --set-policy --client="*" --user="*" --privilege="*" --type=BUCKET \
+        --bucket="$bucket_src" --metadata="$bucket_dst"
+done <<END
+MAIN MANIFESTS
+PRIVACY_MANAGER MAIN
+END
+
+# Import user-type policies
+find "$USERTYPE_POLICY_PATH" -name "usertype-*.profile" |
+while read file
+do
+    bucket="`echo $file | sed -r 's|.*/usertype-(.*).profile$|USER_TYPE_\U\1|'`"
+
+    # Re-create the bucket with empty contents
+    cyad --delete-bucket=$bucket || true
+    cyad --set-bucket=$bucket --type=DENY
+
+    # Link the bucket to ADMIN bucket
+    cyad --set-policy --client="*" --user="*" --privilege="*" --type=BUCKET \
+        --bucket="$bucket" --metadata="ADMIN"
+
+    grep -v ^\' $file |
+    while read app privilege
+    do
+        user="*"        # Match any user id
+        policy="0xFFFF" # ALLOW (FIXME: cyad should parse policy names, not numeric values)
+        printf '%s;%s;%s;%s;%s;\n' "$bucket" "$user" "$app" "$privilege" "$policy"
+    done |
+    cyad --set-policy --bulk=-
+done

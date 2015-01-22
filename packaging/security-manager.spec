@@ -48,6 +48,7 @@ Development files needed for using the security manager client
 Summary:    Security manager policy
 Group:      Security/Development
 Requires:   security-manager = %{version}-%{release}
+Requires:   cyad
 
 %description -n security-manager-policy
 Set of security rules that constitute security policy in the system
@@ -81,8 +82,6 @@ cp LICENSE %{buildroot}%{_datadir}/license/%{name}
 cp LICENSE %{buildroot}%{_datadir}/license/libsecurity-manager-client
 mkdir -p %{buildroot}/%{TZ_SYS_SMACK}
 cp app-rules-template.smack %{buildroot}/%{TZ_SYS_SMACK}
-mkdir -p %{buildroot}%{_datadir}/security-manager
-cp -rf policy %{buildroot}%{_datadir}/security-manager
 %make_install
 
 mkdir -p %{buildroot}/%{_unitdir}/multi-user.target.wants
@@ -125,6 +124,9 @@ fi
 
 %postun -n libsecurity-manager-client -p /sbin/ldconfig
 
+%post policy
+%{_bindir}/security-manager-policy-reload
+
 %files -n security-manager
 %manifest security-manager.manifest
 %defattr(-,root,root,-)
@@ -161,3 +163,4 @@ fi
 %files -n security-manager-policy
 %manifest %{name}.manifest
 %{_datadir}/security-manager/policy
+%attr(755,root,root) %{_bindir}/security-manager-policy-reload
