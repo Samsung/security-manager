@@ -31,7 +31,6 @@
 #include <dpl/log/log.h>
 #include <dpl/singleton.h>
 #include <dpl/singleton_safe_impl.h>
-#include <dpl/exception.h>
 #include <protocols.h>
 #include <security-manager.h>
 
@@ -124,66 +123,50 @@ static void usage(std::string name)
     cout << endl << getAllOptions() << endl << endl;
 }
 
-static bool parseCommandOptions(int argc, char *argv[], std::string cmd,
+void parseCommandOptions(int argc, char *argv[],
                                 po::options_description opts,
                                 po::variables_map &vm)
 {
-    bool ret = false;
-
-    try {
-        const po::positional_options_description p;
-        /* style options:
-         * unix_style: The more-or-less traditional unix style. It looks as
-         *     follows: unix_style = (allow_short | short_allow_adjacent |
-         *                            short_allow_next | allow_long |
-         *                            long_allow_adjacent | long_allow_next |
-         *                            allow_sticky | allow_guessing |
-         *                            allow_dash_for_short)
-         * allow_long_disguise: Allow long options with single option starting
-         *     character, e.g -foo=10
-         * allow_guessing: Allow abbreviated spellings for long options, if
-         *     they unambiguously identify long option. No long
-         *     option name should be prefix of other long option name if
-         *     guessing is in effect.
-         * allow_short: Alow "-<single character" style.
-         * short_allow_adjacent: Allow option parameter in the same token for
-         *     short options.
-         * short_allow_next: Allow option parameter in the next token for
-         *     short options.
-         * allow_long: Allow "--long_name" style.
-         * long_allow_adjacent: Allow option parameter in the same token for
-         *     long option, like in --foo=10
-         * long_allow_next: Allow option parameter in the next token for long
-         *     options.
-         * allow_sticky: Allow to merge several short options together, so
-         *     that "-s -k" become "-sk". All of the options but
-         *     last should accept no parameter. For example, if "-s" accept a
-         *     parameter, then "k" will be taken as
-         *     parameter, not another short option. Dos-style short options
-         *     cannot be sticky.
-         * allow_dash_for_short: Allow "-" in short options.
-         */
-        po::store(po::command_line_parser(argc, argv).
-                      options(getGenericOptions().add(opts)).positional(p).
-                      style((po::command_line_style::unix_style |
-                            po::command_line_style::allow_long_disguise) &
-                            ~po::command_line_style::allow_guessing).
-                      run(),
-                  vm);
-        po::notify(vm);
-        ret = true;
-    } catch (const po::error &e) {
-        std::cout << "Error parsing " << cmd << " command arguments: " <<
-                  e.what() << std::endl;
-        LogError("Error parsing " << cmd << " command arguments: " << e.what());
-    } catch (const std::exception &e) {
-        std::cout << "Unknown error while parsing " << cmd <<
-                  " command arguments: " << e.what() << std::endl;
-        LogError("Unknown error while parsing " << cmd <<
-                 " command arguments: " << e.what());
-    }
-
-    return ret;
+    const po::positional_options_description p;
+    /* style options:
+     * unix_style: The more-or-less traditional unix style. It looks as
+     *     follows: unix_style = (allow_short | short_allow_adjacent |
+     *                            short_allow_next | allow_long |
+     *                            long_allow_adjacent | long_allow_next |
+     *                            allow_sticky | allow_guessing |
+     *                            allow_dash_for_short)
+     * allow_long_disguise: Allow long options with single option starting
+     *     character, e.g -foo=10
+     * allow_guessing: Allow abbreviated spellings for long options, if
+     *     they unambiguously identify long option. No long
+     *     option name should be prefix of other long option name if
+     *     guessing is in effect.
+     * allow_short: Alow "-<single character" style.
+     * short_allow_adjacent: Allow option parameter in the same token for
+     *     short options.
+     * short_allow_next: Allow option parameter in the next token for
+     *     short options.
+     * allow_long: Allow "--long_name" style.
+     * long_allow_adjacent: Allow option parameter in the same token for
+     *     long option, like in --foo=10
+     * long_allow_next: Allow option parameter in the next token for long
+     *     options.
+     * allow_sticky: Allow to merge several short options together, so
+     *     that "-s -k" become "-sk". All of the options but
+     *     last should accept no parameter. For example, if "-s" accept a
+     *     parameter, then "k" will be taken as
+     *     parameter, not another short option. Dos-style short options
+     *     cannot be sticky.
+     * allow_dash_for_short: Allow "-" in short options.
+     */
+    po::store(po::command_line_parser(argc, argv).
+                  options(getGenericOptions().add(opts)).positional(p).
+                  style((po::command_line_style::unix_style |
+                        po::command_line_style::allow_long_disguise) &
+                        ~po::command_line_style::allow_guessing).
+                  run(),
+              vm);
+    po::notify(vm);
 }
 
 static bool loadPaths(const std::vector<std::string> &paths,
@@ -213,61 +196,48 @@ static bool loadPaths(const std::vector<std::string> &paths,
     return (!req.appPaths.empty());
 }
 
-static bool parseInstallOptions(int argc, char *argv[],
+static void parseInstallOptions(int argc, char *argv[],
                                 struct app_inst_req &req,
                                 po::variables_map &vm)
 {
-    bool ret;
-    ret = parseCommandOptions(argc, argv, "install", getInstallOptions(), vm);
-    if (!ret)
-        return ret;
-    try {
-        if (vm.count("app"))
-            req.appId = vm["app"].as<std::string>();
-        if (vm.count("pkg"))
-            req.pkgId = vm["pkg"].as<std::string>();
-        if (vm.count("path")) {
-            const std::vector<std::string> paths =
-                vm["path"].as<std::vector<std::string> >();
-            if (!loadPaths(paths, req)) {
-                std::cout << "Error in parsing path arguments." << std::endl;
-                LogError("Error in parsing path arguments.");
-                return false;
-            }
+
+    parseCommandOptions(argc, argv, getInstallOptions(), vm);
+
+    if (vm.count("app"))
+        req.appId = vm["app"].as<std::string>();
+    if (vm.count("pkg"))
+        req.pkgId = vm["pkg"].as<std::string>();
+    if (vm.count("path")) {
+        const std::vector<std::string> paths =
+            vm["path"].as<std::vector<std::string> >();
+        if (!loadPaths(paths, req)) {
+            po::error e("Error in parsing path arguments.");
+            throw e;
         }
-        if (vm.count("privilege")) {
-            req.privileges = vm["privilege"].as<std::vector<std::string> >();
-            if (req.privileges.empty()) {
-                std::cout << "Error in parsing privilege arguments." << std::endl;
-                LogError("Error in parsing privilege arguments.");
-                return false;
-            }
-#ifdef BUILD_TYPE_DEBUG
-            LogDebug("Passed privileges:");
-            for (const auto &p : req.privileges) {
-                LogDebug("    " << p);
-            }
-#endif
-        }
-        if (vm.count("uid"))
-            req.uid = vm["uid"].as<uid_t>();
-    } catch (const std::exception &e) {
-        std::cout << "Error while parsing install arguments: " << e.what() <<
-                  std::endl;
-        LogError("Error while parsing install arguments: " << e.what());
-        ret = false;
     }
-    return ret;
+    if (vm.count("privilege")) {
+        req.privileges = vm["privilege"].as<std::vector<std::string> >();
+        if (req.privileges.empty()) {
+            po::error e("Error in parsing privilege arguments.");
+            throw e;
+        }
+#ifdef BUILD_TYPE_DEBUG
+        LogDebug("Passed privileges:");
+        for (const auto &p : req.privileges) {
+            LogDebug("    " << p);
+        }
+#endif
+    }
+    if (vm.count("uid"))
+        req.uid = vm["uid"].as<uid_t>();
+
 }
 
-static bool parseUserOptions(int argc, char *argv[],
+static void parseUserOptions(int argc, char *argv[],
                              struct user_req &req,
                              po::variables_map &vm)
 {
-    bool ret;
-    ret = parseCommandOptions(argc, argv, "manage-users", getUserOptions(), vm);
-    if (!ret)
-        return ret;
+    parseCommandOptions(argc, argv, getUserOptions(), vm);
     try {
         if (vm.count("uid"))
             req.uid = vm["uid"].as<uid_t>();
@@ -276,16 +246,9 @@ static bool parseUserOptions(int argc, char *argv[],
         } else
             req.utype = SM_USER_TYPE_NORMAL;
     } catch (const std::out_of_range &e) {
-        std::cout << "Invalid user type found." << std::endl;
-        LogError("Invalid path type found.");
-        return false;
-    } catch (const std::exception &e) {
-        std::cout << "Error while parsing user management arguments: " << e.what() <<
-                  std::endl;
-        LogError("Error while parsing user management arguments: " << e.what());
-        ret = false;
+        po::error er("Invalid user type found.");
+        throw er;
     }
-    return ret;
 }
 
 static int installApp(const struct app_inst_req &req)
@@ -347,7 +310,7 @@ int main(int argc, char *argv[])
 {
     po::variables_map vm;
 
-    UNHANDLED_EXCEPTION_HANDLER_BEGIN
+    try
     {
         SecurityManager::Singleton<SecurityManager::Log::LogSystem>::Instance().SetTag("SECURITY_MANAGER_INSTALLER");
 
@@ -359,14 +322,10 @@ int main(int argc, char *argv[])
             usage(std::string(argv[0]));
             return EXIT_FAILURE;
         }
-        try{
-            po::store(po::command_line_parser(argc, argv).
-                      options(getGenericOptions()).allow_unregistered().run(),
-                      vm);
-        }catch (po::error& e) {
-            std::cout << e.what() << std::endl;
-            return EXIT_FAILURE;
-        }
+
+         po::store(po::command_line_parser(argc, argv).
+                   options(getGenericOptions()).allow_unregistered().run(),
+                   vm);
         if (vm.count("help")) {
             usage(std::string(argv[0]));
             return EXIT_SUCCESS;
@@ -378,27 +337,32 @@ int main(int argc, char *argv[])
             LogDebug("Install command.");
             if (security_manager_app_inst_req_new(&req) != SECURITY_MANAGER_SUCCESS)
                 return EXIT_FAILURE;
-            if (parseInstallOptions(argc, argv, *req, vm))
-                return installApp(*req);
-            else
-                return EXIT_FAILURE;
+            parseInstallOptions(argc, argv, *req, vm);
+            return installApp(*req);
         } else if (vm.count("manage-users")) {
             std::string operation = vm["manage-users"].as<std::string>();
             struct user_req *req = nullptr;
             LogDebug("Manage users command.");
             if (security_manager_user_req_new(&req) != SECURITY_MANAGER_SUCCESS)
                 return EXIT_FAILURE;
-            if (parseUserOptions(argc, argv, *req, vm))
-                return manageUserOperation(*req, operation);
-            else
-                return EXIT_FAILURE;
+            parseUserOptions(argc, argv, *req, vm);
+            return manageUserOperation(*req, operation);
         } else {
             std::cout << "No command argument was given." << std::endl;
             usage(std::string(argv[0]));
             return EXIT_FAILURE;
         }
     }
-    UNHANDLED_EXCEPTION_HANDLER_END
+    catch (po::error &e) {
+        std::cout << e.what() << std::endl;
+        LogError("Program options error occured: " << e.what());
+        return EXIT_FAILURE;
+    }
+    catch (const std::exception &e) {
+        std::cout << "Error occured: " << e.what() << std::endl;
+        LogError("Error occured: " << e.what());
+    }
+
 
     return EXIT_FAILURE;
 }
