@@ -59,7 +59,7 @@ static po::options_description getGenericOptions()
     opts.add_options()
          ("help,h", "produce help message")
          ("install,i", "install an application")
-         ("manage-users,m", po::value<std::string>()->required(), "add or remove user, parameter is 'a' or 'add' (for add) and 'r' or 'remove' (for remove)")
+         ("manage-users,m", po::value<std::string>(), "add or remove user, parameter is 'a' or 'add' (for add) and 'r' or 'remove' (for remove)")
          ;
     return opts;
 }
