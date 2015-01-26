@@ -205,7 +205,11 @@ static bool checkCynaraError(int result, const std::string &msg)
     }
 }
 
+CynaraAdmin::TypeToDescriptionMap CynaraAdmin::TypeToDescription;
+CynaraAdmin::DescriptionToTypeMap CynaraAdmin::DescriptionToType;
+
 CynaraAdmin::CynaraAdmin()
+    : m_policyDescriptionsInitialized(false)
 {
     checkCynaraError(
         cynara_admin_initialize(&m_CynaraAdmin),
@@ -378,6 +382,67 @@ void CynaraAdmin::EmptyBucket(const std::string &bucketName, bool recursive, con
             client.c_str(), user.c_str(), privilege.c_str()),
         "Error while emptying bucket: " + bucketName + ", filter (C, U, P): " +
             client + ", " + user + ", " + privilege);
+}
+
+void CynaraAdmin::FetchCynaraPolicyDescriptions(bool forceRefresh)
+{
+    struct cynara_admin_policy_descr **descriptions = nullptr;
+
+    if (!forceRefresh && m_policyDescriptionsInitialized)
+        return;
+
+    // fetch
+    checkCynaraError(
+        cynara_admin_list_policies_descriptions(m_CynaraAdmin, &descriptions),
+        "Error while getting list of policies descriptions from Cynara.");
+
+    if (descriptions[0] == nullptr) {
+        LogError("Fetching policies levels descriptions from Cynara returned empty list. "
+                "There should be at least 2 entries - Allow and Deny");
+        return;
+    }
+
+    // reset the state
+    m_policyDescriptionsInitialized = false;
+    DescriptionToType.clear();
+    TypeToDescription.clear();
+
+    // extract strings
+    for (int i = 0; descriptions[i] != nullptr; i++) {
+        std::string descriptionName(descriptions[i]->name);
+
+        DescriptionToType[descriptionName] = descriptions[i]->result;
+        TypeToDescription[descriptions[i]->result] = std::move(descriptionName);
+
+        free(descriptions[i]->name);
+        free(descriptions[i]);
+    }
+
+    free(descriptions);
+
+    m_policyDescriptionsInitialized = true;
+}
+
+void CynaraAdmin::ListPoliciesDescriptions(std::vector<std::string> &policiesDescriptions)
+{
+    FetchCynaraPolicyDescriptions(false);
+
+    for (auto it = TypeToDescription.rbegin(); it != TypeToDescription.rend(); ++it)
+        policiesDescriptions.push_back(it->second);
+}
+
+std::string CynaraAdmin::convertToPolicyDescription(const int policyType, bool forceRefresh)
+{
+    FetchCynaraPolicyDescriptions(forceRefresh);
+
+    return TypeToDescription.at(policyType);
+}
+
+int CynaraAdmin::convertToPolicyType(const std::string &policy, bool forceRefresh)
+{
+    FetchCynaraPolicyDescriptions(forceRefresh);
+
+    return DescriptionToType.at(policy);
 }
 
 Cynara::Cynara()
