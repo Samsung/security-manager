@@ -39,14 +39,14 @@ IMPLEMENT_SAFE_SINGLETON(SecurityManager::Log::LogSystem);
     registerSocketService<service>(manager, #service)
 
 template<typename T>
-void registerSocketService(SecurityManager::SocketManager &manager, const std::string& serviceName)
+bool registerSocketService(SecurityManager::SocketManager &manager, const std::string& serviceName)
 {
     T *service = NULL;
     try {
         service = new T();
         service->Create();
         manager.RegisterSocketService(service);
-        service = NULL;
+        return true;
     } catch (const SecurityManager::Exception &exception) {
         LogError("Error in creating service " << serviceName <<
                  ", details:\n" << exception.DumpToString());
@@ -59,6 +59,7 @@ void registerSocketService(SecurityManager::SocketManager &manager, const std::s
     }
     if (service)
         delete service;
+    return false;
 }
 
 int main(void) {
@@ -82,7 +83,10 @@ int main(void) {
         LogInfo("Start!");
         SecurityManager::SocketManager manager;
 
-        REGISTER_SOCKET_SERVICE(manager, SecurityManager::Service);
+        if (!REGISTER_SOCKET_SERVICE(manager, SecurityManager::Service)) {
+            LogError("Unable to create socket service. Exiting.");
+            return EXIT_FAILURE;
+        }
 
         manager.MainLoop();
     } catch (const SecurityManager::FileLocker::Exception::Base &e) {
