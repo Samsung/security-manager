@@ -44,9 +44,9 @@
 #include <client-common.h>
 #include <protocols.h>
 #include <service_impl.h>
-#include <file-lock.h>
-
 #include <security-manager.h>
+#include <client-offline.h>
+
 
 /**
  * Mapping of lib_retcode error codes to theirs strings equivalents
@@ -161,19 +161,11 @@ int security_manager_app_install(const app_inst_req *p_req)
         if (p_req->appId.empty() || p_req->pkgId.empty())
             return SECURITY_MANAGER_ERROR_REQ_NOT_COMPLETE;
 
-        bool offlineMode;
         int retval;
-
-        try {
-            SecurityManager::FileLocker serviceLock(SecurityManager::SERVICE_LOCK_FILE);
-            if ((offlineMode = serviceLock.Locked())) {
-                LogInfo("Working in offline mode.");
-                retval = SecurityManager::ServiceImpl::appInstall(*p_req, geteuid());
-            }
-        } catch (const SecurityManager::FileLocker::Exception::Base &e) {
-            offlineMode = false;
-        }
-        if (!offlineMode) {
+        ClientOffline offlineMode;
+        if (offlineMode.isOffline()) {
+            retval = SecurityManager::ServiceImpl::appInstall(*p_req, geteuid());
+        } else {
             MessageBuffer send, recv;
 
             //put data into buffer
@@ -555,22 +547,16 @@ SECURITY_MANAGER_API
 int security_manager_user_add(const user_req *p_req)
 {
     using namespace SecurityManager;
-    bool offlineMode;
-    MessageBuffer send, recv;
     if (!p_req)
         return SECURITY_MANAGER_ERROR_INPUT_PARAM;
+
     return try_catch([&] {
         int retval;
-        try {
-            SecurityManager::FileLocker serviceLock(SecurityManager::SERVICE_LOCK_FILE);
-            if ((offlineMode = serviceLock.Locked())) {
-                LogInfo("Working in offline mode.");
-                retval = SecurityManager::ServiceImpl::userAdd(p_req->uid, p_req->utype, geteuid());
-            }
-        } catch (const SecurityManager::FileLocker::Exception::Base &e) {
-            offlineMode = false;
-        }
-        if (!offlineMode) {
+        ClientOffline offlineMode;
+        if (offlineMode.isOffline()) {
+            retval = SecurityManager::ServiceImpl::userAdd(p_req->uid, p_req->utype, geteuid());
+        } else {
+            MessageBuffer send, recv;
             //server is working
 
             //put data into buffer

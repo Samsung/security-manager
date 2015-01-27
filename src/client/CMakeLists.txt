@@ -22,6 +22,7 @@ INCLUDE_DIRECTORIES(
 SET(CLIENT_SOURCES
     ${CLIENT_PATH}/client-security-manager.cpp
     ${CLIENT_PATH}/client-common.cpp
+    ${CLIENT_PATH}/client-offline.cpp
     )
 
 ADD_LIBRARY(${TARGET_CLIENT} SHARED ${CLIENT_SOURCES})
