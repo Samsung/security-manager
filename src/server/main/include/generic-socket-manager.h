@@ -59,17 +59,20 @@ struct GenericSocketService {
         ServiceDescription(const char *path,
             const char *smackLabel,
             InterfaceID interfaceID = 0,
-            bool useSendMsg = false)
+            bool useSendMsg = false,
+            bool systemdOnly = false)
           : smackLabel(smackLabel)
           , interfaceID(interfaceID)
           , serviceHandlerPath(path)
           , useSendMsg(useSendMsg)
+          , systemdOnly(systemdOnly)
         {}
 
         SmackLabel smackLabel;                 // Smack label for socket
         InterfaceID interfaceID;               // All data from serviceHandlerPath will be marked with this interfaceHandler
         ServiceHandlerPath serviceHandlerPath; // Path to file
         bool useSendMsg;
+        bool systemdOnly;
     };
 
     typedef std::vector<ServiceDescription> ServiceDescriptionVector;

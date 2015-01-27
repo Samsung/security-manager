@@ -43,7 +43,11 @@ Service::Service()
 GenericSocketService::ServiceDescriptionVector Service::GetServiceDescription()
 {
     return ServiceDescriptionVector {
-        {SERVICE_SOCKET, "security-manager", IFACE},
+        {SERVICE_SOCKET,  /* path */
+         "*",   /* smackLabel label (not used, we rely on systemd) */
+         IFACE, /* InterfaceID */
+         false, /* useSendMsg */
+         true}, /* systemdOnly */
     };
 }
 

@@ -545,8 +545,14 @@ void SocketManager::CreateDomainSocket(
     const GenericSocketService::ServiceDescription &desc)
 {
     int sockfd = GetSocketFromSystemD(desc);
-    if (-1 == sockfd)
+    if (-1 == sockfd) {
+        if (desc.systemdOnly) {
+            LogError("Socket " << desc.serviceHandlerPath << " not provided by systemd.");
+            ThrowMsg(Exception::InitFailed, "Socket " << desc.serviceHandlerPath <<
+                " must be provided by systemd, but it was not.");
+        }
         sockfd = CreateDomainSocketHelp(desc);
+    }
 
     auto &description = CreateDefaultReadSocketDescription(sockfd, false);
 
