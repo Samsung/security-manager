@@ -400,8 +400,6 @@ int userDelete(uid_t uidDeleted, uid_t uid)
     if (uid != 0)
         return SECURITY_MANAGER_API_ERROR_AUTHENTICATION_FAILED;
 
-    //TODO remove policy information from cynara
-
     /*Uninstall all user apps*/
     std::vector<std::string> userApps;
     try {
@@ -418,6 +416,8 @@ int userDelete(uid_t uidDeleted, uid_t uid)
             ret = SECURITY_MANAGER_API_ERROR_SERVER_ERROR;
         }
     }
+
+    CynaraAdmin::getInstance().UserRemove(uidDeleted);
 
     return ret;
 }

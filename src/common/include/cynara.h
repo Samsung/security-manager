@@ -137,6 +137,13 @@ public:
     void UserInit(uid_t uid, security_manager_user_type userType);
 
     /**
+     * Removes all entries for a user from cynara database
+     *
+     * @param uid removed user uid
+     */
+    void UserRemove(uid_t uid);
+
+    /**
      * List Cynara policies that match selected criteria in given bucket.
      *
      * @param bucketName name of the bucket to search policies in

@@ -337,6 +337,15 @@ void CynaraAdmin::UserInit(uid_t uid, security_manager_user_type userType)
     CynaraAdmin::getInstance().SetPolicies(policies);
 }
 
+void CynaraAdmin::UserRemove(uid_t uid)
+{
+    std::vector<CynaraAdminPolicy> policies;
+    std::string user = std::to_string(static_cast<unsigned int>(uid));
+
+    EmptyBucket(Buckets.at(Bucket::PRIVACY_MANAGER),true,
+            CYNARA_ADMIN_ANY, user, CYNARA_ADMIN_ANY);
+}
+
 void CynaraAdmin::ListPolicies(
     const std::string &bucketName,
     const std::string &appId,
