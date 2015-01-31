@@ -667,6 +667,41 @@ int security_manager_policy_update_send(policy_update_req *p_req)
     return SECURITY_MANAGER_ERROR_UNKNOWN;
 }
 
+SECURITY_MANAGER_API
+int security_manager_get_configured_policy_for_admin(
+        policy_entry *p_filter,
+        policy_entry **pp_privs_policy,
+        size_t *p_size)
+{
+    (void)p_filter;
+    (void)pp_privs_policy;
+    (void)p_size;
+    return  SECURITY_MANAGER_ERROR_UNKNOWN;
+}
+
+SECURITY_MANAGER_API
+int security_manager_get_configured_policy_for_self(
+        policy_entry *p_filter,
+        policy_entry **pp_privs_policy,
+        size_t *p_size)
+{
+    (void)p_filter;
+    (void)pp_privs_policy;
+    (void)p_size;
+    return  SECURITY_MANAGER_ERROR_UNKNOWN;
+}
+
+
+int security_manager_get_policy(
+        policy_entry *p_filter,
+        policy_entry **pp_privs_policy,
+        size_t *p_size)
+{
+    (void)p_filter;
+    (void)pp_privs_policy;
+    (void)p_size;
+    return  SECURITY_MANAGER_ERROR_UNKNOWN;
+}
 
 SECURITY_MANAGER_API
 int security_manager_policy_entry_new(policy_entry **p_entry)
@@ -742,4 +777,56 @@ int security_manager_policy_update_req_add_entry(policy_update_req *p_req, const
     p_req->units.push_back(p_entry);
 
     return  SECURITY_MANAGER_SUCCESS;
+}
+
+SECURITY_MANAGER_API
+const char *security_manager_policy_entry_get_user(policy_entry *p_entry)
+{
+    if (p_entry)
+        return strdup(p_entry->user.c_str());
+    else
+        return nullptr;
+}
+
+SECURITY_MANAGER_API
+const char *security_manager_policy_entry_get_application(policy_entry *p_entry)
+{
+    if (p_entry)
+        return strdup(p_entry->appId.c_str());
+    else
+        return nullptr;
+}
+SECURITY_MANAGER_API
+const char *security_manager_policy_entry_get_privilege(policy_entry *p_entry)
+{
+    if (p_entry)
+        return strdup(p_entry->privilege.c_str());
+    else
+        return nullptr;
+}
+SECURITY_MANAGER_API
+const char *security_manager_policy_entry_get_level(policy_entry *p_entry)
+{
+    if (p_entry)
+        return strdup(p_entry->currentLevel.c_str());
+    else
+        return nullptr;
+}
+
+SECURITY_MANAGER_API
+const char *security_manager_policy_entry_get_max_level(policy_entry *p_entry)
+{
+    if (p_entry)
+        return strdup(p_entry->maxLevel.c_str());
+    else
+        return nullptr;
+}
+
+SECURITY_MANAGER_API
+void security_manager_policy_entries_free(policy_entry *p_entries, const size_t size)
+{
+    for (size_t i = 0; i < size; i++) {
+        delete &p_entries[i];
+    }
+    delete [] p_entries;
 }
