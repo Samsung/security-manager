@@ -143,6 +143,15 @@ int getConfiguredPolicy(bool forAdmin, const policy_entry &filter, uid_t uid, pi
  */
 int getPolicy(const policy_entry &filter, uid_t uid, pid_t pid, const std::string &smackLabel, std::vector<policy_entry> &policyEntries);
 
+/**
+ * Process getting policy descriptions list.
+ *
+ * @param[in] descriptions empty vector for descriptions strings
+ *
+ * @return API return code, as defined in protocols.h
+ */
+int policyGetDesc(std::vector<std::string> &descriptions);
+
 } /* namespace ServiceImpl */
 } /* namespace SecurityManager */
 

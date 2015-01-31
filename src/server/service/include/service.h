@@ -132,6 +132,13 @@ private:
      */
     void processGetPolicy(MessageBuffer &buffer, MessageBuffer &send, uid_t uid, pid_t pid, const std::string &smackLabel);
 
+    /**
+     * Process getting policies descriptions as strings from Cynara
+     *
+     * @param  send   Raw data buffer to be sent
+     */
+    void processPolicyGetDesc(MessageBuffer &send);
+
 };
 
 } // namespace SecurityManager

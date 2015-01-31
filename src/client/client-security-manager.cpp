@@ -896,15 +896,69 @@ void security_manager_policy_entries_free(policy_entry *p_entries, const size_t 
 SECURITY_MANAGER_API
 int security_manager_policy_levels_get(char ***levels, size_t *levels_count)
 {
-    (void)levels;
-    (void)levels_count;
+    using namespace SecurityManager;
+    MessageBuffer send, recv;
+    if (!levels || !levels_count)
+        return SECURITY_MANAGER_ERROR_INPUT_PARAM;
+    return try_catch([&] {
 
-    return 0;
+        //put data into buffer
+        Serialization::Serialize(send, static_cast<int>(SecurityModuleCall::POLICY_GET_DESCRIPTIONS));
+
+        //send buffer to server
+        int retval = sendToServer(SERVICE_SOCKET, send.Pop(), recv);
+        if (retval != SECURITY_MANAGER_API_SUCCESS) {
+            LogError("Error in sendToServer. Error code: " << retval);
+            return SECURITY_MANAGER_ERROR_UNKNOWN;
+        }
+
+        //receive response from server
+        Deserialization::Deserialize(recv, retval);
+
+        switch(retval) {
+            case SECURITY_MANAGER_API_SUCCESS:
+                // success - continue
+                break;
+            case SECURITY_MANAGER_API_ERROR_OUT_OF_MEMORY:
+                return SECURITY_MANAGER_ERROR_MEMORY;
+            case SECURITY_MANAGER_API_ERROR_INPUT_PARAM:
+                return SECURITY_MANAGER_ERROR_INPUT_PARAM;
+            default:
+                return SECURITY_MANAGER_ERROR_UNKNOWN;
+        }
+
+        int count;
+        Deserialization::Deserialize(recv, count);
+        *levels_count = count;
+        LogInfo("Number of policy descriptions: " << *levels_count);
+
+        char **array = new char *[*levels_count];
+
+        for (unsigned int i = 0; i < *levels_count; ++i) {
+            std::string level;
+            Deserialization::Deserialize(recv, level);
+
+            if (level.empty()) {
+                LogError("Unexpected empty level");
+                return SECURITY_MANAGER_ERROR_UNKNOWN;
+            }
+
+            array[i] = strdup(level.c_str());
+            if (array[i] == nullptr)
+                return SECURITY_MANAGER_ERROR_MEMORY;
+        }
+
+        *levels = array;
+
+        return SECURITY_MANAGER_SUCCESS;
+    });
 }
 
 SECURITY_MANAGER_API
 void security_manager_policy_levels_free(char **levels, size_t levels_count)
 {
-    (void)levels;
-    (void)levels_count;
+    for (unsigned int i = 0; i < levels_count; i++)
+        free(levels[i]);
+
+    delete[] levels;
 }
