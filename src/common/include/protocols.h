@@ -130,4 +130,19 @@ enum class SecurityModuleCall
 
 } // namespace SecurityManager
 
+struct policy_entry {
+    std::string user;           // uid converted to string
+    std::string appId;          // application identifier
+    std::string privilege;      // cynara privilege
+    std::string currentLevel;   // current level of privielege, or level asked to be set in privacy manager bucket
+    std::string maxLevel;       // holds read maximum policy status or status to be set in admin bucket
+};
+typedef struct policy_entry policy_entry;
+
+
+struct policy_update_req {
+    std::vector<const policy_entry *> units;
+};
+
+
 #endif // _SECURITY_MANAGER_PROTOCOLS_
