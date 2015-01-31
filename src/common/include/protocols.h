@@ -28,6 +28,7 @@
 #include <sys/types.h>
 #include <vector>
 #include <string>
+#include <dpl/serialization.h>
 
 /**
  * \name Return Codes
@@ -126,16 +127,42 @@ enum class SecurityModuleCall
     APP_GET_GROUPS,
     USER_ADD,
     USER_DELETE,
+    POLICY_UPDATE,
+    GET_POLICY,
+    GET_CONF_POLICY_ADMIN,
+    GET_CONF_POLICY_SELF,
 };
 
 } // namespace SecurityManager
 
-struct policy_entry {
+using namespace SecurityManager;
+
+struct policy_entry : ISerializable {
     std::string user;           // uid converted to string
     std::string appId;          // application identifier
-    std::string privilege;      // cynara privilege
+    std::string privilege;      // Cynara privilege
     std::string currentLevel;   // current level of privielege, or level asked to be set in privacy manager bucket
     std::string maxLevel;       // holds read maximum policy status or status to be set in admin bucket
+
+    policy_entry() : user(""), appId(""), privilege(""), currentLevel(""), maxLevel("")
+    {}
+
+    policy_entry(IStream &stream) {
+        Deserialization::Deserialize(stream, user);
+        Deserialization::Deserialize(stream, appId);
+        Deserialization::Deserialize(stream, privilege);
+        Deserialization::Deserialize(stream, currentLevel);
+        Deserialization::Deserialize(stream, maxLevel);
+    }
+
+    virtual void Serialize(IStream &stream) const {
+        Serialization::Serialize(stream, user);
+        Serialization::Serialize(stream, appId);
+        Serialization::Serialize(stream, privilege);
+        Serialization::Serialize(stream, currentLevel);
+        Serialization::Serialize(stream, maxLevel);
+    }
+
 };
 typedef struct policy_entry policy_entry;
 

@@ -662,9 +662,90 @@ void security_manager_policy_update_req_free(policy_update_req *p_req)
 SECURITY_MANAGER_API
 int security_manager_policy_update_send(policy_update_req *p_req)
 {
-    (void)p_req;
+    using namespace SecurityManager;
+    MessageBuffer send, recv;
 
-    return SECURITY_MANAGER_ERROR_UNKNOWN;
+    if (p_req == nullptr || p_req->units.size() == 0)
+        return SECURITY_MANAGER_ERROR_INPUT_PARAM;
+
+    return try_catch([&] {
+
+        //put request into buffer
+        Serialization::Serialize(send, static_cast<int>(SecurityModuleCall::POLICY_UPDATE));
+        Serialization::Serialize(send, p_req->units);
+
+        //send it to server
+        int retval = sendToServer(SERVICE_SOCKET, send.Pop(), recv);
+        if (retval != SECURITY_MANAGER_API_SUCCESS) {
+            LogError("Error in sendToServer. Error code: " << retval);
+            return SECURITY_MANAGER_ERROR_UNKNOWN;
+        }
+
+        //receive response from server
+        Deserialization::Deserialize(recv, retval);
+        switch(retval) {
+            case SECURITY_MANAGER_API_SUCCESS:
+                return SECURITY_MANAGER_SUCCESS;
+            case SECURITY_MANAGER_API_ERROR_AUTHENTICATION_FAILED:
+                return SECURITY_MANAGER_ERROR_AUTHENTICATION_FAILED;
+            default:
+                return SECURITY_MANAGER_ERROR_UNKNOWN;
+        }
+    });
+}
+
+static inline int security_manager_get_policy_internal(
+        SecurityManager::SecurityModuleCall call_type,
+        policy_entry *p_filter,
+        policy_entry **pp_privs_policy,
+        size_t *p_size)
+{
+    using namespace SecurityManager;
+    MessageBuffer send, recv;
+
+    if (pp_privs_policy == nullptr || p_size == nullptr)
+        return SECURITY_MANAGER_ERROR_INPUT_PARAM;
+
+    return try_catch([&] {
+        //put request into buffer
+        Serialization::Serialize(send, static_cast<int>(call_type));
+        Serialization::Serialize(send, *p_filter);
+        //send it to server
+        int retval = sendToServer(SERVICE_SOCKET, send.Pop(), recv);
+        if (retval != SECURITY_MANAGER_API_SUCCESS) {
+            LogError("Error in sendToServer. Error code: " << retval);
+            return SECURITY_MANAGER_ERROR_UNKNOWN;
+        }
+        //receive response from server
+        Deserialization::Deserialize(recv, retval);
+        switch(retval) {
+            case SECURITY_MANAGER_API_SUCCESS: {
+                //extract and allocate buffers for privs policy entries
+                size_t entriesCnt = 0;
+                policy_entry **entries = nullptr;
+                Deserialization::Deserialize(recv, entriesCnt);
+                try {
+                    entries = new policy_entry*[entriesCnt]();
+                    for (size_t i = 0; i < entriesCnt; ++i)
+                        Deserialization::Deserialize(recv, entries[i]);
+                } catch (...) {
+                    LogError("Error while parsing server response");
+                    for (size_t i = 0; i < entriesCnt; ++i)
+                        delete(entries[i]);
+                    delete entries;
+                    return SECURITY_MANAGER_ERROR_UNKNOWN;
+                }
+                *p_size = entriesCnt;
+                pp_privs_policy = entries;
+                return SECURITY_MANAGER_SUCCESS;
+            }
+            case SECURITY_MANAGER_API_ERROR_AUTHENTICATION_FAILED:
+                return SECURITY_MANAGER_ERROR_AUTHENTICATION_FAILED;
+
+            default:
+                return SECURITY_MANAGER_ERROR_UNKNOWN;
+        }
+    });
 }
 
 SECURITY_MANAGER_API
@@ -673,10 +754,7 @@ int security_manager_get_configured_policy_for_admin(
         policy_entry **pp_privs_policy,
         size_t *p_size)
 {
-    (void)p_filter;
-    (void)pp_privs_policy;
-    (void)p_size;
-    return  SECURITY_MANAGER_ERROR_UNKNOWN;
+    return security_manager_get_policy_internal(SecurityModuleCall::GET_CONF_POLICY_ADMIN, p_filter, pp_privs_policy, p_size);
 }
 
 SECURITY_MANAGER_API
@@ -685,23 +763,17 @@ int security_manager_get_configured_policy_for_self(
         policy_entry **pp_privs_policy,
         size_t *p_size)
 {
-    (void)p_filter;
-    (void)pp_privs_policy;
-    (void)p_size;
-    return  SECURITY_MANAGER_ERROR_UNKNOWN;
+    return security_manager_get_policy_internal(SecurityModuleCall::GET_CONF_POLICY_SELF, p_filter, pp_privs_policy, p_size);
 }
 
-
+SECURITY_MANAGER_API
 int security_manager_get_policy(
         policy_entry *p_filter,
         policy_entry **pp_privs_policy,
         size_t *p_size)
 {
-    (void)p_filter;
-    (void)pp_privs_policy;
-    (void)p_size;
-    return  SECURITY_MANAGER_ERROR_UNKNOWN;
-}
+    return security_manager_get_policy_internal(SecurityModuleCall::GET_POLICY, p_filter, pp_privs_policy, p_size);
+};
 
 SECURITY_MANAGER_API
 int security_manager_policy_entry_new(policy_entry **p_entry)
