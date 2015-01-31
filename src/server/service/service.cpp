@@ -27,6 +27,7 @@
 
 #include <dpl/log/log.h>
 #include <dpl/serialization.h>
+#include <sys/smack.h>
 
 #include "protocols.h"
 #include "service.h"
@@ -51,13 +52,20 @@ GenericSocketService::ServiceDescriptionVector Service::GetServiceDescription()
     };
 }
 
-static bool getPeerID(int sock, uid_t &uid, pid_t &pid) {
+static bool getPeerID(int sock, uid_t &uid, pid_t &pid, std::string &smackLabel)
+{
     struct ucred cr;
     socklen_t len = sizeof(cr);
 
     if (!getsockopt(sock, SOL_SOCKET, SO_PEERCRED, &cr, &len)) {
+        char *smk;
+        ssize_t ret = smack_new_label_from_socket(sock, &smk);
+        if (ret < 0)
+            return false;
+        smackLabel = smk;
         uid = cr.uid;
         pid = cr.pid;
+        free(smk);
         return true;
     }
 
@@ -79,9 +87,10 @@ bool Service::processOne(const ConnectionID &conn, MessageBuffer &buffer,
 
     uid_t uid;
     pid_t pid;
+    std::string smackLabel;
 
-    if (!getPeerID(conn.sock, uid, pid)) {
-        LogError("Closing socket because of error: unable to get peer's uid and pid");
+    if (!getPeerID(conn.sock, uid, pid, smackLabel)) {
+        LogError("Closing socket because of error: unable to get peer's uid, pid or smack label");
         m_serviceManager->Close(conn);
         return false;
     }
