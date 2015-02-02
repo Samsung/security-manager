@@ -73,6 +73,15 @@ static FileDecision labelExecs(const FTSENT *ftsent)
     return FileDecision::SKIP;
 }
 
+static inline bool pathSetSmack(const char *path, const std::string &label,
+        const char *xattr_name)
+{
+    if (lsetxattr(path, xattr_name, label.c_str(), label.length(), 0) != 0)
+        return false;
+
+    return true;
+}
+
 static bool dirSetSmack(const std::string &path, const std::string &label,
         const char *xattr_name, LabelDecisionFn fn)
 {
@@ -107,8 +116,8 @@ static bool dirSetSmack(const std::string &path, const std::string &label,
         }
 
         if (ret == FileDecision::LABEL) {
-            if (lsetxattr(ftsent->fts_path, xattr_name, label.c_str(), label.length(), 0) != 0) {
-                LogError("lsetxattr failed.");
+            if (!pathSetSmack(ftsent->fts_path, label, xattr_name)) {
+                LogError("pathSetSmack failed.");
                 return false;
             }
         }
@@ -122,7 +131,6 @@ static bool dirSetSmack(const std::string &path, const std::string &label,
     }
     return true;
 }
-
 
 static bool labelDir(const std::string &path, const std::string &label,
         bool set_transmutable, bool set_executables)
@@ -193,6 +201,39 @@ std::string generateAppNameFromLabel(const std::string &label)
 {
     //TODO: Fix when a label generating mechanism is ready
     return label;
+}
+
+bool setupCorrectPath(const std::string &pkgId, const std::string &appId, const std::string &appPath)
+{
+    std::string tmpPath;
+    std::string label;
+
+    tmpPath.clear();
+    tmpPath = appPath + "/" + pkgId;
+
+    label.clear();
+    generatePkgLabel(pkgId, label);
+
+    if (!pathSetSmack(tmpPath.c_str(), label, XATTR_NAME_SMACK)) {
+        LogError("pathSetSmack failed (access label) on: " << tmpPath);
+        return false;
+    }
+
+    label.clear();
+    generateAppLabel(appId, label);
+    tmpPath += "/" + appId;
+
+    if (!pathSetSmack(tmpPath.c_str(), label, XATTR_NAME_SMACK)) {
+        LogError("pathSetSmack failed (access label) on: " << tmpPath);
+        return false;
+    }
+
+    if (!pathSetSmack(tmpPath.c_str(), "TRUE", XATTR_NAME_SMACKTRANSMUTE)) {
+        LogError("pathSetSmack failed (transmute) on: " << tmpPath);
+        return false;
+    }
+
+    return true;
 }
 
 bool generateAppLabel(const std::string &appId, std::string &label)

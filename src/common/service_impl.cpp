@@ -163,26 +163,56 @@ static inline bool isSubDir(const char *parent, const char *subdir)
     return (*subdir == '/');
 }
 
-static inline bool installRequestAuthCheck(const app_inst_req &req, uid_t uid)
+static bool getUserAppDir(const uid_t &uid, std::string &userAppDir)
 {
-    struct passwd *pwd;
-    do {
-        errno = 0;
-        pwd = getpwuid(uid);
-        if (!pwd && errno != EINTR) {
-            LogError("getpwuid failed with '" << uid
-                    << "' as parameter: " << strerror(errno));
-            return false;
-        }
-    } while (!pwd);
+    struct tzplatform_context *tz_ctx = nullptr;
 
-    std::unique_ptr<char, std::function<void(void*)>> home(
-        realpath(pwd->pw_dir, NULL), free);
-    if (!home.get()) {
-            LogError("realpath failed with '" << pwd->pw_dir
-                    << "' as parameter: " << strerror(errno));
+    if (tzplatform_context_create(&tz_ctx))
             return false;
+
+    if (tzplatform_context_set_user(tz_ctx, uid)) {
+        tzplatform_context_destroy(tz_ctx);
+        tz_ctx = nullptr;
+        return false;
     }
+
+    enum tzplatform_variable id =
+            (uid == getGlobalUserId()) ? TZ_SYS_RW_APP : TZ_USER_APP;
+    const char *appDir = tzplatform_context_getenv(tz_ctx, id);
+    if (!appDir) {
+        tzplatform_context_destroy(tz_ctx);
+        tz_ctx = nullptr;
+        return false;
+    }
+
+    userAppDir = appDir;
+
+    tzplatform_context_destroy(tz_ctx);
+    tz_ctx = nullptr;
+
+    return true;
+}
+
+static inline bool installRequestAuthCheck(const app_inst_req &req, uid_t uid, bool &isCorrectPath, std::string &appPath)
+{
+    std::string userHome;
+    std::string userAppDir;
+    std::stringstream correctPath;
+
+    if (uid != getGlobalUserId())
+        LogDebug("Installation type: single user");
+    else
+        LogDebug("Installation type: global installation");
+
+    if (!getUserAppDir(uid, userAppDir)) {
+        LogError("Failed getting app dir for user uid: " << uid);
+        return false;
+    }
+
+    appPath = userAppDir;
+    correctPath.clear();
+    correctPath << userAppDir << "/" << req.pkgId << "/" << req.appId;
+    LogDebug("correctPath: " << correctPath.str());
 
     for (const auto &appPath : req.appPaths) {
         std::unique_ptr<char, std::function<void(void*)>> real_path(
@@ -193,11 +223,17 @@ static inline bool installRequestAuthCheck(const app_inst_req &req, uid_t uid)
             return false;
         }
         LogDebug("Requested path is '" << appPath.first.c_str()
-                << "'. User's HOME is '" << pwd->pw_dir << "'");
-        if (!isSubDir(home.get(), real_path.get())) {
-            LogWarning("User's apps may have registered folders only in user's home dir");
+                << "'. User's APPS_DIR is '" << userAppDir << "'");
+        if (!isSubDir(userAppDir.c_str(), real_path.get())) {
+            LogWarning("User's apps may have registered folders only in user's APPS_DIR");
             return false;
         }
+
+        if (!isSubDir(correctPath.str().c_str(), real_path.get())) {
+            LogWarning("Installation is outside correct path: " << correctPath.str());
+            //return false;
+        } else
+            isCorrectPath = true;
 
         app_install_path_type pathType = static_cast<app_install_path_type>(appPath.second);
         if (pathType == SECURITY_MANAGER_PATH_PUBLIC) {
@@ -214,6 +250,8 @@ int appInstall(const app_inst_req &req, uid_t uid)
     std::vector<std::string> removedPermissions;
     std::vector<std::string> pkgContents;
     std::string uidstr;
+    bool isCorrectPath = false;
+    std::string appPath;
     if (uid) {
         if (uid != req.uid) {
             LogError("User " << uid <<
@@ -226,7 +264,7 @@ int appInstall(const app_inst_req &req, uid_t uid)
     }
     checkGlobalUser(uid, uidstr);
 
-    if (!installRequestAuthCheck(req, uid)) {
+    if (!installRequestAuthCheck(req, uid, isCorrectPath, appPath)) {
         LogError("Request from uid " << uid << " for app installation denied");
         return SECURITY_MANAGER_API_ERROR_AUTHENTICATION_FAILED;
     }
@@ -286,6 +324,12 @@ int appInstall(const app_inst_req &req, uid_t uid)
         LogError("Memory allocation while setting Cynara rules for application: " << e.what());
         return SECURITY_MANAGER_API_ERROR_SERVER_ERROR;
     }
+
+    if (isCorrectPath)
+        if (!setupCorrectPath(req.pkgId, req.appId, appPath)) {
+            LogError("Can't setup <APP_ROOT> dirs");
+            return false;
+        }
 
     // register paths
     for (const auto &appPath : req.appPaths) {
