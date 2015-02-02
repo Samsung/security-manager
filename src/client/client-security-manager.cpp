@@ -830,3 +830,19 @@ void security_manager_policy_entries_free(policy_entry *p_entries, const size_t 
     }
     delete [] p_entries;
 }
+
+SECURITY_MANAGER_API
+int security_manager_policy_levels_get(char ***levels, size_t *levels_count)
+{
+    (void)levels;
+    (void)levels_count;
+
+    return 0;
+}
+
+SECURITY_MANAGER_API
+void security_manager_policy_levels_free(char **levels, size_t levels_count)
+{
+    (void)levels;
+    (void)levels_count;
+}
