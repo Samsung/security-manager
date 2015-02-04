@@ -98,6 +98,7 @@ void FileLocker::Unlock()
 {
     if (m_locked) {
         m_flock.unlock();
+        m_locked = false;
         LogDebug("Lock released.");
     }
 }

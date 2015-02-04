@@ -50,8 +50,6 @@ public:
     ~FileLocker();
 
     bool Locked();
-
-protected:
     void Lock();
     void Unlock();
 

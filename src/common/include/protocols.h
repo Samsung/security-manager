@@ -131,6 +131,7 @@ enum class SecurityModuleCall
     GET_POLICY,
     GET_CONF_POLICY_ADMIN,
     GET_CONF_POLICY_SELF,
+    NOOP = 0x90,
 };
 
 } // namespace SecurityManager

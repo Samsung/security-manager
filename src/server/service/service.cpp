@@ -94,6 +94,10 @@ bool Service::processOne(const ConnectionID &conn, MessageBuffer &buffer,
             SecurityModuleCall call_type = static_cast<SecurityModuleCall>(call_type_int);
 
             switch (call_type) {
+                case SecurityModuleCall::NOOP:
+                    LogDebug("call_type: SecurityModuleCall::NOOP");
+                    Serialization::Serialize(send, SECURITY_MANAGER_API_SUCCESS);
+                    break;
                 case SecurityModuleCall::APP_INSTALL:
                     LogDebug("call_type: SecurityModuleCall::APP_INSTALL");
                     processAppInstall(buffer, send, uid);
