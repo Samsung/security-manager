@@ -687,13 +687,13 @@ int security_manager_policy_update_send(policy_update_req *p_req)
 static inline int security_manager_get_policy_internal(
         SecurityManager::SecurityModuleCall call_type,
         policy_entry *p_filter,
-        policy_entry **pp_privs_policy,
+        policy_entry ***ppp_privs_policy,
         size_t *p_size)
 {
     using namespace SecurityManager;
     MessageBuffer send, recv;
 
-    if (pp_privs_policy == nullptr || p_size == nullptr)
+    if (ppp_privs_policy == nullptr || p_size == nullptr)
         return SECURITY_MANAGER_ERROR_INPUT_PARAM;
 
     return try_catch([&] {
@@ -716,8 +716,10 @@ static inline int security_manager_get_policy_internal(
                 Deserialization::Deserialize(recv, entriesCnt);
                 try {
                     entries = new policy_entry*[entriesCnt]();
-                    for (int i = 0; i < entriesCnt; ++i)
+                    for (int i = 0; i < entriesCnt; ++i) {
+                        entries[i] = new policy_entry;
                         Deserialization::Deserialize(recv, entries[i]);
+                    };
                 } catch (...) {
                     LogError("Error while parsing server response");
                     for (int i = 0; i < entriesCnt; ++i)
@@ -726,7 +728,7 @@ static inline int security_manager_get_policy_internal(
                     return SECURITY_MANAGER_ERROR_UNKNOWN;
                 }
                 *p_size = entriesCnt;
-                pp_privs_policy = entries;
+                *ppp_privs_policy = entries;
                 return SECURITY_MANAGER_SUCCESS;
             }
             case SECURITY_MANAGER_API_ERROR_AUTHENTICATION_FAILED:
@@ -741,28 +743,28 @@ static inline int security_manager_get_policy_internal(
 SECURITY_MANAGER_API
 int security_manager_get_configured_policy_for_admin(
         policy_entry *p_filter,
-        policy_entry **pp_privs_policy,
+        policy_entry ***ppp_privs_policy,
         size_t *p_size)
 {
-    return security_manager_get_policy_internal(SecurityModuleCall::GET_CONF_POLICY_ADMIN, p_filter, pp_privs_policy, p_size);
+    return security_manager_get_policy_internal(SecurityModuleCall::GET_CONF_POLICY_ADMIN, p_filter, ppp_privs_policy, p_size);
 }
 
 SECURITY_MANAGER_API
 int security_manager_get_configured_policy_for_self(
         policy_entry *p_filter,
-        policy_entry **pp_privs_policy,
+        policy_entry ***ppp_privs_policy,
         size_t *p_size)
 {
-    return security_manager_get_policy_internal(SecurityModuleCall::GET_CONF_POLICY_SELF, p_filter, pp_privs_policy, p_size);
+    return security_manager_get_policy_internal(SecurityModuleCall::GET_CONF_POLICY_SELF, p_filter, ppp_privs_policy, p_size);
 }
 
 SECURITY_MANAGER_API
 int security_manager_get_policy(
         policy_entry *p_filter,
-        policy_entry **pp_privs_policy,
+        policy_entry ***ppp_privs_policy,
         size_t *p_size)
 {
-    return security_manager_get_policy_internal(SecurityModuleCall::GET_POLICY, p_filter, pp_privs_policy, p_size);
+    return security_manager_get_policy_internal(SecurityModuleCall::GET_POLICY, p_filter, ppp_privs_policy, p_size);
 };
 
 SECURITY_MANAGER_API

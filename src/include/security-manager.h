@@ -631,13 +631,14 @@ int security_manager_policy_update_send(policy_update_req *p_req);
  *            for freeing allocated resources.
  *
  * \param[in]  p_filter        Pointer to filter struct
- * \param[out] pp_privs_policy Pointer handling allocated policy_entry structures array
+ * \param[out] ppp_privs_policy Pointer handling allocated policy_entry structures array
  * \param[out] p_size          Pointer where the size of allocated array will be stored
  * \return API return code or error code
  */
 int security_manager_get_configured_policy_for_admin(
         policy_entry *p_filter,
-        policy_entry **pp_privs_policy, size_t *p_size);
+        policy_entry ***ppp_privs_policy,
+        size_t *p_size);
 
 /**
  * \brief Function fetches all privileges that are configured by user in his/her
@@ -648,13 +649,13 @@ int security_manager_get_configured_policy_for_admin(
  *            for freeing allocated resources.
  *
  * \param[in]  p_filter        Pointer to filter struct
- * \param[out] pp_privs_policy Pointer handling allocated policy_entry structures array
+ * \param[out] ppp_privs_policy Pointer handling allocated policy_entry structures array
  * \param[out] p_size          Pointer where the size of allocated array will be stored
  * \return API return code or error code
  */
 int security_manager_get_configured_policy_for_self(
         policy_entry *p_filter,
-        policy_entry **pp_privs_policy,
+        policy_entry ***ppp_privs_policy,
         size_t *p_size);
 
 /**
@@ -669,13 +670,13 @@ int security_manager_get_configured_policy_for_self(
  *            for freeing allocated resources.
  *
  * \param[in]  p_filter        Pointer to filter struct
- * \param[out] pp_privs_policy Pointer handling allocated policy_entry structures array
+ * \param[out] ppp_privs_policy Pointer handling allocated policy_entry structures array
  * \param[out] p_size          Pointer where the size of allocated array will be stored
  * \return API return code or error code
  */
 int security_manager_get_policy(
         policy_entry *p_filter,
-        policy_entry **pp_privs_policy,
+        policy_entry ***ppp_privs_policy,
         size_t *p_size);
 
 /**
