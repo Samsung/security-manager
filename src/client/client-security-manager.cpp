@@ -716,13 +716,13 @@ static inline int security_manager_get_policy_internal(
         }
         //receive response from server
         Deserialization::Deserialize(recv, retval);
-        switch(retval) {
+        switch (retval) {
             case SECURITY_MANAGER_API_SUCCESS: {
                 //extract and allocate buffers for privs policy entries
                 int entriesCnt = 0;
                 policy_entry **entries = nullptr;
-                Deserialization::Deserialize(recv, entriesCnt);
                 try {
+                    Deserialization::Deserialize(recv, entriesCnt);
                     entries = new policy_entry*[entriesCnt]();
                     for (int i = 0; i < entriesCnt; ++i) {
                         entries[i] = new policy_entry;
@@ -732,7 +732,7 @@ static inline int security_manager_get_policy_internal(
                     LogError("Error while parsing server response");
                     for (int i = 0; i < entriesCnt; ++i)
                         delete(entries[i]);
-                    delete entries;
+                    delete[] entries;
                     return SECURITY_MANAGER_ERROR_UNKNOWN;
                 }
                 *p_size = entriesCnt;
