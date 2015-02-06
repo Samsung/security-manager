@@ -27,6 +27,7 @@
 #include <grp.h>
 #include <limits.h>
 #include <pwd.h>
+#include <sys/socket.h>
 
 #include <cstring>
 #include <algorithm>
@@ -157,6 +158,20 @@ static inline bool isSubDir(const char *parent, const char *subdir)
             return false;
 
     return (*subdir == '/');
+}
+
+bool getPeerID(int sock, uid_t &uid, pid_t &pid)
+{
+    struct ucred cr;
+    socklen_t len = sizeof(cr);
+
+    if (!getsockopt(sock, SOL_SOCKET, SO_PEERCRED, &cr, &len)) {
+        uid = cr.uid;
+        pid = cr.pid;
+        return true;
+    }
+
+    return false;
 }
 
 static bool getUserAppDir(const uid_t &uid, std::string &userAppDir)

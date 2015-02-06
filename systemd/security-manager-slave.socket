@@ -1,0 +1,10 @@
+[Socket]
+ListenStream=/run/security-manager-slave.socket
+Symlinks=/run/security-manager.socket
+SocketMode=0777
+SmackLabelIPIn=*
+SmackLabelIPOut=@
+Service=security-manager-slave.service
+
+[Unit]
+ConditionVirtualization=lxc

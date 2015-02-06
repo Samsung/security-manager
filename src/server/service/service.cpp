@@ -37,19 +37,29 @@ namespace SecurityManager {
 
 const InterfaceID IFACE = 1;
 
-Service::Service()
+Service::Service(const bool isSlave):
+        m_isSlave(isSlave)
 {
 }
 
 GenericSocketService::ServiceDescriptionVector Service::GetServiceDescription()
 {
-    return ServiceDescriptionVector {
-        {SERVICE_SOCKET,  /* path */
-         "*",   /* smackLabel label (not used, we rely on systemd) */
-         IFACE, /* InterfaceID */
-         false, /* useSendMsg */
-         true}, /* systemdOnly */
-    };
+    if (m_isSlave)
+        return ServiceDescriptionVector {
+            {SLAVE_SERVICE_SOCKET,  /* path */
+             "*",   /* smackLabel label (not used, we rely on systemd) */
+             IFACE, /* InterfaceID */
+             false, /* useSendMsg */
+             true}, /* systemdOnly */
+        };
+    else
+        return ServiceDescriptionVector {
+            {SERVICE_SOCKET,  /* path */
+             "*",   /* smackLabel label (not used, we rely on systemd) */
+             IFACE, /* InterfaceID */
+             false, /* useSendMsg */
+             true}, /* systemdOnly */
+        };
 }
 
 static bool getPeerID(int sock, uid_t &uid, pid_t &pid, std::string &smackLabel)

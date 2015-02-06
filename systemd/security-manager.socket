@@ -7,5 +7,9 @@ SmackLabelIPOut=@
 # TODO: move to separate systemd service
 Service=security-manager.service
 
+[Unit]
+ConditionVirtualization=!lxc
+ConditionPathExists=!/usr/share/.zones/enabled
+
 [Install]
 WantedBy=sockets.target

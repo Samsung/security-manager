@@ -32,6 +32,10 @@ namespace SecurityManager {
 
 char const * const SERVICE_SOCKET =
         SOCKET_PATH_PREFIX "security-manager.socket";
+char const * const MASTER_SERVICE_SOCKET =
+        SOCKET_PATH_PREFIX "security-manager-master.socket";
+char const * const SLAVE_SERVICE_SOCKET =
+        SOCKET_PATH_PREFIX "security-manager-slave.socket";
 
 } // namespace SecurityManager
 

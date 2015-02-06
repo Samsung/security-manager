@@ -1,0 +1,10 @@
+[Unit]
+Description=Start the security manager master
+ConditionVirtualization=!lxc
+ConditionPathExists=/usr/share/.zones/enabled
+
+[Service]
+Type=notify
+ExecStart=@BIN_INSTALL_DIR@/security-manager --master
+
+Sockets=security-manager-master.socket

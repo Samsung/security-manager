@@ -40,10 +40,12 @@ class Service :
     public SecurityManager::BaseService
 {
 public:
-    Service();
+    Service(const bool isSlave);
     ServiceDescriptionVector GetServiceDescription();
 
 private:
+    const bool m_isSlave;
+
     /**
      * Handle request from a client
      *

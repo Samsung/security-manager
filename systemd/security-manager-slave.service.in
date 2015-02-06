@@ -1,0 +1,9 @@
+[Unit]
+Description=Start the security manager slave
+ConditionVirtualization=lxc
+
+[Service]
+Type=notify
+ExecStart=@BIN_INSTALL_DIR@/security-manager --slave
+
+Sockets=security-manager-slave.socket

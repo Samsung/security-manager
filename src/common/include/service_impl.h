@@ -35,6 +35,17 @@ namespace SecurityManager {
 namespace ServiceImpl {
 
 /**
+ * Retrieves ID (UID and PID) of peer connected to socket
+ *
+ * @param[in]  Socket file descriptor
+ * @param[out] UID of connected peer. Function does not modify the variable if ID retrieval fails.
+ * @param[out] PID of connected peer. Function does not modify the variable if ID retrieval fails.
+ *
+ * @return True if peer ID was successfully retrieved, false otherwise.
+ */
+bool getPeerID(int sock, uid_t &uid, pid_t &pid);
+
+/**
  * Process application installation request.
  *
  * @param[in] req installation request

@@ -120,6 +120,8 @@ struct user_req {
 namespace SecurityManager {
 
 extern char const * const SERVICE_SOCKET;
+extern char const * const MASTER_SERVICE_SOCKET;
+extern char const * const SLAVE_SERVICE_SOCKET;
 
 enum class SecurityModuleCall
 {
