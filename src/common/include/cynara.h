@@ -141,6 +141,13 @@ public:
     void UserInit(uid_t uid, security_manager_user_type userType);
 
     /**
+     * List all users registered in Cynara
+     *
+     * @param[out] listOfUsers list of users
+     */
+    void ListUsers(std::vector<uid_t> &listOfUsers);
+
+    /**
      * Removes all entries for a user from cynara database
      *
      * @param uid removed user uid

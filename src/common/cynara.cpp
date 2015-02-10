@@ -361,6 +361,30 @@ void CynaraAdmin::UserInit(uid_t uid, security_manager_user_type userType)
     CynaraAdmin::getInstance().SetPolicies(policies);
 }
 
+void CynaraAdmin::ListUsers(std::vector<uid_t> &listOfUsers)
+{
+    std::vector<CynaraAdminPolicy> tmpListOfUsers;
+    CynaraAdmin::getInstance().ListPolicies(
+        CynaraAdmin::Buckets.at(Bucket::MAIN),
+        CYNARA_ADMIN_WILDCARD,
+        CYNARA_ADMIN_ANY,
+        CYNARA_ADMIN_WILDCARD,
+        tmpListOfUsers);
+
+    for (const auto &tmpUser : tmpListOfUsers) {
+        std::string user = tmpUser.user;
+        if (!user.compare(CYNARA_ADMIN_WILDCARD))
+            continue;
+        try {
+            listOfUsers.push_back(std::stoul(user));
+        } catch (std::invalid_argument &e) {
+            LogError("Invalid UID: " << e.what());
+            continue;
+        };
+    };
+    LogDebug("Found users: " << listOfUsers.size());
+};
+
 void CynaraAdmin::UserRemove(uid_t uid)
 {
     std::vector<CynaraAdminPolicy> policies;
