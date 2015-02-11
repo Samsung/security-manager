@@ -47,6 +47,7 @@
 #include <security-manager.h>
 #include <client-offline.h>
 
+static const char *EMPTY = "";
 
 /**
  * Mapping of lib_retcode error codes to theirs strings equivalents
@@ -58,7 +59,8 @@ static std::map<enum lib_retcode, std::string> lib_retcode_string_map = {
     {SECURITY_MANAGER_ERROR_MEMORY, "Memory allocation error"},
     {SECURITY_MANAGER_ERROR_REQ_NOT_COMPLETE, "Incomplete data in application request"},
     {SECURITY_MANAGER_ERROR_AUTHENTICATION_FAILED, "User does not have sufficient "
-                                                   "rigths to perform an operation"}
+                                                   "rigths to perform an operation"},
+    {SECURITY_MANAGER_ERROR_ACCESS_DENIED, "Insufficient privileges"},
 };
 
 SECURITY_MANAGER_API
@@ -191,6 +193,8 @@ int security_manager_app_install(const app_inst_req *p_req)
                 return SECURITY_MANAGER_SUCCESS;
             case SECURITY_MANAGER_API_ERROR_AUTHENTICATION_FAILED:
                 return SECURITY_MANAGER_ERROR_AUTHENTICATION_FAILED;
+            case SECURITY_MANAGER_API_ERROR_ACCESS_DENIED:
+                return SECURITY_MANAGER_ERROR_ACCESS_DENIED;
             case SECURITY_MANAGER_API_ERROR_INPUT_PARAM:
                 return SECURITY_MANAGER_ERROR_INPUT_PARAM;
             default:
@@ -678,6 +682,8 @@ int security_manager_policy_update_send(policy_update_req *p_req)
                 return SECURITY_MANAGER_SUCCESS;
             case SECURITY_MANAGER_API_ERROR_AUTHENTICATION_FAILED:
                 return SECURITY_MANAGER_ERROR_AUTHENTICATION_FAILED;
+            case SECURITY_MANAGER_API_ERROR_ACCESS_DENIED:
+                return SECURITY_MANAGER_ERROR_ACCESS_DENIED;
             default:
                 return SECURITY_MANAGER_ERROR_UNKNOWN;
         }
@@ -693,7 +699,9 @@ static inline int security_manager_get_policy_internal(
     using namespace SecurityManager;
     MessageBuffer send, recv;
 
-    if (ppp_privs_policy == nullptr || p_size == nullptr)
+    if (ppp_privs_policy == nullptr
+        || p_size == nullptr
+        || p_filter == nullptr)
         return SECURITY_MANAGER_ERROR_INPUT_PARAM;
 
     return try_catch([&] {
@@ -733,6 +741,9 @@ static inline int security_manager_get_policy_internal(
             }
             case SECURITY_MANAGER_API_ERROR_AUTHENTICATION_FAILED:
                 return SECURITY_MANAGER_ERROR_AUTHENTICATION_FAILED;
+
+            case SECURITY_MANAGER_API_ERROR_ACCESS_DENIED:
+                return SECURITY_MANAGER_ERROR_ACCESS_DENIED;
 
             default:
                 return SECURITY_MANAGER_ERROR_UNKNOWN;
@@ -821,6 +832,7 @@ int security_manager_policy_entry_set_level(policy_entry *p_entry, const char *p
     if (!p_entry)
         return  SECURITY_MANAGER_ERROR_INPUT_PARAM;
     p_entry->currentLevel = policy_level;
+    p_entry->maxLevel = EMPTY;
     return  SECURITY_MANAGER_SUCCESS;
 }
 
@@ -830,6 +842,7 @@ int security_manager_policy_entry_admin_set_level(policy_entry *p_entry, const c
     if (!p_entry)
         return  SECURITY_MANAGER_ERROR_INPUT_PARAM;
     p_entry->maxLevel = policy_level;
+    p_entry->currentLevel = EMPTY;
     return  SECURITY_MANAGER_SUCCESS;
 }
 

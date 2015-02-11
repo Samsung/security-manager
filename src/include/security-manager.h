@@ -40,7 +40,8 @@ enum lib_retcode {
     SECURITY_MANAGER_ERROR_INPUT_PARAM,
     SECURITY_MANAGER_ERROR_MEMORY,
     SECURITY_MANAGER_ERROR_REQ_NOT_COMPLETE,
-    SECURITY_MANAGER_ERROR_AUTHENTICATION_FAILED
+    SECURITY_MANAGER_ERROR_AUTHENTICATION_FAILED,
+    SECURITY_MANAGER_ERROR_ACCESS_DENIED,
 };
 
 /*! \brief accesses types for application installation paths*/
@@ -90,11 +91,17 @@ typedef struct policy_update_req policy_update_req;
 struct policy_entry;
 typedef struct policy_entry policy_entry;
 
-/*! \brief wildcard to be used in policy update requests to match all possible values of
- *         given field. Use it, for example when it is desired to apply policy change for all
+/*! \brief wildcard to be used in requests to match all possible values of given field.
+ *         Use it, for example when it is desired to list or apply policy change for all
  *         users or all apps for selected user.
  */
 #define SECURITY_MANAGER_ANY "#"
+
+/*! \brief value denoting delete operation on specific policy. It can only be used
+ *         in update policy operation, passed to either security_manager_policy_entry_admin_set_level
+ *         or security_manager_policy_entry_set_level.
+ */
+#define SECURITY_MANAGER_DELETE "DELETE"
 
 /**
  * This function translates lib_retcode error codes to strings describing
@@ -343,6 +350,10 @@ void security_manager_policy_update_req_free(policy_update_req *p_req);
  * It uses dynamic allocation inside and user responsibility is to call
  * policy_policy_entry_free() for freeing allocated resources.
  *
+ * \note application and privilege fields default to SECURITY_MANAGER_ANY wildcard,
+ *       user field defaults to calling user's UID, whereas the current and max level
+ *       values, default to empty string "".
+ *
  * \param[out] pp_entry Address of pointer for handle policy_entry structure
  * \return API return code or error code
  */
@@ -532,6 +543,12 @@ const char *security_manager_policy_entry_get_max_level(policy_entry *p_entry);
  * \brief This function is used to send the prepared policy update request using privacy manager
  *        entry point. The request should contain at least one policy update unit, otherwise
  *        the SECURITY_MANAGER_ERROR_INPUT_PARAM is returned.
+ *
+ * \note  1. If user field in policy_entry is empty, then uid of the calling user is assumed
+ *        2. If privilege or app field in policy_entry is empty, then SECURITY_MANAGER_API_BAD_REQUEST
+ *           is returned
+ *        3. For user's personal policy: wildcards usage in application or privilege field of policy_entry
+ *           is not allowed
  *
  * \param[in] p_req Pointer handling allocated policy_update_req structure
  * \return API return code or error code
