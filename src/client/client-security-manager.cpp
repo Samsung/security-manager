@@ -859,44 +859,29 @@ int security_manager_policy_update_req_add_entry(policy_update_req *p_req, const
 SECURITY_MANAGER_API
 const char *security_manager_policy_entry_get_user(policy_entry *p_entry)
 {
-    if (p_entry)
-        return strdup(p_entry->user.c_str());
-    else
-        return nullptr;
+    return p_entry ? p_entry->user.c_str() : nullptr;
 }
 
 SECURITY_MANAGER_API
 const char *security_manager_policy_entry_get_application(policy_entry *p_entry)
 {
-    if (p_entry)
-        return strdup(p_entry->appId.c_str());
-    else
-        return nullptr;
+    return p_entry ? p_entry->appId.c_str() : nullptr;
 }
 SECURITY_MANAGER_API
 const char *security_manager_policy_entry_get_privilege(policy_entry *p_entry)
 {
-    if (p_entry)
-        return strdup(p_entry->privilege.c_str());
-    else
-        return nullptr;
+    return p_entry ? p_entry->privilege.c_str() : nullptr;
 }
 SECURITY_MANAGER_API
 const char *security_manager_policy_entry_get_level(policy_entry *p_entry)
 {
-    if (p_entry)
-        return strdup(p_entry->currentLevel.c_str());
-    else
-        return nullptr;
+    return p_entry ? p_entry->currentLevel.c_str() : nullptr;
 }
 
 SECURITY_MANAGER_API
 const char *security_manager_policy_entry_get_max_level(policy_entry *p_entry)
 {
-    if (p_entry)
-        return strdup(p_entry->maxLevel.c_str());
-    else
-        return nullptr;
+    return p_entry ? p_entry->maxLevel.c_str() : nullptr;
 }
 
 SECURITY_MANAGER_API
