@@ -571,5 +571,232 @@ int policyUpdate(const std::vector<policy_entry> &policyEntries, uid_t uid, pid_
     return SECURITY_MANAGER_API_SUCCESS;
 }
 
+int getConfiguredPolicy(bool forAdmin, const policy_entry &filter, uid_t uid, pid_t pid,
+    const std::string &smackLabel, std::vector<policy_entry> &policyEntries)
+{
+    try {
+        std::string uidStr = std::to_string(uid);
+        std::string pidStr = std::to_string(pid);
+
+        if (!Cynara::getInstance().check(smackLabel, SELF_PRIVILEGE, uidStr, pidStr)) {
+            LogError("Not enough permission to call: " << __FUNCTION__);
+            return SECURITY_MANAGER_API_ERROR_ACCESS_DENIED;
+        };
+
+        LogDebug("Filter is: C: " << filter.appId
+                    << ", U: " << filter.user
+                    << ", P: " << filter.privilege
+                    << ", current: " << filter.currentLevel
+                    << ", max: " << filter.maxLevel
+                    );
+
+        std::vector<CynaraAdminPolicy> listOfPolicies;
+
+        //convert appId to smack label
+        std::string appLabel;
+        if (!filter.appId.compare(SECURITY_MANAGER_ANY))
+            appLabel = CYNARA_ADMIN_ANY;
+        else
+            generateAppLabel(filter.appId, appLabel);
+
+        std::string user = (!filter.user.compare(SECURITY_MANAGER_ANY))? CYNARA_ADMIN_ANY: filter.user;
+        std::string privilege = (!filter.privilege.compare(SECURITY_MANAGER_ANY))? CYNARA_ADMIN_ANY: filter.privilege;
+
+        LogDebug("App: " << filter.appId << ", Label: " << appLabel);
+
+        if (forAdmin) {
+            if (!Cynara::getInstance().check(smackLabel, ADMIN_PRIVILEGE, uidStr, pidStr)) {
+                LogError("Not enough privilege to access admin enforced policies: " << __FUNCTION__);
+                return SECURITY_MANAGER_API_ERROR_ACCESS_DENIED;
+                };
+
+            //Fetch privileges from ADMIN bucket
+            CynaraAdmin::getInstance().ListPolicies(
+                CynaraAdmin::Buckets.at(Bucket::ADMIN),
+                appLabel,
+                user,
+                privilege,
+                listOfPolicies
+                );
+            LogDebug("ADMIN - number of policies matched: " << listOfPolicies.size());
+        } else {
+            if (uidStr.compare(user)) {
+                if (!Cynara::getInstance().check(smackLabel, ADMIN_PRIVILEGE, uidStr, pidStr)) {
+                    LogWarning("Not enough privilege to access other user's personal policies. Limiting query to personal privileges.");
+                    user = uidStr;
+                };
+            };
+            //Fetch privileges from PRIVACY_MANAGER bucket
+            CynaraAdmin::getInstance().ListPolicies(
+                CynaraAdmin::Buckets.at(Bucket::PRIVACY_MANAGER),
+                appLabel,
+                user,
+                privilege,
+                listOfPolicies
+                );
+            LogDebug("PRIVACY MANAGER - number of policies matched: " << listOfPolicies.size());
+        };
+
+        for (const auto &policy : listOfPolicies) {
+            //ignore "jump to bucket" entries
+            if (policy.result ==  CYNARA_ADMIN_BUCKET)
+                continue;
+
+            policy_entry pe;
+
+            pe.appId = strcmp(policy.client, CYNARA_ADMIN_WILDCARD) ? generateAppNameFromLabel(policy.client) : SECURITY_MANAGER_ANY;
+            pe.user =  strcmp(policy.user, CYNARA_ADMIN_WILDCARD) ? policy.user : SECURITY_MANAGER_ANY;
+            pe.privilege = strcmp(policy.privilege, CYNARA_ADMIN_WILDCARD) ? policy.privilege : pe.privilege = SECURITY_MANAGER_ANY;
+            pe.currentLevel = CynaraAdmin::getInstance().convertToPolicyDescription(policy.result);
+
+            if (!forAdmin) {
+                // All policy entries in PRIVACY_MANAGER should be fully-qualified
+                pe.maxLevel = CynaraAdmin::getInstance().convertToPolicyDescription(
+                    CynaraAdmin::getInstance().GetPrivilegeManagerMaxLevel(
+                        policy.client, policy.user, policy.privilege));
+            } else {
+                // Cannot reliably calculate maxLavel for policies from ADMIN bucket
+                pe.maxLevel = CynaraAdmin::getInstance().convertToPolicyDescription(CYNARA_ADMIN_ALLOW);
+            }
+
+
+            LogDebug(
+                "[policy_entry] app: " << pe.appId
+                << " user: " << pe.user
+                << " privilege: " << pe.privilege
+                << " current: " << pe.currentLevel
+                << " max: " << pe.maxLevel
+                );
+
+            policyEntries.push_back(pe);
+        };
+
+    } catch (const CynaraException::Base &e) {
+        LogError("Error while listing Cynara rules: " << e.DumpToString());
+        return SECURITY_MANAGER_API_ERROR_SERVER_ERROR;
+    } catch (const std::bad_alloc &e) {
+        LogError("Memory allocation error while listing Cynara rules: " << e.what());
+        return SECURITY_MANAGER_API_ERROR_SERVER_ERROR;
+    }
+
+
+    return SECURITY_MANAGER_API_SUCCESS;
+}
+
+int getPolicy(const policy_entry &filter, uid_t uid, pid_t pid, const std::string &smackLabel, std::vector<policy_entry> &policyEntries)
+{
+    try {
+        std::string uidStr = std::to_string(uid);
+        std::string pidStr = std::to_string(pid);
+
+        if (!Cynara::getInstance().check(smackLabel, SELF_PRIVILEGE, uidStr, pidStr)) {
+            LogWarning("Not enough permission to call: " << __FUNCTION__);
+            return SECURITY_MANAGER_API_ERROR_ACCESS_DENIED;
+        };
+
+        LogDebug("Filter is: C: " << filter.appId
+                    << ", U: " << filter.user
+                    << ", P: " << filter.privilege
+                    << ", current: " << filter.currentLevel
+                    << ", max: " << filter.maxLevel
+                    );
+
+        std::vector<uid_t> listOfUsers;
+
+        if (Cynara::getInstance().check(smackLabel, ADMIN_PRIVILEGE, uidStr, pidStr)) {
+            LogDebug("User is privileged");
+            if (filter.user.compare(SECURITY_MANAGER_ANY)) {
+                LogDebug("Limitting Cynara query to user: " << filter.user);
+                try {
+                    listOfUsers.push_back(static_cast<uid_t>(std::stoul(filter.user)));
+                } catch (std::invalid_argument &e) {
+                    LogError("Invalid UID: " << e.what());
+                };
+            } else
+                CynaraAdmin::getInstance().ListUsers(listOfUsers);
+        } else {
+            LogWarning("Not enough privilege to fetch user policy for all users by user: " << uid);
+            LogDebug("Fetching personal policy for user: " << uid);
+            listOfUsers.push_back(uid);
+        };
+        LogDebug("Fetching policy for " << listOfUsers.size() << " users");
+
+        for (const uid_t &uid : listOfUsers) {
+            LogDebug("User: " << uid);
+            std::string userStr = std::to_string(uid);
+            std::vector<std::string> listOfApps;
+
+            if (filter.appId.compare(SECURITY_MANAGER_ANY)) {
+                LogDebug("Limitting Cynara query to app: " << filter.appId);
+                listOfApps.push_back(filter.appId);
+            } else {
+                PrivilegeDb::getInstance().GetUserApps(uid, listOfApps);
+                LogDebug("Found apps: " << listOfApps.size());
+            };
+
+            for (const std::string &appId : listOfApps) {
+                LogDebug("App: " << appId);
+                std::string smackLabelForApp;
+                std::vector<std::string> listOfPrivileges;
+
+                generateAppLabel(appId, smackLabelForApp);
+                // FIXME: also fetch privileges of global applications
+                PrivilegeDb::getInstance().GetAppPrivileges(appId, uid, listOfPrivileges);
+
+                if (filter.privilege.compare(SECURITY_MANAGER_ANY)) {
+                    LogDebug("Limitting Cynara query to privilege: " << filter.privilege);
+                    // FIXME: this filtering should be already performed by method fetching the privileges
+                    if (std::find(listOfPrivileges.begin(), listOfPrivileges.end(),
+                        filter.privilege) == listOfPrivileges.end()) {
+                        LogDebug("Application " << appId <<
+                            " doesn't have the filteres privilege " << filter.privilege);
+                        continue;
+                    }
+                    listOfPrivileges.clear();
+                    listOfPrivileges.push_back(filter.privilege);
+                }
+
+                LogDebug("Privileges matching filter - " << filter.privilege << ": " << listOfPrivileges.size());
+
+                for (const std::string &privilege : listOfPrivileges) {
+                    LogDebug("Privilege: " << privilege);
+                    policy_entry pe;
+
+                    pe.appId = appId;
+                    pe.user = userStr;
+                    pe.privilege = privilege;
+
+                    pe.currentLevel = CynaraAdmin::getInstance().convertToPolicyDescription(
+                        CynaraAdmin::getInstance().GetPrivilegeManagerCurrLevel(
+                            smackLabelForApp, userStr, privilege));
+
+                    pe.maxLevel = CynaraAdmin::getInstance().convertToPolicyDescription(
+                        CynaraAdmin::getInstance().GetPrivilegeManagerMaxLevel(
+                            smackLabelForApp, userStr, privilege));
+
+                    LogDebug(
+                        "[policy_entry] app: " << pe.appId
+                        << " user: " << pe.user
+                        << " privilege: " << pe.privilege
+                        << " current: " << pe.currentLevel
+                        << " max: " << pe.maxLevel
+                        );
+
+                    policyEntries.push_back(pe);
+                };
+            };
+        };
+
+    } catch (const CynaraException::Base &e) {
+        LogError("Error while listing Cynara rules: " << e.DumpToString());
+        return SECURITY_MANAGER_API_ERROR_SERVER_ERROR;
+    } catch (const std::bad_alloc &e) {
+        LogError("Memory allocation error while listing Cynara rules: " << e.what());
+        return SECURITY_MANAGER_API_ERROR_SERVER_ERROR;
+    }
+
+    return SECURITY_MANAGER_API_SUCCESS;
+}
+
 } /* namespace ServiceImpl */
 } /* namespace SecurityManager */

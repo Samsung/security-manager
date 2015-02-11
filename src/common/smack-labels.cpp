@@ -187,6 +187,12 @@ bool setupPath(const std::string &pkgId, const std::string &path,
     return labelDir(path, label, label_transmute, label_executables);
 }
 
+std::string generateAppNameFromLabel(const std::string &label)
+{
+    //TODO: Fix when a label generating mechanism is ready
+    return label;
+}
+
 bool generateAppLabel(const std::string &appId, std::string &label)
 {
     (void) appId;

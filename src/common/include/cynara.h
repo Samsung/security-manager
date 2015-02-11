@@ -223,12 +223,39 @@ public:
      *        all buckets linked with bucket provided
      */
     void Check(const std::string &label,
-        const std::string &privilege,
         const std::string &user,
+        const std::string &privilege,
         const std::string &bucket,
         int &result,
         std::string &resultExtra,
         const bool recursive);
+
+    /**
+     * Get current policy level for privilege-manager functionality
+     * Returns current policy value for given application, user and privilege
+     * identifiers.
+     *
+     * @param label application Smack label
+     * @param user user identifier (uid)
+     * @param privilege privilege identifier
+     * @return current policy value
+     */
+    int GetPrivilegeManagerCurrLevel(const std::string &label, const std::string &user,
+        const std::string &privilege);
+
+    /**
+     * Get maximum policy level for privilege-manager functionality
+     * Returns maximum possible policy value for given application, user and privilege
+     * identifiers. The maximum limit is imposed by other policy settings that are
+     * currently in place.
+     *
+     * @param label application Smack label
+     * @param user user identifier (uid)
+     * @param privilege privilege identifier
+     * @return maximum policy value for PRIVACY_MANAGER bucket
+     */
+    int GetPrivilegeManagerMaxLevel(const std::string &label, const std::string &user,
+        const std::string &privilege);
 
 private:
     CynaraAdmin();

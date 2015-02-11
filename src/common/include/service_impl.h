@@ -113,7 +113,36 @@ int userDelete(uid_t uidDeleted, uid_t uid);
  *
  * @return API return code, as defined in protocols.h
  */
+
 int policyUpdate(const std::vector<policy_entry> &policyEntries, uid_t uid, pid_t pid, const std::string &smackLabel);
+/**
+ * Fetch all configured privileges from user configurable bucket.
+ * Depending on forAdmin value: personal user policies or admin enforced
+ * policies are returned.
+ *
+ * @param[in] forAdmin determines if user is asking as ADMIN or not
+ * @param[in] filter filter for limiting the query
+ * @param[in] uid identifier of queried user
+ * @param[in] pid PID of requesting process
+ * @param[out] policyEntries vector of policy entries with result
+ *
+ * @return API return code, as defined in protocols.h
+ */
+int getConfiguredPolicy(bool forAdmin, const policy_entry &filter, uid_t uid, pid_t pid, const std::string &smackLabel, std::vector<policy_entry> &policyEntries);
+
+/**
+ * Fetch all privileges for all apps installed for specific user.
+ *
+ * @param[in] forAdmin determines if user is asking as ADMIN or not
+ * @param[in] filter filter for limiting the query
+ * @param[in] uid identifier of queried user
+ * @param[in] pid PID of requesting process
+ * @param[out] policyEntries vector of policy entries with result
+ *
+ * @return API return code, as defined in protocols.h
+ */
+int getPolicy(const policy_entry &filter, uid_t uid, pid_t pid, const std::string &smackLabel, std::vector<policy_entry> &policyEntries);
+
 } /* namespace ServiceImpl */
 } /* namespace SecurityManager */
 

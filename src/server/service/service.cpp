@@ -130,6 +130,15 @@ bool Service::processOne(const ConnectionID &conn, MessageBuffer &buffer,
                 case SecurityModuleCall::POLICY_UPDATE:
                     processPolicyUpdate(buffer, send, uid, pid, smackLabel);
                     break;
+                case SecurityModuleCall::GET_CONF_POLICY_ADMIN:
+                    processGetConfiguredPolicy(buffer, send, uid, pid, smackLabel, true);
+                    break;
+                case SecurityModuleCall::GET_CONF_POLICY_SELF:
+                    processGetConfiguredPolicy(buffer, send, uid, pid, smackLabel, false);
+                    break;
+                case SecurityModuleCall::GET_POLICY:
+                    processGetPolicy(buffer, send, uid, pid, smackLabel);
+                    break;
                 default:
                     LogError("Invalid call: " << call_type_int);
                     Throw(ServiceException::InvalidAction);
@@ -235,7 +244,6 @@ void Service::processUserDelete(MessageBuffer &buffer, MessageBuffer &send, uid_
     Serialization::Serialize(send, ret);
 }
 
-
 void Service::processPolicyUpdate(MessageBuffer &buffer, MessageBuffer &send, uid_t uid, pid_t pid, const std::string &smackLabel)
 {
     int ret;
@@ -245,6 +253,34 @@ void Service::processPolicyUpdate(MessageBuffer &buffer, MessageBuffer &send, ui
 
     ret = ServiceImpl::policyUpdate(policyEntries, uid, pid, smackLabel);
     Serialization::Serialize(send, ret);
+}
+
+void Service::processGetConfiguredPolicy(MessageBuffer &buffer, MessageBuffer &send, uid_t uid, pid_t pid, const std::string &smackLabel, bool forAdmin)
+{
+    int ret;
+    policy_entry filter;
+    Deserialization::Deserialize(buffer, filter);
+    std::vector<policy_entry> policyEntries;
+    ret = ServiceImpl::getConfiguredPolicy(forAdmin, filter, uid, pid, smackLabel, policyEntries);
+    Serialization::Serialize(send, ret);
+    Serialization::Serialize(send, static_cast<int>(policyEntries.size()));
+    for (const auto &policyEntry : policyEntries) {
+        Serialization::Serialize(send, policyEntry);
+    };
+}
+
+void Service::processGetPolicy(MessageBuffer &buffer, MessageBuffer &send, uid_t uid, pid_t pid, const std::string &smackLabel)
+{
+    int ret;
+    policy_entry filter;
+    Deserialization::Deserialize(buffer, filter);
+    std::vector<policy_entry> policyEntries;
+    ret = ServiceImpl::getPolicy(filter, uid, pid, smackLabel, policyEntries);
+    Serialization::Serialize(send, ret);
+    Serialization::Serialize(send, static_cast<int>(policyEntries.size()));
+    for (const auto &policyEntry : policyEntries) {
+        Serialization::Serialize(send, policyEntry);
+    };
 }
 
 } // namespace SecurityManager

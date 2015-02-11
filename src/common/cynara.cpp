@@ -488,7 +488,7 @@ int CynaraAdmin::convertToPolicyType(const std::string &policy, bool forceRefres
 
     return DescriptionToType.at(policy);
 }
-void CynaraAdmin::Check(const std::string &label, const std::string &privilege, const std::string &user,
+void CynaraAdmin::Check(const std::string &label, const std::string &user, const std::string &privilege,
     const std::string &bucket, int &result, std::string &resultExtra, const bool recursive)
 {
     char *resultExtraCstr = nullptr;
@@ -505,6 +505,28 @@ void CynaraAdmin::Check(const std::string &label, const std::string &privilege, 
         resultExtra = std::string(resultExtraCstr);
         free(resultExtraCstr);
     }
+}
+
+int CynaraAdmin::GetPrivilegeManagerCurrLevel(const std::string &label, const std::string &user,
+        const std::string &privilege)
+{
+    int result;
+    std::string resultExtra;
+
+    Check(label, user, privilege, Buckets.at(Bucket::PRIVACY_MANAGER), result, resultExtra, true);
+
+    return result;
+}
+
+int CynaraAdmin::GetPrivilegeManagerMaxLevel(const std::string &label, const std::string &user,
+        const std::string &privilege)
+{
+    int result;
+    std::string resultExtra;
+
+    Check(label, user, privilege, Buckets.at(Bucket::MAIN), result, resultExtra, true);
+
+    return result;
 }
 
 Cynara::Cynara()

@@ -94,7 +94,6 @@ private:
 
     void processUserDelete(MessageBuffer &buffer, MessageBuffer &send, uid_t uid);
 
-
     /**
      * Process policy update request
      *
@@ -105,6 +104,34 @@ private:
      * @param  smackLabel smack label of requesting app
      */
     void processPolicyUpdate(MessageBuffer &buffer, MessageBuffer &send, uid_t uid, pid_t pid, const std::string &smackLabel);
+
+    /**
+     * List all privileges for specific user, placed in Cynara's PRIVACY_MANAGER
+     * or ADMIN's bucket - choice based on forAdmin parameter
+     *
+     * @param  buffer Raw received data buffer
+     * @param  send   Raw data buffer to be sent
+     * @param  uid    Identifier of the user who sent the request
+     * @param  pid    PID of the process which sent the request
+     * @param  smackLabel smack label of requesting app
+     * @param  forAdmin determines internal type of request
+     */
+    void processGetConfiguredPolicy(MessageBuffer &buffer, MessageBuffer &send, uid_t uid, pid_t pid, const std::string &smackLabel, bool forAdmin);
+
+    /**
+     * Get whole policy for specific user. Whole policy is a list of all apps,
+     * and their permissions (based on what they've stated in their manifests).
+     * If uid is unprivileged, then only privileges for the caller uid will be
+     * listed. If uid is privileged, then apps for all the users will be listed.
+     *
+     * @param  buffer Raw received data buffer
+     * @param  send     Raw data buffer to be sent
+     * @param  uid      Identifier of the user who sent the request
+     * @param  pid      PID of the process which sent the request
+     * @param  smackLabel smack label of requesting app
+     */
+    void processGetPolicy(MessageBuffer &buffer, MessageBuffer &send, uid_t uid, pid_t pid, const std::string &smackLabel);
+
 };
 
 } // namespace SecurityManager

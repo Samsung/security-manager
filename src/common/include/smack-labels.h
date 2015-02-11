@@ -47,6 +47,14 @@ bool setupPath(const std::string &pkgId, const std::string &path,
     app_install_path_type pathType);
 
 /**
+ * Generates application name for a label fetched from Cynara
+ *
+ * @param[in] label string to fetch application name for
+ * @return application name on success, empty string on error.
+*/
+std::string generateAppNameFromLabel(const std::string &label);
+
+/**
  * Generates label for an application with a specific application ID
  * read from @ref appId and assigns it to @ref label.
  *
