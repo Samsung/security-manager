@@ -7,6 +7,7 @@ License:    Apache-2.0
 Source0:    %{name}-%{version}.tar.gz
 Source1:    security-manager.manifest
 Source3:    libsecurity-manager-client.manifest
+Requires: security-manager-policy
 Requires(post): smack
 BuildRequires: cmake
 BuildRequires: zip
@@ -44,13 +45,13 @@ Requires:   libsecurity-manager-client = %{version}-%{release}
 %description -n libsecurity-manager-client-devel
 Development files needed for using the security manager client
 
-%package -n security-manager-policy
+%package policy
 Summary:    Security manager policy
-Group:      Security/Development
-Requires:   security-manager = %{version}-%{release}
-Requires:   cyad
+Group:      Security/Access Control
+Requires(post): security-manager = %{version}-%{release}
+Requires(post): cyad
 
-%description -n security-manager-policy
+%description policy
 Set of security rules that constitute security policy in the system
 
 %prep
