@@ -462,7 +462,7 @@ int getAppGroups(const std::string &appId, uid_t uid, pid_t pid, std::unordered_
         }
         LogDebug("pkgId: " << pkgId);
 
-        smackLabel = SmackLabels::generatePkgLabel(pkgId);
+        smackLabel = SmackLabels::generateAppLabel(appId);
         LogDebug("smack label: " << smackLabel);
 
         std::vector<std::string> privileges;
@@ -472,7 +472,7 @@ int getAppGroups(const std::string &appId, uid_t uid, pid_t pid, std::unordered_
         PrivilegeDb::getInstance().GetPkgPrivileges(pkgId, getGlobalUserId(), privileges);
         /*privileges needs to be sorted and with no duplications - for cynara sake*/
         std::inplace_merge(privileges.begin(), privileges.begin() + tmp, privileges.end());
-        privileges.erase( unique( privileges.begin(), privileges.end() ), privileges.end() );
+        privileges.erase(unique(privileges.begin(), privileges.end()), privileges.end());
 
         for (const auto &privilege : privileges) {
             std::vector<std::string> gidsTmp;
@@ -480,9 +480,9 @@ int getAppGroups(const std::string &appId, uid_t uid, pid_t pid, std::unordered_
             if (!gidsTmp.empty()) {
                 LogDebug("Considering privilege " << privilege << " with " <<
                     gidsTmp.size() << " groups assigned");
+                // TODO: create method in Cynara class for fetching all privileges of an application
                 if (Cynara::getInstance().check(smackLabel, privilege, uidStr, pidStr)) {
-                    for_each(gidsTmp.begin(), gidsTmp.end(), [&] (std::string group)
-                    {
+                    for_each(gidsTmp.begin(), gidsTmp.end(), [&] (std::string group) {
                         struct group *grp = getgrnam(group.c_str());
                         if (grp == NULL) {
                                 LogError("No such group: " << group.c_str());
