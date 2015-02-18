@@ -447,8 +447,8 @@ void CynaraAdmin::ListPoliciesDescriptions(std::vector<std::string> &policiesDes
 {
     FetchCynaraPolicyDescriptions(false);
 
-    for (auto it = TypeToDescription.rbegin(); it != TypeToDescription.rend(); ++it)
-        policiesDescriptions.push_back(it->second);
+    for (const auto &it : TypeToDescription)
+        policiesDescriptions.push_back(it.second);
 }
 
 std::string CynaraAdmin::convertToPolicyDescription(const int policyType, bool forceRefresh)

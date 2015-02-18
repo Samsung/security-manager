@@ -706,7 +706,7 @@ void security_manager_policy_entries_free(policy_entry *p_entries, const size_t 
 /**
  * This function returns array of available policy levels in form of simple
  * text descriptions. List is sorted using internal policy level value,
- * from highest value to lowest and starts with "Allow".
+ * from lowest value to highest and starts with "Deny".
  *
  * Caller needs to free memory allocated for the list using
  * security_manager_policy_levels_free().
