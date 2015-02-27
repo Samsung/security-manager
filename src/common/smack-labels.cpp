@@ -168,20 +168,32 @@ void setupCorrectPath(const std::string &pkgId, const std::string &appId, const 
 
 std::string generateAppNameFromLabel(const std::string &label)
 {
-    //TODO: Fix when a label generating mechanism is ready
-    return label;
+    static const char prefix[] = "User::App::";
+
+    if (label.compare(0, sizeof(prefix) - 1, prefix))
+        ThrowMsg(SmackException::InvalidLabel, "Cannot extract appId from Smack label " << label);
+
+    return label.substr(sizeof(prefix) - 1);
 }
 
 std::string generateAppLabel(const std::string &appId)
 {
-    (void) appId;
-    return "User";
+    std::string label = "User::App::" + appId;
+
+    if (smack_label_length(label.c_str()) <= 0)
+        ThrowMsg(SmackException::InvalidLabel, "Invalid Smack label generated from appId " << appId);
+
+    return label;
 }
 
 std::string generatePkgLabel(const std::string &pkgId)
 {
-    (void) pkgId;
-    return "User";
+    std::string label = "User::Pkg::" + pkgId;
+
+    if (smack_label_length(label.c_str()) <= 0)
+        ThrowMsg(SmackException::InvalidLabel, "Invalid Smack label generated from pkgId " << pkgId);
+
+    return label;
 }
 
 } // namespace SmackLabels
