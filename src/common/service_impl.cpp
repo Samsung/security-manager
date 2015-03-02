@@ -64,7 +64,6 @@ static inline int validatePolicy(policy_entry &policyEntry, std::string uidStr, 
         policyEntry.user = uidStr;
     };
 
-    std::string client;
     int level;
 
     if (policyEntry.currentLevel.empty()) { //for admin
@@ -116,13 +115,10 @@ static inline int validatePolicy(policy_entry &policyEntry, std::string uidStr, 
         policyEntry.user = CYNARA_ADMIN_WILDCARD;
     if (!policyEntry.privilege.compare(SECURITY_MANAGER_ANY))
         policyEntry.privilege = CYNARA_ADMIN_WILDCARD;
-    if (policyEntry.appId.compare(SECURITY_MANAGER_ANY))
-        generateAppLabel(policyEntry.appId, client);
-    else
-        client = CYNARA_ADMIN_WILDCARD;
 
     cyap = std::move(CynaraAdminPolicy(
-        client,
+        policyEntry.appId.compare(SECURITY_MANAGER_ANY) ?
+            SmackLabels::generateAppLabel(policyEntry.appId) : CYNARA_ADMIN_WILDCARD,
         policyEntry.user,
         policyEntry.privilege,
         level,
@@ -252,6 +248,9 @@ int appInstall(const app_inst_req &req, uid_t uid)
     std::string uidstr;
     bool isCorrectPath = false;
     std::string appPath;
+    std::string appLabel;
+    std::string pkgLabel;
+
     if (uid) {
         if (uid != req.uid) {
             LogError("User " << uid <<
@@ -269,15 +268,6 @@ int appInstall(const app_inst_req &req, uid_t uid)
         return SECURITY_MANAGER_API_ERROR_AUTHENTICATION_FAILED;
     }
 
-    std::string smackLabel;
-    if (!generateAppLabel(req.appId, smackLabel)) {
-        LogError("Cannot generate Smack label for application: " << req.appId);
-        return SECURITY_MANAGER_API_ERROR_SERVER_ERROR;
-    }
-
-    LogDebug("Install parameters: appId: " << req.appId << ", pkgId: " << req.pkgId
-            << ", generated smack label: " << smackLabel);
-
     // create null terminated array of strings for permissions
     std::unique_ptr<const char *[]> pp_permissions(new const char* [req.privileges.size() + 1]);
     for (size_t i = 0; i < req.privileges.size(); ++i) {
@@ -288,8 +278,13 @@ int appInstall(const app_inst_req &req, uid_t uid)
 
     try {
         std::vector<std::string> oldAppPrivileges;
+
+        appLabel = SmackLabels::generateAppLabel(req.appId);
+        /* NOTE: we don't use pkgLabel here, but generate it for pkgId validation */
+        pkgLabel = SmackLabels::generatePkgLabel(req.pkgId);
         LogDebug("Install parameters: appId: " << req.appId << ", pkgId: " << req.pkgId
-                 << ", uidstr " << uidstr << ", generated smack label: " << smackLabel);
+                 << ", uidstr " << uidstr
+                 << ", app label: " << appLabel << ", pkg label: " << pkgLabel);
 
         PrivilegeDb::getInstance().BeginTransaction();
         std::string pkg;
@@ -304,7 +299,7 @@ int appInstall(const app_inst_req &req, uid_t uid)
         PrivilegeDb::getInstance().UpdateAppPrivileges(req.appId, uid, req.privileges);
         /* Get all application ids in the package to generate rules withing the package */
         PrivilegeDb::getInstance().GetAppIdsForPkgId(req.pkgId, pkgContents);
-        CynaraAdmin::getInstance().UpdateAppPolicy(smackLabel, uidstr, oldAppPrivileges,
+        CynaraAdmin::getInstance().UpdateAppPolicy(appLabel, uidstr, oldAppPrivileges,
                                          req.privileges);
         PrivilegeDb::getInstance().CommitTransaction();
         LogDebug("Application installation commited to database");
@@ -319,35 +314,36 @@ int appInstall(const app_inst_req &req, uid_t uid)
         PrivilegeDb::getInstance().RollbackTransaction();
         LogError("Error while setting Cynara rules for application: " << e.DumpToString());
         return SECURITY_MANAGER_API_ERROR_SERVER_ERROR;
+    } catch (const SmackException::InvalidLabel &e) {
+        PrivilegeDb::getInstance().RollbackTransaction();
+        LogError("Error while generating Smack labels: " << e.DumpToString());
+        return SECURITY_MANAGER_API_ERROR_SERVER_ERROR;
     } catch (const std::bad_alloc &e) {
         PrivilegeDb::getInstance().RollbackTransaction();
         LogError("Memory allocation while setting Cynara rules for application: " << e.what());
-        return SECURITY_MANAGER_API_ERROR_SERVER_ERROR;
+        return SECURITY_MANAGER_API_ERROR_OUT_OF_MEMORY;
     }
 
-    if (isCorrectPath)
-        if (!setupCorrectPath(req.pkgId, req.appId, appPath)) {
-            LogError("Can't setup <APP_ROOT> dirs");
-            return false;
+    try {
+        if (isCorrectPath)
+            SmackLabels::setupCorrectPath(req.pkgId, req.appId, appPath);
+
+        // register paths
+        for (const auto &appPath : req.appPaths) {
+            const std::string &path = appPath.first;
+            app_install_path_type pathType = static_cast<app_install_path_type>(appPath.second);
+            SmackLabels::setupPath(req.appId, path, pathType);
         }
 
-    // register paths
-    for (const auto &appPath : req.appPaths) {
-        const std::string &path = appPath.first;
-        app_install_path_type pathType = static_cast<app_install_path_type>(appPath.second);
-        int result = setupPath(req.appId, path, pathType);
-
-        if (!result) {
-            LogError("setupPath() failed");
-            return SECURITY_MANAGER_API_ERROR_SERVER_ERROR;
-        }
-    }
-
-    LogDebug("Adding Smack rules for new appId: " << req.appId << " with pkgId: "
-            << req.pkgId << ". Applications in package: " << pkgContents.size());
-    if (!SmackRules::installApplicationRules(req.appId, req.pkgId, pkgContents)) {
-        LogError("Failed to apply package-specific smack rules");
-        return SECURITY_MANAGER_API_ERROR_SERVER_ERROR;
+        LogDebug("Adding Smack rules for new appId: " << req.appId << " with pkgId: "
+                << req.pkgId << ". Applications in package: " << pkgContents.size());
+        SmackRules::installApplicationRules(req.appId, req.pkgId, pkgContents);
+    } catch (const SmackException::Base &e) {
+        LogError("Error while applying Smack policy for application: " << e.DumpToString());
+        return SECURITY_MANAGER_API_ERROR_SETTING_FILE_LABEL_FAILED;
+    } catch (const std::bad_alloc &e) {
+        LogError("Memory allocation error: " << e.what());
+        return SECURITY_MANAGER_API_ERROR_OUT_OF_MEMORY;
     }
 
     return SECURITY_MANAGER_API_SUCCESS;
@@ -373,14 +369,9 @@ int appUninstall(const std::string &appId, uid_t uid)
             PrivilegeDb::getInstance().RollbackTransaction();
             appExists = false;
         } else {
-
+            smackLabel = SmackLabels::generateAppLabel(appId);
             LogDebug("Uninstall parameters: appId: " << appId << ", pkgId: " << pkgId
                      << ", uidstr " << uidstr << ", generated smack label: " << smackLabel);
-
-            if (!generateAppLabel(appId, smackLabel)) {
-                LogError("Cannot generate Smack label for package: " << pkgId);
-                return SECURITY_MANAGER_API_ERROR_SERVER_ERROR;
-            }
 
             /* Before we remove the app from the database, let's fetch all apps in the package
                 that this app belongs to, this will allow us to remove all rules withing the
@@ -405,26 +396,32 @@ int appUninstall(const std::string &appId, uid_t uid)
         PrivilegeDb::getInstance().RollbackTransaction();
         LogError("Error while setting Cynara rules for application: " << e.DumpToString());
         return SECURITY_MANAGER_API_ERROR_SERVER_ERROR;
+    } catch (const SmackException::InvalidLabel &e) {
+        PrivilegeDb::getInstance().RollbackTransaction();
+        LogError("Error while generating Smack labels: " << e.DumpToString());
+        return SECURITY_MANAGER_API_ERROR_SERVER_ERROR;
     } catch (const std::bad_alloc &e) {
         PrivilegeDb::getInstance().RollbackTransaction();
         LogError("Memory allocation while setting Cynara rules for application: " << e.what());
-        return SECURITY_MANAGER_API_ERROR_SERVER_ERROR;
+        return SECURITY_MANAGER_API_ERROR_OUT_OF_MEMORY;
     }
 
-    if (appExists) {
-
-        if (removePkg) {
-            LogDebug("Removing Smack rules for deleted pkgId " << pkgId);
-            if (!SmackRules::uninstallPackageRules(pkgId)) {
-                LogError("Error on uninstallation of package-specific smack rules");
-                return SECURITY_MANAGER_API_ERROR_SERVER_ERROR;
+    try {
+        if (appExists) {
+            if (removePkg) {
+                LogDebug("Removing Smack rules for deleted pkgId " << pkgId);
+                SmackRules::uninstallPackageRules(pkgId);
             }
+
+            LogDebug("Removing smack rules for deleted appId " << appId);
+            SmackRules::uninstallApplicationRules(appId, pkgId, pkgContents);
         }
-        LogDebug ("Removing smack rules for deleted appId " << appId);
-        if (!SmackRules::uninstallApplicationRules(appId, pkgId, pkgContents)) {
-            LogError("Error during uninstallation of application-specific smack rules");
-            return SECURITY_MANAGER_API_ERROR_SERVER_ERROR;
-        }
+    } catch (const SmackException::Base &e) {
+        LogError("Error while removing Smack rules for application: " << e.DumpToString());
+        return SECURITY_MANAGER_API_ERROR_SETTING_FILE_LABEL_FAILED;
+    } catch (const std::bad_alloc &e) {
+        LogError("Memory allocation error: " << e.what());
+        return SECURITY_MANAGER_API_ERROR_OUT_OF_MEMORY;
     }
 
     return SECURITY_MANAGER_API_SUCCESS;
@@ -464,10 +461,8 @@ int getAppGroups(const std::string &appId, uid_t uid, pid_t pid, std::unordered_
             return SECURITY_MANAGER_API_ERROR_NO_SUCH_OBJECT;
         }
         LogDebug("pkgId: " << pkgId);
-        if (!generatePkgLabel(pkgId, smackLabel)) {
-            LogError("Cannot generate Smack label for pkgId: " << pkgId);
-            return SECURITY_MANAGER_API_ERROR_NO_SUCH_OBJECT;
-        }
+
+        smackLabel = SmackLabels::generatePkgLabel(pkgId);
         LogDebug("smack label: " << smackLabel);
 
         std::vector<std::string> privileges;
@@ -505,6 +500,9 @@ int getAppGroups(const std::string &appId, uid_t uid, pid_t pid, std::unordered_
         return SECURITY_MANAGER_API_ERROR_SERVER_ERROR;
     } catch (const CynaraException::Base &e) {
         LogError("Error while querying Cynara for permissions: " << e.DumpToString());
+        return SECURITY_MANAGER_API_ERROR_SERVER_ERROR;
+    } catch (const SmackException::InvalidLabel &e) {
+        LogError("Error while generating Smack labels: " << e.DumpToString());
         return SECURITY_MANAGER_API_ERROR_SERVER_ERROR;
     } catch (const std::bad_alloc &e) {
         LogError("Memory allocation failed: " << e.what());
@@ -637,14 +635,9 @@ int getConfiguredPolicy(bool forAdmin, const policy_entry &filter, uid_t uid, pi
         std::vector<CynaraAdminPolicy> listOfPolicies;
 
         //convert appId to smack label
-        std::string appLabel;
-        if (!filter.appId.compare(SECURITY_MANAGER_ANY))
-            appLabel = CYNARA_ADMIN_ANY;
-        else
-            generateAppLabel(filter.appId, appLabel);
-
-        std::string user = (!filter.user.compare(SECURITY_MANAGER_ANY))? CYNARA_ADMIN_ANY: filter.user;
-        std::string privilege = (!filter.privilege.compare(SECURITY_MANAGER_ANY))? CYNARA_ADMIN_ANY: filter.privilege;
+        std::string appLabel = filter.appId.compare(SECURITY_MANAGER_ANY) ? SmackLabels::generateAppLabel(filter.appId) : CYNARA_ADMIN_ANY;
+        std::string user = filter.user.compare(SECURITY_MANAGER_ANY) ? filter.user : CYNARA_ADMIN_ANY;
+        std::string privilege = filter.privilege.compare(SECURITY_MANAGER_ANY) ? filter.privilege : CYNARA_ADMIN_ANY;
 
         LogDebug("App: " << filter.appId << ", Label: " << appLabel);
 
@@ -688,7 +681,7 @@ int getConfiguredPolicy(bool forAdmin, const policy_entry &filter, uid_t uid, pi
 
             policy_entry pe;
 
-            pe.appId = strcmp(policy.client, CYNARA_ADMIN_WILDCARD) ? generateAppNameFromLabel(policy.client) : SECURITY_MANAGER_ANY;
+            pe.appId = strcmp(policy.client, CYNARA_ADMIN_WILDCARD) ? SmackLabels::generateAppNameFromLabel(policy.client) : SECURITY_MANAGER_ANY;
             pe.user =  strcmp(policy.user, CYNARA_ADMIN_WILDCARD) ? policy.user : SECURITY_MANAGER_ANY;
             pe.privilege = strcmp(policy.privilege, CYNARA_ADMIN_WILDCARD) ? policy.privilege : pe.privilege = SECURITY_MANAGER_ANY;
             pe.currentLevel = CynaraAdmin::getInstance().convertToPolicyDescription(policy.result);
@@ -717,6 +710,9 @@ int getConfiguredPolicy(bool forAdmin, const policy_entry &filter, uid_t uid, pi
 
     } catch (const CynaraException::Base &e) {
         LogError("Error while listing Cynara rules: " << e.DumpToString());
+        return SECURITY_MANAGER_API_ERROR_SERVER_ERROR;
+    } catch (const SmackException::InvalidLabel &e) {
+        LogError("Error while generating Smack labels: " << e.DumpToString());
         return SECURITY_MANAGER_API_ERROR_SERVER_ERROR;
     } catch (const std::bad_alloc &e) {
         LogError("Memory allocation error while listing Cynara rules: " << e.what());
@@ -780,10 +776,9 @@ int getPolicy(const policy_entry &filter, uid_t uid, pid_t pid, const std::strin
 
             for (const std::string &appId : listOfApps) {
                 LogDebug("App: " << appId);
-                std::string smackLabelForApp;
+                std::string smackLabelForApp = SmackLabels::generateAppLabel(appId);
                 std::vector<std::string> listOfPrivileges;
 
-                generateAppLabel(appId, smackLabelForApp);
                 // FIXME: also fetch privileges of global applications
                 PrivilegeDb::getInstance().GetAppPrivileges(appId, uid, listOfPrivileges);
 
@@ -833,6 +828,9 @@ int getPolicy(const policy_entry &filter, uid_t uid, pid_t pid, const std::strin
 
     } catch (const CynaraException::Base &e) {
         LogError("Error while listing Cynara rules: " << e.DumpToString());
+        return SECURITY_MANAGER_API_ERROR_SERVER_ERROR;
+    } catch (const SmackException::InvalidLabel &e) {
+        LogError("Error while generating Smack labels: " << e.DumpToString());
         return SECURITY_MANAGER_API_ERROR_SERVER_ERROR;
     } catch (const std::bad_alloc &e) {
         LogError("Memory allocation error while listing Cynara rules: " << e.what());

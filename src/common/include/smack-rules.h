@@ -27,6 +27,7 @@
 
 #include <vector>
 #include <string>
+#include <smack-exceptions.h>
 
 struct smack_accesses;
 
@@ -38,18 +39,18 @@ public:
     SmackRules();
     virtual ~SmackRules();
 
-    bool add(const std::string &subject, const std::string &object,
+    void add(const std::string &subject, const std::string &object,
             const std::string &permissions);
-    bool addModify(const std::string &subject, const std::string &object,
+    void addModify(const std::string &subject, const std::string &object,
             const std::string &allowPermissions, const std::string &denyPermissions);
-    bool loadFromFile(const std::string &path);
-    bool addFromTemplate(const std::vector<std::string> &templateRules,
+    void loadFromFile(const std::string &path);
+    void addFromTemplate(const std::vector<std::string> &templateRules,
         const std::string &appId, const std::string &pkgId);
-    bool addFromTemplateFile(const std::string &appId, const std::string &pkgId);
+    void addFromTemplateFile(const std::string &appId, const std::string &pkgId);
 
-    bool apply() const;
-    bool clear() const;
-    bool saveToFile(const std::string &path) const;
+    void apply() const;
+    void clear() const;
+    void saveToFile(const std::string &path) const;
 
     /**
      * Create cross dependencies for all applications in a package
@@ -58,9 +59,9 @@ public:
      * correct permissions to shared data.
      *
      * @param[in] pkgContents - a list of all applications inside this package
-     * @return true on success, false on error
      */
-    bool generatePackageCrossDeps(const std::vector<std::string> &pkgContents);
+    void generatePackageCrossDeps(const std::vector<std::string> &pkgContents);
+
     /**
      * Install package-specific smack rules.
      *
@@ -70,9 +71,8 @@ public:
      * @param[in] appId - application id that is beeing installed
      * @param[in] pkgId - package id that the application is in
      * @param[in] pkgContents - a list of all applications in the package
-     * @return true on success, false on error
      */
-    static bool installApplicationRules(const std::string &appId, const std::string &pkgId,
+    static void installApplicationRules(const std::string &appId, const std::string &pkgId,
         const std::vector<std::string> &pkgContents);
     /**
      * Uninstall package-specific smack rules.
@@ -81,13 +81,13 @@ public:
      * and removes them from the persistent storage.
      *
      * @param[in] pkgId - package identifier
-     * @return true if smack rule file has been uninstalled or didn't exist
-     *         false otherwise
      */
-    static bool uninstallPackageRules(const std::string &pkgId);
+    static void uninstallPackageRules(const std::string &pkgId);
+
     /* FIXME: Remove this function if real pkgId instead of "User" label will be used
      * in generateAppLabel(). */
-    static bool addMissingRulesFix();
+    static void addMissingRulesFix();
+
     /**
     * Uninstall application-specific smack rules.
     *
@@ -97,10 +97,10 @@ public:
     * @param[in] appId - application id
     * @param[in] pkgId - package id that the application belongs to
     * @param[in] appsInPkg - a list of other applications in the same package id that the application belongs to
-    * @return true if smack rules have been removed false otherwise
     */
-    static bool uninstallApplicationRules(const std::string &appId, const std::string &pkgId,
+    static void uninstallApplicationRules(const std::string &appId, const std::string &pkgId,
             std::vector<std::string> appsInPkg);
+
     /**
      * Update package specific rules
      *
@@ -110,19 +110,21 @@ public:
      *
      * @param[in] pkgId - id of the package to update
      * @param[in] pkgContents - a list of all applications in the package
-     * @return true in case of success false otherwise
      */
-    static bool updatePackageRules(const std::string &pkgId, const std::vector<std::string> &pkgContents);
+    static void updatePackageRules(const std::string &pkgId, const std::vector<std::string> &pkgContents);
+
 private:
     /**
      * Create a path for package rules
      *
      */
     static std::string getPackageRulesFilePath(const std::string &pkgId);
+
     /**
      * Create a path for application rules
      */
     static std::string getApplicationRulesFilePath(const std::string &appId);
+
     /**
      * Uninstall rules inside a specified file path
      *
@@ -130,9 +132,8 @@ private:
      * rules in the file specified by path
      *
      * @param[in] path - path to the file that contains the rules
-     * @return true in case of success false otherwise
      */
-    static bool uninstallRules (const std::string &path);
+    static void uninstallRules (const std::string &path);
 
     smack_accesses *m_handle;
 };

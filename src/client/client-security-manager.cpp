@@ -363,7 +363,9 @@ int security_manager_set_process_label_from_appid(const char *app_id)
     if (smack_smackfs_path() == NULL)
         return SECURITY_MANAGER_SUCCESS;
 
-    if (SecurityManager::generateAppLabel(std::string(app_id), appLabel) == false) {
+    try {
+        appLabel = SecurityManager::SmackLabels::generateAppLabel(app_id);
+    } catch (...) {
         LogError("Failed to generate smack label for appId: " << app_id);
         return SECURITY_MANAGER_API_ERROR_NO_SUCH_OBJECT;
     }

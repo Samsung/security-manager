@@ -39,133 +39,93 @@
 #include "smack-labels.h"
 
 namespace SecurityManager {
+namespace SmackLabels {
 
 /* Const defined below is used to label files accessible to apps only for reading */
 const char *const LABEL_FOR_APP_RO_PATH = "User::Home";
 
-enum class FileDecision {
-    SKIP = 0,
-    LABEL = 1,
-    ERROR = -1
-};
+typedef std::function<bool(const FTSENT*)> LabelDecisionFn;
 
-typedef std::function<FileDecision(const FTSENT*)> LabelDecisionFn;
-
-static FileDecision labelAll(const FTSENT *ftsent __attribute__((unused)))
+static bool labelAll(const FTSENT *ftsent __attribute__((unused)))
 {
-    return FileDecision::LABEL;
-}
-
-static FileDecision labelDirs(const FTSENT *ftsent)
-{
-    // label only directories
-    if (S_ISDIR(ftsent->fts_statp->st_mode))
-        return FileDecision::LABEL;
-    return FileDecision::SKIP;
-}
-
-static FileDecision labelExecs(const FTSENT *ftsent)
-{
-    // LogDebug("Mode = " << ftsent->fts_statp->st_mode); // this could be helpfull in debugging
-    // label only regular executable files
-    if (S_ISREG(ftsent->fts_statp->st_mode) && (ftsent->fts_statp->st_mode & S_IXUSR))
-        return FileDecision::LABEL;
-    return FileDecision::SKIP;
-}
-
-static inline bool pathSetSmack(const char *path, const std::string &label,
-        const char *xattr_name)
-{
-    if (lsetxattr(path, xattr_name, label.c_str(), label.length(), 0) != 0)
-        return false;
-
     return true;
 }
 
-static bool dirSetSmack(const std::string &path, const std::string &label,
+static bool labelDirs(const FTSENT *ftsent)
+{
+    // label only directories
+    return (S_ISDIR(ftsent->fts_statp->st_mode));
+}
+
+static bool labelExecs(const FTSENT *ftsent)
+{
+    // LogDebug("Mode = " << ftsent->fts_statp->st_mode); // this could be helpfull in debugging
+    // label only regular executable files
+    return (S_ISREG(ftsent->fts_statp->st_mode) && (ftsent->fts_statp->st_mode & S_IXUSR));
+}
+
+static inline void pathSetSmack(const char *path, const std::string &label,
+        const char *xattr_name)
+{
+    if (lsetxattr(path, xattr_name, label.c_str(), label.length(), 0)) {
+        LogError("lsetxattr failed.");
+        ThrowMsg(SmackException::FileError, "lsetxattr failed.");
+    }
+}
+
+static void dirSetSmack(const std::string &path, const std::string &label,
         const char *xattr_name, LabelDecisionFn fn)
 {
     char *const path_argv[] = {const_cast<char *>(path.c_str()), NULL};
     FTSENT *ftsent;
-    FileDecision ret;
 
     std::unique_ptr<FTS, std::function<void(FTS*)> > fts(
             fts_open(path_argv, FTS_PHYSICAL | FTS_NOCHDIR, NULL),
             fts_close);
 
-    if (fts.get() == NULL) {
+    if (!fts) {
         LogError("fts_open failed.");
-        return false;
+        ThrowMsg(SmackException::FileError, "fts_open failed.");
     }
 
     while ((ftsent = fts_read(fts.get())) != NULL) {
         /* Check for error (FTS_ERR) or failed stat(2) (FTS_NS) */
         if (ftsent->fts_info == FTS_ERR || ftsent->fts_info == FTS_NS) {
             LogError("FTS_ERR error or failed stat(2) (FTS_NS)");
-            return false;
+            ThrowMsg(SmackException::FileError, "FTS_ERR error or failed stat(2) (FTS_NS)");
         }
 
         /* avoid to tag directories two times */
         if (ftsent->fts_info == FTS_D)
             continue;
 
-        ret = fn(ftsent);
-        if (ret == FileDecision::ERROR) {
-            LogError("fn(ftsent) failed.");
-            return false;
-        }
-
-        if (ret == FileDecision::LABEL) {
-            if (!pathSetSmack(ftsent->fts_path, label, xattr_name)) {
-                LogError("pathSetSmack failed.");
-                return false;
-            }
-        }
-
+        if (fn(ftsent))
+            pathSetSmack(ftsent->fts_path, label, xattr_name);
     }
 
     /* If last call to fts_read() set errno, we need to return error. */
     if ((errno != 0) && (ftsent == NULL)) {
         LogError("Last errno from fts_read: " << strerror(errno));
-        return false;
+        ThrowMsg(SmackException::FileError, "Last errno from fts_read: " << strerror(errno));
     }
-    return true;
 }
 
-static bool labelDir(const std::string &path, const std::string &label,
+static void labelDir(const std::string &path, const std::string &label,
         bool set_transmutable, bool set_executables)
 {
-    bool ret = true;
-
     // setting access label on everything in given directory and below
-    ret = dirSetSmack(path, label, XATTR_NAME_SMACK, labelAll);
-    if (!ret) {
-        LogError("dirSetSmack failed (access label)");
-        return ret;
-    }
+    dirSetSmack(path, label, XATTR_NAME_SMACK, labelAll);
 
-    if (set_transmutable) {
-        // setting transmute on dirs
-        ret = dirSetSmack(path, "TRUE", XATTR_NAME_SMACKTRANSMUTE, labelDirs);
-        if (!ret) {
-            LogError("dirSetSmack failed (transmute)");
-            return ret;
-        }
-    }
+    // setting transmute on dirs
+    if (set_transmutable)
+        dirSetSmack(path, "TRUE", XATTR_NAME_SMACKTRANSMUTE, labelDirs);
 
-    if (set_executables) {
-        ret = dirSetSmack(path, label, XATTR_NAME_SMACKEXEC, &labelExecs);
-        if (!ret)
-        {
-            LogError("dirSetSmack failed (execs).");
-            return ret;
-        }
-    }
-
-    return ret;
+    // setting SMACK64EXEC labels
+    if (set_executables)
+        dirSetSmack(path, label, XATTR_NAME_SMACKEXEC, &labelExecs);
 }
 
-bool setupPath(const std::string &appId, const std::string &path,
+void setupPath(const std::string &appId, const std::string &path,
     app_install_path_type pathType)
 {
     std::string label;
@@ -174,8 +134,7 @@ bool setupPath(const std::string &appId, const std::string &path,
     switch (pathType) {
     case SECURITY_MANAGER_PATH_PRIVATE:
     case SECURITY_MANAGER_PATH_RW:
-        if (!generateAppLabel(appId, label))
-            return false;
+        label = generateAppLabel(appId);
         label_executables = true;
         label_transmute = false;
         break;
@@ -192,9 +151,19 @@ bool setupPath(const std::string &appId, const std::string &path,
         break;
     default:
         LogError("Path type not known.");
-        return false;
+        Throw(SmackException::InvalidPathType);
     }
     return labelDir(path, label, label_transmute, label_executables);
+}
+
+void setupCorrectPath(const std::string &pkgId, const std::string &appId, const std::string &basePath)
+{
+    std::string pkgPath = basePath + "/" + pkgId;
+    std::string appPath = pkgPath + "/" + appId;
+
+    pathSetSmack(pkgPath.c_str(), generatePkgLabel(pkgId), XATTR_NAME_SMACK);
+    pathSetSmack(appPath.c_str(), generateAppLabel(appId), XATTR_NAME_SMACK);
+    pathSetSmack(appPath.c_str(), "TRUE", XATTR_NAME_SMACKTRANSMUTE);
 }
 
 std::string generateAppNameFromLabel(const std::string &label)
@@ -203,51 +172,17 @@ std::string generateAppNameFromLabel(const std::string &label)
     return label;
 }
 
-bool setupCorrectPath(const std::string &pkgId, const std::string &appId, const std::string &appPath)
-{
-    std::string tmpPath;
-    std::string label;
-
-    tmpPath.clear();
-    tmpPath = appPath + "/" + pkgId;
-
-    label.clear();
-    generatePkgLabel(pkgId, label);
-
-    if (!pathSetSmack(tmpPath.c_str(), label, XATTR_NAME_SMACK)) {
-        LogError("pathSetSmack failed (access label) on: " << tmpPath);
-        return false;
-    }
-
-    label.clear();
-    generateAppLabel(appId, label);
-    tmpPath += "/" + appId;
-
-    if (!pathSetSmack(tmpPath.c_str(), label, XATTR_NAME_SMACK)) {
-        LogError("pathSetSmack failed (access label) on: " << tmpPath);
-        return false;
-    }
-
-    if (!pathSetSmack(tmpPath.c_str(), "TRUE", XATTR_NAME_SMACKTRANSMUTE)) {
-        LogError("pathSetSmack failed (transmute) on: " << tmpPath);
-        return false;
-    }
-
-    return true;
-}
-
-bool generateAppLabel(const std::string &appId, std::string &label)
+std::string generateAppLabel(const std::string &appId)
 {
     (void) appId;
-    label = "User";
-    return true;
+    return "User";
 }
 
-bool generatePkgLabel(const std::string &pkgId, std::string &label)
+std::string generatePkgLabel(const std::string &pkgId)
 {
     (void) pkgId;
-    label = "User";
-    return (true);
+    return "User";
 }
 
+} // namespace SmackLabels
 } // namespace SecurityManager
