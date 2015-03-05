@@ -5,7 +5,7 @@ USERTYPE_POLICY_PATH=/usr/share/security-manager/policy
 # Create default buckets
 while read bucket default_policy
 do
-    # Reuse the main bucket for PRIVACY_MANAGER bucket
+    # Reuse the primary bucket for PRIVACY_MANAGER bucket
     [ "$bucket" = "PRIVACY_MANAGER" ] && bucket=""
     cyad --set-bucket="$bucket" --type="$default_policy"
 done <<END
@@ -49,4 +49,10 @@ do
         printf '%s;%s;%s;%s;%s;\n' "$bucket" "$user" "$app" "$privilege" "$policy"
     done |
     cyad --set-policy --bulk=-
+done
+
+# Non-application programs get access to all privileges
+for client in User System
+do
+    cyad --set-policy --bucket=MAIN --client="$client" --user="*" --privilege="*" --type=ALLOW
 done
