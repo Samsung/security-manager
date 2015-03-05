@@ -81,8 +81,6 @@ rm -rf %{buildroot}
 mkdir -p %{buildroot}%{_datadir}/license
 cp LICENSE %{buildroot}%{_datadir}/license/%{name}
 cp LICENSE %{buildroot}%{_datadir}/license/libsecurity-manager-client
-mkdir -p %{buildroot}/%{TZ_SYS_SMACK}
-cp app-rules-template.smack %{buildroot}/%{TZ_SYS_SMACK}
 %make_install
 
 mkdir -p %{buildroot}/%{_unitdir}/sockets.target.wants
@@ -137,7 +135,6 @@ fi
 %{_libdir}/libsecurity-manager-commons.so.*
 %attr(-,root,root) %{_unitdir}/security-manager.*
 %attr(-,root,root) %{_unitdir}/sockets.target.wants/security-manager.*
-%attr(-,root,root) %{TZ_SYS_SMACK}/app-rules-template.smack
 %config(noreplace) %attr(0600,root,root) %{TZ_SYS_DB}/.security-manager.db
 %config(noreplace) %attr(0600,root,root) %{TZ_SYS_DB}/.security-manager.db-journal
 %{_datadir}/license/%{name}
