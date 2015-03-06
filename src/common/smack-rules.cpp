@@ -25,7 +25,6 @@
 
 #include <unistd.h>
 #include <sys/types.h>
-#include <dirent.h>
 #include <sys/stat.h>
 #include <sys/smack.h>
 #include <fcntl.h>
@@ -253,27 +252,6 @@ void SmackRules::updatePackageRules(const std::string &pkgId, const std::vector<
     smackRules.saveToFile(pkgPath);
 }
 
-/* FIXME: Remove this function if real pkgId instead of "User" label will be used
- * in generateAppLabel(). */
-void SmackRules::addMissingRulesFix()
-{
-    struct dirent *ent;
-
-    std::string path(tzplatform_mkpath(TZ_SYS_SMACK, "accesses.d"));
-    std::unique_ptr<DIR, std::function<int(DIR*)>> dir(opendir(path.c_str()), closedir);
-    if (!dir)
-        ThrowMsg(SmackException::FileError, "opendir");
-
-    while ((ent = readdir(dir.get()))) {
-        SmackRules rules;
-        if (ent->d_type == DT_REG) {
-            rules.loadFromFile(tzplatform_mkpath3(TZ_SYS_SMACK, "accesses.d/", ent->d_name));
-            // Do not check error here. If this fails we can't do anything anyway.
-        }
-        rules.apply();
-    }
-}
-
 void SmackRules::uninstallPackageRules(const std::string &pkgId)
 {
     uninstallRules(getPackageRulesFilePath(pkgId));
@@ -284,9 +262,6 @@ void SmackRules::uninstallApplicationRules(const std::string &appId,
 {
     uninstallRules(getApplicationRulesFilePath(appId));
     updatePackageRules(pkgId, pkgContents);
-
-    // FIXME: Reloading all rules:
-    SmackRules::addMissingRulesFix();
 }
 
 void SmackRules::uninstallRules(const std::string &path)
