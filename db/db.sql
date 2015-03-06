@@ -37,8 +37,8 @@ FOREIGN KEY (privilege_id) REFERENCES privilege (privilege_id)
 
 CREATE TABLE IF NOT EXISTS privilege_group (
 privilege_id INTEGER NOT NULL,
-name VARCHAR NOT NULL,
-PRIMARY KEY (privilege_id, name),
+group_name VARCHAR NOT NULL,
+PRIMARY KEY (privilege_id, group_name),
 FOREIGN KEY (privilege_id) REFERENCES privilege (privilege_id)
 );
 
@@ -106,8 +106,16 @@ CREATE VIEW privilege_group_view AS
 SELECT
     privilege_id,
     privilege.name as privilege_name,
-    privilege_group.name
+    privilege_group.group_name
 FROM privilege_group
 LEFT JOIN privilege USING (privilege_id);
+
+DROP TRIGGER IF EXISTS privilege_group_view_insert_trigger;
+CREATE TRIGGER privilege_group_view_insert_trigger
+INSTEAD OF INSERT ON privilege_group_view
+BEGIN
+    INSERT OR IGNORE INTO privilege(name) VALUES (NEW.privilege_name);
+    INSERT OR IGNORE INTO privilege_group(privilege_id, group_name) VALUES ((SELECT privilege_id FROM privilege WHERE name=NEW.privilege_name), NEW.group_name);
+END;
 
 COMMIT TRANSACTION;

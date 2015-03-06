@@ -1,6 +1,8 @@
 #!/bin/sh -e
 
-USERTYPE_POLICY_PATH=/usr/share/security-manager/policy
+POLICY_PATH=/usr/share/security-manager/policy
+PRIVILEGE_GROUP_MAPPING=$POLICY_PATH/privilege-group.list
+DB_FILE=`tzplatform-get TZ_SYS_DB | cut -d= -f2`/.security-manager.db
 
 # Create default buckets
 while read bucket default_policy
@@ -28,7 +30,7 @@ PRIVACY_MANAGER MAIN
 END
 
 # Import user-type policies
-find "$USERTYPE_POLICY_PATH" -name "usertype-*.profile" |
+find "$POLICY_PATH" -name "usertype-*.profile" |
 while read file
 do
     bucket="`echo $file | sed -r 's|.*/usertype-(.*).profile$|USER_TYPE_\U\1|'`"
@@ -56,3 +58,15 @@ for client in User System
 do
     cyad --set-policy --bucket=MAIN --client="$client" --user="*" --privilege="*" --type=ALLOW
 done
+
+# Load privilege-group mappings
+(
+echo "BEGIN;"
+echo "DELETE FROM privilege_group;"
+grep -v '^#' "$PRIVILEGE_GROUP_MAPPING" |
+while read privilege group
+do
+    echo "INSERT INTO privilege_group_view (privilege_name, group_name) VALUES ('$privilege', '$group');"
+done
+echo "COMMIT;"
+) | sqlite3 "$DB_FILE"

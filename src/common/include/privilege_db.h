@@ -80,7 +80,7 @@ private:
         { QueryType::ERemoveAppPrivileges, "DELETE FROM app_privilege_view WHERE app_name=? AND uid=?" },
         { QueryType::EPkgIdExists, "SELECT * FROM pkg WHERE name=?" },
         { QueryType::EGetPkgId, " SELECT pkg_name FROM app_pkg_view WHERE app_name = ?" },
-        { QueryType::EGetPrivilegeGroups, " SELECT name FROM privilege_group_view WHERE privilege_name = ?" },
+        { QueryType::EGetPrivilegeGroups, " SELECT group_name FROM privilege_group_view WHERE privilege_name = ?" },
         { QueryType::EGetUserApps, "SELECT name FROM app WHERE uid=?" },
         { QueryType::EGetAppsInPkg, " SELECT app_name FROM app_pkg_view WHERE pkg_name = ?" },
     };
