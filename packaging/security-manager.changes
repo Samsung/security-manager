@@ -1,3 +1,36 @@
+* Fri Mar 06 2015 Rafal Krypa <r.krypa@samsung.com>
+- Version 1.0.0
+- User management
+  - Support for managing policy per user
+  - Interface for registering user creation and removal
+  - Hook-based Integration with gumd for user creation/removal events
+  - Initial user policy based on user type (guest, normal, admin)
+  - Initial configuration of user type policy granting all privileges to every
+    user type
+- API for managing per-user policy
+  - Support for user-admin-like interface for tuning per-user policy by
+    administrator
+  - Support for privacy-manager-like interface for users limiting their own
+    applications
+- Off-line mode supporting limited functionality when service is not running
+  - Application installation
+  - User creation
+- Command line tool wrapping some of security-manager's APIs
+  - Registration of application installation and deinstallation with privileges
+    and application paths
+  - Registration of user creation/removal (for gumd integration mentioned above)
+- Enhanced configuration of Cynara policy
+  - Structured policy based on several buckets
+  - Initial policy created on security-manager installation
+  - Programs with "User" and "System" labels get access to all privileges (with
+    regard to per-user policy)
+- Easier setup of privilege-group mapping
+  - A config file with the mapping and command line tool for importing it to
+    security-manager
+- Smack labeling for applications in final form
+  - No longer hard-code labels of all applications to "User"
+  - Each application gets unique Smack label based on appId
+
 * Tue Sep 18 2014 Rafal Krypa <r.krypa@samsung.com>
 - Version 0.2.0
 - No longer use libprivilege-control
