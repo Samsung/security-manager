@@ -56,7 +56,7 @@ done
 # Non-application programs get access to all privileges
 for client in User System
 do
-    cyad --set-policy --bucket=MAIN --client="$client" --user="*" --privilege="*" --type=ALLOW
+    cyad --set-policy --bucket=MANIFESTS --client="$client" --user="*" --privilege="*" --type=ALLOW
 done
 
 # Load privilege-group mappings
