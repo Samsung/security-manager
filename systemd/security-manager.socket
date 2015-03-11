@@ -7,9 +7,5 @@ SmackLabelIPOut=@
 # TODO: move to separate systemd service
 Service=security-manager.service
 
-[Unit]
-Wants=security-manager.target
-Before=security-manager.target
-
 [Install]
 WantedBy=sockets.target
