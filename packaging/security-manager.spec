@@ -50,6 +50,8 @@ Summary:    Security manager policy
 Group:      Security/Access Control
 Requires(post): security-manager = %{version}-%{release}
 Requires(post): cyad
+Requires(post): sqlite
+Requires(post): tizen-platform-config-tools
 
 %description policy
 Set of security rules that constitute security policy in the system
