@@ -35,6 +35,12 @@ ClientOffline::ClientOffline()
 {
     offlineMode = false;
     serviceLock = nullptr;
+
+    if (geteuid()) {
+        LogInfo("UID != 0, attempting only on-line mode.");
+        return;
+    }
+
     try {
         serviceLock = new SecurityManager::FileLocker(SecurityManager::SERVICE_LOCK_FILE, false);
         if (serviceLock->Locked()) {
@@ -53,7 +59,8 @@ ClientOffline::ClientOffline()
                 LogInfo("Service seems to be running now.");
         }
     } catch (...) {
-        /* Ignore exceptions, assume on-line */
+        LogError("Cannot detect off-line mode by lock.");
+        offlineMode = false;
     }
 
     if (offlineMode)

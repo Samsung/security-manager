@@ -41,18 +41,11 @@ FileLocker::FileLocker(const std::string &lockFile, bool blocking)
         ThrowMsg(FileLocker::Exception::LockFailed,
                  "File name can not be empty.");
     }
-    try {
-        m_locked = false;
-        m_blocking = blocking;
-        m_lockFile = lockFile;
-        Lock();
-    } catch (FileLocker::Exception::Base &e) {
-        LogError("Failed to lock " << lockFile << " file: "
-                 << e.DumpToString());
-        ThrowMsg(FileLocker::Exception::LockFailed,
-                 "Failed to lock " << lockFile << " file: "
-                 << e.DumpToString());
-    }
+
+    m_locked = false;
+    m_blocking = blocking;
+    m_lockFile = lockFile;
+    Lock();
 }
 
 FileLocker::~FileLocker()
@@ -69,9 +62,11 @@ void FileLocker::Lock()
 {
     if (m_locked)
         return;
+
     try {
-        if (!std::ifstream(m_lockFile).good())
-            std::ofstream(m_lockFile.c_str());
+        std::ofstream tmpf(m_lockFile);
+        tmpf.close();
+
         m_flock = boost::interprocess::file_lock(m_lockFile.c_str());
         if (m_blocking) {
             m_flock.lock();
@@ -79,19 +74,15 @@ void FileLocker::Lock()
         } else
             m_locked = m_flock.try_lock();
     } catch (const std::exception &e) {
-            ThrowMsg(FileLocker::Exception::LockFailed,
-                     "Error while locking a file.");
+        LogError("Error while locking a file: " << e.what());
+        ThrowMsg(FileLocker::Exception::LockFailed,
+                 "Error while locking a file: " << e.what());
     }
-    if (m_locked) {
+
+    if (m_locked)
         LogDebug("We have a lock on " << m_lockFile << " file.");
-    } else {
-        if (m_blocking) {
-            ThrowMsg(FileLocker::Exception::LockFailed,
-                     "Unable to lock file.");
-        } else {
-            LogDebug("Impossible to lock a file now.");
-        }
-    }
+    else
+        LogDebug("Impossible to lock a file now.");
 }
 
 void FileLocker::Unlock()
