@@ -5,7 +5,7 @@ includedir=${prefix}/include
 
 Name: security-manager
 Description: Security Manager Package
-Version: 1.0.0
+Version: 1.0.1
 Requires:
 Libs: -L${libdir} -lsecurity-manager-client
 Cflags: -I${includedir}/security-manager
