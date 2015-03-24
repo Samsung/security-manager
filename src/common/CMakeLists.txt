@@ -3,7 +3,7 @@ SET(COMMON_VERSION ${COMMON_VERSION_MAJOR}.0.2)
 
 PKG_CHECK_MODULES(COMMON_DEP
     REQUIRED
-    libsystemd-journal
+    libsystemd
     libsmack
     db-util
     cynara-admin

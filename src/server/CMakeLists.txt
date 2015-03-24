@@ -1,6 +1,6 @@
 PKG_CHECK_MODULES(SERVER_DEP
     REQUIRED
-    libsystemd-daemon
+    libsystemd
     cynara-client
     )
 
