@@ -1,3 +1,7 @@
+* Wed Mar 25 2015 Jacek Bukarewicz <j.bukarewicz@samsung.com>
+- Version 1.0.2
+- Work around application installation problems on slow targets
+
 * Fri Mar 20 2015 Rafal Krypa <r.krypa@samsung.com>
 - Version 1.0.1
 - Bug-fix release, no new features.
