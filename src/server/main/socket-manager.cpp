@@ -48,7 +48,7 @@
 
 namespace {
 
-const time_t SOCKET_TIMEOUT = 20;
+const time_t SOCKET_TIMEOUT = 300;
 
 } // namespace anonymous
 
