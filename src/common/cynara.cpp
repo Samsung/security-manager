@@ -249,6 +249,11 @@ CynaraAdmin &CynaraAdmin::getInstance()
 
 void CynaraAdmin::SetPolicies(const std::vector<CynaraAdminPolicy> &policies)
 {
+    if (policies.empty()) {
+        LogDebug("no policies to set in Cynara.");
+        return;
+    }
+
     std::vector<const struct cynara_admin_policy *> pp_policies(policies.size() + 1);
 
     LogDebug("Sending " << policies.size() << " policies to Cynara");
