@@ -212,12 +212,20 @@ static bool checkCynaraError(int result, const std::string &msg)
             return true;
         case CYNARA_API_ACCESS_DENIED:
             return false;
+        case CYNARA_API_MAX_PENDING_REQUESTS:
+            ThrowMsg(CynaraException::MaxPendingRequests, msg);
         case CYNARA_API_OUT_OF_MEMORY:
             ThrowMsg(CynaraException::OutOfMemory, msg);
         case CYNARA_API_INVALID_PARAM:
             ThrowMsg(CynaraException::InvalidParam, msg);
         case CYNARA_API_SERVICE_NOT_AVAILABLE:
             ThrowMsg(CynaraException::ServiceNotAvailable, msg);
+        case CYNARA_API_METHOD_NOT_SUPPORTED:
+            ThrowMsg(CynaraException::MethodNotSupported, msg);
+        case CYNARA_API_OPERATION_NOT_ALLOWED:
+            ThrowMsg(CynaraException::OperationNotAllowed, msg);
+        case CYNARA_API_OPERATION_FAILED:
+            ThrowMsg(CynaraException::OperationFailed, msg);
         case CYNARA_API_BUCKET_NOT_FOUND:
             ThrowMsg(CynaraException::BucketNotFound, msg);
         default:

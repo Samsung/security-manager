@@ -51,11 +51,15 @@ class CynaraException
 {
 public:
     DECLARE_EXCEPTION_TYPE(SecurityManager::Exception, Base)
+    DECLARE_EXCEPTION_TYPE(Base, MaxPendingRequests)
     DECLARE_EXCEPTION_TYPE(Base, OutOfMemory)
     DECLARE_EXCEPTION_TYPE(Base, InvalidParam)
     DECLARE_EXCEPTION_TYPE(Base, ServiceNotAvailable)
-    DECLARE_EXCEPTION_TYPE(Base, UnknownError)
+    DECLARE_EXCEPTION_TYPE(Base, MethodNotSupported)
+    DECLARE_EXCEPTION_TYPE(Base, OperationNotAllowed)
+    DECLARE_EXCEPTION_TYPE(Base, OperationFailed)
     DECLARE_EXCEPTION_TYPE(Base, BucketNotFound)
+    DECLARE_EXCEPTION_TYPE(Base, UnknownError)
 };
 
 struct CynaraAdminPolicy : cynara_admin_policy
