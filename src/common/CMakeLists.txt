@@ -7,7 +7,7 @@ PKG_CHECK_MODULES(COMMON_DEP
     libsmack
     db-util
     cynara-admin
-    cynara-client
+    cynara-client-async
     )
 
 FIND_PACKAGE(Boost REQUIRED)

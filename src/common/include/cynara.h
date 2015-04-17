@@ -24,12 +24,18 @@
 #ifndef _SECURITY_MANAGER_CYNARA_
 #define _SECURITY_MANAGER_CYNARA_
 
-#include <cynara-client.h>
+#include <cynara-client-async.h>
 #include <cynara-admin.h>
 #include <dpl/exception.h>
 #include <string>
 #include <vector>
 #include <map>
+#include <mutex>
+#include <thread>
+#include <future>
+
+#include <poll.h>
+#include <sys/eventfd.h>
 
 #include "security-manager.h"
 
@@ -293,7 +299,7 @@ private:
 class Cynara
 {
 public:
-    virtual ~Cynara();
+    ~Cynara();
 
     static Cynara &getInstance();
 
@@ -311,9 +317,24 @@ public:
 
 private:
     Cynara();
-    struct cynara *m_Cynara;
-};
 
+    static void statusCallback(int oldFd, int newFd,
+        cynara_async_status status, void *ptr);
+
+    static void responseCallback(cynara_check_id checkId,
+        cynara_async_call_cause cause, int response, void *ptr);
+
+    void run();
+
+    void threadNotifyPut();
+    void threadNotifyGet();
+
+    cynara_async *cynara;
+    struct pollfd pollFds[2];
+    std::mutex mutex;
+    std::thread thread;
+    std::atomic<bool> terminate{false};
+};
 
 } // namespace SecurityManager
 

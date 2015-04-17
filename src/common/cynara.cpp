@@ -544,14 +544,39 @@ int CynaraAdmin::GetPrivilegeManagerMaxLevel(const std::string &label, const std
 
 Cynara::Cynara()
 {
+    int ret;
+
+    ret = eventfd(0, 0);
+    if (ret == -1) {
+        LogError("Error while creating eventfd: " << strerror(errno));
+        ThrowMsg(CynaraException::UnknownError, "Error while creating eventfd");
+    }
+
+    // Poll the eventfd for reading
+    pollFds[0].fd = ret;
+    pollFds[0].events = POLLIN;
+
+    // Temporary, will be replaced by cynara fd when available
+    pollFds[1].fd = pollFds[0].fd;
+    pollFds[1].events = 0;
+
     checkCynaraError(
-        cynara_initialize(&m_Cynara, nullptr),
+        cynara_async_initialize(&cynara, nullptr, &Cynara::statusCallback, &(pollFds[1])),
         "Cannot connect to Cynara policy interface.");
+
+    thread = std::thread(&Cynara::run, this);
 }
 
 Cynara::~Cynara()
 {
-    cynara_finish(m_Cynara);
+    LogDebug("Sending terminate event to Cynara thread");
+    terminate.store(true);
+    threadNotifyPut();
+    thread.join();
+
+    // Critical section
+    std::lock_guard<std::mutex> guard(mutex);
+    cynara_async_finish(cynara);
 }
 
 Cynara &Cynara::getInstance()
@@ -560,13 +585,150 @@ Cynara &Cynara::getInstance()
     return cynara;
 }
 
+void Cynara::threadNotifyPut()
+{
+    int ret = eventfd_write(pollFds[0].fd, 1);
+    if (ret == -1)
+        LogError("Unexpected error while writing to eventfd: " << strerror(errno));
+}
+
+void Cynara::threadNotifyGet()
+{
+    eventfd_t value;
+    int ret = eventfd_read(pollFds[0].fd, &value);
+    if (ret == -1)
+        LogError("Unexpected error while reading from eventfd: " << strerror(errno));
+}
+
+void Cynara::statusCallback(int oldFd, int newFd, cynara_async_status status,
+    void *ptr)
+{
+    auto cynaraFd = static_cast<struct pollfd *>(ptr);
+
+    LogDebug("Cynara status callback. " <<
+        "Status = " << status << ", oldFd = " << oldFd << ", newFd = " << newFd);
+
+    if (newFd == -1) {
+        cynaraFd->events = 0;
+    } else {
+        cynaraFd->fd = newFd;
+
+        switch (status) {
+        case CYNARA_STATUS_FOR_READ:
+            cynaraFd->events = POLLIN;
+            break;
+
+        case CYNARA_STATUS_FOR_RW:
+            cynaraFd->events = POLLIN | POLLOUT;
+            break;
+        }
+    }
+}
+
+void Cynara::responseCallback(cynara_check_id checkId,
+    cynara_async_call_cause cause, int response, void *ptr)
+{
+    LogDebug("Response for received for Cynara check id: " << checkId);
+
+    auto promise = static_cast<std::promise<bool>*>(ptr);
+
+    switch (cause) {
+    case CYNARA_CALL_CAUSE_ANSWER:
+        LogDebug("Cynara cause: ANSWER: " << response);
+        promise->set_value(response);
+        break;
+
+    case CYNARA_CALL_CAUSE_CANCEL:
+        LogDebug("Cynara cause: CANCEL");
+        promise->set_value(CYNARA_API_ACCESS_DENIED);
+        break;
+
+    case CYNARA_CALL_CAUSE_FINISH:
+        LogDebug("Cynara cause: FINISH");
+        promise->set_value(CYNARA_API_ACCESS_DENIED);
+        break;
+
+    case CYNARA_CALL_CAUSE_SERVICE_NOT_AVAILABLE:
+        LogError("Cynara cause: SERVICE_NOT_AVAILABLE");
+
+        try {
+            ThrowMsg(CynaraException::ServiceNotAvailable,
+                "Cynara service not available");
+        } catch (...) {
+            promise->set_exception(std::current_exception());
+        }
+        break;
+    }
+}
+
+void Cynara::run()
+{
+    LogInfo("Cynara thread started");
+    while (true) {
+        int ret = poll(pollFds, 2, -1);
+        if (ret == -1) {
+            if (errno != EINTR)
+                LogError("Unexpected error returned by poll: " << strerror(errno));
+            continue;
+        }
+
+        // Check eventfd for termination signal
+        if (pollFds[0].revents) {
+            threadNotifyGet();
+            if (terminate.load()) {
+                LogInfo("Cynara thread terminated");
+                return;
+            }
+        }
+
+        // Check if Cynara fd is ready for processing
+        try {
+            if (pollFds[1].revents) {
+                // Critical section
+                std::lock_guard<std::mutex> guard(mutex);
+
+                checkCynaraError(cynara_async_process(cynara),
+                    "Unexpected error returned by cynara_async_process");
+            }
+        } catch (const CynaraException::Base &e) {
+            LogError("Error while processing Cynara events: " << e.DumpToString());
+        }
+    }
+}
+
 bool Cynara::check(const std::string &label, const std::string &privilege,
         const std::string &user, const std::string &session)
 {
-    return checkCynaraError(
-        cynara_check(m_Cynara,
-            label.c_str(), session.c_str(), user.c_str(), privilege.c_str()),
-        "Cannot check permission with Cynara.");
+    LogDebug("check: client = " << label << ", user = " << user <<
+        ", privilege = " << privilege << ", session = " << session);
+
+    std::promise<bool> promise;
+    auto future = promise.get_future();
+
+    // Critical section
+    {
+        std::lock_guard<std::mutex> guard(mutex);
+
+        int ret = cynara_async_check_cache(cynara,
+            label.c_str(), session.c_str(), user.c_str(), privilege.c_str());
+
+        if (ret != CYNARA_API_CACHE_MISS)
+            return checkCynaraError(ret, "Error while checking Cynara cache");
+
+        LogDebug("Cynara cache miss");
+
+        cynara_check_id check_id;
+        checkCynaraError(
+            cynara_async_create_request(cynara,
+                label.c_str(), session.c_str(), user.c_str(), privilege.c_str(),
+                &check_id, &Cynara::responseCallback, &promise),
+            "Cannot check permission with Cynara.");
+
+        threadNotifyPut();
+        LogDebug("Waiting for response to Cynara query id " << check_id);
+    }
+
+    return future.get();
 }
 
 } // namespace SecurityManager
