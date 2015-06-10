@@ -1,6 +1,7 @@
 PKG_CHECK_MODULES(SERVER_DEP
     REQUIRED
     libsystemd-daemon
+    libtzplatform-config
     cynara-client
     )
 
