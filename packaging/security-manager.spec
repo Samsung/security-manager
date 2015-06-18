@@ -48,6 +48,7 @@ Development files needed for using the security manager client
 %package policy
 Summary:    Security manager policy
 Group:      Security/Access Control
+Requires:   sed
 Requires(post): security-manager = %{version}-%{release}
 Requires(post): cyad
 Requires(post): sqlite
