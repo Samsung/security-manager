@@ -154,6 +154,9 @@ bool Service::processOne(const ConnectionID &conn, MessageBuffer &buffer,
                 case SecurityModuleCall::POLICY_GET_DESCRIPTIONS:
                     processPolicyGetDesc(send);
                     break;
+                case SecurityModuleCall::GET_PRIVILEGES_MAPPING:
+                    processPrivilegesMappings(buffer, send);
+                    break;
                 default:
                     LogError("Invalid call: " << call_type_int);
                     Throw(ServiceException::InvalidAction);
@@ -333,6 +336,20 @@ void Service::processPolicyGetDesc(MessageBuffer &send)
             Serialization::Serialize(send, descriptions[i]);
         }
     }
+}
+
+void Service::processPrivilegesMappings(MessageBuffer &recv, MessageBuffer &send)
+{
+    std::vector<std::string> privileges;
+    std::string version_from, version_to;
+    Deserialization::Deserialize(recv, version_from);
+    Deserialization::Deserialize(recv, version_to);
+    Deserialization::Deserialize(recv, privileges);
+
+    int ret = SECURITY_MANAGER_API_SUCCESS;
+    std::vector<std::string> mappings;
+    Serialization::Serialize(send, ret);
+    Serialization::Serialize(send, mappings);
 }
 
 } // namespace SecurityManager
