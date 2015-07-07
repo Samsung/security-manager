@@ -232,6 +232,18 @@ void SqlConnection::DataCommand::BindString(
     BindString(position, ToUTF8String(value).c_str());
 }
 
+void SqlConnection::DataCommand::BindString(
+        SqlConnection::ArgumentIndex position,
+        const std::string& value)
+{
+    CheckBindResult(sqlite3_bind_text(m_stmt, position,
+                                      value.c_str(), value.length(),
+                                      SQLITE_TRANSIENT));
+
+    LogPedantic("SQL data command bind string: ["
+                << position << "] -> " << value);
+}
+
 void SqlConnection::DataCommand::BindInteger(
     SqlConnection::ArgumentIndex position,
     const boost::optional<int> &value)

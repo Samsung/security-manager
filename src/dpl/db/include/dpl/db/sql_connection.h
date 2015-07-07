@@ -159,6 +159,14 @@ class SqlConnection
         void BindString(ArgumentIndex position, const String& value);
 
         /**
+         * Bind string to the prepared statement argument
+         *
+         * @param position Index of argument to bind value to
+         * @param value Value to bind
+         */
+        void BindString(ArgumentIndex position, const std::string& value);
+
+        /**
          * Bind optional int to the prepared statement argument.
          * If optional is not set null will be bound
          *
