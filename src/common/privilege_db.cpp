@@ -76,7 +76,7 @@ void PrivilegeDb::initDataCommands()
     }
 }
 
-DB::SqlConnection::DataCommandAutoPtr & PrivilegeDb::getQuery(QueryType queryType)
+DB::SqlConnection::DataCommandAutoPtr & PrivilegeDb::getStatement(StmtType queryType)
 {
     auto &command = m_commands.at(static_cast<size_t>(queryType));
     command->Reset();
@@ -119,7 +119,7 @@ void PrivilegeDb::RollbackTransaction(void)
 bool PrivilegeDb::PkgIdExists(const std::string &pkgId)
 {
     return try_catch<bool>([&] {
-        auto &command = getQuery(QueryType::EPkgIdExists);
+        auto &command = getStatement(StmtType::EPkgIdExists);
         command->BindString(1, pkgId);
         return command->Step();
     });
@@ -128,7 +128,7 @@ bool PrivilegeDb::PkgIdExists(const std::string &pkgId)
 bool PrivilegeDb::GetAppPkgId(const std::string &appId, std::string &pkgId)
 {
     return try_catch<bool>([&] {
-        auto &command = getQuery(QueryType::EGetPkgId);
+        auto &command = getStatement(StmtType::EGetPkgId);
         command->BindString(1, appId);
 
         if (!command->Step()) {
@@ -147,14 +147,14 @@ void PrivilegeDb::AddApplication(const std::string &appId,
         const std::string &pkgId, uid_t uid)
 {
     try_catch<void>([&] {
-        auto &command = getQuery(QueryType::EAddApplication);
+        auto &command = getStatement(StmtType::EAddApplication);
         command->BindString(1, appId);
         command->BindString(2, pkgId);
         command->BindInteger(3, static_cast<unsigned int>(uid));
 
         if (command->Step()) {
             LogDebug("Unexpected SQLITE_ROW answer to query: " <<
-                    Queries.at(QueryType::EAddApplication));
+                    Queries.at(StmtType::EAddApplication));
         };
 
         LogDebug("Added appId: " << appId << ", pkgId: " << pkgId);
@@ -171,13 +171,13 @@ void PrivilegeDb::RemoveApplication(const std::string &appId, uid_t uid,
             return;
         }
 
-        auto &command = getQuery(QueryType::ERemoveApplication);
+        auto &command = getStatement(StmtType::ERemoveApplication);
         command->BindString(1, appId);
         command->BindInteger(2, static_cast<unsigned int>(uid));
 
         if (command->Step()) {
             LogDebug("Unexpected SQLITE_ROW answer to query: " <<
-                    Queries.at(QueryType::ERemoveApplication));
+                    Queries.at(StmtType::ERemoveApplication));
         };
 
         LogDebug("Removed appId: " << appId);
@@ -190,7 +190,7 @@ void PrivilegeDb::GetPkgPrivileges(const std::string &pkgId, uid_t uid,
         std::vector<std::string> &currentPrivileges)
 {
     try_catch<void>([&] {
-        auto &command = getQuery(QueryType::EGetPkgPrivileges);
+        auto &command = getStatement(StmtType::EGetPkgPrivileges);
         command->BindString(1, pkgId);
         command->BindInteger(2, static_cast<unsigned int>(uid));
 
@@ -207,7 +207,7 @@ void PrivilegeDb::GetAppPrivileges(const std::string &appId, uid_t uid,
 {
     try_catch<void>([&] {
         DB::SqlConnection::DataCommandAutoPtr &command =
-                m_commands.at(static_cast<size_t>(QueryType::EGetAppPrivileges));
+                m_commands.at(static_cast<size_t>(StmtType::EGetAppPrivileges));
 
         command->Reset();
         command->BindString(1, appId);
@@ -225,12 +225,12 @@ void PrivilegeDb::GetAppPrivileges(const std::string &appId, uid_t uid,
 void PrivilegeDb::RemoveAppPrivileges(const std::string &appId, uid_t uid)
 {
     try_catch<void>([&] {
-        auto &command = getQuery(QueryType::ERemoveAppPrivileges);
+        auto &command = getStatement(StmtType::ERemoveAppPrivileges);
         command->BindString(1, appId);
         command->BindInteger(2, static_cast<unsigned int>(uid));
         if (command->Step()) {
             LogDebug("Unexpected SQLITE_ROW answer to query: " <<
-                    Queries.at(QueryType::ERemoveAppPrivileges));
+                    Queries.at(StmtType::ERemoveAppPrivileges));
         }
 
         LogDebug("Removed all privileges for appId: " << appId);
@@ -241,7 +241,7 @@ void PrivilegeDb::UpdateAppPrivileges(const std::string &appId, uid_t uid,
         const std::vector<std::string> &privileges)
 {
     try_catch<void>([&] {
-        auto &command = getQuery(QueryType::EAddAppPrivileges);
+        auto &command = getStatement(StmtType::EAddAppPrivileges);
         command->BindString(1, appId);
         command->BindInteger(2, static_cast<unsigned int>(uid));
 
@@ -260,7 +260,7 @@ void PrivilegeDb::GetPrivilegeGroups(const std::string &privilege,
         std::vector<std::string> &groups)
 {
    try_catch<void>([&] {
-        auto &command = getQuery(QueryType::EGetPrivilegeGroups);
+        auto &command = getStatement(StmtType::EGetPrivilegeGroups);
         command->BindString(1, privilege);
 
         while (command->Step()) {
@@ -274,7 +274,7 @@ void PrivilegeDb::GetPrivilegeGroups(const std::string &privilege,
 void PrivilegeDb::GetUserApps(uid_t uid, std::vector<std::string> &apps)
 {
    try_catch<void>([&] {
-        auto &command = getQuery(QueryType::EGetUserApps);
+        auto &command = getStatement(StmtType::EGetUserApps);
         command->BindInteger(1, static_cast<unsigned int>(uid));
         apps.clear();
         while (command->Step()) {
@@ -290,7 +290,7 @@ void PrivilegeDb::GetAppIdsForPkgId(const std::string &pkgId,
 {
     try_catch<void>([&] {
         DB::SqlConnection::DataCommandAutoPtr &command =
-                m_commands.at(static_cast<size_t>(QueryType::EGetAppsInPkg));
+                m_commands.at(static_cast<size_t>(StmtType::EGetAppsInPkg));
 
         command->Reset();
         command->BindString(1, pkgId);
@@ -301,6 +301,81 @@ void PrivilegeDb::GetAppIdsForPkgId(const std::string &pkgId,
             LogDebug ("Got appid: " << appId << " for pkgId " << pkgId);
             appIds.push_back(appId);
         };
+    });
+}
+
+void PrivilegeDb::GetDefaultMapping(const std::string &version_from,
+                                    const std::string &version_to,
+                                    std::vector<std::string> &mappings)
+{
+    try_catch<void>([&] {
+        auto &command = getStatement(StmtType::EGetDefaultMappings);
+        command->BindString(1, version_from);
+        command->BindString(2, version_to);
+
+        mappings.clear();
+        while (command->Step()) {
+            std::string mapping = command->GetColumnString(0);
+            LogDebug("Default Privilege from version " << version_from
+                    <<" to version " << version_to << " is " << mapping);
+            mappings.push_back(mapping);
+        }
+    });
+}
+
+void PrivilegeDb::GetPrivilegeMappings(const std::string &version_from,
+                                       const std::string &version_to,
+                                       const std::string &privilege,
+                                       std::vector<std::string> &mappings)
+{
+    try_catch<void>([&] {
+        auto &command = getStatement(StmtType::EGetPrivilegeMappings);
+        command->BindString(1, version_from);
+        command->BindString(2, version_to);
+        command->BindString(3, privilege);
+
+        mappings.clear();
+        while (command->Step()) {
+            std::string mapping = command->GetColumnString(0);
+            LogDebug("Privilege " << privilege << " in version " << version_from
+                    <<" has mapping " << mapping << " in version " << version_to);
+            mappings.push_back(mapping);
+        }
+    });
+}
+
+void PrivilegeDb::GetPrivilegesMappings(const std::string &version_from,
+                                        const std::string &version_to,
+                                        const std::vector<std::string> &privileges,
+                                        std::vector<std::string> &mappings)
+{
+    try_catch<void>([&] {
+        auto &deleteCmd = getStatement(StmtType::EDeletePrivilegesToMap);
+        deleteCmd->Step();
+
+        auto & insertCmd = getStatement(StmtType::EInsertPrivilegeToMap);
+        for (auto &privilege : privileges) {
+            if (privilege.empty())
+                continue;
+            insertCmd->BindString(1, privilege);
+            insertCmd->Step();
+            insertCmd->Reset();
+        }
+
+        insertCmd->BindNull(1);
+        insertCmd->Step();
+
+        auto &queryCmd = getStatement(StmtType::EGetPrivilegesMappings);
+        queryCmd->BindString(1, version_from);
+        queryCmd->BindString(2, version_to);
+
+        mappings.clear();
+        while (queryCmd->Step()) {
+            std::string mapping = queryCmd->GetColumnString(0);
+            LogDebug("Privilege set  in version " << version_from
+                     <<" has mapping " << mapping << " in version " << version_to);
+             mappings.push_back(mapping);
+        }
     });
 }
 

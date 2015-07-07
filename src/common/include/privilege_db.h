@@ -23,6 +23,7 @@
  * @file        privilege_db.h
  * @author      Krzysztof Sasiak <k.sasiak@samsung.com>
  * @author      Rafal Krypa <r.krypa@samsung.com>
+ * @author      Zofia Abramowska <z.abramowska@samsung.com>
  * @version     1.0
  * @brief       This file contains declaration of the API to privilges database.
  */
@@ -43,7 +44,7 @@ namespace SecurityManager {
 
 const char *const PRIVILEGE_DB_PATH = tzplatform_mkpath(TZ_SYS_DB, ".security-manager.db");
 
-enum class QueryType {
+enum class StmtType {
     EGetPkgPrivileges,
     EGetAppPrivileges,
     EAddApplication,
@@ -54,7 +55,12 @@ enum class QueryType {
     EGetPkgId,
     EGetPrivilegeGroups,
     EGetUserApps,
-    EGetAppsInPkg
+    EGetAppsInPkg,
+    EGetDefaultMappings,
+    EGetPrivilegeMappings,
+    EInsertPrivilegeToMap,
+    EGetPrivilegesMappings,
+    EDeletePrivilegesToMap
 };
 
 class PrivilegeDb {
@@ -71,18 +77,27 @@ private:
     PrivilegeDb(const std::string &path = std::string(PRIVILEGE_DB_PATH));
 
     SecurityManager::DB::SqlConnection *mSqlConnection;
-    const std::map<QueryType, const char * const > Queries = {
-        { QueryType::EGetPkgPrivileges, "SELECT DISTINCT privilege_name FROM app_privilege_view WHERE pkg_name=? AND uid=? ORDER BY privilege_name"},
-        { QueryType::EGetAppPrivileges, "SELECT DISTINCT privilege_name FROM app_privilege_view WHERE app_name=? AND uid=? ORDER BY privilege_name"},
-        { QueryType::EAddApplication, "INSERT INTO app_pkg_view (app_name, pkg_name, uid) VALUES (?, ?, ?)" },
-        { QueryType::ERemoveApplication, "DELETE FROM app_pkg_view WHERE app_name=? AND uid=?" },
-        { QueryType::EAddAppPrivileges, "INSERT INTO app_privilege_view (app_name, uid, privilege_name) VALUES (?, ?, ?)" },
-        { QueryType::ERemoveAppPrivileges, "DELETE FROM app_privilege_view WHERE app_name=? AND uid=?" },
-        { QueryType::EPkgIdExists, "SELECT * FROM pkg WHERE name=?" },
-        { QueryType::EGetPkgId, " SELECT pkg_name FROM app_pkg_view WHERE app_name = ?" },
-        { QueryType::EGetPrivilegeGroups, " SELECT group_name FROM privilege_group_view WHERE privilege_name = ?" },
-        { QueryType::EGetUserApps, "SELECT name FROM app WHERE uid=?" },
-        { QueryType::EGetAppsInPkg, " SELECT app_name FROM app_pkg_view WHERE pkg_name = ?" },
+    const std::map<StmtType, const char * const > Queries = {
+        { StmtType::EGetPkgPrivileges, "SELECT DISTINCT privilege_name FROM app_privilege_view WHERE pkg_name=? AND uid=? ORDER BY privilege_name"},
+        { StmtType::EGetAppPrivileges, "SELECT DISTINCT privilege_name FROM app_privilege_view WHERE app_name=? AND uid=? ORDER BY privilege_name"},
+        { StmtType::EAddApplication, "INSERT INTO app_pkg_view (app_name, pkg_name, uid) VALUES (?, ?, ?)" },
+        { StmtType::ERemoveApplication, "DELETE FROM app_pkg_view WHERE app_name=? AND uid=?" },
+        { StmtType::EAddAppPrivileges, "INSERT INTO app_privilege_view (app_name, uid, privilege_name) VALUES (?, ?, ?)" },
+        { StmtType::ERemoveAppPrivileges, "DELETE FROM app_privilege_view WHERE app_name=? AND uid=?" },
+        { StmtType::EPkgIdExists, "SELECT * FROM pkg WHERE name=?" },
+        { StmtType::EGetPkgId, " SELECT pkg_name FROM app_pkg_view WHERE app_name = ?" },
+        { StmtType::EGetPrivilegeGroups, " SELECT group_name FROM privilege_group_view WHERE privilege_name = ?" },
+        { StmtType::EGetUserApps, "SELECT name FROM app WHERE uid=?" },
+        { StmtType::EGetDefaultMappings, "SELECT DISTINCT privilege_mapping_name FROM privilege_mapping_view"
+                                         " WHERE version_from_name=? AND version_to_name=? AND privilege_name IS NULL"},
+        { StmtType::EGetAppsInPkg, " SELECT app_name FROM app_pkg_view WHERE pkg_name = ?" },
+        { StmtType::EGetPrivilegeMappings, " SELECT DISTINCT privilege_mapping_name FROM privilege_mapping_view"
+                                           " WHERE version_from_name=? AND version_to_name=? AND (privilege_name=? OR privilege_name IS NULL)"},
+        { StmtType::EInsertPrivilegeToMap, " INSERT INTO privilege_to_map(privilege_name) VALUES (?);"},
+        { StmtType::EGetPrivilegesMappings, "SELECT DISTINCT privilege_mapping_name FROM privilege_mapping_view"
+                                            " WHERE version_from_name=? AND version_to_name=?"
+                                            " AND privilege_name IN (SELECT privilege_name FROM privilege_to_map)"},
+        { StmtType::EDeletePrivilegesToMap, "DELETE FROM privilege_to_map"},
     };
 
     /**
@@ -106,7 +121,7 @@ private:
      * @param queryType query identifier
      * @return reference to prepared, reset query
      */
-    DB::SqlConnection::DataCommandAutoPtr & getQuery(QueryType queryType);
+    DB::SqlConnection::DataCommandAutoPtr & getStatement(StmtType queryType);
 
     /**
      * Check if pkgId is already registered in database
@@ -255,6 +270,44 @@ public:
      */
     void GetAppIdsForPkgId (const std::string &pkgId,
         std::vector<std::string> &appIds);
+
+    /**
+     * Retrieve default mappings from one version to another
+     *
+     * @param version_from - version of privilege availability
+     * @param version_to - version of mappings availability
+     * @param[out] mappings - vector of privilege mappings
+     * @exception DB::SqlConnection::Exception::InternalError on internal error
+     */
+    void GetDefaultMapping(const std::string &version_from,
+                           const std::string &version_to,
+                           std::vector<std::string> &mappings);
+    /**
+     * Retrieve privilege mappings from one version to another
+     *
+     * @param version_from - version of privilege availability
+     * @param version_to - version of mappings availability
+     * @param privilege - name of privilege to be mapped
+     * @param[out] mappings - vector of privilege mappings
+     * @exception DB::SqlConnection::Exception::InternalError on internal error
+     */
+    void GetPrivilegeMappings(const std::string &version_from,
+                              const std::string &version_to,
+                              const std::string &privilege,
+                              std::vector<std::string> &mappings);
+    /**
+     * Retrieve mappings of privilege set from one version to another
+     *
+     * @param version_from - version of privilege availability
+     * @param version_to - version of mappings availability
+     * @param privileges - vector of names of privileges to be mapped
+     * @param[out] mappings - vector of privileges mappings
+     * @exception DB::SqlConnection::Exception::InternalError on internal error
+     */
+    void GetPrivilegesMappings(const std::string &version_from,
+                               const std::string &version_to,
+                               const std::vector<std::string> &privileges,
+                               std::vector<std::string> &mappings);
 };
 
 } //namespace SecurityManager
