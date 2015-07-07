@@ -120,7 +120,7 @@ bool PrivilegeDb::PkgIdExists(const std::string &pkgId)
 {
     return try_catch<bool>([&] {
         auto &command = getQuery(QueryType::EPkgIdExists);
-        command->BindString(1, pkgId.c_str());
+        command->BindString(1, pkgId);
         return command->Step();
     });
 }
@@ -129,7 +129,7 @@ bool PrivilegeDb::GetAppPkgId(const std::string &appId, std::string &pkgId)
 {
     return try_catch<bool>([&] {
         auto &command = getQuery(QueryType::EGetPkgId);
-        command->BindString(1, appId.c_str());
+        command->BindString(1, appId);
 
         if (!command->Step()) {
             // No application with such appId
@@ -148,8 +148,8 @@ void PrivilegeDb::AddApplication(const std::string &appId,
 {
     try_catch<void>([&] {
         auto &command = getQuery(QueryType::EAddApplication);
-        command->BindString(1, appId.c_str());
-        command->BindString(2, pkgId.c_str());
+        command->BindString(1, appId);
+        command->BindString(2, pkgId);
         command->BindInteger(3, static_cast<unsigned int>(uid));
 
         if (command->Step()) {
@@ -172,7 +172,7 @@ void PrivilegeDb::RemoveApplication(const std::string &appId, uid_t uid,
         }
 
         auto &command = getQuery(QueryType::ERemoveApplication);
-        command->BindString(1, appId.c_str());
+        command->BindString(1, appId);
         command->BindInteger(2, static_cast<unsigned int>(uid));
 
         if (command->Step()) {
@@ -191,7 +191,7 @@ void PrivilegeDb::GetPkgPrivileges(const std::string &pkgId, uid_t uid,
 {
     try_catch<void>([&] {
         auto &command = getQuery(QueryType::EGetPkgPrivileges);
-        command->BindString(1, pkgId.c_str());
+        command->BindString(1, pkgId);
         command->BindInteger(2, static_cast<unsigned int>(uid));
 
         while (command->Step()) {
@@ -210,7 +210,7 @@ void PrivilegeDb::GetAppPrivileges(const std::string &appId, uid_t uid,
                 m_commands.at(static_cast<size_t>(QueryType::EGetAppPrivileges));
 
         command->Reset();
-        command->BindString(1, appId.c_str());
+        command->BindString(1, appId);
         command->BindInteger(2, static_cast<unsigned int>(uid));
         currentPrivileges.clear();
 
@@ -226,7 +226,7 @@ void PrivilegeDb::RemoveAppPrivileges(const std::string &appId, uid_t uid)
 {
     try_catch<void>([&] {
         auto &command = getQuery(QueryType::ERemoveAppPrivileges);
-        command->BindString(1, appId.c_str());
+        command->BindString(1, appId);
         command->BindInteger(2, static_cast<unsigned int>(uid));
         if (command->Step()) {
             LogDebug("Unexpected SQLITE_ROW answer to query: " <<
@@ -242,13 +242,13 @@ void PrivilegeDb::UpdateAppPrivileges(const std::string &appId, uid_t uid,
 {
     try_catch<void>([&] {
         auto &command = getQuery(QueryType::EAddAppPrivileges);
-        command->BindString(1, appId.c_str());
+        command->BindString(1, appId);
         command->BindInteger(2, static_cast<unsigned int>(uid));
 
         RemoveAppPrivileges(appId, uid);
 
         for (const auto &privilege : privileges) {
-            command->BindString(3, privilege.c_str());
+            command->BindString(3, privilege);
             command->Step();
             command->Reset();
             LogDebug("Added privilege: " << privilege << " to appId: " << appId);
@@ -261,7 +261,7 @@ void PrivilegeDb::GetPrivilegeGroups(const std::string &privilege,
 {
    try_catch<void>([&] {
         auto &command = getQuery(QueryType::EGetPrivilegeGroups);
-        command->BindString(1, privilege.c_str());
+        command->BindString(1, privilege);
 
         while (command->Step()) {
             std::string groupName = command->GetColumnString(0);
@@ -293,7 +293,7 @@ void PrivilegeDb::GetAppIdsForPkgId(const std::string &pkgId,
                 m_commands.at(static_cast<size_t>(QueryType::EGetAppsInPkg));
 
         command->Reset();
-        command->BindString(1, pkgId.c_str());
+        command->BindString(1, pkgId);
         appIds.clear();
 
         while (command->Step()) {
