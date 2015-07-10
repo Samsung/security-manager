@@ -1,6 +1,5 @@
 PKG_CHECK_MODULES(CMD_DEP
     REQUIRED
-    libtzplatform-config
     )
 
 FIND_PACKAGE(Boost REQUIRED COMPONENTS program_options)

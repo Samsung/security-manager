@@ -8,6 +8,7 @@ PKG_CHECK_MODULES(COMMON_DEP
     db-util
     cynara-admin
     cynara-client-async
+    libtzplatform-config
     )
 
 FIND_PACKAGE(Boost REQUIRED)
