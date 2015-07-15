@@ -169,6 +169,19 @@ int getPolicy(const policy_entry &filter, uid_t uid, pid_t pid, const std::strin
  */
 int policyGetDesc(std::vector<std::string> &descriptions);
 
+/**
+ * Process getting privileges mappings from one version to another.
+ *
+ * @param[in] version_from version to be mapped from
+ * @param[in] version_to version to be mapped to
+ * @param[in] privileges vector of privileges to be mapped
+ * @param[out] mappings mappings of given privileges
+ */
+int getPrivilegesMappings(const std::string &version_from,
+                          const std::string &version_to,
+                          const std::vector<std::string> &privileges,
+                          std::vector<std::string> &mappings);
+
 } /* namespace ServiceImpl */
 } /* namespace SecurityManager */
 

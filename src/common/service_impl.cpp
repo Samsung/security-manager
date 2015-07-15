@@ -35,6 +35,7 @@
 #include <dpl/log/log.h>
 #include <tzplatform_config.h>
 
+#include <config.h>
 #include "protocols.h"
 #include "privilege_db.h"
 #include "cynara.h"
@@ -982,6 +983,52 @@ int policyGetDesc(std::vector<std::string> &levels)
     }
 
     return ret;
+}
+
+int getPrivilegesMappings(const std::string &version_from,
+                          const std::string &version_to,
+                          const std::vector<std::string> &privileges,
+                          std::vector<std::string> &mappings)
+{
+    int errorRet;
+    try {
+        std::string finalVersionTo;
+        if (version_to.empty()) {
+            finalVersionTo = Config::PRIVILEGE_VERSION;
+        } else {
+            finalVersionTo = version_to;
+        }
+
+        PrivilegeDb::getInstance().BeginTransaction();
+        if (privileges.size() == 0) {
+            PrivilegeDb::getInstance().GetDefaultMapping(version_from, finalVersionTo, mappings);
+        } else if ( privileges.size() == 1) {
+            PrivilegeDb::getInstance().GetPrivilegeMappings(version_from, finalVersionTo,
+                                                            privileges.front(), mappings);
+        } else {
+            PrivilegeDb::getInstance().GetPrivilegesMappings(version_from, finalVersionTo,
+                                                             privileges, mappings);
+        }
+        PrivilegeDb::getInstance().CommitTransaction();
+        return SECURITY_MANAGER_API_SUCCESS;
+    } catch (const PrivilegeDb::Exception::IOError &e) {
+        LogError("Cannot access application database: " << e.DumpToString());
+        errorRet = SECURITY_MANAGER_API_ERROR_SERVER_ERROR;
+    } catch (const PrivilegeDb::Exception::InternalError &e) {
+        LogError("Error while getting privilege mapping from database: " << e.DumpToString());
+        errorRet = SECURITY_MANAGER_API_ERROR_SERVER_ERROR;
+    } catch (const std::bad_alloc &e) {
+        LogError("Memory allocation failed: " << e.what());
+        errorRet = SECURITY_MANAGER_API_ERROR_OUT_OF_MEMORY;
+    } catch (const std::exception &e) {
+        LogError("Some exception thrown : " << e.what());
+        errorRet = SECURITY_MANAGER_API_ERROR_UNKNOWN;
+    } catch (...) {
+        LogError("Unknown exception thrown");
+        errorRet = SECURITY_MANAGER_API_ERROR_UNKNOWN;
+    }
+    PrivilegeDb::getInstance().RollbackTransaction();
+    return errorRet;
 }
 
 } /* namespace ServiceImpl */

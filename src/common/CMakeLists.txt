@@ -41,6 +41,7 @@ SET(COMMON_SOURCES
     ${DPL_PATH}/core/src/string.cpp
     ${DPL_PATH}/db/src/naive_synchronization_object.cpp
     ${DPL_PATH}/db/src/sql_connection.cpp
+    ${COMMON_PATH}/config.cpp
     ${COMMON_PATH}/connection.cpp
     ${COMMON_PATH}/cynara.cpp
     ${COMMON_PATH}/file-lock.cpp

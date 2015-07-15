@@ -346,8 +346,9 @@ void Service::processPrivilegesMappings(MessageBuffer &recv, MessageBuffer &send
     Deserialization::Deserialize(recv, version_to);
     Deserialization::Deserialize(recv, privileges);
 
-    int ret = SECURITY_MANAGER_API_SUCCESS;
     std::vector<std::string> mappings;
+    int ret = ServiceImpl::getPrivilegesMappings(version_from, version_to, privileges, mappings);
+
     Serialization::Serialize(send, ret);
     Serialization::Serialize(send, mappings);
 }
