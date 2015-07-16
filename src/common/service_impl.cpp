@@ -309,14 +309,6 @@ int appInstall(const app_inst_req &req, uid_t uid, bool isSlave)
         return SECURITY_MANAGER_API_ERROR_AUTHENTICATION_FAILED;
     }
 
-    // create null terminated array of strings for permissions
-    std::unique_ptr<const char *[]> pp_permissions(new const char* [req.privileges.size() + 1]);
-    for (size_t i = 0; i < req.privileges.size(); ++i) {
-        LogDebug("  Permission = " << req.privileges[i]);
-        pp_permissions[i] = req.privileges[i].c_str();
-    }
-    pp_permissions[req.privileges.size()] = nullptr;
-
     try {
         std::vector<std::string> oldAppPrivileges;
 
