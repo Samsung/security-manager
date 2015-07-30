@@ -76,6 +76,18 @@ private:
      */
     PrivilegeDb(const std::string &path = std::string(PRIVILEGE_DB_PATH));
 
+    /**
+     * Wrapper for prepared statement, it will reset statement at destruction.
+     */
+    class StatementWrapper {
+    public:
+        StatementWrapper(DB::SqlConnection::DataCommandAutoPtr &ref);
+        ~StatementWrapper();
+        DB::SqlConnection::DataCommand* operator->();
+    private:
+        DB::SqlConnection::DataCommandAutoPtr &m_ref;
+    };
+
     SecurityManager::DB::SqlConnection *mSqlConnection;
     const std::map<StmtType, const char * const > Queries = {
         { StmtType::EGetPkgPrivileges, "SELECT DISTINCT privilege_name FROM app_privilege_view WHERE pkg_name=? AND uid=? ORDER BY privilege_name"},
@@ -115,13 +127,13 @@ private:
     void initDataCommands();
 
     /**
-     * Return prepared query for given query type.
-     * The query will be reset before returning.
+     * Return wrapped prepared query for given query type.
+     * The query will be reset after wrapper destruction.
      *
      * @param queryType query identifier
-     * @return reference to prepared, reset query
+     * @return wrapped prepared query
      */
-    DB::SqlConnection::DataCommandAutoPtr & getStatement(StmtType queryType);
+    StatementWrapper getStatement(StmtType queryType);
 
     /**
      * Check if pkgId is already registered in database
