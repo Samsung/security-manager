@@ -211,6 +211,14 @@ struct Serialization {
     {
         Serialize(stream, *p);
     }
+
+    // serialize 'em all
+    template<typename T1, typename T2, typename... Tail>
+    static void Serialize(IStream& stream, const T1& first, const T2& second, const Tail&... tail)
+    {
+        Serialize(stream, first);
+        Serialize(stream, second, tail...);
+    }
 }; // struct Serialization
 
 struct Deserialization {

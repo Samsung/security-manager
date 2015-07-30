@@ -181,11 +181,8 @@ struct policy_entry : ISerializable {
     }
 
     virtual void Serialize(IStream &stream) const {
-        Serialization::Serialize(stream, user);
-        Serialization::Serialize(stream, appId);
-        Serialization::Serialize(stream, privilege);
-        Serialization::Serialize(stream, currentLevel);
-        Serialization::Serialize(stream, maxLevel);
+        Serialization::Serialize(stream,
+            user, appId, privilege, currentLevel, maxLevel);
     }
 
 };

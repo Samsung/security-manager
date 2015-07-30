@@ -38,12 +38,11 @@ int CynaraPolicyUpdate(const std::string &appId,  const std::string &uidstr,
 {
     int ret;
     MessageBuffer sendBuf, retBuf;
+
     Serialization::Serialize(sendBuf,
-                             static_cast<int>(MasterSecurityModuleCall::CYNARA_UPDATE_POLICY));
-    Serialization::Serialize(sendBuf, appId);
-    Serialization::Serialize(sendBuf, uidstr);
-    Serialization::Serialize(sendBuf, oldPkgPrivileges);
-    Serialization::Serialize(sendBuf, newPkgPrivileges);
+        static_cast<int>(MasterSecurityModuleCall::CYNARA_UPDATE_POLICY),
+        appId, uidstr, oldPkgPrivileges, newPkgPrivileges);
+
     ret = sendToServer(MASTER_SERVICE_SOCKET, sendBuf.Pop(), retBuf);
     if (ret == SECURITY_MANAGER_API_SUCCESS)
         Deserialization::Deserialize(retBuf, ret);
@@ -55,10 +54,11 @@ int CynaraUserInit(const uid_t uidAdded, int userType)
 {
     int ret;
     MessageBuffer sendBuf, retBuf;
+
     Serialization::Serialize(sendBuf,
-                             static_cast<int>(MasterSecurityModuleCall::CYNARA_USER_INIT));
-    Serialization::Serialize(sendBuf, uidAdded);
-    Serialization::Serialize(sendBuf, userType);
+        static_cast<int>(MasterSecurityModuleCall::CYNARA_USER_INIT),
+        uidAdded, userType);
+
     ret = sendToServer(MASTER_SERVICE_SOCKET, sendBuf.Pop(), retBuf);
     if (ret == SECURITY_MANAGER_API_SUCCESS)
         Deserialization::Deserialize(retBuf, ret);
@@ -70,9 +70,11 @@ int CynaraUserRemove(const uid_t uidDeleted)
 {
     int ret;
     MessageBuffer sendBuf, retBuf;
+
     Serialization::Serialize(sendBuf,
-                             static_cast<int>(MasterSecurityModuleCall::CYNARA_USER_REMOVE));
-    Serialization::Serialize(sendBuf, uidDeleted);
+        static_cast<int>(MasterSecurityModuleCall::CYNARA_USER_REMOVE),
+        uidDeleted);
+
     ret = sendToServer(MASTER_SERVICE_SOCKET, sendBuf.Pop(), retBuf);
     if (ret == SECURITY_MANAGER_API_SUCCESS)
         Deserialization::Deserialize(retBuf, ret);
@@ -86,10 +88,9 @@ int SmackInstallRules(const std::string &appId, const std::string &pkgId,
     int ret;
     MessageBuffer sendBuf, retBuf;
     Serialization::Serialize(sendBuf,
-                             static_cast<int>(MasterSecurityModuleCall::SMACK_INSTALL_RULES));
-    Serialization::Serialize(sendBuf, appId);
-    Serialization::Serialize(sendBuf, pkgId);
-    Serialization::Serialize(sendBuf, pkgContents);
+        static_cast<int>(MasterSecurityModuleCall::SMACK_INSTALL_RULES),
+        appId, pkgId, pkgContents);
+
     ret = sendToServer(MASTER_SERVICE_SOCKET, sendBuf.Pop(), retBuf);
     if (ret == SECURITY_MANAGER_API_SUCCESS)
         Deserialization::Deserialize(retBuf, ret);
@@ -102,12 +103,11 @@ int SmackUninstallRules(const std::string &appId, const std::string &pkgId,
 {
     int ret;
     MessageBuffer sendBuf, retBuf;
+
     Serialization::Serialize(sendBuf,
-                             static_cast<int>(MasterSecurityModuleCall::SMACK_UNINSTALL_RULES));
-    Serialization::Serialize(sendBuf, appId);
-    Serialization::Serialize(sendBuf, pkgId);
-    Serialization::Serialize(sendBuf, pkgContents);
-    Serialization::Serialize(sendBuf, removePkg);
+        static_cast<int>(MasterSecurityModuleCall::SMACK_UNINSTALL_RULES),
+        appId, pkgId, pkgContents, removePkg);
+
     ret = sendToServer(MASTER_SERVICE_SOCKET, sendBuf.Pop(), retBuf);
     if (ret == SECURITY_MANAGER_API_SUCCESS)
         Deserialization::Deserialize(retBuf, ret);
@@ -122,12 +122,10 @@ int PolicyUpdate(const std::vector<policy_entry> &policyEntries, uid_t uid, pid_
 {
     int ret;
     MessageBuffer sendBuf, retBuf;
+
     Serialization::Serialize(sendBuf,
-                             static_cast<int>(MasterSecurityModuleCall::POLICY_UPDATE));
-    Serialization::Serialize(sendBuf, policyEntries);
-    Serialization::Serialize(sendBuf, uid);
-    Serialization::Serialize(sendBuf, pid);
-    Serialization::Serialize(sendBuf, smackLabel);
+        static_cast<int>(MasterSecurityModuleCall::POLICY_UPDATE),
+        policyEntries, uid, pid, smackLabel);
 
     ret = sendToServer(MASTER_SERVICE_SOCKET, sendBuf.Pop(), retBuf);
     if (ret == SECURITY_MANAGER_API_SUCCESS)
@@ -141,13 +139,10 @@ int GetConfiguredPolicy(bool forAdmin, const policy_entry &filter, uid_t uid, pi
 {
     int ret;
     MessageBuffer sendBuf, retBuf;
+
     Serialization::Serialize(sendBuf,
-                             static_cast<int>(MasterSecurityModuleCall::GET_CONFIGURED_POLICY));
-    Serialization::Serialize(sendBuf, forAdmin);
-    Serialization::Serialize(sendBuf, filter);
-    Serialization::Serialize(sendBuf, uid);
-    Serialization::Serialize(sendBuf, pid);
-    Serialization::Serialize(sendBuf, smackLabel);
+        static_cast<int>(MasterSecurityModuleCall::GET_CONFIGURED_POLICY),
+        forAdmin, filter, uid, pid, smackLabel);
 
     ret = sendToServer(MASTER_SERVICE_SOCKET, sendBuf.Pop(), retBuf);
     if (ret == SECURITY_MANAGER_API_SUCCESS) {
@@ -164,12 +159,10 @@ int GetPolicy(const policy_entry &filter, uid_t uid, pid_t pid, const std::strin
 {
     int ret;
     MessageBuffer sendBuf, retBuf;
+
     Serialization::Serialize(sendBuf,
-                             static_cast<int>(MasterSecurityModuleCall::GET_POLICY));
-    Serialization::Serialize(sendBuf, filter);
-    Serialization::Serialize(sendBuf, uid);
-    Serialization::Serialize(sendBuf, pid);
-    Serialization::Serialize(sendBuf, smackLabel);
+        static_cast<int>(MasterSecurityModuleCall::GET_POLICY),
+        filter, uid, pid, smackLabel);
 
     ret = sendToServer(MASTER_SERVICE_SOCKET, sendBuf.Pop(), retBuf);
     if (ret == SECURITY_MANAGER_API_SUCCESS) {
@@ -185,8 +178,9 @@ int PolicyGetDesc(std::vector<std::string> &descriptions)
 {
     int ret;
     MessageBuffer sendBuf, retBuf;
+
     Serialization::Serialize(sendBuf,
-                             static_cast<int>(MasterSecurityModuleCall::POLICY_GET_DESC));
+        static_cast<int>(MasterSecurityModuleCall::POLICY_GET_DESC));
 
     ret = sendToServer(MASTER_SERVICE_SOCKET, sendBuf.Pop(), retBuf);
     if (ret == SECURITY_MANAGER_API_SUCCESS) {

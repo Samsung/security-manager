@@ -176,12 +176,8 @@ int security_manager_app_install(const app_inst_req *p_req)
             MessageBuffer send, recv;
 
             //put data into buffer
-            Serialization::Serialize(send, (int)SecurityModuleCall::APP_INSTALL);
-            Serialization::Serialize(send, p_req->appId);
-            Serialization::Serialize(send, p_req->pkgId);
-            Serialization::Serialize(send, p_req->privileges);
-            Serialization::Serialize(send, p_req->appPaths);
-            Serialization::Serialize(send, p_req->uid);
+            Serialization::Serialize(send, (int)SecurityModuleCall::APP_INSTALL,
+                p_req->appId, p_req->pkgId, p_req->privileges, p_req->appPaths, p_req->uid);
 
             //send buffer to server
             retval = sendToServer(SERVICE_SOCKET, send.Pop(), recv);
@@ -223,8 +219,8 @@ int security_manager_app_uninstall(const app_inst_req *p_req)
             return SECURITY_MANAGER_ERROR_REQ_NOT_COMPLETE;
 
         //put data into buffer
-        Serialization::Serialize(send, (int)SecurityModuleCall::APP_UNINSTALL);
-        Serialization::Serialize(send, p_req->appId);
+        Serialization::Serialize(send, (int)SecurityModuleCall::APP_UNINSTALL,
+            p_req->appId);
 
         //send buffer to server
         int retval = sendToServer(SERVICE_SOCKET, send.Pop(), recv);
@@ -264,8 +260,8 @@ int security_manager_get_app_pkgid(char **pkg_id, const char *app_id)
         }
 
         //put data into buffer
-        Serialization::Serialize(send, static_cast<int>(SecurityModuleCall::APP_GET_PKGID));
-        Serialization::Serialize(send, std::string(app_id));
+        Serialization::Serialize(send, static_cast<int>(SecurityModuleCall::APP_GET_PKGID),
+            std::string(app_id));
 
         //send buffer to server
         int retval = sendToServer(SERVICE_SOCKET, send.Pop(), recv);
@@ -411,8 +407,8 @@ int security_manager_set_process_groups_from_appid(const char *app_id)
         }
 
         //put data into buffer
-        Serialization::Serialize(send, static_cast<int>(SecurityModuleCall::APP_GET_GROUPS));
-        Serialization::Serialize(send, std::string(app_id));
+        Serialization::Serialize(send, static_cast<int>(SecurityModuleCall::APP_GET_GROUPS),
+            std::string(app_id));
 
         //send buffer to server
         int retval = sendToServer(SERVICE_SOCKET, send.Pop(), recv);
@@ -586,10 +582,8 @@ int security_manager_user_add(const user_req *p_req)
             //server is working
 
             //put data into buffer
-            Serialization::Serialize(send, static_cast<int>(SecurityModuleCall::USER_ADD));
-
-            Serialization::Serialize(send, p_req->uid);
-            Serialization::Serialize(send, p_req->utype);
+            Serialization::Serialize(send, static_cast<int>(SecurityModuleCall::USER_ADD),
+                p_req->uid, p_req->utype);
 
             //send buffer to server
             retval = sendToServer(SERVICE_SOCKET, send.Pop(), recv);
@@ -622,10 +616,8 @@ int security_manager_user_delete(const user_req *p_req)
     return try_catch([&] {
 
         //put data into buffer
-        Serialization::Serialize(send, static_cast<int>(SecurityModuleCall::USER_DELETE));
-
-        Serialization::Serialize(send, p_req->uid);
-
+        Serialization::Serialize(send, static_cast<int>(SecurityModuleCall::USER_DELETE),
+            p_req->uid);
 
         //send buffer to server
         int retval = sendToServer(SERVICE_SOCKET, send.Pop(), recv);
@@ -683,8 +675,8 @@ int security_manager_policy_update_send(policy_update_req *p_req)
     return try_catch([&] {
 
         //put request into buffer
-        Serialization::Serialize(send, static_cast<int>(SecurityModuleCall::POLICY_UPDATE));
-        Serialization::Serialize(send, p_req->units);
+        Serialization::Serialize(send, static_cast<int>(SecurityModuleCall::POLICY_UPDATE),
+            p_req->units);
 
         //send it to server
         int retval = sendToServer(SERVICE_SOCKET, send.Pop(), recv);
@@ -724,8 +716,9 @@ static inline int security_manager_get_policy_internal(
 
     return try_catch([&] {
         //put request into buffer
-        Serialization::Serialize(send, static_cast<int>(call_type));
-        Serialization::Serialize(send, *p_filter);
+        Serialization::Serialize(send, static_cast<int>(call_type),
+            *p_filter);
+
         //send it to server
         int retval = sendToServer(SERVICE_SOCKET, send.Pop(), recv);
         if (retval != SECURITY_MANAGER_API_SUCCESS) {
