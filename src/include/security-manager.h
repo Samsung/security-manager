@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2000 - 2014 Samsung Electronics Co., Ltd All Rights Reserved
+ *  Copyright (c) 2000 - 2015 Samsung Electronics Co., Ltd All Rights Reserved
  *
  *  Contact: Rafal Krypa <r.krypa@samsung.com>
  *
@@ -760,6 +760,28 @@ int security_manager_get_privileges_mapping(const char *from_version,
  * @param[in] mapping_count Number of privileges
  */
 void security_manager_privilege_mapping_free(char **privileges_mappings, size_t mappings_count);
+
+/**
+ * This function returns array of groups bound to privileges of file resources.
+ *
+ * Caller needs to free memory allocated for the list using
+ * security_manager_groups_free().
+ *
+ * @param[out] groups pointer to array of strings.
+ * @param[out] groups_count number of strings in levels array.
+ * @return API return code or error code.
+ */
+int security_manager_groups_get(char ***groups, size_t *groups_count);
+
+/**
+ * This function frees memory allocated by security_manager_groups_get()
+ * function.
+ *
+ * @param[in] groups array of strings returned by security_manager_groups_get() function.
+ * @param[in] groups_count size of the groups array
+ */
+void security_manager_groups_free(char **groups, size_t groups_count);
+
 #ifdef __cplusplus
 }
 #endif

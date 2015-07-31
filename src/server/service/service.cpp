@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2000 - 2014 Samsung Electronics Co., Ltd All Rights Reserved
+ *  Copyright (c) 2000 - 2015 Samsung Electronics Co., Ltd All Rights Reserved
  *
  *  Contact: Rafal Krypa <r.krypa@samsung.com>
  *
@@ -156,6 +156,9 @@ bool Service::processOne(const ConnectionID &conn, MessageBuffer &buffer,
                     break;
                 case SecurityModuleCall::GET_PRIVILEGES_MAPPING:
                     processPrivilegesMappings(buffer, send);
+                    break;
+                case SecurityModuleCall::GROUPS_GET:
+                    processGroupsGet(send);
                     break;
                 default:
                     LogError("Invalid call: " << call_type_int);
@@ -351,6 +354,17 @@ void Service::processPrivilegesMappings(MessageBuffer &recv, MessageBuffer &send
 
     Serialization::Serialize(send, ret);
     Serialization::Serialize(send, mappings);
+}
+
+void Service::processGroupsGet(MessageBuffer &send)
+{
+    std::vector<std::string> groups;
+    int ret = ServiceImpl::policyGetGroups(groups);
+
+    Serialization::Serialize(send, ret);
+    if (ret == SECURITY_MANAGER_API_SUCCESS) {
+        Serialization::Serialize(send, groups);
+    }
 }
 
 } // namespace SecurityManager

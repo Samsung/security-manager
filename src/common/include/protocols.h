@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2000 - 2014 Samsung Electronics Co., Ltd All Rights Reserved
+ *  Copyright (c) 2000 - 2015 Samsung Electronics Co., Ltd All Rights Reserved
  *
  *  Contact: Rafal Krypa <r.krypa@samsung.com>
  *
@@ -137,6 +137,7 @@ enum class SecurityModuleCall
     GET_CONF_POLICY_SELF,
     POLICY_GET_DESCRIPTIONS,
     GET_PRIVILEGES_MAPPING,
+    GROUPS_GET,
     NOOP = 0x90,
 };
 

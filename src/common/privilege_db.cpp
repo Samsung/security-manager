@@ -1,7 +1,7 @@
 /*
  * security-manager, database access
  *
- * Copyright (c) 2000 - 2014 Samsung Electronics Co., Ltd All Rights Reserved
+ * Copyright (c) 2000 - 2015 Samsung Electronics Co., Ltd All Rights Reserved
  *
  * Contact: Rafal Krypa <r.krypa@samsung.com>
  *
@@ -383,6 +383,19 @@ void PrivilegeDb::GetPrivilegesMappings(const std::string &version_from,
                      <<" has mapping " << mapping << " in version " << version_to);
              mappings.push_back(mapping);
         }
+    });
+}
+
+void PrivilegeDb::GetGroups(std::vector<std::string> &groups)
+{
+   try_catch<void>([&] {
+        auto command = getStatement(StmtType::EGetGroups);
+
+        while (command->Step()) {
+            std::string groupName = command->GetColumnString(0);
+            LogDebug("Group " << groupName);
+            groups.push_back(groupName);
+        };
     });
 }
 

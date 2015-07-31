@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2014 Samsung Electronics Co., Ltd All Rights Reserved
+ *  Copyright (c) 2014-2015 Samsung Electronics Co., Ltd All Rights Reserved
  *
  *  Contact: Rafal Krypa <r.krypa@samsung.com>
  *
@@ -181,6 +181,15 @@ int getPrivilegesMappings(const std::string &version_from,
                           const std::string &version_to,
                           const std::vector<std::string> &privileges,
                           std::vector<std::string> &mappings);
+
+/**
+ * Process getting resources group list.
+ *
+ * @param[out] groups empty vector for group strings
+ *
+ * @return API return code, as defined in protocols.h
+ */
+int policyGetGroups(std::vector<std::string> &groups);
 
 } /* namespace ServiceImpl */
 } /* namespace SecurityManager */

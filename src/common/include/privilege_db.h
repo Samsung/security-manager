@@ -1,7 +1,7 @@
 /*
  * security-manager, database access
  *
- * Copyright (c) 2000 - 2014 Samsung Electronics Co., Ltd All Rights Reserved
+ * Copyright (c) 2000 - 2015 Samsung Electronics Co., Ltd All Rights Reserved
  *
  * Contact: Rafal Krypa <r.krypa@samsung.com>
  *
@@ -24,6 +24,7 @@
  * @author      Krzysztof Sasiak <k.sasiak@samsung.com>
  * @author      Rafal Krypa <r.krypa@samsung.com>
  * @author      Zofia Abramowska <z.abramowska@samsung.com>
+ * @author      Aleksander Zdyb <a.zdyb@samsung.com>
  * @version     1.0
  * @brief       This file contains declaration of the API to privilges database.
  */
@@ -60,7 +61,8 @@ enum class StmtType {
     EGetPrivilegeMappings,
     EInsertPrivilegeToMap,
     EGetPrivilegesMappings,
-    EDeletePrivilegesToMap
+    EDeletePrivilegesToMap,
+    EGetGroups
 };
 
 class PrivilegeDb {
@@ -110,6 +112,7 @@ private:
                                             " WHERE version_from_name=? AND version_to_name=?"
                                             " AND privilege_name IN (SELECT privilege_name FROM privilege_to_map)"},
         { StmtType::EDeletePrivilegesToMap, "DELETE FROM privilege_to_map"},
+        { StmtType::EGetGroups, "SELECT DISTINCT group_name FROM privilege_group_view" },
     };
 
     /**
@@ -320,6 +323,14 @@ public:
                                const std::string &version_to,
                                const std::vector<std::string> &privileges,
                                std::vector<std::string> &mappings);
+
+    /**
+     * Retrieve list of resource groups
+     *
+     * @param[out] grp_names - list of group names
+     * @exception DB::SqlConnection::Exception::InternalError on internal error
+     */
+    void GetGroups(std::vector<std::string> &grp_names);
 };
 
 } //namespace SecurityManager
