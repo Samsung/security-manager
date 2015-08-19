@@ -35,7 +35,7 @@ END
 find "$POLICY_PATH" -name "usertype-*.profile" |
 while read file
 do
-    bucket="`echo $file | sed -r 's|.*/usertype-(.*).profile$|USER_TYPE_\U\1|'`"
+    bucket="`echo $file | sed -r 's|.*/usertype-(.*).profile$|USER_TYPE_\1|' | tr '[:lower:]' '[:upper:]'`"
 
     # Re-create the bucket with empty contents
     cyad --delete-bucket=$bucket || true
