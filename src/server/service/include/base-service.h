@@ -29,6 +29,7 @@
 #include <generic-socket-manager.h>
 #include <message-buffer.h>
 #include <connection-info.h>
+#include <service_impl.h>
 
 namespace SecurityManager {
 
@@ -58,7 +59,21 @@ public:
     void close(const CloseEvent &event);
 
 protected:
+    ServiceImpl serviceImpl;
+
     ConnectionInfoMap m_connectionInfoMap;
+
+    /**
+     * Retrieves ID (UID and PID) of peer connected to socket
+     *
+     * @param[in]  sock Socket file descriptor
+     * @param[out] uid PID of connected peer.
+     * @param[out] pid PID of connected peer.
+     * @param[out] smackLabel Smack label of connected peer.
+     *
+     * @return True if peer ID was successfully retrieved, false otherwise.
+     */
+    bool getPeerID(int sock, uid_t &uid, pid_t &pid, std::string &smackLabel);
 
     /**
      * Handle request from a client

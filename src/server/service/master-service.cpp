@@ -65,8 +65,9 @@ bool MasterService::processOne(const ConnectionID &conn, MessageBuffer &buffer,
 
     uid_t uid;
     pid_t pid;
+    std::string smackLabel;
 
-    if (!ServiceImpl::getPeerID(conn.sock, uid, pid)) {
+    if (!getPeerID(conn.sock, uid, pid, smackLabel)) {
         LogError("Closing socket because of error: unable to get peer's uid and pid");
         m_serviceManager->Close(conn);
         return false;
@@ -249,7 +250,7 @@ void MasterService::processPolicyUpdate(MessageBuffer &buffer, MessageBuffer &se
     Deserialization::Deserialize(buffer, pid);
     Deserialization::Deserialize(buffer, smackLabel);
 
-    ret = ServiceImpl::policyUpdate(policyEntries, uid, pid, smackLabel);
+    ret = serviceImpl.policyUpdate(policyEntries, uid, pid, smackLabel);
     Serialization::Serialize(send, ret);
 }
 
@@ -269,7 +270,7 @@ void MasterService::processGetConfiguredPolicy(MessageBuffer &buffer, MessageBuf
     Deserialization::Deserialize(buffer, pid);
     Deserialization::Deserialize(buffer, smackLabel);
 
-    ret = ServiceImpl::getConfiguredPolicy(forAdmin, filter, uid, pid, smackLabel, policyEntries);
+    ret = serviceImpl.getConfiguredPolicy(forAdmin, filter, uid, pid, smackLabel, policyEntries);
     Serialization::Serialize(send, ret);
     if (ret == SECURITY_MANAGER_API_SUCCESS)
         Serialization::Serialize(send, policyEntries);
@@ -294,7 +295,7 @@ void MasterService::processGetPolicy(MessageBuffer &buffer, MessageBuffer &send)
     Deserialization::Deserialize(buffer, pid);
     Deserialization::Deserialize(buffer, smackLabel);
 
-    ret = ServiceImpl::getPolicy(filter, uid, pid, smackLabel, policyEntries);*/
+    ret = serviceImpl.getPolicy(filter, uid, pid, smackLabel, policyEntries);*/
     Serialization::Serialize(send, ret);
     /*if (ret == SECURITY_MANAGER_API_SUCCESS)
         Serialization::Serialize(send, policyEntries);*/
@@ -305,7 +306,7 @@ void MasterService::processPolicyGetDesc(MessageBuffer &send)
     int ret = SECURITY_MANAGER_API_ERROR_SERVER_ERROR;
     std::vector<std::string> descriptions;
 
-    ret = ServiceImpl::policyGetDesc(descriptions);
+    ret = serviceImpl.policyGetDesc(descriptions);
     Serialization::Serialize(send, ret);
     if (ret == SECURITY_MANAGER_API_SUCCESS)
         Serialization::Serialize(send, descriptions);

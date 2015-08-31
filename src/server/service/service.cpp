@@ -64,26 +64,6 @@ GenericSocketService::ServiceDescriptionVector Service::GetServiceDescription()
         };
 }
 
-static bool getPeerID(int sock, uid_t &uid, pid_t &pid, std::string &smackLabel)
-{
-    struct ucred cr;
-    socklen_t len = sizeof(cr);
-
-    if (!getsockopt(sock, SOL_SOCKET, SO_PEERCRED, &cr, &len)) {
-        char *smk;
-        ssize_t ret = smack_new_label_from_socket(sock, &smk);
-        if (ret < 0)
-            return false;
-        smackLabel = smk;
-        uid = cr.uid;
-        pid = cr.pid;
-        free(smk);
-        return true;
-    }
-
-    return false;
-}
-
 bool Service::processOne(const ConnectionID &conn, MessageBuffer &buffer,
                                   InterfaceID interfaceID)
 {
@@ -200,7 +180,7 @@ void Service::processAppInstall(MessageBuffer &buffer, MessageBuffer &send, uid_
     Deserialization::Deserialize(buffer, req.privileges);
     Deserialization::Deserialize(buffer, req.appPaths);
     Deserialization::Deserialize(buffer, req.uid);
-    Serialization::Serialize(send, ServiceImpl::appInstall(req, uid, m_isSlave));
+    Serialization::Serialize(send, serviceImpl.appInstall(req, uid, m_isSlave));
 }
 
 void Service::processAppUninstall(MessageBuffer &buffer, MessageBuffer &send, uid_t uid)
@@ -208,7 +188,7 @@ void Service::processAppUninstall(MessageBuffer &buffer, MessageBuffer &send, ui
     std::string appId;
 
     Deserialization::Deserialize(buffer, appId);
-    Serialization::Serialize(send, ServiceImpl::appUninstall(appId, uid, m_isSlave));
+    Serialization::Serialize(send, serviceImpl.appUninstall(appId, uid, m_isSlave));
 }
 
 void Service::processGetPkgId(MessageBuffer &buffer, MessageBuffer &send)
@@ -218,7 +198,7 @@ void Service::processGetPkgId(MessageBuffer &buffer, MessageBuffer &send)
     int ret;
 
     Deserialization::Deserialize(buffer, appId);
-    ret = ServiceImpl::getPkgId(appId, pkgId);
+    ret = serviceImpl.getPkgId(appId, pkgId);
     Serialization::Serialize(send, ret);
     if (ret == SECURITY_MANAGER_API_SUCCESS)
         Serialization::Serialize(send, pkgId);
@@ -231,7 +211,7 @@ void Service::processGetAppGroups(MessageBuffer &buffer, MessageBuffer &send, ui
     int ret;
 
     Deserialization::Deserialize(buffer, appId);
-    ret = ServiceImpl::getAppGroups(appId, uid, pid, m_isSlave, gids);
+    ret = serviceImpl.getAppGroups(appId, uid, pid, m_isSlave, gids);
     Serialization::Serialize(send, ret);
     if (ret == SECURITY_MANAGER_API_SUCCESS) {
         Serialization::Serialize(send, static_cast<int>(gids.size()));
@@ -250,7 +230,7 @@ void Service::processUserAdd(MessageBuffer &buffer, MessageBuffer &send, uid_t u
     Deserialization::Deserialize(buffer, uidAdded);
     Deserialization::Deserialize(buffer, userType);
 
-    ret = ServiceImpl::userAdd(uidAdded, userType, uid, m_isSlave);
+    ret = serviceImpl.userAdd(uidAdded, userType, uid, m_isSlave);
     Serialization::Serialize(send, ret);
 }
 
@@ -261,7 +241,7 @@ void Service::processUserDelete(MessageBuffer &buffer, MessageBuffer &send, uid_
 
     Deserialization::Deserialize(buffer, uidRemoved);
 
-    ret = ServiceImpl::userDelete(uidRemoved, uid, m_isSlave);
+    ret = serviceImpl.userDelete(uidRemoved, uid, m_isSlave);
     Serialization::Serialize(send, ret);
 }
 
@@ -275,7 +255,7 @@ void Service::processPolicyUpdate(MessageBuffer &buffer, MessageBuffer &send, ui
     if (m_isSlave) {
         ret = MasterReq::PolicyUpdate(policyEntries, uid, pid, smackLabel);
     } else {
-        ret = ServiceImpl::policyUpdate(policyEntries, uid, pid, smackLabel);
+        ret = serviceImpl.policyUpdate(policyEntries, uid, pid, smackLabel);
     }
     Serialization::Serialize(send, ret);
 }
@@ -290,7 +270,7 @@ void Service::processGetConfiguredPolicy(MessageBuffer &buffer, MessageBuffer &s
     if (m_isSlave) {
         ret = MasterReq::GetConfiguredPolicy(forAdmin, filter, uid, pid, smackLabel, policyEntries);
     } else {
-        ret = ServiceImpl::getConfiguredPolicy(forAdmin, filter, uid, pid, smackLabel,
+        ret = serviceImpl.getConfiguredPolicy(forAdmin, filter, uid, pid, smackLabel,
                                                policyEntries);
     }
 
@@ -311,7 +291,7 @@ void Service::processGetPolicy(MessageBuffer &buffer, MessageBuffer &send, uid_t
     if (m_isSlave) {
         ret = MasterReq::GetPolicy(filter, uid, pid, smackLabel, policyEntries);
     } else {
-        ret = ServiceImpl::getPolicy(filter, uid, pid, smackLabel, policyEntries);
+        ret = serviceImpl.getPolicy(filter, uid, pid, smackLabel, policyEntries);
     }
 
     Serialization::Serialize(send, ret);
@@ -329,7 +309,7 @@ void Service::processPolicyGetDesc(MessageBuffer &send)
     if (m_isSlave) {
         ret = MasterReq::PolicyGetDesc(descriptions);
     } else {
-        ret = ServiceImpl::policyGetDesc(descriptions);
+        ret = serviceImpl.policyGetDesc(descriptions);
     }
     Serialization::Serialize(send, ret);
     if (ret == SECURITY_MANAGER_API_SUCCESS) {
@@ -350,7 +330,7 @@ void Service::processPrivilegesMappings(MessageBuffer &recv, MessageBuffer &send
     Deserialization::Deserialize(recv, privileges);
 
     std::vector<std::string> mappings;
-    int ret = ServiceImpl::getPrivilegesMappings(version_from, version_to, privileges, mappings);
+    int ret = serviceImpl.getPrivilegesMappings(version_from, version_to, privileges, mappings);
 
     Serialization::Serialize(send, ret);
     Serialization::Serialize(send, mappings);
@@ -359,7 +339,7 @@ void Service::processPrivilegesMappings(MessageBuffer &recv, MessageBuffer &send
 void Service::processGroupsGet(MessageBuffer &send)
 {
     std::vector<std::string> groups;
-    int ret = ServiceImpl::policyGetGroups(groups);
+    int ret = serviceImpl.policyGetGroups(groups);
 
     Serialization::Serialize(send, ret);
     if (ret == SECURITY_MANAGER_API_SUCCESS) {

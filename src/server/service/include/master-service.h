@@ -26,6 +26,7 @@
 #define _SECURITY_MANAGER_MASTER_SERVICE_
 
 #include "base-service.h"
+#include "service_impl.h"
 
 namespace SecurityManager {
 
@@ -44,6 +45,7 @@ public:
     ServiceDescriptionVector GetServiceDescription();
 
 private:
+    ServiceImpl serviceImpl;
 
     /**
      * Handle request from a client

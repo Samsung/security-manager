@@ -26,6 +26,7 @@
 #define _SECURITY_MANAGER_SERVICE_
 
 #include "base-service.h"
+#include "service_impl.h"
 
 namespace SecurityManager {
 
@@ -45,6 +46,7 @@ public:
 
 private:
     const bool m_isSlave;
+    ServiceImpl serviceImpl;
 
     /**
      * Handle request from a client
