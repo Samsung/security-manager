@@ -152,18 +152,17 @@ do                                                                         \
     }                                                                      \
 } while (0)
 
-/* Errors must be always logged. */
+/* Errors and warnings must be always logged. */
 #define  LogError(message) DPL_MACRO_FOR_LOGGING(message, Error)
+#define  LogWarning(message) DPL_MACRO_FOR_LOGGING(message, Warning)
 
 #ifdef BUILD_TYPE_DEBUG
     #define LogDebug(message) DPL_MACRO_FOR_LOGGING(message, Debug)
     #define LogInfo(message) DPL_MACRO_FOR_LOGGING(message, Info)
-    #define LogWarning(message) DPL_MACRO_FOR_LOGGING(message, Warning)
     #define LogPedantic(message) DPL_MACRO_FOR_LOGGING(message, Pedantic)
 #else
     #define LogDebug(message) DPL_MACRO_DUMMY_LOGGING(message, Debug)
     #define LogInfo(message) DPL_MACRO_DUMMY_LOGGING(message, Info)
-    #define LogWarning(message) DPL_MACRO_DUMMY_LOGGING(message, Warning)
     #define LogPedantic(message) DPL_MACRO_DUMMY_LOGGING(message, Pedantic)
 #endif // BUILD_TYPE_DEBUG
 
