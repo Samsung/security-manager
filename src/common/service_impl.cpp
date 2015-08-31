@@ -168,7 +168,7 @@ bool ServiceImpl::isSubDir(const char *parent, const char *subdir)
         if (*parent++ != *subdir++)
             return false;
 
-    return (*subdir == '/');
+    return (*subdir == '/' || *parent == *subdir);
 }
 
 bool ServiceImpl::getUserAppDir(const uid_t &uid, std::string &userAppDir)
@@ -201,7 +201,7 @@ bool ServiceImpl::getUserAppDir(const uid_t &uid, std::string &userAppDir)
     return true;
 }
 
-bool ServiceImpl::installRequestAuthCheck(const app_inst_req &req, uid_t uid, bool &isCorrectPath, std::string &appPath)
+bool ServiceImpl::installRequestAuthCheck(const app_inst_req &req, uid_t uid, std::string &appPath)
 {
     std::string userHome;
     std::string userAppDir;
@@ -219,7 +219,7 @@ bool ServiceImpl::installRequestAuthCheck(const app_inst_req &req, uid_t uid, bo
 
     appPath = userAppDir;
     correctPath.clear();
-    correctPath << userAppDir << "/" << req.pkgId << "/" << req.appId;
+    correctPath << userAppDir << "/" << req.pkgId;
     LogDebug("correctPath: " << correctPath.str());
 
     for (const auto &appPath : req.appPaths) {
@@ -232,20 +232,8 @@ bool ServiceImpl::installRequestAuthCheck(const app_inst_req &req, uid_t uid, bo
         }
         LogDebug("Requested path is '" << appPath.first.c_str()
                 << "'. User's APPS_DIR is '" << userAppDir << "'");
-        if (!isSubDir(userAppDir.c_str(), real_path.get())) {
-            LogWarning("User's apps may have registered folders only in user's APPS_DIR");
-            return false;
-        }
-
         if (!isSubDir(correctPath.str().c_str(), real_path.get())) {
-            LogWarning("Installation is outside correct path: " << correctPath.str());
-            //return false;
-        } else
-            isCorrectPath = true;
-
-        app_install_path_type pathType = static_cast<app_install_path_type>(appPath.second);
-        if (pathType == SECURITY_MANAGER_PATH_PUBLIC) {
-            LogWarning("Only root can register SECURITY_MANAGER_PATH_PUBLIC path");
+            LogWarning("Installation is outside correct path: " << correctPath.str() << "," << real_path.get());
             return false;
         }
     }
@@ -274,7 +262,6 @@ int ServiceImpl::appInstall(const app_inst_req &req, uid_t uid, bool isSlave)
     std::vector<std::string> removedPermissions;
     std::vector<std::string> pkgContents;
     std::string uidstr;
-    bool isCorrectPath = false;
     std::string appPath;
     std::string appLabel;
     std::string pkgLabel;
@@ -299,7 +286,7 @@ int ServiceImpl::appInstall(const app_inst_req &req, uid_t uid, bool isSlave)
     }
     checkGlobalUser(uid, uidstr);
 
-    if (!installRequestAuthCheck(req, uid, isCorrectPath, appPath)) {
+    if (!installRequestAuthCheck(req, uid, appPath)) {
         LogError("Request from uid " << uid << " for app installation denied");
         return SECURITY_MANAGER_API_ERROR_AUTHENTICATION_FAILED;
     }
@@ -365,14 +352,14 @@ int ServiceImpl::appInstall(const app_inst_req &req, uid_t uid, bool isSlave)
     }
 
     try {
-        if (isCorrectPath)
-            SmackLabels::setupCorrectPath(req.pkgId, req.appId, appPath, zoneId);
+        if (!req.appPaths.empty())
+            SmackLabels::setupAppBasePath(req.pkgId, appPath);
 
         // register paths
         for (const auto &appPath : req.appPaths) {
             const std::string &path = appPath.first;
             app_install_path_type pathType = static_cast<app_install_path_type>(appPath.second);
-            SmackLabels::setupPath(req.appId, path, pathType, zoneId);
+            SmackLabels::setupPath(req.pkgId, path, pathType, zoneId);
         }
 
         if (isSlave) {

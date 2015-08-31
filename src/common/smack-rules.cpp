@@ -177,17 +177,10 @@ void SmackRules::addFromTemplate(const std::vector<std::string> &templateRules,
             ThrowMsg(SmackException::FileError, "Invalid rule template: " << rule);
         }
 
-        if (subject == SMACK_APP_LABEL_TEMPLATE)
-            subject = SmackLabels::generateAppLabel(appId);
-
-        if (subject == SMACK_PKG_LABEL_TEMPLATE)
-            subject = SmackLabels::generatePkgLabel(pkgId);
-
-        if (object == SMACK_APP_LABEL_TEMPLATE)
-            object = SmackLabels::generateAppLabel(appId);
-
-        if (object == SMACK_PKG_LABEL_TEMPLATE)
-            object = SmackLabels::generatePkgLabel(pkgId);
+        strReplace(subject, SMACK_APP_LABEL_TEMPLATE, SmackLabels::generateAppLabel(appId));
+        strReplace(subject, SMACK_PKG_LABEL_TEMPLATE, SmackLabels::generatePkgLabel(pkgId));
+        strReplace(object,  SMACK_APP_LABEL_TEMPLATE, SmackLabels::generateAppLabel(appId));
+        strReplace(object,  SMACK_PKG_LABEL_TEMPLATE, SmackLabels::generatePkgLabel(pkgId));
 
         if (!zoneId.empty()) {
             // FIXME replace with vasum calls. See zone-utils.h
@@ -305,6 +298,14 @@ void SmackRules::uninstallRules(const std::string &path)
         LogWarning("Failed to remove smack rules file: " << path);
         ThrowMsg(SmackException::FileError, "Failed to remove smack rules file: " << path);
     }
+}
+
+void SmackRules::strReplace(std::string &haystack, const std::string &needle,
+            const std::string &replace)
+{
+    size_t pos;
+    while ((pos = haystack.find(needle)) != std::string::npos)
+        haystack.replace(pos, needle.size(), replace);
 }
 
 } // namespace SecurityManager

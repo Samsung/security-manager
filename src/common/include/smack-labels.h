@@ -37,49 +37,22 @@ namespace SmackLabels {
 /**
  * Sets Smack labels on a directory and its contents, recursively.
  *
- * @param appId[in] application's identifier
- * @param path[in] path to a file or directory to setup
- * @param pathType[in] type of path to setup. See description of
- *         app_install_path_type in security-manager.h for details
- *
- */
-void setupPath(const std::string &appId, const std::string &path,
-    app_install_path_type pathType);
-
-/**
- * Sets Smack labels on a directory and its contents, recursively.
- *
- * @param appId[in] application's identifier
+ * @param pkgId[in] application's package identifier
  * @param path[in] path to a file or directory to setup
  * @param pathType[in] type of path to setup. See description of
  *         app_install_path_type in security-manager.h for details
  * @param zoneId[in] ID of zone for which label should be set
  */
-void setupPath(const std::string &appId, const std::string &path,
+void setupPath(const std::string &pkgId, const std::string &path,
     app_install_path_type pathType, const std::string &zoneId);
 
 /**
- * Sets Smack labels on a <ROOT_APP>/<pkg_id> and <ROOT_APP>/<pkg_id>/<app_id>
- * non-recursively
+ * Sets Smack labels on a <ROOT_APP>/<pkg_id> non-recursively
  *
  * @param pkgId[in] package identifier
- * @param appId[in] application's identifier
  * @param basePath[in] <ROOT_APP> path
  */
-void setupCorrectPath(const std::string &pkgId, const std::string &appId,
-        const std::string &basePath);
-
-/**
- * Sets Smack labels on a <ROOT_APP>/<pkg_id> and <ROOT_APP>/<pkg_id>/<app_id>
- * non-recursively
- *
- * @param pkgId[in] package identifier
- * @param appId[in] application's identifier
- * @param basePath[in] <ROOT_APP> path
- * @param zoneId[in] ID of zone for which label should be set
- */
-void setupCorrectPath(const std::string &pkgId, const std::string &appId,
-        const std::string &basePath, const std::string &zoneId);
+void setupAppBasePath(const std::string &pkgId, const std::string &basePath);
 
 /**
  * Generates application name for a label fetched from Cynara
@@ -104,6 +77,15 @@ std::string generateAppLabel(const std::string &appId);
  * @return resulting Smack label
  */
 std::string generatePkgLabel(const std::string &pkgId);
+
+/**
+ * Generates label for private application RO files with package ID @ref pkgId
+ *
+ * @param[in] pkgId
+ * @return resulting Smack label
+ */
+std::string generatePkgROLabel(const std::string &pkgId);
+
 
 } // namespace SmackLabels
 } // namespace SecurityManager

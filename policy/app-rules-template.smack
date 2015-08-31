@@ -4,9 +4,11 @@ System ~APP~ rwx
 ~APP~ System::Run rwxat
 ~APP~ System::Log rwxa
 ~APP~ _ l
-User ~APP~ rwxa
+User ~APP~ rwx
 User ~PKG~ rwxat
+User ~PKG~::RO rwxat
 ~APP~ User wx
 ~APP~ User::Home rxl
 ~APP~ User::App::Shared rwxat
 ~APP~ ~PKG~ rwxat
+~APP~ ~PKG~::RO rxl

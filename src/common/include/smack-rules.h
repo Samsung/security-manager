@@ -155,6 +155,17 @@ private:
      */
     static void uninstallRules (const std::string &path);
 
+    /**
+     * Helper method: replace all occurrences of \ref needle in \ref haystack
+     * with \ref replace.
+     *
+     * @param[in,out] haystack string to modify
+     * @param needle string to find in \ref haystack
+     * @param replace string to replace \ref needle with
+     */
+    static void strReplace(std::string &haystack, const std::string &needle,
+            const std::string &replace);
+
     smack_accesses *m_handle;
 };
 

@@ -43,7 +43,7 @@ private:
 
     static bool getUserAppDir(const uid_t &uid, std::string &userAppDir);
 
-    static bool installRequestAuthCheck(const app_inst_req &req, uid_t uid, bool &isCorrectPath, std::string &appPath);
+    static bool installRequestAuthCheck(const app_inst_req &req, uid_t uid, std::string &appPath);
 
     static bool getZoneId(std::string &zoneId);
 

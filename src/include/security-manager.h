@@ -46,17 +46,13 @@ enum lib_retcode {
 
 /*! \brief accesses types for application installation paths*/
 enum app_install_path_type {
-    //accessible read-write only for applications with same package id
-    SECURITY_MANAGER_PATH_PRIVATE,
-    //read-write access for all applications
-    SECURITY_MANAGER_PATH_PUBLIC,
-    //read only access for all applications
+    //! RO access for all applications
     SECURITY_MANAGER_PATH_PUBLIC_RO,
-    //accessible for writing to all apps within its package
+    //! RW access for given application package
     SECURITY_MANAGER_PATH_RW,
-    //accessible to apps for reading
+    //! RO access for given application package
     SECURITY_MANAGER_PATH_RO,
-    //this is only for range limit
+    //! this is only for range limit
     SECURITY_MANAGER_ENUM_END
 };
 

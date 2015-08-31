@@ -42,8 +42,8 @@
 namespace SecurityManager {
 namespace SmackLabels {
 
-/* Const defined below is used to label files accessible to apps only for reading */
-const char *const LABEL_FOR_APP_RO_PATH = "User::Home";
+//! Smack label used for SECURITY_MANAGER_PATH_PUBLIC_RO paths (RO for all apps)
+const char *const LABEL_FOR_APP_PUBLIC_RO_PATH = "User::Home";
 
 typedef std::function<bool(const FTSENT*)> LabelDecisionFn;
 
@@ -126,34 +126,27 @@ static void labelDir(const std::string &path, const std::string &label,
         dirSetSmack(path, label, XATTR_NAME_SMACKEXEC, &labelExecs);
 }
 
-void setupPath(const std::string &appId, const std::string &path, app_install_path_type pathType)
-{
-    setupPath(appId, path, pathType, std::string());
-}
-
-void setupPath(const std::string &appId, const std::string &path, app_install_path_type pathType,
+void setupPath(const std::string &pkgId, const std::string &path, app_install_path_type pathType,
         const std::string &zoneId)
 {
     std::string label;
     bool label_executables, label_transmute;
 
     switch (pathType) {
-    case SECURITY_MANAGER_PATH_PRIVATE:
     case SECURITY_MANAGER_PATH_RW:
-        label = zoneSmackLabelGenerate(generateAppLabel(appId), zoneId);
+        label = zoneSmackLabelGenerate(generatePkgLabel(pkgId), zoneId);
         label_executables = true;
         label_transmute = false;
         break;
-    case SECURITY_MANAGER_PATH_PUBLIC:
     case SECURITY_MANAGER_PATH_RO:
-        label.assign(LABEL_FOR_APP_RO_PATH);
-        label_executables = false;
-        label_transmute = true;
-        break;
-    case SECURITY_MANAGER_PATH_PUBLIC_RO:
-        label.assign("_");
+        label = zoneSmackLabelGenerate(generatePkgROLabel(pkgId), zoneId);
         label_executables = false;
         label_transmute = false;
+        break;
+    case SECURITY_MANAGER_PATH_PUBLIC_RO:
+        label.assign(LABEL_FOR_APP_PUBLIC_RO_PATH);
+        label_executables = false;
+        label_transmute = true;
         break;
     default:
         LogError("Path type not known.");
@@ -162,20 +155,10 @@ void setupPath(const std::string &appId, const std::string &path, app_install_pa
     return labelDir(path, label, label_transmute, label_executables);
 }
 
-void setupCorrectPath(const std::string &pkgId, const std::string &appId, const std::string &basePath)
-{
-    setupCorrectPath(pkgId, appId, basePath, std::string());
-}
-
-void setupCorrectPath(const std::string &pkgId, const std::string &appId, const std::string &basePath,
-        const std::string& zoneId)
+void setupAppBasePath(const std::string &pkgId, const std::string &basePath)
 {
     std::string pkgPath = basePath + "/" + pkgId;
-    std::string appPath = pkgPath + "/" + appId;
-
-    pathSetSmack(pkgPath.c_str(), zoneSmackLabelGenerate(generatePkgLabel(pkgId), zoneId), XATTR_NAME_SMACK);
-    pathSetSmack(appPath.c_str(), zoneSmackLabelGenerate(generateAppLabel(appId), zoneId), XATTR_NAME_SMACK);
-    pathSetSmack(appPath.c_str(), "TRUE", XATTR_NAME_SMACKTRANSMUTE);
+    pathSetSmack(pkgPath.c_str(), LABEL_FOR_APP_PUBLIC_RO_PATH, XATTR_NAME_SMACK);
 }
 
 std::string generateAppNameFromLabel(const std::string &label)
@@ -207,6 +190,17 @@ std::string generatePkgLabel(const std::string &pkgId)
 
     return label;
 }
+
+std::string generatePkgROLabel(const std::string &pkgId)
+{
+    std::string label = "User::Pkg::" + pkgId + "::RO";
+
+    if (smack_label_length(label.c_str()) <= 0)
+        ThrowMsg(SmackException::InvalidLabel, "Invalid Smack label generated from pkgId " << pkgId);
+
+    return label;
+}
+
 
 } // namespace SmackLabels
 } // namespace SecurityManager
