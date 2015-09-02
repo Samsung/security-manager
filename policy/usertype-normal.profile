@@ -4,6 +4,7 @@
 *	http://tizen.org/privilege/account.write
 *	http://tizen.org/privilege/alarm.get
 *	http://tizen.org/privilege/alarm.set
+*	http://tizen.org/privilege/antivirus
 *	http://tizen.org/privilege/apphistory.read
 *	http://tizen.org/privilege/appmanager.kill
 *	http://tizen.org/privilege/appmanager.kill.bgapp
