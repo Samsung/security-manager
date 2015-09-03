@@ -135,8 +135,8 @@ void setupPath(const std::string &pkgId, const std::string &path, app_install_pa
     switch (pathType) {
     case SECURITY_MANAGER_PATH_RW:
         label = zoneSmackLabelGenerate(generatePkgLabel(pkgId), zoneId);
-        label_executables = true;
-        label_transmute = false;
+        label_executables = false;
+        label_transmute = true;
         break;
     case SECURITY_MANAGER_PATH_RO:
         label = zoneSmackLabelGenerate(generatePkgROLabel(pkgId), zoneId);
