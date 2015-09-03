@@ -1,4 +1,6 @@
 System ~APP~ rwx
+System ~PKG~ rwxat
+System ~PKG~::RO rwxat
 ~APP~ System wx
 ~APP~ System::Shared rxl
 ~APP~ System::Run rwxat
