@@ -1,3 +1,11 @@
+* Thu Sep 03 2015 Rafal Krypa <r.krypa@samsung.com>
+- Version 1.1.0
+- Master-slave mode to support Vasum (Tizen containers)
+- New API for support of privilege mapping between platform versions
+- New API for getting list of groups mapped to privileges
+- Updated policy for labeling application files\
+- Always print warning log messages
+
 * Wed Mar 25 2015 Jacek Bukarewicz <j.bukarewicz@samsung.com>
 - Version 1.0.2
 - Work around application installation problems on slow targets
