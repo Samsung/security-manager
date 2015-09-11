@@ -75,3 +75,4 @@
 *	http://tizen.org/privilege/wifidirect
 *	http://tizen.org/privilege/window.priority.set
 *	http://tizen.org/privilege/notexist
+*	http://tizen.org/privilege/internal/dbus
