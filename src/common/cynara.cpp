@@ -22,6 +22,7 @@
  */
 
 #include <cstring>
+#include <unordered_set>
 #include "cynara.h"
 
 #include <dpl/log/log.h>
@@ -286,53 +287,35 @@ void CynaraAdmin::SetPolicies(const std::vector<CynaraAdminPolicy> &policies)
 void CynaraAdmin::UpdateAppPolicy(
     const std::string &label,
     const std::string &user,
-    const std::vector<std::string> &oldPrivileges,
-    const std::vector<std::string> &newPrivileges)
+    const std::vector<std::string> &privileges)
 {
+    std::unordered_set<std::string> privilegesSet(privileges.begin(), privileges.end());
+
     std::vector<CynaraAdminPolicy> policies;
+    CynaraAdmin::getInstance().ListPolicies(
+        CynaraAdmin::Buckets.at(Bucket::MANIFESTS),
+        label, user, CYNARA_ADMIN_ANY, policies);
 
-    // Perform sort-merge join on oldPrivileges and newPrivileges.
-    // Assume that they are already sorted and without duplicates.
-    auto oldIter = oldPrivileges.begin();
-    auto newIter = newPrivileges.begin();
-
-    while (oldIter != oldPrivileges.end() && newIter != newPrivileges.end()) {
-        int compare = oldIter->compare(*newIter);
-        if (compare == 0) {
+    // Compare previous policies with set of new requested privileges
+    for (auto &policy : policies) {
+        if (privilegesSet.erase(policy.privilege)) {
+            // privilege was found and removed from the set, keeping policy
             LogDebug("(user = " << user << " label = " << label << ") " <<
-                "keeping privilege " << *newIter);
-            ++oldIter;
-            ++newIter;
-            continue;
-        } else if (compare < 0) {
-            LogDebug("(user = " << user << " label = " << label << ") " <<
-                "removing privilege " << *oldIter);
-            policies.push_back(CynaraAdminPolicy(label, user, *oldIter,
-                    static_cast<int>(CynaraAdminPolicy::Operation::Delete),
-                    Buckets.at(Bucket::MANIFESTS)));
-            ++oldIter;
+                "keeping privilege " << policy.privilege);
         } else {
+            // privilege was not found in the set, deleting policy
+            policy.result = static_cast<int>(CynaraAdminPolicy::Operation::Delete);
             LogDebug("(user = " << user << " label = " << label << ") " <<
-                "adding privilege " << *newIter);
-            policies.push_back(CynaraAdminPolicy(label, user, *newIter,
-                    static_cast<int>(CynaraAdminPolicy::Operation::Allow),
-                    Buckets.at(Bucket::MANIFESTS)));
-            ++newIter;
+                "removing privilege " << policy.privilege);
         }
     }
 
-    for (; oldIter != oldPrivileges.end(); ++oldIter) {
+    // Add policies for privileges that weren't previously enabled
+    // Those that were previously enabled are now removed from privilegesSet
+    for (const auto &privilege : privilegesSet) {
         LogDebug("(user = " << user << " label = " << label << ") " <<
-            "removing privilege " << *oldIter);
-        policies.push_back(CynaraAdminPolicy(label, user, *oldIter,
-                    static_cast<int>(CynaraAdminPolicy::Operation::Delete),
-                    Buckets.at(Bucket::MANIFESTS)));
-    }
-
-    for (; newIter != newPrivileges.end(); ++newIter) {
-        LogDebug("(user = " << user << " label = " << label << ") " <<
-            "adding privilege " << *newIter);
-        policies.push_back(CynaraAdminPolicy(label, user, *newIter,
+            "adding privilege " << privilege);
+        policies.push_back(CynaraAdminPolicy(label, user, privilege,
                     static_cast<int>(CynaraAdminPolicy::Operation::Allow),
                     Buckets.at(Bucket::MANIFESTS)));
     }

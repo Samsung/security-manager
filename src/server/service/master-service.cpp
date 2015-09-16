@@ -170,19 +170,17 @@ void MasterService::processCynaraUpdatePolicy(MessageBuffer &buffer, MessageBuff
     int ret = SECURITY_MANAGER_API_ERROR_SERVER_ERROR;
     std::string appId;
     std::string uidstr;
-    std::vector<std::string> oldAppPrivileges, newAppPrivileges;
-    std::string appLabel, newLabel;
+    std::string appLabel;
+    std::vector<std::string> privileges;
 
     Deserialization::Deserialize(buffer, appId);
     Deserialization::Deserialize(buffer, uidstr);
-    Deserialization::Deserialize(buffer, oldAppPrivileges);
-    Deserialization::Deserialize(buffer, newAppPrivileges);
+    Deserialization::Deserialize(buffer, privileges);
 
     appLabel = zoneSmackLabelGenerate(SmackLabels::generateAppLabel(appId), zoneId);
 
     try {
-        CynaraAdmin::getInstance().UpdateAppPolicy(appLabel, uidstr, oldAppPrivileges,
-                                                   newAppPrivileges);
+        CynaraAdmin::getInstance().UpdateAppPolicy(appLabel, uidstr, privileges);
     } catch (const CynaraException::Base &e) {
         LogError("Error while setting Cynara rules for application: " << e.DumpToString());
         goto out;

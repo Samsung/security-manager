@@ -292,8 +292,6 @@ int ServiceImpl::appInstall(const app_inst_req &req, uid_t uid, bool isSlave)
     }
 
     try {
-        std::vector<std::string> oldAppPrivileges;
-
         appLabel = zoneSmackLabelGenerate(SmackLabels::generateAppLabel(req.appId), zoneId);
         /* NOTE: we don't use pkgLabel here, but generate it for pkgId validation */
         pkgLabel = zoneSmackLabelGenerate(SmackLabels::generatePkgLabel(req.pkgId), zoneId);
@@ -309,23 +307,21 @@ int ServiceImpl::appInstall(const app_inst_req &req, uid_t uid, bool isSlave)
             PrivilegeDb::getInstance().RollbackTransaction();
             return SECURITY_MANAGER_API_ERROR_INPUT_PARAM;
         }
-        PrivilegeDb::getInstance().GetAppPrivileges(req.appId, uid, oldAppPrivileges);
+
         PrivilegeDb::getInstance().AddApplication(req.appId, req.pkgId, uid);
         PrivilegeDb::getInstance().UpdateAppPrivileges(req.appId, uid, req.privileges);
         /* Get all application ids in the package to generate rules withing the package */
         PrivilegeDb::getInstance().GetAppIdsForPkgId(req.pkgId, pkgContents);
 
         if (isSlave) {
-            int ret = MasterReq::CynaraPolicyUpdate(req.appId, uidstr, oldAppPrivileges,
-                                                    req.privileges);
+            int ret = MasterReq::CynaraPolicyUpdate(req.appId, uidstr, req.privileges);
             if (ret != SECURITY_MANAGER_API_SUCCESS) {
                 PrivilegeDb::getInstance().RollbackTransaction();
                 LogError("Error while processing request on master: " << ret);
                 return ret;
             }
         } else {
-            CynaraAdmin::getInstance().UpdateAppPolicy(appLabel, uidstr, oldAppPrivileges,
-                                                       req.privileges);
+            CynaraAdmin::getInstance().UpdateAppPolicy(appLabel, uidstr, req.privileges);
         }
 
         PrivilegeDb::getInstance().CommitTransaction();
@@ -408,8 +404,6 @@ int ServiceImpl::appUninstall(const std::string &appId, uid_t uid, bool isSlave)
     }
 
     try {
-        std::vector<std::string> oldAppPrivileges;
-
         PrivilegeDb::getInstance().BeginTransaction();
         if (!PrivilegeDb::getInstance().GetAppPkgId(appId, pkgId)) {
             LogWarning("Application " << appId <<
@@ -425,21 +419,18 @@ int ServiceImpl::appUninstall(const std::string &appId, uid_t uid, bool isSlave)
                 that this app belongs to, this will allow us to remove all rules withing the
                 package that the app appears in */
             PrivilegeDb::getInstance().GetAppIdsForPkgId(pkgId, pkgContents);
-            PrivilegeDb::getInstance().GetAppPrivileges(appId, uid, oldAppPrivileges);
             PrivilegeDb::getInstance().UpdateAppPrivileges(appId, uid, std::vector<std::string>());
             PrivilegeDb::getInstance().RemoveApplication(appId, uid, removePkg);
 
             if (isSlave) {
-                int ret = MasterReq::CynaraPolicyUpdate(appId, uidstr, oldAppPrivileges,
-                                                        std::vector<std::string>());
+                int ret = MasterReq::CynaraPolicyUpdate(appId, uidstr, std::vector<std::string>());
                 if (ret != SECURITY_MANAGER_API_SUCCESS) {
                     PrivilegeDb::getInstance().RollbackTransaction();
                     LogError("Error while processing request on master: " << ret);
                     return ret;
                 }
             } else {
-                CynaraAdmin::getInstance().UpdateAppPolicy(smackLabel, uidstr, oldAppPrivileges,
-                                                           std::vector<std::string>());
+                CynaraAdmin::getInstance().UpdateAppPolicy(smackLabel, uidstr, std::vector<std::string>());
             }
 
             PrivilegeDb::getInstance().CommitTransaction();
@@ -883,6 +874,7 @@ int ServiceImpl::getPolicy(const policy_entry &filter, uid_t uid, pid_t pid, con
                 std::vector<std::string> listOfPrivileges;
 
                 // FIXME: also fetch privileges of global applications
+                // FIXME: fetch privileges from cynara, drop PrivilegeDb::GetAppPrivileges
                 PrivilegeDb::getInstance().GetAppPrivileges(appId, uid, listOfPrivileges);
 
                 if (filter.privilege.compare(SECURITY_MANAGER_ANY)) {

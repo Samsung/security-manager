@@ -32,16 +32,15 @@
 namespace SecurityManager {
 namespace MasterReq {
 
-int CynaraPolicyUpdate(const std::string &appId,  const std::string &uidstr,
-                       const std::vector<std::string> &oldPkgPrivileges,
-                       const std::vector<std::string> &newPkgPrivileges)
+int CynaraPolicyUpdate(const std::string &appId, const std::string &uidstr,
+                       const std::vector<std::string> &privileges)
 {
     int ret;
     MessageBuffer sendBuf, retBuf;
 
     Serialization::Serialize(sendBuf,
         static_cast<int>(MasterSecurityModuleCall::CYNARA_UPDATE_POLICY),
-        appId, uidstr, oldPkgPrivileges, newPkgPrivileges);
+        appId, uidstr, privileges);
 
     ret = sendToServer(MASTER_SERVICE_SOCKET, sendBuf.Pop(), retBuf);
     if (ret == SECURITY_MANAGER_API_SUCCESS)
