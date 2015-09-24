@@ -76,3 +76,4 @@
 *	http://tizen.org/privilege/window.priority.set
 *	http://tizen.org/privilege/notexist
 *	http://tizen.org/privilege/internal/dbus
+*	http://tizen.org/privilege/internal/usermanagement
