@@ -42,6 +42,7 @@ enum lib_retcode {
     SECURITY_MANAGER_ERROR_REQ_NOT_COMPLETE,
     SECURITY_MANAGER_ERROR_AUTHENTICATION_FAILED,
     SECURITY_MANAGER_ERROR_ACCESS_DENIED,
+    SECURITY_MANAGER_ERROR_NO_SUCH_OBJECT,
 };
 
 /*! \brief accesses types for application installation paths*/
@@ -777,6 +778,43 @@ int security_manager_groups_get(char ***groups, size_t *groups_count);
  * @param[in] groups_count size of the groups array
  */
 void security_manager_groups_free(char **groups, size_t groups_count);
+
+/**
+ * Get package and application id of an application with given socket descriptor
+ *
+ * On successful call pkg_id and app_id should be freed when caller is done with them.
+ * Both pkg_id and app_id are allocated with malloc() so they should be freed with free() function.
+ * Either app_id or pkg_id may be NULL. NULL-ed argument will be ignored.
+ * If both app_id and pkg_id are NULL then SECURITY_MANAGER_ERROR_INPUT_PARAM will be returned.
+ * When socket descriptor is incorrect or not related to any package, this function will
+ * return SECURITY_MANAGER_ERROR_NO_SUCH_OBJECT.
+ *
+ * \param[in] Socket descriptor of wanted application
+ * \param[out]  package id of the application
+ * \param[out]  application id of the application
+ * \return API return code or error code
+ */
+int security_manager_identify_app_from_socket(int sockfd, char **pkg_id, char **app_id);
+
+/**
+ * Get package and application id of an application with given process identifier
+ *
+ * On successful call pkg_id and app_id should be freed when caller is done with them.
+ * Both pkg_id and app_id are allocated with malloc() so they should be freed with free() function.
+ * Either app_id or pkg_id may be NULL. NULL-ed argument will be ignored.
+ * If both app_id and pkg_id are NULL then SECURITY_MANAGER_ERROR_INPUT_PARAM will be returned.
+ * When process identifier is incorrect or not related to any package, this function will
+ * return SECURITY_MANAGER_ERROR_NO_SUCH_OBJECT.
+ *
+ * \note Caller must be able to access and read file /proc/PID/atrr/current where PID is the given
+ * process identifier.
+ *
+ * \param[in] process identifier of wanted application
+ * \param[out]  package id of the application
+ * \param[out]  application id of the application
+ * \return API return code or error code
+ */
+int security_manager_identify_app_from_pid(pid_t pid, char **pkg_id, char **app_id);
 
 #ifdef __cplusplus
 }

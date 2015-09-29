@@ -1149,3 +1149,69 @@ void security_manager_groups_free(char **groups, size_t groups_count)
 
     free(groups);
 }
+
+static lib_retcode get_app_and_pkg_id_from_smack_label(
+        const std::string &label,
+        char **pkg_id,
+        char **app_id)
+{
+    std::string appIdString;
+
+    try {
+        appIdString = SmackLabels::generateAppNameFromLabel(label);
+    } catch (const SmackException::InvalidLabel &) {
+        return SECURITY_MANAGER_ERROR_NO_SUCH_OBJECT;
+    }
+
+    if (app_id && !(*app_id = strdup(appIdString.c_str()))) {
+        LogError("Memory allocation in strdup failed.");
+        return SECURITY_MANAGER_ERROR_MEMORY;
+    }
+
+    return pkg_id ? static_cast<lib_retcode>(security_manager_get_app_pkgid(pkg_id, appIdString.c_str()))
+            : SECURITY_MANAGER_SUCCESS;
+}
+
+static int security_manager_identify_app(
+        const std::function<std::string()> &getLabel,
+        char **pkg_id,
+        char **app_id)
+{
+    using namespace SecurityManager;
+
+    LogDebug(__PRETTY_FUNCTION__ << " called");
+
+    if (pkg_id == NULL && app_id == NULL) {
+        LogError("Both pkg_id and app_id are NULL");
+        return SECURITY_MANAGER_ERROR_INPUT_PARAM;
+    }
+
+    std::string label;
+    try {
+        label = getLabel();
+    } catch (...) {
+        return SECURITY_MANAGER_ERROR_NO_SUCH_OBJECT;
+    }
+
+    return get_app_and_pkg_id_from_smack_label(label, pkg_id, app_id);
+}
+
+SECURITY_MANAGER_API
+int security_manager_identify_app_from_socket(int sockfd, char **pkg_id, char **app_id)
+{
+    return try_catch([&] {
+        return security_manager_identify_app([&] {
+            return SmackLabels::getSmackLabelFromSocket(sockfd);
+        }, pkg_id, app_id);
+    });
+}
+
+SECURITY_MANAGER_API
+int security_manager_identify_app_from_pid(pid_t pid, char **pkg_id, char **app_id)
+{
+    return try_catch([&] {
+        return security_manager_identify_app([&] {
+            return SmackLabels::getSmackLabelFromPid(pid);
+        }, pkg_id, app_id);
+    });
+}
