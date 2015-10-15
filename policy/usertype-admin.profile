@@ -78,6 +78,7 @@
 *	http://tizen.org/privilege/internal/default/public
 *	http://tizen.org/privilege/internal/default/partner
 *	http://tizen.org/privilege/internal/default/platform
+*	http://tizen.org/privilege/internal/buxton
 *	http://tizen.org/privilege/internal/buxton/account.read
 *	http://tizen.org/privilege/internal/buxton/camcorder
 *	http://tizen.org/privilege/internal/buxton/contact.read
