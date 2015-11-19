@@ -222,15 +222,15 @@ bool ServiceImpl::installRequestAuthCheck(const app_inst_req &req, uid_t uid, st
     correctPath << userAppDir << "/" << req.pkgId;
     LogDebug("correctPath: " << correctPath.str());
 
-    for (const auto &appPath : req.appPaths) {
+    for (const auto &path : req.appPaths) {
         std::unique_ptr<char, std::function<void(void*)>> real_path(
-            realpath(appPath.first.c_str(), NULL), free);
+            realpath(path.first.c_str(), NULL), free);
         if (!real_path.get()) {
-            LogError("realpath failed with '" << appPath.first.c_str()
+            LogError("realpath failed with '" << path.first.c_str()
                     << "' as parameter: " << strerror(errno));
             return false;
         }
-        LogDebug("Requested path is '" << appPath.first.c_str()
+        LogDebug("Requested path is '" << path.first.c_str()
                 << "'. User's APPS_DIR is '" << userAppDir << "'");
         if (!isSubDir(correctPath.str().c_str(), real_path.get())) {
             LogWarning("Installation is outside correct path: " << correctPath.str() << "," << real_path.get());
@@ -855,16 +855,16 @@ int ServiceImpl::getPolicy(const policy_entry &filter, uid_t uid, pid_t pid, con
         };
         LogDebug("Fetching policy for " << listOfUsers.size() << " users");
 
-        for (const uid_t &uid : listOfUsers) {
-            LogDebug("User: " << uid);
-            std::string userStr = std::to_string(uid);
+        for (const uid_t &user : listOfUsers) {
+            LogDebug("User: " << user);
+            std::string userStr = std::to_string(user);
             std::vector<std::string> listOfApps;
 
             if (filter.appId.compare(SECURITY_MANAGER_ANY)) {
                 LogDebug("Limitting Cynara query to app: " << filter.appId);
                 listOfApps.push_back(filter.appId);
             } else {
-                PrivilegeDb::getInstance().GetUserApps(uid, listOfApps);
+                PrivilegeDb::getInstance().GetUserApps(user, listOfApps);
                 LogDebug("Found apps: " << listOfApps.size());
             };
 
@@ -875,7 +875,7 @@ int ServiceImpl::getPolicy(const policy_entry &filter, uid_t uid, pid_t pid, con
 
                 // FIXME: also fetch privileges of global applications
                 // FIXME: fetch privileges from cynara, drop PrivilegeDb::GetAppPrivileges
-                PrivilegeDb::getInstance().GetAppPrivileges(appId, uid, listOfPrivileges);
+                PrivilegeDb::getInstance().GetAppPrivileges(appId, user, listOfPrivileges);
 
                 if (filter.privilege.compare(SECURITY_MANAGER_ANY)) {
                     LogDebug("Limitting Cynara query to privilege: " << filter.privilege);
