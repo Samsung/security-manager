@@ -24,6 +24,7 @@
 
 #include "zone-utils.h"
 
+#include <unistd.h>
 #include <fstream>
 
 #include <dpl/log/log.h>
@@ -48,6 +49,12 @@ bool getZoneIdFromPid(int pid, std::string& zoneId)
 {
     //open /proc/<pid>/cpuset and get its contents
     const std::string path = "/proc/" + std::to_string(pid) + "/cpuset";
+
+    //Assume there are no containers if cpuset dosen't present
+    if(access(path.c_str(), F_OK)!= 0) {
+        zoneId = ZONE_HOST;
+        return true;
+    }
 
     std::ifstream cpusetFile(path);
     if (!cpusetFile) {
