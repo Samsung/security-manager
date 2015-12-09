@@ -98,14 +98,15 @@ int SmackInstallRules(const std::string &appId, const std::string &pkgId,
 }
 
 int SmackUninstallRules(const std::string &appId, const std::string &pkgId,
-                        const std::vector<std::string> &pkgContents, const bool removePkg)
+                        const std::vector<std::string> &pkgContents,
+                        const bool removeApp, const bool removePkg)
 {
     int ret;
     MessageBuffer sendBuf, retBuf;
 
     Serialization::Serialize(sendBuf,
         static_cast<int>(MasterSecurityModuleCall::SMACK_UNINSTALL_RULES),
-        appId, pkgId, pkgContents, removePkg);
+        appId, pkgId, pkgContents, removeApp, removePkg);
 
     ret = sendToServer(MASTER_SERVICE_SOCKET, sendBuf.Pop(), retBuf);
     if (ret == SECURITY_MANAGER_API_SUCCESS)

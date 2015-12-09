@@ -136,6 +136,15 @@ bool PrivilegeDb::PkgIdExists(const std::string &pkgId)
     });
 }
 
+bool PrivilegeDb::AppIdExists(const std::string &appId)
+{
+    return try_catch<bool>([&] {
+        auto command = getStatement(StmtType::EAppIdExists);
+        command->BindString(1, appId);
+        return command->Step();
+    });
+}
+
 bool PrivilegeDb::GetAppPkgId(const std::string &appId, std::string &pkgId)
 {
     return try_catch<bool>([&] {
@@ -173,7 +182,7 @@ void PrivilegeDb::AddApplication(const std::string &appId,
 }
 
 void PrivilegeDb::RemoveApplication(const std::string &appId, uid_t uid,
-        bool &pkgIdIsNoMore)
+        bool &appIdIsNoMore, bool &pkgIdIsNoMore)
 {
     try_catch<void>([&] {
         std::string pkgId;
@@ -193,6 +202,7 @@ void PrivilegeDb::RemoveApplication(const std::string &appId, uid_t uid,
 
         LogDebug("Removed appId: " << appId);
 
+        appIdIsNoMore = !(this->AppIdExists(appId));
         pkgIdIsNoMore = !(this->PkgIdExists(pkgId));
     });
 }

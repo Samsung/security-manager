@@ -53,6 +53,7 @@ enum class StmtType {
     EAddAppPrivileges,
     ERemoveAppPrivileges,
     EPkgIdExists,
+    EAppIdExists,
     EGetPkgId,
     EGetPrivilegeGroups,
     EGetUserApps,
@@ -99,6 +100,7 @@ private:
         { StmtType::EAddAppPrivileges, "INSERT INTO app_privilege_view (app_name, uid, privilege_name) VALUES (?, ?, ?)" },
         { StmtType::ERemoveAppPrivileges, "DELETE FROM app_privilege_view WHERE app_name=? AND uid=?" },
         { StmtType::EPkgIdExists, "SELECT * FROM pkg WHERE name=?" },
+        { StmtType::EAppIdExists, "SELECT * FROM app WHERE name=?" },
         { StmtType::EGetPkgId, " SELECT pkg_name FROM app_pkg_view WHERE app_name = ?" },
         { StmtType::EGetPrivilegeGroups, " SELECT group_name FROM privilege_group_view WHERE privilege_name = ?" },
         { StmtType::EGetUserApps, "SELECT name FROM app WHERE uid=?" },
@@ -147,6 +149,16 @@ private:
      *
      */
     bool PkgIdExists(const std::string &pkgId);
+
+    /**
+     * Check if appId is registered in database
+     *
+     * @param appId - package identifier
+     * @exception DB::SqlConnection::Exception::InternalError on internal error
+     * @return true if appId exists in the database
+     *
+     */
+    bool AppIdExists(const std::string &appId);
 
 public:
     class Exception
@@ -230,10 +242,12 @@ public:
      *
      * @param appId - application identifier
      * @param uid - user identifier whose application is going to be uninstalled
+     * @param[out] appIdIsNoMore - return info if appId is in the database
      * @param[out] pkgIdIsNoMore - return info if pkgId is in the database
      * @exception DB::SqlConnection::Exception::InternalError on internal error
      */
-    void RemoveApplication(const std::string &appId, uid_t uid, bool &pkgIdIsNoMore);
+    void RemoveApplication(const std::string &appId, uid_t uid,
+        bool &appIdIsNoMore, bool &pkgIdIsNoMore);
 
     /**
      * Remove privileges assigned to application

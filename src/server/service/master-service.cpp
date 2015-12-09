@@ -359,55 +359,56 @@ out:
 void MasterService::processSmackUninstallRules(MessageBuffer &buffer, MessageBuffer &send,
                                                const std::string &zoneId)
 {
-    int ret = SECURITY_MANAGER_API_ERROR_SERVER_ERROR;
     std::string appId, pkgId;
     std::vector<std::string> pkgContents;
+    bool removeApp = false;
     bool removePkg = false;
 
     Deserialization::Deserialize(buffer, appId);
     Deserialization::Deserialize(buffer, pkgId);
     Deserialization::Deserialize(buffer, pkgContents);
+    Deserialization::Deserialize(buffer, removeApp);
     Deserialization::Deserialize(buffer, removePkg);
 
     try {
+        if (removeApp) {
+            LogDebug("Removing smack rules for deleted appId " << appId);
+            SmackRules::uninstallApplicationRules(appId, pkgId, pkgContents, zoneId);
+
+            std::string zoneAppLabel = SmackLabels::generateAppLabel(appId);
+            std::string hostAppLabel = zoneSmackLabelGenerate(zoneAppLabel, zoneId);
+            // FIXME zoneSmackLabelUnmap should throw exception on error, not return false
+            // FIXME implement zoneSmackLabelUnmap and check if works when Smack Namespaces are implemented
+            if (!zoneSmackLabelUnmap(hostAppLabel, zoneId)) {
+                LogError("Failed to unmap Smack labels for application " << appId);
+                Serialization::Serialize(send, SECURITY_MANAGER_API_ERROR_SERVER_ERROR);
+                return;
+            }
+        }
+
         if (removePkg) {
             LogDebug("Removing Smack rules for deleted pkgId " << pkgId);
             SmackRules::uninstallPackageRules(pkgId);
-        }
 
-        LogDebug ("Removing smack rules for deleted appId " << appId);
-        SmackRules::uninstallApplicationRules(appId, pkgId, pkgContents, zoneId);
-
-        // FIXME implement zoneSmackLabelUnmap and check if works when Smack Namespaces are implemented
-        std::string zoneAppLabel = SmackLabels::generateAppLabel(appId);
-        std::string zonePkgLabel = SmackLabels::generatePkgLabel(pkgId);
-        std::string hostAppLabel = zoneSmackLabelGenerate(zoneAppLabel, zoneId);
-        std::string hostPkgLabel = zoneSmackLabelGenerate(zonePkgLabel, zoneId);
-
-        if (!zoneSmackLabelUnmap(hostAppLabel, zoneId)) {
-            LogError("Failed to unmap Smack labels for application " << appId);
-            goto out;
-        }
-
-        if (removePkg) {
+            std::string zonePkgLabel = SmackLabels::generatePkgLabel(pkgId);
+            std::string hostPkgLabel = zoneSmackLabelGenerate(zonePkgLabel, zoneId);
             if (!zoneSmackLabelUnmap(hostPkgLabel, zoneId)) {
                 LogError("Failed to unmap Smack label for package " << pkgId);
-                goto out;
+                Serialization::Serialize(send, SECURITY_MANAGER_API_ERROR_SERVER_ERROR);
+                return;
             }
         }
     } catch (const SmackException::Base &e) {
         LogError("Error while removing Smack rules for application: " << e.DumpToString());
-        ret = SECURITY_MANAGER_API_ERROR_SETTING_FILE_LABEL_FAILED;
-        goto out;
+        Serialization::Serialize(send, SECURITY_MANAGER_API_ERROR_SETTING_FILE_LABEL_FAILED);
+        return;
     } catch (const std::bad_alloc &e) {
         LogError("Memory allocation error: " << e.what());
-        ret =  SECURITY_MANAGER_API_ERROR_OUT_OF_MEMORY;
-        goto out;
+        Serialization::Serialize(send, SECURITY_MANAGER_API_ERROR_OUT_OF_MEMORY);
+        return;
     }
 
-    ret = SECURITY_MANAGER_API_SUCCESS;
-out:
-    Serialization::Serialize(send, ret);
+    Serialization::Serialize(send, SECURITY_MANAGER_API_SUCCESS);
 }
 
 } // namespace SecurityManager
