@@ -8,3 +8,4 @@ http://tizen.org/privilege/camera priv_camera
 http://tizen.org/privilege/recorder priv_recorder
 http://tizen.org/privilege/mediastorage priv_mediastorage
 http://tizen.org/privilege/externalstorage priv_externalstorage
+http://tizen.org/privilege/message.read priv_message_read
