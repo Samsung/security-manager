@@ -21,6 +21,9 @@
 *	http://tizen.org/privilege/contact.read
 *	http://tizen.org/privilege/contact.write
 *	http://tizen.org/privilege/content.write
+*	http://tizen.org/privilege/d2d.admin
+*	http://tizen.org/privilege/d2d.appcontrol
+*	http://tizen.org/privilege/d2d.datasharing
 *	http://tizen.org/privilege/datasharing
 *	http://tizen.org/privilege/display
 *	http://tizen.org/privilege/download
