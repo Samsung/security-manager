@@ -38,7 +38,7 @@ do
     bucket="`echo $file | sed -r 's|.*/usertype-(.*).profile$|USER_TYPE_\1|' | tr '[:lower:]' '[:upper:]'`"
 
     # Re-create the bucket with empty contents
-    cyad --delete-bucket=$bucket || true
+    cyad --erase=$bucket --recursive=n --client='#' --user='#' --privilege='#' || true
     cyad --set-bucket=$bucket --type=DENY
 
     # Link the bucket to ADMIN bucket
