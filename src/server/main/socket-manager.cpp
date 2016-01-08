@@ -30,6 +30,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/smack.h>
+#include <linux/xattr.h>
 #include <sys/un.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -500,9 +501,9 @@ int SocketManager::CreateDomainSocketHelp(
     if (smack_check()) {
         LogInfo("Set up smack label: " << desc.smackLabel);
 
-        if (0 != smack_fsetlabel(sockfd, desc.smackLabel.c_str(), SMACK_LABEL_IPIN)) {
-            LogError("Error in smack_fsetlabel");
-            ThrowMsg(Exception::InitFailed, "Error in smack_fsetlabel");
+        if (0 != smack_set_label_for_file(sockfd, XATTR_NAME_SMACKIPIN, desc.smackLabel.c_str())) {
+            LogError("Error in smack_set_label_for_file");
+            ThrowMsg(Exception::InitFailed, "Error in smack_set_label_for_file");
         }
     } else {
         LogInfo("No smack on platform. Socket won't be securied with smack label!");
