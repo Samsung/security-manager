@@ -40,8 +40,9 @@ namespace po = boost::program_options;
 IMPLEMENT_SAFE_SINGLETON(SecurityManager::Log::LogSystem);
 
 static std::map <std::string, enum app_install_path_type> app_install_path_type_map = {
-    {"writable", SECURITY_MANAGER_PATH_RW},
-    {"readable", SECURITY_MANAGER_PATH_RO}
+    {"rw", SECURITY_MANAGER_PATH_RW},
+    {"ro", SECURITY_MANAGER_PATH_RO},
+    {"public_ro", SECURITY_MANAGER_PATH_PUBLIC_RO},
 };
 
 static std::map <std::string, enum security_manager_user_type> user_type_map = {
@@ -81,9 +82,9 @@ static po::options_description getInstallOptions()
          ("path,p", po::value< std::vector<std::string> >()->multitoken(),
           "path for setting smack labels (may occur more than once).\n"
           "Format: --path <path> <path type>\n"
-          "  where <path type> is: \tprivate, public, public_ro\n"
+          "  where <path type> is: \trw, ro, public_ro\n"
           "example:\n"
-          "        \t--path=/home/user/app private")
+          "        \t--path=/home/user/app rw")
          ("privilege,s", po::value< std::vector<std::string> >(),
           "privilege for the application (may occur more than once)")
          ("uid,u", po::value<uid_t>()->required(),
