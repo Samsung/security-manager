@@ -15,6 +15,7 @@ BuildRequires: cmake
 BuildRequires: zip
 # BuildRequires: pkgconfig(dlog)
 BuildRequires: libattr-devel
+BuildRequires: pkgconfig(libprocps)
 BuildRequires: pkgconfig(libsmack)
 BuildRequires: pkgconfig(libcap)
 BuildRequires: pkgconfig(libsystemd-daemon)

@@ -26,6 +26,7 @@
  */
 
 #include <cstdio>
+#include <cstdlib>
 #include <functional>
 #include <memory>
 #include <unordered_set>
@@ -52,6 +53,7 @@
 #include <protocols.h>
 #include <service_impl.h>
 #include <connection.h>
+#include <check-proper-drop.h>
 
 #include <security-manager.h>
 #include <client-offline.h>
@@ -694,22 +696,35 @@ int security_manager_drop_process_privileges(void)
 SECURITY_MANAGER_API
 int security_manager_prepare_app(const char *app_name)
 {
-    LogDebug("security_manager_prepare_app() called");
-    int ret;
+    return try_catch([&] {
+        LogDebug("security_manager_prepare_app() called");
+        int ret;
 
-    ret = security_manager_set_process_groups_from_appid(app_name);
-    if (ret != SECURITY_MANAGER_SUCCESS) {
-        LogWarning("Unable to setup process groups for application. Privileges with direct access to resources will not work.");
-        ret = SECURITY_MANAGER_SUCCESS;
-    }
+        ret = security_manager_set_process_groups_from_appid(app_name);
+        if (ret != SECURITY_MANAGER_SUCCESS) {
+            LogWarning("Unable to setup process groups for application. Privileges with direct access to resources will not work.");
+        }
 
-    ret = security_manager_sync_threads_internal(app_name);
-    if (ret != SECURITY_MANAGER_SUCCESS) {
-        LogError("Can't properly setup application threads (Smack label & capabilities)");
+        ret = security_manager_sync_threads_internal(app_name);
+        if (ret != SECURITY_MANAGER_SUCCESS) {
+            LogError("Can't properly setup application threads (Smack label & capabilities)");
+            exit(EXIT_FAILURE);
+        }
+
+        try {
+            CheckProperDrop cpd;
+            cpd.getThreads();
+            if (!cpd.checkThreads()) {
+                LogError("Privileges haven't been properly dropped for the whole process");
+                exit(EXIT_FAILURE);
+            }
+        } catch (const SecurityManager::Exception &e) {
+            LogError("Error while checking privileges of the process: " << e.DumpToString());
+            exit(EXIT_FAILURE);
+        }
+
         return ret;
-    }
-
-    return ret;
+    });
 }
 
 SECURITY_MANAGER_API
