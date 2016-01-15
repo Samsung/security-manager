@@ -1215,3 +1215,40 @@ int security_manager_identify_app_from_pid(pid_t pid, char **pkg_id, char **app_
         }, pkg_id, app_id);
     });
 }
+
+SECURITY_MANAGER_API
+int security_manager_app_has_privilege(const char *app_id, const char *privilege,
+                                       uid_t uid, int *result)
+{
+    using namespace SecurityManager;
+    MessageBuffer send, recv;
+    return try_catch([&] {
+        Serialization::Serialize(send, static_cast<int>(SecurityModuleCall::APP_HAS_PRIVILEGE),
+            std::string(app_id), std::string(privilege), uid);
+
+        int retval = sendToServer(SERVICE_SOCKET, send.Pop(), recv);
+        if (retval != SECURITY_MANAGER_API_SUCCESS) {
+            LogError("Error in sendToServer. Error code: " << retval);
+            return SECURITY_MANAGER_ERROR_UNKNOWN;
+        }
+
+        Deserialization::Deserialize(recv, retval);
+
+        switch(retval) {
+            case SECURITY_MANAGER_API_SUCCESS:
+                // success - continue
+                break;
+            case SECURITY_MANAGER_API_ERROR_OUT_OF_MEMORY:
+                return SECURITY_MANAGER_ERROR_MEMORY;
+            case SECURITY_MANAGER_API_ERROR_INPUT_PARAM:
+                return SECURITY_MANAGER_ERROR_INPUT_PARAM;
+            default:
+                return SECURITY_MANAGER_ERROR_UNKNOWN;
+        }
+
+        Deserialization::Deserialize(recv, *result);
+        LogDebug("app_has_privilege result: " << *result);
+
+        return SECURITY_MANAGER_SUCCESS;
+    });
+}

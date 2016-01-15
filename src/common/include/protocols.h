@@ -138,6 +138,7 @@ enum class SecurityModuleCall
     POLICY_GET_DESCRIPTIONS,
     GET_PRIVILEGES_MAPPING,
     GROUPS_GET,
+    APP_HAS_PRIVILEGE,
     NOOP = 0x90,
 };
 

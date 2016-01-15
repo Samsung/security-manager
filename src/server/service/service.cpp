@@ -140,6 +140,9 @@ bool Service::processOne(const ConnectionID &conn, MessageBuffer &buffer,
                 case SecurityModuleCall::GROUPS_GET:
                     processGroupsGet(send);
                     break;
+                case SecurityModuleCall::APP_HAS_PRIVILEGE:
+                    processAppHasPrivilege(buffer, send);
+                    break;
                 default:
                     LogError("Invalid call: " << call_type_int);
                     Throw(ServiceException::InvalidAction);
@@ -345,6 +348,24 @@ void Service::processGroupsGet(MessageBuffer &send)
     if (ret == SECURITY_MANAGER_API_SUCCESS) {
         Serialization::Serialize(send, groups);
     }
+}
+
+void Service::processAppHasPrivilege(MessageBuffer &recv, MessageBuffer &send)
+{
+    std::string appId;
+    std::string privilege;
+    uid_t uid;
+
+    Deserialization::Deserialize(recv, appId);
+    Deserialization::Deserialize(recv, privilege);
+    Deserialization::Deserialize(recv, uid);
+
+    bool result;
+    int ret = serviceImpl.appHasPrivilege(appId, privilege, uid, m_isSlave, result);
+
+    Serialization::Serialize(send, ret);
+    if (ret == SECURITY_MANAGER_API_SUCCESS)
+        Serialization::Serialize(send, static_cast<int>(result));
 }
 
 } // namespace SecurityManager

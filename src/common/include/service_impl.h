@@ -196,6 +196,21 @@ public:
      * @return API return code, as defined in protocols.h
      */
     int policyGetGroups(std::vector<std::string> &groups);
+
+    /**
+     * Process checking application's privilege access based on app_id
+     *
+     * @param[in]  appId application identifier
+     * @param[in]  privilege privilege name
+     * @param[in]  uid user identifier
+     * @param[in]  isSlave indicates if function should be called under slave mode
+     * @param[out] result placeholder for check result
+     *
+     * @return API return code, as defined in protocols.h
+     */
+    int appHasPrivilege(std::string appId, std::string privilege, uid_t uid,
+            bool isSlave, bool &result);
+
 };
 } /* namespace SecurityManager */
 

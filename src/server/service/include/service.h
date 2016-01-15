@@ -158,6 +158,14 @@ private:
      * @param  send   Raw data buffer to be sent
      */
     void processGroupsGet(MessageBuffer &send);
+
+    /**
+     * Process checking application's privilege access based on app_id
+     *
+     * @param  recv   Raw received data buffer
+     * @param  send   Raw data buffer to be sent
+     */
+    void processAppHasPrivilege(MessageBuffer &recv, MessageBuffer &send);
 };
 
 } // namespace SecurityManager

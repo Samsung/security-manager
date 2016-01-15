@@ -1020,4 +1020,40 @@ int ServiceImpl::policyGetGroups(std::vector<std::string> &groups)
     return ret;
 }
 
+int ServiceImpl::appHasPrivilege(std::string appId, std::string privilege,
+    uid_t uid, bool isSlave, bool &result)
+{
+    try {
+        // FIXME getAppGroups should work without generating zone-specific labels when
+        //       Smack Namespaces will work
+        std::string zoneId;
+        if (isSlave) {
+            if (!getZoneId(zoneId)) {
+                LogError("Failed to get Zone ID.");
+                return SECURITY_MANAGER_API_ERROR_SERVER_ERROR;
+            }
+        }
+
+        std::string appLabel = zoneSmackLabelGenerate(
+            SmackLabels::generateAppLabel(appId), zoneId);
+        std::string uidStr = std::to_string(uid);
+        result = Cynara::getInstance().check(appLabel, privilege, uidStr, "");
+        LogDebug("result = " << result);
+    } catch (const CynaraException::Base &e) {
+        LogError("Error while querying Cynara for permissions: " << e.DumpToString());
+        return SECURITY_MANAGER_API_ERROR_SERVER_ERROR;
+    } catch (const SmackException::InvalidLabel &e) {
+        LogError("Error while generating Smack labels: " << e.DumpToString());
+        return SECURITY_MANAGER_API_ERROR_SERVER_ERROR;
+    } catch (const std::bad_alloc &e) {
+        LogError("Memory allocation failed: " << e.what());
+        return SECURITY_MANAGER_API_ERROR_OUT_OF_MEMORY;
+    } catch (...) {
+        LogError("Unknown exception thrown");
+        return SECURITY_MANAGER_API_ERROR_UNKNOWN;
+    }
+
+    return SECURITY_MANAGER_API_SUCCESS;
+}
+
 } /* namespace SecurityManager */

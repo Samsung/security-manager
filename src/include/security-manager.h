@@ -816,6 +816,26 @@ int security_manager_identify_app_from_socket(int sockfd, char **pkg_id, char **
  */
 int security_manager_identify_app_from_pid(pid_t pid, char **pkg_id, char **app_id);
 
+/**
+ * Check whether an application would have access to a privilege
+ *
+ * This enables queries for application's privileges when there is no application
+ * process running. In such case the application label cannot be determined from
+ * the process and the query for privilege must be based on app_id.
+ *
+ * The check result is placed in \ref result:
+ * - 0: access denied
+ * - 1: access granted
+ *
+ * @param[in] app_id application identifier
+ * @param[in] privilege name
+ * @param[in] uid user identifier
+ * @param[out] result placeholder for result
+ * @return API return code or error code
+ */
+int security_manager_app_has_privilege(const char *app_id, const char *privilege,
+                                       uid_t uid, int *result);
+
 #ifdef __cplusplus
 }
 #endif
