@@ -618,7 +618,7 @@ void Cynara::responseCallback(cynara_check_id checkId,
     switch (cause) {
     case CYNARA_CALL_CAUSE_ANSWER:
         LogDebug("Cynara cause: ANSWER: " << response);
-        promise->set_value(response);
+        promise->set_value(response == CYNARA_API_ACCESS_ALLOWED);
         break;
 
     case CYNARA_CALL_CAUSE_CANCEL:
