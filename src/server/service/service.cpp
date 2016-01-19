@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2000 - 2015 Samsung Electronics Co., Ltd All Rights Reserved
+ *  Copyright (c) 2000 - 2016 Samsung Electronics Co., Ltd All Rights Reserved
  *
  *  Contact: Rafal Krypa <r.krypa@samsung.com>
  *
@@ -184,6 +184,7 @@ void Service::processAppInstall(MessageBuffer &buffer, MessageBuffer &send, uid_
     Deserialization::Deserialize(buffer, req.appPaths);
     Deserialization::Deserialize(buffer, req.uid);
     Deserialization::Deserialize(buffer, req.tizenVersion);
+    Deserialization::Deserialize(buffer, req.authorId);
     Serialization::Serialize(send, serviceImpl.appInstall(req, uid, m_isSlave));
 }
 

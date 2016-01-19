@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2000 - 2015 Samsung Electronics Co., Ltd All Rights Reserved
+ *  Copyright (c) 2000 - 2016 Samsung Electronics Co., Ltd All Rights Reserved
  *
  *  Contact: Rafal Krypa <r.krypa@samsung.com>
  *
@@ -111,6 +111,7 @@ struct app_inst_req {
     std::vector<std::pair<std::string, int>> appPaths;
     uid_t uid;
     std::string tizenVersion;
+    std::string authorId;
 };
 
 struct user_req {

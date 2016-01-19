@@ -129,8 +129,8 @@ int security_manager_app_inst_req_set_author_id(app_inst_req *p_req, const char 
     if (!p_req || !author_id || strlen(author_id) == 0)
         return SECURITY_MANAGER_ERROR_INPUT_PARAM;
 
-    LogError("Not implemented");
-    return SECURITY_MANAGER_ERROR_UNKNOWN;
+    p_req->authorId.assign(author_id);
+    return SECURITY_MANAGER_SUCCESS;
 }
 
 SECURITY_MANAGER_API
@@ -197,8 +197,15 @@ int security_manager_app_install(const app_inst_req *p_req)
             MessageBuffer send, recv;
 
             //put data into buffer
-            Serialization::Serialize(send, (int)SecurityModuleCall::APP_INSTALL,
-                p_req->appId, p_req->pkgId, p_req->privileges, p_req->appPaths, p_req->uid, p_req->tizenVersion);
+            Serialization::Serialize(send,
+                                     (int)SecurityModuleCall::APP_INSTALL,
+                                     p_req->appId,
+                                     p_req->pkgId,
+                                     p_req->privileges,
+                                     p_req->appPaths,
+                                     p_req->uid,
+                                     p_req->tizenVersion,
+                                     p_req->authorId);
 
             //send buffer to server
             retval = sendToServer(SERVICE_SOCKET, send.Pop(), recv);
