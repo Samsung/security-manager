@@ -8,6 +8,7 @@ Source0:    %{name}-%{version}.tar.gz
 Source1:    security-manager.manifest
 Source3:    libsecurity-manager-client.manifest
 Requires: security-manager-policy
+Requires: nether
 Requires(post): smack
 BuildRequires: cmake
 BuildRequires: zip
