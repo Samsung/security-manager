@@ -119,6 +119,12 @@ struct user_req {
     int utype;
 };
 
+struct private_sharing_req {
+    std::string ownerAppId;
+    std::string targetAppId;
+    std::vector<std::string> paths;
+};
+
 namespace SecurityManager {
 
 extern char const * const SERVICE_SOCKET;
