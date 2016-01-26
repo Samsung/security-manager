@@ -232,6 +232,67 @@ void PrivilegeDb::RemoveApplication(const std::string &appId, uid_t uid,
     });
 }
 
+void PrivilegeDb::GetPathSharingCount(const std::string &path, int &count) {
+    try_catch<void>([&] {
+        auto command = getStatement(StmtType::EGetPathSharedCount);
+        command->BindString(1, path);
+
+        command->Step();
+        count = command->GetColumnInteger(0);
+    });
+}
+void PrivilegeDb::GetOwnerTargetSharingCount(const std::string &ownerAppId, const std::string &targetAppId,
+                                int &count)
+{
+    try_catch<void>([&] {
+        auto command = getStatement(StmtType::EGetOwnerTargetSharedCount);
+        command->BindString(1, ownerAppId);
+        command->BindString(2, targetAppId);
+
+        command->Step();
+        count = command->GetColumnInteger(0);
+    });
+}
+void PrivilegeDb::GetTargetPathSharingCount(const std::string &targetAppId,
+                               const std::string &path,
+                               int &count)
+{
+    try_catch<void>([&] {
+        auto command = getStatement(StmtType::EGetTargetPathSharedCount);
+        command->BindString(1, targetAppId);
+        command->BindString(2, path);
+
+        command->Step();
+        count = command->GetColumnInteger(0);
+    });
+}
+void PrivilegeDb::ApplyPrivateSharing(const std::string &ownerAppId, const std::string &targetAppId,
+                         const std::string &path, const std::string &pathLabel)
+{
+    try_catch<void>([&] {
+        auto command = getStatement(StmtType::EAddPrivatePathSharing);
+        command->BindString(1, ownerAppId);
+        command->BindString(2, targetAppId);
+        command->BindString(3, path);
+        command->BindString(4, pathLabel);
+
+        command->Step();
+    });
+}
+
+void PrivilegeDb::DropPrivateSharing(const std::string &ownerAppId, const std::string &targetAppId,
+                            const std::string &path)
+{
+    try_catch<void>([&] {
+        auto command = getStatement(StmtType::ERemovePrivatePathSharing);
+        command->BindString(1, ownerAppId);
+        command->BindString(2, targetAppId);
+        command->BindString(3, path);
+
+        command->Step();
+    });
+}
+
 void PrivilegeDb::GetPkgPrivileges(const std::string &pkgId, uid_t uid,
         std::vector<std::string> &currentPrivileges)
 {
