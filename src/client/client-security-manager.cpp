@@ -113,6 +113,17 @@ int security_manager_app_inst_req_set_uid(app_inst_req *p_req,
 }
 
 SECURITY_MANAGER_API
+int security_manager_app_inst_req_set_target_version(app_inst_req *p_req, const char *tizen_ver)
+{
+    if (!p_req || !tizen_ver)
+        return SECURITY_MANAGER_ERROR_INPUT_PARAM;
+
+    p_req->tizenVersion = tizen_ver;
+
+    return SECURITY_MANAGER_SUCCESS;
+}
+
+SECURITY_MANAGER_API
 int security_manager_app_inst_req_set_app_id(app_inst_req *p_req, const char *app_id)
 {
     if (!p_req || !app_id)
@@ -177,7 +188,7 @@ int security_manager_app_install(const app_inst_req *p_req)
 
             //put data into buffer
             Serialization::Serialize(send, (int)SecurityModuleCall::APP_INSTALL,
-                p_req->appId, p_req->pkgId, p_req->privileges, p_req->appPaths, p_req->uid);
+                p_req->appId, p_req->pkgId, p_req->privileges, p_req->appPaths, p_req->uid, p_req->tizenVersion);
 
             //send buffer to server
             retval = sendToServer(SERVICE_SOCKET, send.Pop(), recv);

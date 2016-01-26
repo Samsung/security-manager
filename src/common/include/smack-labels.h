@@ -71,6 +71,15 @@ std::string generateAppNameFromLabel(const std::string &label);
 std::string generateAppLabel(const std::string &appId);
 
 /**
+ * Generates label for an application with an pkgId, specific
+ * for folders that can be modified by owner and other apps can only read it.
+ *
+ * @param[in] pkgId application's package identifier
+ * @return resulting Smack label
+*/
+std::string generatePkgLabelOwnerRWothersRO(const std::string &pkgId);
+
+/**
  * Generates label for an application with a package ID read from @ref pkgId.
  *
  * @param[in] pkgId

@@ -315,16 +315,20 @@ void MasterService::processSmackInstallRules(MessageBuffer &buffer, MessageBuffe
 {
     int ret = SECURITY_MANAGER_API_ERROR_SERVER_ERROR;
     std::string appId, pkgId;
-    std::vector<std::string> pkgContents;
+    std::vector<std::string> pkgContents, appsGranted, accessPackages;
 
     Deserialization::Deserialize(buffer, appId);
     Deserialization::Deserialize(buffer, pkgId);
     Deserialization::Deserialize(buffer, pkgContents);
+    Deserialization::Deserialize(buffer, appsGranted);
+    Deserialization::Deserialize(buffer, accessPackages);
 
     try {
         LogDebug("Adding Smack rules for new appId: " << appId << " with pkgId: "
-                << pkgId << ". Applications in package: " << pkgContents.size());
-        SmackRules::installApplicationRules(appId, pkgId, pkgContents, zoneId);
+                << pkgId << ". Applications in package: " << pkgContents.size()
+                << ". Other Tizen 2.X applications: " << appsGranted.size());
+
+        SmackRules::installApplicationRules(appId, pkgId, pkgContents, appsGranted, accessPackages, zoneId);
 
         // FIXME implement zoneSmackLabelMap and check if works when Smack Namespaces are implemented
         std::string zoneAppLabel = SmackLabels::generateAppLabel(appId);
@@ -360,20 +364,21 @@ void MasterService::processSmackUninstallRules(MessageBuffer &buffer, MessageBuf
                                                const std::string &zoneId)
 {
     std::string appId, pkgId;
-    std::vector<std::string> pkgContents;
+    std::vector<std::string> pkgContents, appsGranted;
     bool removeApp = false;
     bool removePkg = false;
 
     Deserialization::Deserialize(buffer, appId);
     Deserialization::Deserialize(buffer, pkgId);
     Deserialization::Deserialize(buffer, pkgContents);
+    Deserialization::Deserialize(buffer, appsGranted);
     Deserialization::Deserialize(buffer, removeApp);
     Deserialization::Deserialize(buffer, removePkg);
 
     try {
         if (removeApp) {
             LogDebug("Removing smack rules for deleted appId " << appId);
-            SmackRules::uninstallApplicationRules(appId, pkgId, pkgContents, zoneId);
+            SmackRules::uninstallApplicationRules(appId, pkgId, pkgContents, appsGranted, zoneId);
 
             std::string zoneAppLabel = SmackLabels::generateAppLabel(appId);
             std::string hostAppLabel = zoneSmackLabelGenerate(zoneAppLabel, zoneId);

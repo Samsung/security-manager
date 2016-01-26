@@ -66,17 +66,15 @@ public:
             const std::string &zoneId);
 
     /**
-     * Install package-specific smack rules.
+     * Create cross dependencies for all other 2.X applications
      *
-     * Function creates smack rules using predefined template. Rules are applied
-     * to the kernel and saved on persistent storage so they are loaded on system boot.
-     *
-     * @param[in] appId - application id that is beeing installed
-     * @param[in] pkgId - package id that the application is in
-     * @param[in] pkgContents - a list of all applications in the package
+     * @param[in] pkgId - installed package id to access it's shared dir
+     * @param[in] other2XApps - list of 2.x apps to grant access
+     * @param[in] zoneId - ID of zone which requested application install
      */
-    static void installApplicationRules(const std::string &appId, const std::string &pkgId,
-        const std::vector<std::string> &pkgContents);
+    void generateAllowOther2XApplicationDeps(const std::string pkgId,
+            const std::vector<std::string> &other2XApps,
+            const std::string &zoneId);
 
     /**
      * Install package-specific smack rules.
@@ -86,11 +84,34 @@ public:
      *
      * @param[in] appId - application id that is beeing installed
      * @param[in] pkgId - package id that the application is in
-     * @param[in] pkgContents - a list of all applications in the package
-     * @param[in] zoneId - ID of zone which requested application install
+     * @param[in] pkgContents - list of all applications in the package
+     * @param[in] appsGranted - list of 2.x apps to grant access
+     * @param[in] accessPackages - list of 2.x packages to be accessed
      */
     static void installApplicationRules(const std::string &appId, const std::string &pkgId,
-        const std::vector<std::string> &pkgContents, const std::string &zoneId);
+        const std::vector<std::string> &pkgContents,
+        const std::vector<std::string> &appsGranted,
+        const std::vector<std::string> &accessPackages);
+
+    /**
+     * Install package-specific smack rules plus add rules for specified external apps.
+     *
+     * Function creates smack rules using predefined template. Rules are applied
+     * to the kernel and saved on persistent storage so they are loaded on system boot.
+     *
+     * @param[in] appId - application id that is beeing installed
+     * @param[in] pkgId - package id that the application is in
+     * @param[in] pkgContents - list of all applications in the package
+     * @param[in] zoneId - ID of zone which requested application install
+     * @param[in] appsGranted - list of 2.x apps granted access
+     * @param[in] accessPackages - list of 2.x packages to be accessed
+     */
+    static void installApplicationRules(const std::string &appId, const std::string &pkgId,
+            const std::vector<std::string> &pkgContents,
+            const std::vector<std::string> &appsGranted,
+            const std::vector<std::string> &accessPackages,
+            const std::string &zoneId);
+
     /**
      * Uninstall package-specific smack rules.
      *
@@ -114,10 +135,13 @@ public:
     * @param[in] appId - application id
     * @param[in] pkgId - package id that the application belongs to
     * @param[in] appsInPkg - a list of other applications in the same package id that the application belongs to
+    * @param[in] appsGranted - list of 2.x apps granted access
     * @param[in] zoneId - ID of zone which requested application uninstall
     */
     static void uninstallApplicationRules(const std::string &appId, const std::string &pkgId,
-            std::vector<std::string> appsInPkg, const std::string &zoneId);
+            std::vector<std::string> appsInPkg,
+            const std::vector<std::string> &appsGranted,
+            const std::string &zoneId);
 
     /**
      * Update package specific rules
@@ -127,11 +151,14 @@ public:
      * package
      *
      * @param[in] pkgId - id of the package to update
-     * @param[in] pkgContents - a list of all applications in the package
+     * @param[in] pkgContents - list of all applications in the package
+     * @param[in] appsGranted - list of 2.x apps granted access
      * @param[in] zoneId - ID of zone which requested application uninstall
      */
     static void updatePackageRules(const std::string &pkgId,
-            const std::vector<std::string> &pkgContents, const std::string &zoneId);
+            const std::vector<std::string> &pkgContents,
+            const std::vector<std::string> &appsGranted,
+            const std::string &zoneId);
 
 private:
     /**
@@ -154,6 +181,17 @@ private:
      * @param[in] path - path to the file that contains the rules
      */
     static void uninstallRules (const std::string &path);
+
+    /**
+     * Allow application to access other packages shared directory.
+     *
+     * @param[in] path - path to the file that contains the rules
+     * @param[in] other2XPackages - list of 2.x packages to be accessed
+     * @param[in] zoneId - ID of zone which requested application uninstall
+     */
+    static void generateAppToOtherPackagesDeps(const std::string appId,
+            const std::vector<std::string> &other2XPackages,
+            const std::string &zoneId);
 
     /**
      * Helper method: replace all occurrences of \ref needle in \ref haystack

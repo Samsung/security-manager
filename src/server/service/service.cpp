@@ -183,6 +183,7 @@ void Service::processAppInstall(MessageBuffer &buffer, MessageBuffer &send, uid_
     Deserialization::Deserialize(buffer, req.privileges);
     Deserialization::Deserialize(buffer, req.appPaths);
     Deserialization::Deserialize(buffer, req.uid);
+    Deserialization::Deserialize(buffer, req.tizenVersion);
     Serialization::Serialize(send, serviceImpl.appInstall(req, uid, m_isSlave));
 }
 

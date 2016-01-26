@@ -72,13 +72,17 @@ int CynaraUserRemove(const uid_t uidDeleted);
  *
  * @param[in]  appId       ID of application being removed
  * @param[in]  pkgId       ID of package being removed
- * @param[in]  pkgContents A list of all applications in the package
+ * @param[in]  pkgContents list of all applications in the package
+ * @param[in]  appsGranted list of 2.x apps granted access
+ * @param[in]  accessPackages list of 2.x packages to be accessed
  * @return API return code, as defined in protocols.h
  *
  * @see SmackRules::installApplicationRules
  */
 int SmackInstallRules(const std::string &appId, const std::string &pkgId,
-                      const std::vector<std::string> &pkgContents);
+                      const std::vector<std::string> &pkgContents,
+                      const std::vector<std::string> &appsGranted,
+                      const std::vector<std::string> &accessPackages);
 
 /**
  * Forwards SMACK rule removal to Master service.
@@ -86,6 +90,7 @@ int SmackInstallRules(const std::string &appId, const std::string &pkgId,
  * @param[in]  appId       ID of application being removed
  * @param[in]  pkgId       ID of package being removed
  * @param[in]  pkgContents A list of all applications in the package
+ * @param[in]  appsGranted list of 2.x apps granted access
  * @param[in]  removeApp   Flag stating if the application is no longer installed
  *                         for any user and should be removed
  * @param[in]  removePkg   Flag stating if entire package should be removed
@@ -95,6 +100,7 @@ int SmackInstallRules(const std::string &appId, const std::string &pkgId,
  */
 int SmackUninstallRules(const std::string &appId, const std::string &pkgId,
                         const std::vector<std::string> &pkgContents,
+                        const std::vector<std::string> &appsGranted,
                         const bool removeApp, const bool removePkg);
 
 /**

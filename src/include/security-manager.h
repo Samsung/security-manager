@@ -53,6 +53,9 @@ enum app_install_path_type {
     SECURITY_MANAGER_PATH_RW,
     //! RO access for given application package
     SECURITY_MANAGER_PATH_RO,
+    //! RW access for the owner, RO for other 2.X applications
+    //! (other 3.0 apps will not have access to the shared folder)
+    SECURITY_MANAGER_PATH_OWNER_RW_OTHER_RO,
     //! this is only for range limit
     SECURITY_MANAGER_ENUM_END
 };
@@ -127,6 +130,15 @@ int security_manager_app_inst_req_new(app_inst_req **pp_req);
  *  \param[in] Pointer handling allocated app_inst_req structure
  */
 void security_manager_app_inst_req_free(app_inst_req *p_req);
+
+/*
+ * This function is used to set up target Tizen API version for app in app_inst_req structure
+ *
+ * \param[in] Pointer handling app_inst_req structure
+ * \param[in] Target Tizen version
+ * \return API return code or error code
+ */
+int security_manager_app_inst_req_set_target_version(app_inst_req *p_req, const char *tizen_ver);
 
 /*
  * This function is used to set up application identifier in app_inst_req structure
