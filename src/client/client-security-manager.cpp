@@ -1350,7 +1350,32 @@ int security_manager_private_sharing_apply(const private_sharing_req *p_req)
             return SECURITY_MANAGER_ERROR_INPUT_PARAM;
         if (p_req->ownerAppId.empty() || p_req->targetAppId.empty() || p_req->paths.empty())
             return SECURITY_MANAGER_ERROR_REQ_NOT_COMPLETE;
-        return SECURITY_MANAGER_SUCCESS;
+
+        MessageBuffer send, recv;
+        Serialization::Serialize(send, static_cast<int>(SecurityModuleCall::APP_APPLY_PRIVATE_SHARING));
+        Serialization::Serialize(send, p_req->ownerAppId);
+        Serialization::Serialize(send, p_req->targetAppId);
+        Serialization::Serialize(send, p_req->paths);
+
+        //send buffer to server
+       int retval = sendToServer(SERVICE_SOCKET, send.Pop(), recv);
+       if (retval != SECURITY_MANAGER_API_SUCCESS) {
+           LogError("Error in sendToServer. Error code: " << retval);
+           return SECURITY_MANAGER_ERROR_UNKNOWN;
+       }
+
+       //receive response from server
+       Deserialization::Deserialize(recv, retval);
+       switch(retval) {
+           case SECURITY_MANAGER_API_SUCCESS:
+               return SECURITY_MANAGER_SUCCESS;
+           case SECURITY_MANAGER_API_ERROR_OUT_OF_MEMORY:
+               return SECURITY_MANAGER_ERROR_MEMORY;
+           case SECURITY_MANAGER_API_ERROR_INPUT_PARAM:
+               return SECURITY_MANAGER_ERROR_INPUT_PARAM;
+           default:
+               return SECURITY_MANAGER_ERROR_UNKNOWN;
+       }
     });
 }
 
@@ -1363,7 +1388,32 @@ int security_manager_private_sharing_drop(const private_sharing_req *p_req)
             return SECURITY_MANAGER_ERROR_INPUT_PARAM;
         if (p_req->ownerAppId.empty() || p_req->targetAppId.empty() || p_req->paths.empty())
             return SECURITY_MANAGER_ERROR_REQ_NOT_COMPLETE;
-        return SECURITY_MANAGER_SUCCESS;
+
+        MessageBuffer send, recv;
+        Serialization::Serialize(send, static_cast<int>(SecurityModuleCall::APP_DROP_PRIVATE_SHARING));
+        Serialization::Serialize(send, p_req->ownerAppId);
+        Serialization::Serialize(send, p_req->targetAppId);
+        Serialization::Serialize(send, p_req->paths);
+
+        //send buffer to server
+       int retval = sendToServer(SERVICE_SOCKET, send.Pop(), recv);
+       if (retval != SECURITY_MANAGER_API_SUCCESS) {
+           LogError("Error in sendToServer. Error code: " << retval);
+           return SECURITY_MANAGER_ERROR_UNKNOWN;
+       }
+
+       //receive response from server
+       Deserialization::Deserialize(recv, retval);
+       switch(retval) {
+           case SECURITY_MANAGER_API_SUCCESS:
+               return SECURITY_MANAGER_SUCCESS;
+           case SECURITY_MANAGER_API_ERROR_OUT_OF_MEMORY:
+               return SECURITY_MANAGER_ERROR_MEMORY;
+           case SECURITY_MANAGER_API_ERROR_INPUT_PARAM:
+               return SECURITY_MANAGER_ERROR_INPUT_PARAM;
+           default:
+               return SECURITY_MANAGER_ERROR_UNKNOWN;
+       }
     });
 }
 

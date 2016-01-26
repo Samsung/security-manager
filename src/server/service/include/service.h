@@ -166,6 +166,21 @@ private:
      * @param  send   Raw data buffer to be sent
      */
     void processAppHasPrivilege(MessageBuffer &recv, MessageBuffer &send);
+
+    /**
+     * Process applying private path sharing between applications.
+     *
+     * @param  recv   Raw received data buffer
+     * @param  send   Raw data buffer to be sent
+     */
+    void processApplyPrivateSharing(MessageBuffer &recv, MessageBuffer &send);
+    /**
+     * Process drop private path sharing between applications.
+     *
+     * @param  recv   Raw received data buffer
+     * @param  send   Raw data buffer to be sent
+     */
+    void processDropPrivateSharing(MessageBuffer &recv, MessageBuffer &send);
 };
 
 } // namespace SecurityManager

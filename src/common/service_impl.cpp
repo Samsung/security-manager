@@ -1090,6 +1090,31 @@ int ServiceImpl::appHasPrivilege(std::string appId, std::string privilege,
         LogError("Unknown exception thrown");
         return SECURITY_MANAGER_API_ERROR_UNKNOWN;
     }
+    return SECURITY_MANAGER_API_SUCCESS;
+}
+
+int ServiceImpl::applyPrivatePathSharing(const std::string &ownerAppId,
+                            const std::string &targetAppId,
+                            const std::vector<std::string> &paths,
+                            bool isSlave)
+{
+    (void)ownerAppId;
+    (void)targetAppId;
+    (void)paths;
+    (void)isSlave;
+
+    return SECURITY_MANAGER_API_SUCCESS;
+}
+
+int ServiceImpl::dropPrivatePathSharing(const std::string &ownerAppId,
+                           const std::string &targetAppId,
+                           const std::vector<std::string> &paths,
+                           bool isSlave)
+{
+    (void)ownerAppId;
+    (void)targetAppId;
+    (void)paths;
+    (void)isSlave;
 
     return SECURITY_MANAGER_API_SUCCESS;
 }

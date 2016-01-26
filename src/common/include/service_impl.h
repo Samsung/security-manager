@@ -211,6 +211,34 @@ public:
     int appHasPrivilege(std::string appId, std::string privilege, uid_t uid,
             bool isSlave, bool &result);
 
+    /**
+     * Process applying private path sharing between applications.
+     *
+     * @param[in] ownerAppId application owning paths
+     * @param[in] targetAppId application which paths will be shared with
+     * @param[in] paths vector of paths to be shared
+     * @param[in]  isSlave Indicates if function should be called under slave mode
+     *
+     * @return API return code, as defined in protocols.h
+     */
+    int applyPrivatePathSharing(const std::string &ownerAppId,
+                                const std::string &targetAppId,
+                                const std::vector<std::string> &paths,
+                                bool isSlave);
+
+    /**
+     * Process droping private path sharing between applications.
+     *
+     * @param[in] ownerAppId application owning paths
+     * @param[in] targetAppId application which paths won't be anymore shared with
+     * @param[in] paths vector of paths to be stopped being shared
+     * @param[in]  isSlave Indicates if function should be called under slave mode
+     * @return API return code, as defined in protocols.h
+     */
+    int dropPrivatePathSharing(const std::string &ownerAppId,
+                               const std::string &targetAppId,
+                               const std::vector<std::string> &paths,
+                               bool isSlave);
 };
 } /* namespace SecurityManager */
 

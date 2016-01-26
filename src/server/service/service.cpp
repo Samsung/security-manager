@@ -143,6 +143,12 @@ bool Service::processOne(const ConnectionID &conn, MessageBuffer &buffer,
                 case SecurityModuleCall::APP_HAS_PRIVILEGE:
                     processAppHasPrivilege(buffer, send);
                     break;
+                case SecurityModuleCall::APP_APPLY_PRIVATE_SHARING:
+                    processApplyPrivateSharing(buffer, send);
+                    break;
+                case SecurityModuleCall::APP_DROP_PRIVATE_SHARING:
+                    processDropPrivateSharing(buffer, send);
+                    break;
                 default:
                     LogError("Invalid call: " << call_type_int);
                     Throw(ServiceException::InvalidAction);
@@ -370,4 +376,25 @@ void Service::processAppHasPrivilege(MessageBuffer &recv, MessageBuffer &send)
         Serialization::Serialize(send, static_cast<int>(result));
 }
 
+void Service::processApplyPrivateSharing(MessageBuffer &recv, MessageBuffer &send)
+{
+    std::string ownerAppId, targetAppId;
+    std::vector<std::string> paths;
+    Deserialization::Deserialize(recv, ownerAppId);
+    Deserialization::Deserialize(recv, targetAppId);
+    Deserialization::Deserialize(recv, paths);
+    int ret = serviceImpl.applyPrivatePathSharing(ownerAppId, targetAppId, paths, m_isSlave);
+    Serialization::Serialize(send, ret);
+}
+
+void Service::processDropPrivateSharing(MessageBuffer &recv, MessageBuffer &send)
+{
+    std::string ownerAppId, targetAppId;
+    std::vector<std::string> paths;
+    Deserialization::Deserialize(recv, ownerAppId);
+    Deserialization::Deserialize(recv, targetAppId);
+    Deserialization::Deserialize(recv, paths);
+    int ret = serviceImpl.dropPrivatePathSharing(ownerAppId, targetAppId, paths, m_isSlave);
+    Serialization::Serialize(send, ret);
+}
 } // namespace SecurityManager
