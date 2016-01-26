@@ -72,6 +72,7 @@ int CynaraUserRemove(const uid_t uidDeleted);
  *
  * @param[in]  appId       ID of application being removed
  * @param[in]  pkgId       ID of package being removed
+ * @param[in]  authorId    ID for author.
  * @param[in]  pkgContents list of all applications in the package
  * @param[in]  appsGranted list of 2.x apps granted access
  * @param[in]  accessPackages list of 2.x packages to be accessed
@@ -79,7 +80,9 @@ int CynaraUserRemove(const uid_t uidDeleted);
  *
  * @see SmackRules::installApplicationRules
  */
-int SmackInstallRules(const std::string &appId, const std::string &pkgId,
+int SmackInstallRules(const std::string &appId,
+                      const std::string &pkgId,
+                      const std::string &authorId,
                       const std::vector<std::string> &pkgContents,
                       const std::vector<std::string> &appsGranted,
                       const std::vector<std::string> &accessPackages);

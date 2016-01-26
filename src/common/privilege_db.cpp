@@ -388,6 +388,23 @@ void PrivilegeDb::GetAppIdsForPkgId(const std::string &pkgId,
     });
 }
 
+void PrivilegeDb::GetAuthorIdForAppId(const std::string &appId,
+        std::string &authorId)
+{
+    try_catch<void>([&] {
+        authorId.clear();
+        auto command = getStatement(StmtType::EGetAuthorIdAppId);
+
+        command->BindString(1, appId);
+        if (command->Step()) {
+            authorId = command->GetColumnString(0);
+            LogDebug("Got authorid: " << authorId << " for appId " << appId);
+        } else {
+            LogDebug("No authorid found for appId " << appId);
+        }
+    });
+}
+
 void PrivilegeDb::GetDefaultMapping(const std::string &version_from,
                                     const std::string &version_to,
                                     std::vector<std::string> &mappings)

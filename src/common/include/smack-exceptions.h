@@ -36,6 +36,7 @@ public:
     DECLARE_EXCEPTION_TYPE(Base, FileError)
     DECLARE_EXCEPTION_TYPE(Base, InvalidLabel)
     DECLARE_EXCEPTION_TYPE(Base, InvalidPathType)
+    DECLARE_EXCEPTION_TYPE(Base, InvalidParam)
 };
 
 } // namespace SecurityManager

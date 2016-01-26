@@ -44,6 +44,7 @@ namespace SecurityManager {
 
 const char *const SMACK_APP_LABEL_TEMPLATE     = "~APP~";
 const char *const SMACK_PKG_LABEL_TEMPLATE     = "~PKG~";
+const char *const SMACK_AUTHOR_LABEL_TEMPLATE  = "~AUTHOR~";
 const char *const APP_RULES_TEMPLATE_FILE_PATH = tzplatform_mkpath4(TZ_SYS_SHARE, "security-manager", "policy", "app-rules-template.smack");
 const char *const SMACK_APP_IN_PACKAGE_PERMS   = "rwxat";
 const char *const SMACK_APP_CROSS_PKG_PERMS    = "rx";
@@ -137,8 +138,10 @@ void SmackRules::saveToFile(const std::string &path) const
     }
 }
 
-
-void SmackRules::addFromTemplateFile(const std::string &appId, const std::string &pkgId,
+void SmackRules::addFromTemplateFile(
+        const std::string &appId,
+        const std::string &pkgId,
+        const std::string &authorId,
         const std::string &zoneId)
 {
     std::vector<std::string> templateRules;
@@ -159,14 +162,21 @@ void SmackRules::addFromTemplateFile(const std::string &appId, const std::string
         ThrowMsg(SmackException::FileError, "Error reading template file: " << APP_RULES_TEMPLATE_FILE_PATH);
     }
 
-    addFromTemplate(templateRules, appId, pkgId, zoneId);
+    addFromTemplate(templateRules, appId, pkgId, authorId, zoneId);
 }
 
-void SmackRules::addFromTemplate(const std::vector<std::string> &templateRules,
-        const std::string &appId, const std::string &pkgId, const std::string &zoneId)
+void SmackRules::addFromTemplate(
+        const std::vector<std::string> &templateRules,
+        const std::string &appId,
+        const std::string &pkgId,
+        const std::string &authorId,
+        const std::string &zoneId)
 {
     for (auto rule : templateRules) {
         if (rule.empty())
+            continue;
+
+        if (authorId.empty() && rule.find(SMACK_AUTHOR_LABEL_TEMPLATE) != std::string::npos)
             continue;
 
         std::stringstream stream(rule);
@@ -182,6 +192,12 @@ void SmackRules::addFromTemplate(const std::vector<std::string> &templateRules,
         strReplace(subject, SMACK_PKG_LABEL_TEMPLATE, SmackLabels::generatePkgLabel(pkgId));
         strReplace(object,  SMACK_APP_LABEL_TEMPLATE, SmackLabels::generateAppLabel(appId));
         strReplace(object,  SMACK_PKG_LABEL_TEMPLATE, SmackLabels::generatePkgLabel(pkgId));
+
+        if (!authorId.empty()) {
+            strReplace(object,
+                       SMACK_AUTHOR_LABEL_TEMPLATE,
+                       SmackLabels::generateAuthorLabel(authorId));
+        }
 
         if (!zoneId.empty()) {
             // FIXME replace with vasum calls. See zone-utils.h
@@ -270,15 +286,21 @@ std::string SmackRules::getApplicationRulesFilePath(const std::string &appId)
     return path;
 }
 
-void SmackRules::installApplicationRules(const std::string &appId, const std::string &pkgId,
-        const std::vector<std::string> &pkgContents, const std::vector<std::string> &appsGranted,
+void SmackRules::installApplicationRules(
+        const std::string &appId,
+        const std::string &pkgId,
+        const std::string &authorId,
+        const std::vector<std::string> &pkgContents,
+        const std::vector<std::string> &appsGranted,
         const std::vector<std::string> &accessPackages)
 {
-    installApplicationRules(appId, pkgId, pkgContents, appsGranted, accessPackages, std::string());
+    installApplicationRules(appId, pkgId, authorId, pkgContents, appsGranted, accessPackages, std::string());
 }
 
-void SmackRules::installApplicationRules(const std::string &appId,
+void SmackRules::installApplicationRules(
+        const std::string &appId,
         const std::string &pkgId,
+        const std::string &authorId,
         const std::vector<std::string> &pkgContents,
         const std::vector<std::string> &appsGranted,
         const std::vector<std::string> &accessPackages,
@@ -287,7 +309,8 @@ void SmackRules::installApplicationRules(const std::string &appId,
     SmackRules smackRules;
     std::string appPath = getApplicationRulesFilePath(appId);
 
-    smackRules.addFromTemplateFile(appId, pkgId, zoneId);
+    smackRules.addFromTemplateFile(appId, pkgId, authorId, zoneId);
+
     if (smack_smackfs_path() != NULL)
         smackRules.apply();
 
