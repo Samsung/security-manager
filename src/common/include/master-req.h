@@ -145,6 +145,48 @@ int GetPolicy(const policy_entry &filter, uid_t uid, pid_t pid, const std::strin
  */
 int PolicyGetDesc(std::vector<std::string> &descriptions);
 
+/**
+ * Forwards Smack rules applying for private sharing to Master service.
+ *
+ * @param[in]  ownerPkgId         App id of path owner application
+ * @param[in]  pkgContents        Vector of applications belonging to the same package as path owner
+ * @param[in]  targetAppId        App id of sharing path target application
+ * @param[in]  path               Path being shared
+ * @param[in]  ownerTargetCount   Count of saved owner with target sharing
+ * @param[in]  pathSharingCount          Count of saved path sharing
+ *
+ * @return API return code, as defined in protocols.h
+ *
+ * @see ServiceImpl::applyPrivateSharing
+ */
+int SmackApplyPrivateSharingRules(const std::string &ownerPkgId,
+                                  const std::vector<std::string> &pkgContents,
+                                  const std::string &targetAppId,
+                                  const std::string &path,
+                                  int ownerTargetCount,
+                                  int pathSharingCount);
+
+/**
+ * Forwards Smack rules applying for private sharing to Master service.
+ *
+ * @param[in]  ownerPkgId         Package id of path owner application
+ * @param[in]  pkgContents        Vector of applications belonging to the same package as path owner
+ * @param[in]  targetAppId        App id of sharing path target application
+ * @param[in]  path               Path being shared
+ * @param[in]  ownerTargetCount   Count of saved owner with target sharing
+ * @param[in]  pathSharingCount          Count of saved path sharing
+ *
+ * @return API return code, as defined in protocols.h
+ *
+ * @see ServiceImpl::dropPrivateSharing
+ */
+int SmackDropPrivateSharingRules(const std::string &ownerPkgId,
+                                 const std::vector<std::string> &pkgContents,
+                                 const std::string &targetAppId,
+                                 const std::string &path,
+                                 int ownerTargetCount,
+                                 int pathSharingCount);
+
 } // namespace MasterReq
 } // namespace SecurityManager
 

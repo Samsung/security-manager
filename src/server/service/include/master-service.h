@@ -134,6 +134,25 @@ private:
      */
     void processSmackUninstallRules(MessageBuffer &buffer, MessageBuffer &send,
                                     const std::string &zoneId);
+
+    /**
+     * Process SMACK rules apply private path sharing
+     *
+     * @param  buffer Raw received data buffer
+     * @param  send   Raw data buffer to be sent
+     * @param  zoneId ID of zone which requested the call
+     */
+    void processSmackApplySharingRules(MessageBuffer &buffer, MessageBuffer &send,
+                                    const std::string &zoneId);
+    /**
+     * Process SMACK rules drop private path sharing
+     *
+     * @param  buffer Raw received data buffer
+     * @param  send   Raw data buffer to be sent
+     * @param  zoneId ID of zone which requested the call
+     */
+    void processSmackDropSharingRules(MessageBuffer &buffer, MessageBuffer &send,
+                                    const std::string &zoneId);
 };
 
 } // namespace SecurityManager

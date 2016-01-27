@@ -203,5 +203,59 @@ int PolicyGetDesc(std::vector<std::string> &descriptions)
     return ret;
 }
 
+int SmackApplyPrivateSharingRules(const std::string &ownerPkgId,
+                                  const std::vector<std::string> &pkgContents,
+                                  const std::string &targetAppId,
+                                  const std::string &path,
+                                  int ownerTargetCount,
+                                  int pathCount)
+{
+    int ret;
+    MessageBuffer sendBuf, retBuf;
+
+    Serialization::Serialize(sendBuf,
+        static_cast<int>(MasterSecurityModuleCall::SMACK_APPLY_PRIVATE_SHARING_RULES));
+    Serialization::Serialize(sendBuf, ownerPkgId);
+    Serialization::Serialize(sendBuf, pkgContents);
+    Serialization::Serialize(sendBuf, targetAppId);
+    Serialization::Serialize(sendBuf, path);
+    Serialization::Serialize(sendBuf, ownerTargetCount);
+    Serialization::Serialize(sendBuf, pathCount);
+
+    ret = sendToServer(MASTER_SERVICE_SOCKET, sendBuf.Pop(), retBuf);
+    if (ret == SECURITY_MANAGER_API_SUCCESS) {
+        Deserialization::Deserialize(retBuf, ret);
+    }
+
+    return ret;
+}
+
+int SmackDropPrivateSharingRules(const std::string &ownerPkgId,
+                                 const std::vector<std::string> &pkgContents,
+                                 const std::string &targetAppId,
+                                 const std::string &path,
+                                 int ownerTargetCount,
+                                 int pathCount)
+{
+    int ret;
+    MessageBuffer sendBuf, retBuf;
+
+    Serialization::Serialize(sendBuf,
+        static_cast<int>(MasterSecurityModuleCall::SMACK_DROP_PRIVATE_SHARING_RULES));
+    Serialization::Serialize(sendBuf, ownerPkgId);
+    Serialization::Serialize(sendBuf, pkgContents);
+    Serialization::Serialize(sendBuf, targetAppId);
+    Serialization::Serialize(sendBuf, path);
+    Serialization::Serialize(sendBuf, ownerTargetCount);
+    Serialization::Serialize(sendBuf, pathCount);
+
+    ret = sendToServer(MASTER_SERVICE_SOCKET, sendBuf.Pop(), retBuf);
+    if (ret == SECURITY_MANAGER_API_SUCCESS) {
+        Deserialization::Deserialize(retBuf, ret);
+    }
+
+    return ret;
+}
+
 } // namespace MasterReq
 } // namespace SecurityManager

@@ -133,6 +133,12 @@ bool MasterService::processOne(const ConnectionID &conn, MessageBuffer &buffer,
                     LogDebug("call type MasterSecurityModuleCall::SMACK_UNINSTALL_RULES");
                     processSmackUninstallRules(buffer, send, vsmZoneId);
                     break;
+                case MasterSecurityModuleCall::SMACK_APPLY_PRIVATE_SHARING_RULES:
+                    processSmackApplySharingRules(buffer, send, vsmZoneId);
+                    break;
+                case MasterSecurityModuleCall::SMACK_DROP_PRIVATE_SHARING_RULES:
+                    processSmackDropSharingRules(buffer, send, vsmZoneId);
+                    break;
                 default:
                     LogError("Invalid call: " << call_type_int);
                     Throw(MasterServiceException::InvalidAction);
@@ -413,6 +419,44 @@ void MasterService::processSmackUninstallRules(MessageBuffer &buffer, MessageBuf
         Serialization::Serialize(send, SECURITY_MANAGER_API_ERROR_OUT_OF_MEMORY);
         return;
     }
+
+    Serialization::Serialize(send, SECURITY_MANAGER_API_SUCCESS);
+}
+
+void MasterService::processSmackApplySharingRules(MessageBuffer &buffer, MessageBuffer &send,
+                                const std::string &zoneId)
+{
+    std::string ownerPkgId, targetAppId, path;
+    std::vector<std::string> pkgContents;
+    int ownerTargetCount, pathCount;
+
+    Deserialization::Deserialize(buffer, ownerPkgId);
+    Deserialization::Deserialize(buffer, pkgContents);
+    Deserialization::Deserialize(buffer, targetAppId);
+    Deserialization::Deserialize(buffer, path);
+    Deserialization::Deserialize(buffer, ownerTargetCount);
+    Deserialization::Deserialize(buffer, pathCount);
+
+    (void)zoneId;
+
+    Serialization::Serialize(send, SECURITY_MANAGER_API_SUCCESS);
+}
+
+void MasterService::processSmackDropSharingRules(MessageBuffer &buffer, MessageBuffer &send,
+                                const std::string &zoneId)
+{
+    std::string ownerPkgId, targetAppId, path;
+    std::vector<std::string> pkgContents;
+    int ownerTargetCount, pathCount;
+
+    Deserialization::Deserialize(buffer, ownerPkgId);
+    Deserialization::Deserialize(buffer, pkgContents);
+    Deserialization::Deserialize(buffer, targetAppId);
+    Deserialization::Deserialize(buffer, path);
+    Deserialization::Deserialize(buffer, ownerTargetCount);
+    Deserialization::Deserialize(buffer, pathCount);
+
+    (void)zoneId;
 
     Serialization::Serialize(send, SECURITY_MANAGER_API_SUCCESS);
 }

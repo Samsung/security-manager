@@ -163,6 +163,8 @@ enum class MasterSecurityModuleCall
     POLICY_GET_DESC,
     SMACK_INSTALL_RULES,
     SMACK_UNINSTALL_RULES,
+    SMACK_APPLY_PRIVATE_SHARING_RULES,
+    SMACK_DROP_PRIVATE_SHARING_RULES
 };
 
 } // namespace SecurityManager
