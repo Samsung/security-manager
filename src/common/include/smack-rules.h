@@ -179,6 +179,56 @@ public:
     /* Temporary fix for authors rules */
     static void fixAuthorRules(const std::string &authorId);
 
+    /**
+     * Add rules related to private path sharing rules
+     *
+     * This function generates and applies rules needed to apply private sharing.
+     * If isPathSharedAlready, no rule for owner, User or System to path label will be applied.
+     * If isTargetSharingAlready, no rule for directory traversing is set for target.
+     *
+     * @param[in] ownerAppId - package id of path owner
+     * @param[in] ownerPkgContents - vector of application ids contained in package which owner
+     *                               application belongs to
+     * @param[in] targetAppId - id of the target application
+     * @param[in] pathLabel - a list of all applications in the package
+     * @param[in] isPathSharedAlready - flag indicated, if path has been shared before
+     * @param[in] isTargetSharingAlready - flag indicated, if target is already sharing anything
+     *                                     with owner
+     * @param[in] zoneId - ID of zone which requested applying sharing
+     */
+    static void applyPrivateSharingRules(const std::string &ownerPkgId,
+                                         const std::vector<std::string> &ownerPkgContents,
+                                         const std::string &targetAppId,
+                                         const std::string &pathLabel,
+                                         bool isPathSharedAlready,
+                                         bool isTargetSharingAlready,
+                                         const std::string &zoneId);
+    /**
+     * Remove rules related to private path sharing rules
+     *
+     * This function generates and applies rules needed to apply private sharing.
+     * If isPathSharedNoMore, rules for owner package contents, User or System to path label will
+     * be removed.
+     * If isTargetSharingNoMore, rule for directory traversing is removed for target.
+     *
+     * @param[in] ownerAppId - package id of path owner
+     * @param[in] ownerPkgContents - vector of application ids contained in package which owner
+     *                               application belongs to
+     * @param[in] targetAppId - id of the target application
+     * @param[in] pathLabel - a list of all applications in the package
+     * @param[in] isPathSharedNoMore - flag indicated, if path is not shared anymore
+     * @param[in] isTargetSharingNoMore - flag indicated, if target is not sharing anything
+     *                                    with owner
+     * @param[in] zoneId - ID of zone which requested droping sharing
+     */
+    static void dropPrivateSharingRules(const std::string &ownerPkgId,
+                                        const std::vector<std::string> &ownerPkgContents,
+                                        const std::string &targetAppId,
+                                        const std::string &pathLabel,
+                                        bool isPathSharedNoMore,
+                                        bool isTargetSharingNoMore,
+                                        const std::string &zoneId);
+
 private:
     /**
      * Create a path for package rules

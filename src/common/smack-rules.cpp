@@ -48,6 +48,13 @@ const char *const SMACK_AUTHOR_LABEL_TEMPLATE  = "~AUTHOR~";
 const char *const APP_RULES_TEMPLATE_FILE_PATH = tzplatform_mkpath4(TZ_SYS_SHARE, "security-manager", "policy", "app-rules-template.smack");
 const char *const SMACK_APP_IN_PACKAGE_PERMS   = "rwxat";
 const char *const SMACK_APP_CROSS_PKG_PERMS    = "rx";
+const char *const SMACK_APP_PATH_OWNER_PERMS = "rwxat";
+const char *const SMACK_APP_PATH_TARGET_PERMS = "rxl";
+const char *const SMACK_APP_DIR_TARGET_PERMS = "x";
+const char *const SMACK_USER = "User";
+const char *const SMACK_SYSTEM = "System";
+const char *const SMACK_APP_PATH_SYSTEM_PERMS = "rwxat";
+const char *const SMACK_APP_PATH_USER_PERMS = "rwxat";
 
 SmackRules::SmackRules()
 {
@@ -392,6 +399,61 @@ void SmackRules::fixAuthorRules(const std::string &authorId) {
     std::string authorLabel = SmackLabels::generateAuthorLabel(authorId);
     rules.add("User", authorLabel, "rwxat");
     rules.add("System", authorLabel, "rwxat");
+    rules.apply();
+}
+
+void SmackRules::applyPrivateSharingRules(const std::string &ownerPkgId,
+                                          const std::vector<std::string> &ownerPkgContents,
+                                          const std::string &targetAppId,
+                                          const std::string &pathLabel,
+                                          bool isPathSharedAlready,
+                                          bool isTargetSharingAlready,
+                                          const std::string &zoneId)
+{
+    SmackRules rules;
+    const std::string &targetLabel = zoneSmackLabelGenerate(SmackLabels::generateAppLabel(targetAppId), zoneId);
+    if (!isTargetSharingAlready) {
+
+        rules.add(targetLabel,
+                  zoneSmackLabelGenerate(SmackLabels::generatePkgLabel(ownerPkgId), zoneId),
+                  SMACK_APP_DIR_TARGET_PERMS);
+    }
+    if (!isPathSharedAlready) {
+        for (const auto &app: ownerPkgContents) {
+            const std::string appLabel = zoneSmackLabelGenerate(SmackLabels::generateAppLabel(app), zoneId);
+            rules.add(appLabel, pathLabel, SMACK_APP_PATH_OWNER_PERMS);
+        }
+        rules.add(SMACK_USER, pathLabel, SMACK_APP_PATH_USER_PERMS);
+        rules.add(SMACK_SYSTEM, pathLabel, SMACK_APP_PATH_SYSTEM_PERMS);
+    }
+    rules.add(targetLabel, pathLabel, SMACK_APP_PATH_TARGET_PERMS);
+    rules.apply();
+}
+
+void SmackRules::dropPrivateSharingRules(const std::string &ownerPkgId,
+                                         const std::vector<std::string> &ownerPkgContents,
+                                         const std::string &targetAppId,
+                                         const std::string &pathLabel,
+                                         bool isPathSharedNoMore,
+                                         bool isTargetSharingNoMore,
+                                         const std::string &zoneId)
+{
+    SmackRules rules;
+    const std::string &targetLabel = zoneSmackLabelGenerate(SmackLabels::generateAppLabel(targetAppId), zoneId);
+    if (isTargetSharingNoMore) {
+        rules.addModify(targetLabel,
+                  zoneSmackLabelGenerate(SmackLabels::generatePkgLabel(ownerPkgId), zoneId),
+                  "", SMACK_APP_DIR_TARGET_PERMS);
+    }
+    if (isPathSharedNoMore) {
+        for (const auto &app: ownerPkgContents) {
+            const std::string appLabel = zoneSmackLabelGenerate(SmackLabels::generateAppLabel(app), zoneId);
+            rules.addModify(appLabel, pathLabel, "", SMACK_APP_PATH_OWNER_PERMS);
+        }
+        rules.addModify(SMACK_USER, pathLabel, "", SMACK_APP_PATH_USER_PERMS);
+        rules.addModify(SMACK_SYSTEM, pathLabel, "", SMACK_APP_PATH_SYSTEM_PERMS);
+    }
+    rules.addModify(targetLabel, pathLabel, "", SMACK_APP_PATH_TARGET_PERMS);
     rules.apply();
 }
 
