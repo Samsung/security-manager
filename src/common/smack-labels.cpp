@@ -24,6 +24,7 @@
  *
  */
 
+#include <crypt.h>
 #include <sys/stat.h>
 #include <sys/smack.h>
 #include <sys/xattr.h>
@@ -34,12 +35,14 @@
 #include <fstream>
 #include <string>
 #include <sstream>
+#include <algorithm>
 
 #include <dpl/log/log.h>
 
 #include "security-manager.h"
 #include "smack-labels.h"
 #include "zone-utils.h"
+
 
 namespace SecurityManager {
 namespace SmackLabels {
@@ -179,6 +182,10 @@ void setupAppBasePath(const std::string &pkgId, const std::string &basePath)
     pathSetSmack(pkgPath.c_str(), LABEL_FOR_APP_PUBLIC_RO_PATH, XATTR_NAME_SMACK);
 }
 
+void setupSharedPrivatePath(const std::string &pkgId, const std::string &path) {
+    pathSetSmack(path.c_str(), generateSharedPrivateLabel(pkgId, path), XATTR_NAME_SMACK);
+}
+
 std::string generateAppNameFromLabel(const std::string &label)
 {
     static const char prefix[] = "User::App::";
@@ -235,6 +242,22 @@ std::string generatePkgROLabel(const std::string &pkgId)
     return label;
 }
 
+std::string generateSharedPrivateLabel(const std::string &pkgId, const std::string &path) {
+    // Prefix $1$ causes crypt() to use MD5 function
+    std::string label = "User::Pkg::";
+    std::string salt = "$1$" + pkgId;
+
+    const char * cryptLabel = crypt(path.c_str(), salt.c_str());
+    if (!cryptLabel) {
+        ThrowMsg(SmackException::Base, "crypt error");
+    }
+    label += cryptLabel;
+    std::replace(label.begin(), label.end(), '/', '%');
+    if (smack_label_length(label.c_str()) <= 0)
+        ThrowMsg(SmackException::InvalidLabel, "Invalid Smack label generated from path " << path);
+    return label;
+}
+
 std::string getSmackLabelFromSocket(int socketFd)
 {
     char *label = nullptr;
@@ -273,6 +296,15 @@ std::string generateAuthorLabel(const std::string &authorId) {
     }
 
     return "User::Author::" + authorId;
+}
+
+std::string getSmackLabelFromPath(const std::string &path) {
+    char label[SMACK_LABEL_LEN];
+    ssize_t realLen;
+    if ((realLen = lgetxattr(path.c_str(), XATTR_NAME_SMACK, label, SMACK_LABEL_LEN)) < 0) {
+        ThrowMsg(SmackException::FileError, "lgetxattr failed");
+    }
+    return std::string(label, label+realLen);
 }
 
 } // namespace SmackLabels
