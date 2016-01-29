@@ -1373,6 +1373,10 @@ int security_manager_private_sharing_apply(const private_sharing_req *p_req)
                return SECURITY_MANAGER_ERROR_MEMORY;
            case SECURITY_MANAGER_API_ERROR_INPUT_PARAM:
                return SECURITY_MANAGER_ERROR_INPUT_PARAM;
+           case SECURITY_MANAGER_API_ERROR_APP_UNKNOWN:
+               return SECURITY_MANAGER_ERROR_APP_UNKNOWN;
+           case SECURITY_MANAGER_API_ERROR_APP_NOT_PATH_OWNER:
+               return SECURITY_MANAGER_ERROR_APP_NOT_PATH_OWNER;
            default:
                return SECURITY_MANAGER_ERROR_UNKNOWN;
        }
@@ -1411,6 +1415,10 @@ int security_manager_private_sharing_drop(const private_sharing_req *p_req)
                return SECURITY_MANAGER_ERROR_MEMORY;
            case SECURITY_MANAGER_API_ERROR_INPUT_PARAM:
                return SECURITY_MANAGER_ERROR_INPUT_PARAM;
+           case SECURITY_MANAGER_API_ERROR_APP_UNKNOWN:
+               return SECURITY_MANAGER_ERROR_APP_UNKNOWN;
+           case SECURITY_MANAGER_API_ERROR_APP_NOT_PATH_OWNER:
+               return SECURITY_MANAGER_ERROR_APP_NOT_PATH_OWNER;
            default:
                return SECURITY_MANAGER_ERROR_UNKNOWN;
        }

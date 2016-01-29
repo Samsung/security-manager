@@ -47,6 +47,10 @@ private:
 
     static bool getZoneId(std::string &zoneId);
 
+    int dropOnePrivateSharing(const std::string &ownerAppId, const std::string &ownerPkgId,
+                              const std::vector<std::string> &ownerPkgContents, const std::string &targetAppId,
+                              const std::string &path, const std::string &zoneId, bool isSlave);
+
 public:
     ServiceImpl();
     virtual ~ServiceImpl();

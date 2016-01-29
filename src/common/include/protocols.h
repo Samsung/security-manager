@@ -99,6 +99,12 @@
 /*! \brief   indicating file deletion error  */
 #define SECURITY_MANAGER_API_ERROR_FILE_DELETION_FAILED -28
 
+/*! \brief   indicating that application is not present in the database */
+#define SECURITY_MANAGER_API_ERROR_APP_UNKNOWN -29
+
+/*! \brief   indicating that application is not owner of path */
+#define SECURITY_MANAGER_API_ERROR_APP_NOT_PATH_OWNER -30
+
 /*! \brief   indicating the error with unknown reason */
 #define SECURITY_MANAGER_API_ERROR_UNKNOWN -255
 /** @}*/
