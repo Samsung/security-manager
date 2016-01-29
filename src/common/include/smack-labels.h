@@ -48,7 +48,7 @@ void setupPath(
         const std::string &path,
         app_install_path_type pathType,
         const std::string &zoneId,
-        const std::string &authorId);
+        const std::string &authorId = std::string());
 
 /**
  * Sets Smack labels on a <ROOT_APP>/<pkg_id> non-recursively
