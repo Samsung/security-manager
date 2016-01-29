@@ -20,6 +20,7 @@ INCLUDE_DIRECTORIES(
     ${SERVER_PATH}/service/include
     ${DPL_PATH}/core/include
     ${DPL_PATH}/log/include
+    ${DPL_PATH}/db/include
     )
 
 SET(SERVER_SOURCES
@@ -45,4 +46,19 @@ TARGET_LINK_LIBRARIES(${TARGET_SERVER}
     "-pie"
     )
 
+########## CLEANUP SERVICE ######################################
+SET(CLEANUP_SOURCES
+    ${SERVER_PATH}/cleanup/security-manager-cleanup.cpp
+    )
+ADD_EXECUTABLE(${TARGET_CLEANUP} ${CLEANUP_SOURCES})
+SET_TARGET_PROPERTIES(${TARGET_CLEANUP}
+    PROPERTIES
+        COMPILE_FLAGS "-D_GNU_SOURCE -fvisibility=hidden -fPIE")
+
+TARGET_LINK_LIBRARIES(${TARGET_CLEANUP}
+    ${TARGET_COMMON}
+    "-pie"
+    )
+INSTALL(TARGETS ${TARGET_CLEANUP} DESTINATION ${BIN_INSTALL_DIR})
 INSTALL(TARGETS ${TARGET_SERVER} DESTINATION ${BIN_INSTALL_DIR})
+

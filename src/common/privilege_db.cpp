@@ -293,6 +293,31 @@ void PrivilegeDb::DropPrivateSharing(const std::string &ownerAppId, const std::s
     });
 }
 
+void PrivilegeDb::GetAllPrivateSharing(std::map<std::string, std::vector<std::string>> &appPathMap) {
+    try_catch<void>([&] {
+        auto command = getStatement(StmtType::EGetAllSharedPaths);
+        while (command->Step()) {
+            std::string appName = command->GetColumnString(0);
+            std::string path = command->GetColumnString(1);
+            LogDebug("Got appName : " << appName << " and path : " << path);
+            appPathMap[appName].push_back(path);
+        }
+    });
+}
+
+void PrivilegeDb::ClearPrivateSharing() {
+    try_catch<void>([&] {
+        {
+            auto command = getStatement(StmtType::EClearSharing);
+            command->Step();
+        }
+        {
+            auto command = getStatement(StmtType::EClearPrivatePaths);
+            command->Step();
+        }
+    });
+}
+
 void PrivilegeDb::GetPkgPrivileges(const std::string &pkgId, uid_t uid,
         std::vector<std::string> &currentPrivileges)
 {

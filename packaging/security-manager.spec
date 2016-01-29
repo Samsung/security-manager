@@ -87,9 +87,11 @@ cp LICENSE %{buildroot}%{_datadir}/license/libsecurity-manager-client
 %make_install
 
 mkdir -p %{buildroot}/%{_unitdir}/sockets.target.wants
+mkdir -p %{buildroot}/%{_unitdir}/sysinit.target.wants
 ln -s ../security-manager.socket %{buildroot}/%{_unitdir}/sockets.target.wants/security-manager.socket
 ln -s ../security-manager-master.socket %{buildroot}/%{_unitdir}/sockets.target.wants/security-manager-master.socket
 ln -s ../security-manager-slave.socket %{buildroot}/%{_unitdir}/sockets.target.wants/security-manager-slave.socket
+ln -s ../security-manager-cleanup.service %{buildroot}/%{_unitdir}/sysinit.target.wants/security-manager-cleanup.service
 
 %clean
 rm -rf %{buildroot}
@@ -134,6 +136,7 @@ fi
 %defattr(-,root,root,-)
 %attr(755,root,root) %{_bindir}/security-manager
 %attr(755,root,root) %{_bindir}/security-manager-cmd
+%attr(755,root,root) %{_bindir}/security-manager-cleanup
 %attr(755,root,root) %{_sysconfdir}/gumd/useradd.d/50_security-manager-add.post
 %attr(755,root,root) %{_sysconfdir}/gumd/userdel.d/50_security-manager-remove.pre
 
@@ -141,9 +144,11 @@ fi
 %attr(-,root,root) %{_unitdir}/security-manager.*
 %attr(-,root,root) %{_unitdir}/security-manager-master.*
 %attr(-,root,root) %{_unitdir}/security-manager-slave.*
+%attr(-,root,root) %{_unitdir}/security-manager-cleanup.*
 %attr(-,root,root) %{_unitdir}/sockets.target.wants/security-manager.*
 %attr(-,root,root) %{_unitdir}/sockets.target.wants/security-manager-master.*
 %attr(-,root,root) %{_unitdir}/sockets.target.wants/security-manager-slave.*
+%attr(-,root,root) %{_unitdir}/sysinit.target.wants/security-manager-cleanup.*
 %config(noreplace) %attr(0600,root,root) %{TZ_SYS_DB}/.security-manager.db
 %config(noreplace) %attr(0600,root,root) %{TZ_SYS_DB}/.security-manager.db-journal
 %{_datadir}/license/%{name}

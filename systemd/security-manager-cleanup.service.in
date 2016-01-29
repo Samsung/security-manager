@@ -1,0 +1,10 @@
+[Unit]
+Description=Cleanup private sharing
+After=sysinit.target
+Requires=sysinit.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart = @BIN_INSTALL_DIR@/security-manager-cleanup
+
