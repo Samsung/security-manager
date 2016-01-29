@@ -182,10 +182,12 @@ bool PrivilegeDb::GetAppPkgIdAndVer(const std::string &appId, std::string &pkgId
     });
 }
 
-void PrivilegeDb::AddApplication(const std::string &appId,
-                                 const std::string &pkgId,
-                                 uid_t uid,
-                                 const std::string &targetTizenVer)
+void PrivilegeDb::AddApplication(
+        const std::string &appId,
+        const std::string &pkgId,
+        uid_t uid,
+        const std::string &targetTizenVer,
+        const std::string &authorId)
 {
     try_catch<void>([&] {
         auto command = getStatement(StmtType::EAddApplication);
@@ -193,6 +195,7 @@ void PrivilegeDb::AddApplication(const std::string &appId,
         command->BindString(2, pkgId);
         command->BindInteger(3, static_cast<unsigned int>(uid));
         command->BindString(4, targetTizenVer);
+        authorId.empty() ? command->BindNull(5) : command->BindString(5, authorId);
 
         if (command->Step()) {
             LogDebug("Unexpected SQLITE_ROW answer to query: " <<

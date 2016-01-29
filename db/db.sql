@@ -18,8 +18,10 @@ pkg_id INTEGER NOT NULL,
 uid INTEGER NOT NULL,
 name VARCHAR NOT NULL,
 version VARCHAR NOT NULL,
+author_id INTEGER,
 UNIQUE (name, uid),
 FOREIGN KEY (pkg_id) REFERENCES pkg (pkg_id)
+FOREIGN KEY (author_id) REFERENCES author (author_id)
 );
 
 CREATE TABLE IF NOT EXISTS privilege (
@@ -75,6 +77,12 @@ CREATE TABLE IF NOT EXISTS privilege_to_map (
 privilege_name VARCHAR
 );
 
+CREATE TABLE IF NOT EXISTS author (
+	author_id INTEGER PRIMARY KEY,
+	name VARCHAR NOT NULL,
+	UNIQUE (name)
+);
+
 DROP VIEW IF EXISTS app_privilege_view;
 CREATE VIEW app_privilege_view AS
 SELECT
@@ -98,9 +106,12 @@ SELECT
     app.pkg_id,
     app.uid,
     pkg.name as pkg_name,
-    app.version as version
+    app.version as version,
+    app.author_id,
+    author.name as author_name
 FROM app
-LEFT JOIN pkg USING (pkg_id);
+LEFT JOIN pkg USING (pkg_id)
+LEFT JOIN author USING (author_id);
 
 DROP TRIGGER IF EXISTS app_privilege_view_insert_trigger;
 CREATE TRIGGER app_privilege_view_insert_trigger
@@ -123,8 +134,14 @@ DROP TRIGGER IF EXISTS app_pkg_view_insert_trigger;
 CREATE TRIGGER app_pkg_view_insert_trigger
 INSTEAD OF INSERT ON app_pkg_view
 BEGIN
+    INSERT OR IGNORE INTO author(name) VALUES (NEW.author_name);
     INSERT OR IGNORE INTO pkg(name) VALUES (NEW.pkg_name);
-    INSERT OR IGNORE INTO app(pkg_id, name, uid, version) VALUES ((SELECT pkg_id FROM pkg WHERE name=NEW.pkg_name), NEW.app_name, NEW.uid, NEW.version);
+    INSERT OR IGNORE INTO app(pkg_id, name, uid, version, author_id) VALUES (
+        (SELECT pkg_id FROM pkg WHERE name=NEW.pkg_name),
+        NEW.app_name,
+        NEW.uid,
+        NEW.version,
+        (SELECT author_id FROM author WHERE name=NEW.author_name));
 END;
 
 DROP TRIGGER IF EXISTS app_pkg_view_delete_trigger;
