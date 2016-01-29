@@ -387,4 +387,12 @@ void SmackRules::strReplace(std::string &haystack, const std::string &needle,
         haystack.replace(pos, needle.size(), replace);
 }
 
+void SmackRules::fixAuthorRules(const std::string &authorId) {
+    SmackRules rules;
+    std::string authorLabel = SmackLabels::generateAuthorLabel(authorId);
+    rules.add("User", authorLabel, "rwxat");
+    rules.add("System", authorLabel, "rwxat");
+    rules.apply();
+}
+
 } // namespace SecurityManager

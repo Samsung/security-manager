@@ -405,6 +405,33 @@ void PrivilegeDb::GetAuthorIdForAppId(const std::string &appId,
     });
 }
 
+void PrivilegeDb::RemoveAuthor() {
+    try_catch<void>([&] {
+        auto command = getStatement(StmtType::ERemoveAuthors);
+        if (command->Step()) {
+            LogDebug("Unconnected authors have been removed");
+        } else {
+            LogError("Error during authors removing");
+        }
+    });
+}
+
+void PrivilegeDb::AuthorIdExists(const std::string &authorId, int &result) {
+    try_catch<void>([&] {
+        auto command = getStatement(StmtType::EAuthorIdExists);
+        result = 0;
+
+        if (authorId.empty())
+            return;
+
+        command->BindInteger(1, std::atoi(authorId.c_str()));
+        if (command->Step()) {
+            result = command->GetColumnInteger(0);
+        }
+        LogDebug("For author: " << authorId << " found " << result << " rows");
+    });
+}
+
 void PrivilegeDb::GetDefaultMapping(const std::string &version_from,
                                     const std::string &version_to,
                                     std::vector<std::string> &mappings)

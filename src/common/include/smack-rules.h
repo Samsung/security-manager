@@ -176,6 +176,9 @@ public:
             const std::vector<std::string> &appsGranted,
             const std::string &zoneId);
 
+    /* Temporary fix for authors rules */
+    static void fixAuthorRules(const std::string &authorId);
+
 private:
     /**
      * Create a path for package rules

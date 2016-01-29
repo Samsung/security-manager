@@ -422,6 +422,8 @@ int ServiceImpl::appUninstall(const std::string &appId, uid_t uid, bool isSlave)
     std::string uidstr;
     std::vector<std::string> allTizen2XApps;
     checkGlobalUser(uid, uidstr);
+    std::string authorId;
+    int restoreAuthor = 0;
 
     std::string zoneId;
     if (isSlave) {
@@ -446,9 +448,13 @@ int ServiceImpl::appUninstall(const std::string &appId, uid_t uid, bool isSlave)
             /* Before we remove the app from the database, let's fetch all apps in the package
                 that this app belongs to, this will allow us to remove all rules withing the
                 package that the app appears in */
+            PrivilegeDb::getInstance().GetAuthorIdForAppId(appId, authorId);
             PrivilegeDb::getInstance().GetAppIdsForPkgId(pkgId, pkgContents);
             PrivilegeDb::getInstance().UpdateAppPrivileges(appId, uid, std::vector<std::string>());
             PrivilegeDb::getInstance().RemoveApplication(appId, uid, removeApp, removePkg);
+            PrivilegeDb::getInstance().RemoveAuthor();
+            PrivilegeDb::getInstance().AuthorIdExists(authorId, restoreAuthor);
+
             // if uninstalled app is targetted to Tizen 2.X, remove other 2.X apps RO rules it's shared dir
             if(isTizen2XVersion(tizenVersion))
                 PrivilegeDb::getInstance().GetTizen2XApps(appId, allTizen2XApps);
@@ -507,6 +513,8 @@ int ServiceImpl::appUninstall(const std::string &appId, uid_t uid, bool isSlave)
                     LogDebug("Removing Smack rules for deleted pkgId " << pkgId);
                     SmackRules::uninstallPackageRules(pkgId);
                 }
+                if (restoreAuthor)
+                    SmackRules::fixAuthorRules(authorId);
             }
         } catch (const SmackException::Base &e) {
             LogError("Error while removing Smack rules for application: " << e.DumpToString());
