@@ -2,7 +2,6 @@
 
 POLICY_PATH=/usr/share/security-manager/policy
 PRIVILEGE_GROUP_MAPPING=$POLICY_PATH/privilege-group.list
-PRIVILEGE_MAPPING=$POLICY_PATH/privilege-mapping.list
 
 DB_FILE=`tzplatform-get TZ_SYS_DB | cut -d= -f2`/.security-manager.db
 
@@ -69,18 +68,6 @@ grep -v '^#' "$PRIVILEGE_GROUP_MAPPING" |
 while read privilege group
 do
     echo "INSERT INTO privilege_group_view (privilege_name, group_name) VALUES ('$privilege', '$group');"
-done
-echo "COMMIT;"
-) | sqlite3 "$DB_FILE"
-
-# Load privilege-privilege mappings
-(
-echo "BEGIN;"
-echo "DELETE FROM privilege_mapping;"
-grep -v '^#' "$PRIVILEGE_MAPPING" |
-while read version_from version_to privilege mapping
-do
-    echo "INSERT INTO privilege_mapping_view (version_from_name, version_to_name, privilege_name, privilege_mapping_name) VALUES ('$version_from', '$version_to', '$privilege', '$mapping');"
 done
 echo "COMMIT;"
 ) | sqlite3 "$DB_FILE"

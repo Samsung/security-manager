@@ -145,14 +145,6 @@ private:
     void processPolicyGetDesc(MessageBuffer &send);
 
     /**
-     * Process getting privileges mapping. This retrieves and sends to clinet vector of privileges
-     * which are mapped to given privileges between two given privilege versions.
-     *
-     * @oaran  send   Raw data buffer to be sent
-     */
-    void processPrivilegesMappings(MessageBuffer &recv, MessageBuffer &send);
-
-    /**
      * Process getting groups bound with privileges
      *
      * @param  send   Raw data buffer to be sent

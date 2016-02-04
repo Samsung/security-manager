@@ -134,9 +134,6 @@ bool Service::processOne(const ConnectionID &conn, MessageBuffer &buffer,
                 case SecurityModuleCall::POLICY_GET_DESCRIPTIONS:
                     processPolicyGetDesc(send);
                     break;
-                case SecurityModuleCall::GET_PRIVILEGES_MAPPING:
-                    processPrivilegesMappings(buffer, send);
-                    break;
                 case SecurityModuleCall::GROUPS_GET:
                     processGroupsGet(send);
                     break;
@@ -330,21 +327,6 @@ void Service::processPolicyGetDesc(MessageBuffer &send)
             Serialization::Serialize(send, descriptions[i]);
         }
     }
-}
-
-void Service::processPrivilegesMappings(MessageBuffer &recv, MessageBuffer &send)
-{
-    std::vector<std::string> privileges;
-    std::string version_from, version_to;
-    Deserialization::Deserialize(recv, version_from);
-    Deserialization::Deserialize(recv, version_to);
-    Deserialization::Deserialize(recv, privileges);
-
-    std::vector<std::string> mappings;
-    int ret = serviceImpl.getPrivilegesMappings(version_from, version_to, privileges, mappings);
-
-    Serialization::Serialize(send, ret);
-    Serialization::Serialize(send, mappings);
 }
 
 void Service::processGroupsGet(MessageBuffer &send)

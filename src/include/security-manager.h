@@ -839,36 +839,6 @@ int security_manager_policy_levels_get(char ***levels, size_t *levels_count);
 void security_manager_policy_levels_free(char **levels, size_t levels_count);
 
 /**
- * This function returns mapping of MULTIPLE privileges from one version to the other.
- * List of privileges is a union of mappings of every single given privilege.
- *
- * Caller needs to free memory allocated for the list using
- * security_manager_privilege_mapping_free().
- *
- * @param[in] from_version Version of passed privilege
- * @param[in] to_version Version of requested mapping, if NULL default one will be used
- * @param[in] privileges Names of privileges to be mapped
- * @param[in] privileges_count Number of privileges to be mapped
- * @param[out] privilege_mapping Pointer to list of sum of privileges which given privileges maps to
- * @param[out] mapping_count
- * @return API return code or error code
- */
-int security_manager_get_privileges_mapping(const char *from_version,
-                                            const char *to_version,
-                                            char const * const *privileges,
-                                            size_t privileges_count,
-                                            char ***privileges_mappings,
-                                            size_t *mappings_count);
-/**
- * This function frees memory allocated by security_manager_get_privilege_mapping() and
- * security_manager_get_privileges_mapping().
- *
- * @param[in] privilege_mapping List of privileges
- * @param[in] mapping_count Number of privileges
- */
-void security_manager_privilege_mapping_free(char **privileges_mappings, size_t mappings_count);
-
-/**
  * This function returns array of groups bound to privileges of file resources.
  *
  * Caller needs to free memory allocated for the list using
