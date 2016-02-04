@@ -41,11 +41,10 @@ class Service :
     public SecurityManager::BaseService
 {
 public:
-    Service(const bool isSlave);
+    Service();
     ServiceDescriptionVector GetServiceDescription();
 
 private:
-    const bool m_isSlave;
     ServiceImpl serviceImpl;
 
     /**

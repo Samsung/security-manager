@@ -41,7 +41,6 @@
 
 #include "security-manager.h"
 #include "smack-labels.h"
-#include "zone-utils.h"
 
 
 namespace SecurityManager {
@@ -135,7 +134,6 @@ void setupPath(
         const std::string &pkgId,
         const std::string &path,
         app_install_path_type pathType,
-        const std::string &zoneId,
         const std::string &authorId)
 {
     std::string label;
@@ -143,12 +141,12 @@ void setupPath(
 
     switch (pathType) {
     case SECURITY_MANAGER_PATH_RW:
-        label = zoneSmackLabelGenerate(generatePkgLabel(pkgId), zoneId);
+        label = generatePkgLabel(pkgId);
         label_executables = false;
         label_transmute = true;
         break;
     case SECURITY_MANAGER_PATH_RO:
-        label = zoneSmackLabelGenerate(generatePkgROLabel(pkgId), zoneId);
+        label = generatePkgROLabel(pkgId);
         label_executables = false;
         label_transmute = false;
         break;
@@ -158,7 +156,7 @@ void setupPath(
         label_transmute = true;
         break;
     case SECURITY_MANAGER_PATH_OWNER_RW_OTHER_RO:
-        label = zoneSmackLabelGenerate(generatePkgLabelOwnerRWothersRO(pkgId), zoneId);
+        label = generatePkgLabelOwnerRWothersRO(pkgId);
         label_executables = false;
         label_transmute = true;
         break;

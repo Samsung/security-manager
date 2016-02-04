@@ -33,35 +33,22 @@
 #include "protocols.h"
 #include "service.h"
 #include "service_impl.h"
-#include "master-req.h"
 
 namespace SecurityManager {
 
 const InterfaceID IFACE = 1;
 
-Service::Service(const bool isSlave):
-        m_isSlave(isSlave)
-{
-}
+Service::Service(){}
 
 GenericSocketService::ServiceDescriptionVector Service::GetServiceDescription()
 {
-    if (m_isSlave)
-        return ServiceDescriptionVector {
-            {SLAVE_SERVICE_SOCKET,  /* path */
-             "*",   /* smackLabel label (not used, we rely on systemd) */
-             IFACE, /* InterfaceID */
-             false, /* useSendMsg */
-             true}, /* systemdOnly */
-        };
-    else
-        return ServiceDescriptionVector {
-            {SERVICE_SOCKET,  /* path */
-             "*",   /* smackLabel label (not used, we rely on systemd) */
-             IFACE, /* InterfaceID */
-             false, /* useSendMsg */
-             true}, /* systemdOnly */
-        };
+    return ServiceDescriptionVector {
+        {SERVICE_SOCKET,  /* path */
+        "*",   /* smackLabel label (not used, we rely on systemd) */
+        IFACE, /* InterfaceID */
+        false, /* useSendMsg */
+        true}, /* systemdOnly */
+    };
 }
 
 bool Service::processOne(const ConnectionID &conn, MessageBuffer &buffer,
@@ -188,7 +175,7 @@ void Service::processAppInstall(MessageBuffer &buffer, MessageBuffer &send, uid_
     Deserialization::Deserialize(buffer, req.uid);
     Deserialization::Deserialize(buffer, req.tizenVersion);
     Deserialization::Deserialize(buffer, req.authorId);
-    Serialization::Serialize(send, serviceImpl.appInstall(req, uid, m_isSlave));
+    Serialization::Serialize(send, serviceImpl.appInstall(req, uid));
 }
 
 void Service::processAppUninstall(MessageBuffer &buffer, MessageBuffer &send, uid_t uid)
@@ -196,7 +183,7 @@ void Service::processAppUninstall(MessageBuffer &buffer, MessageBuffer &send, ui
     std::string appId;
 
     Deserialization::Deserialize(buffer, appId);
-    Serialization::Serialize(send, serviceImpl.appUninstall(appId, uid, m_isSlave));
+    Serialization::Serialize(send, serviceImpl.appUninstall(appId, uid));
 }
 
 void Service::processGetPkgId(MessageBuffer &buffer, MessageBuffer &send)
@@ -219,7 +206,7 @@ void Service::processGetAppGroups(MessageBuffer &buffer, MessageBuffer &send, ui
     int ret;
 
     Deserialization::Deserialize(buffer, appId);
-    ret = serviceImpl.getAppGroups(appId, uid, pid, m_isSlave, gids);
+    ret = serviceImpl.getAppGroups(appId, uid, pid, gids);
     Serialization::Serialize(send, ret);
     if (ret == SECURITY_MANAGER_API_SUCCESS) {
         Serialization::Serialize(send, static_cast<int>(gids.size()));
@@ -238,7 +225,7 @@ void Service::processUserAdd(MessageBuffer &buffer, MessageBuffer &send, uid_t u
     Deserialization::Deserialize(buffer, uidAdded);
     Deserialization::Deserialize(buffer, userType);
 
-    ret = serviceImpl.userAdd(uidAdded, userType, uid, m_isSlave);
+    ret = serviceImpl.userAdd(uidAdded, userType, uid);
     Serialization::Serialize(send, ret);
 }
 
@@ -249,7 +236,7 @@ void Service::processUserDelete(MessageBuffer &buffer, MessageBuffer &send, uid_
 
     Deserialization::Deserialize(buffer, uidRemoved);
 
-    ret = serviceImpl.userDelete(uidRemoved, uid, m_isSlave);
+    ret = serviceImpl.userDelete(uidRemoved, uid);
     Serialization::Serialize(send, ret);
 }
 
@@ -260,11 +247,7 @@ void Service::processPolicyUpdate(MessageBuffer &buffer, MessageBuffer &send, ui
 
     Deserialization::Deserialize(buffer, policyEntries);
 
-    if (m_isSlave) {
-        ret = MasterReq::PolicyUpdate(policyEntries, uid, pid, smackLabel);
-    } else {
-        ret = serviceImpl.policyUpdate(policyEntries, uid, pid, smackLabel);
-    }
+    ret = serviceImpl.policyUpdate(policyEntries, uid, pid, smackLabel);
     Serialization::Serialize(send, ret);
 }
 
@@ -275,12 +258,7 @@ void Service::processGetConfiguredPolicy(MessageBuffer &buffer, MessageBuffer &s
     Deserialization::Deserialize(buffer, filter);
     std::vector<policy_entry> policyEntries;
 
-    if (m_isSlave) {
-        ret = MasterReq::GetConfiguredPolicy(forAdmin, filter, uid, pid, smackLabel, policyEntries);
-    } else {
-        ret = serviceImpl.getConfiguredPolicy(forAdmin, filter, uid, pid, smackLabel,
-                                               policyEntries);
-    }
+    ret = serviceImpl.getConfiguredPolicy(forAdmin, filter, uid, pid, smackLabel, policyEntries);
 
     Serialization::Serialize(send, ret);
     Serialization::Serialize(send, static_cast<int>(policyEntries.size()));
@@ -296,11 +274,7 @@ void Service::processGetPolicy(MessageBuffer &buffer, MessageBuffer &send, uid_t
     Deserialization::Deserialize(buffer, filter);
     std::vector<policy_entry> policyEntries;
 
-    if (m_isSlave) {
-        ret = MasterReq::GetPolicy(filter, uid, pid, smackLabel, policyEntries);
-    } else {
-        ret = serviceImpl.getPolicy(filter, uid, pid, smackLabel, policyEntries);
-    }
+    ret = serviceImpl.getPolicy(filter, uid, pid, smackLabel, policyEntries);
 
     Serialization::Serialize(send, ret);
     Serialization::Serialize(send, static_cast<int>(policyEntries.size()));
@@ -314,11 +288,8 @@ void Service::processPolicyGetDesc(MessageBuffer &send)
     int ret;
     std::vector<std::string> descriptions;
 
-    if (m_isSlave) {
-        ret = MasterReq::PolicyGetDesc(descriptions);
-    } else {
-        ret = serviceImpl.policyGetDesc(descriptions);
-    }
+    ret = serviceImpl.policyGetDesc(descriptions);
+
     Serialization::Serialize(send, ret);
     if (ret == SECURITY_MANAGER_API_SUCCESS) {
         Serialization::Serialize(send, static_cast<int>(descriptions.size()));
@@ -351,7 +322,7 @@ void Service::processAppHasPrivilege(MessageBuffer &recv, MessageBuffer &send)
     Deserialization::Deserialize(recv, uid);
 
     bool result;
-    int ret = serviceImpl.appHasPrivilege(appId, privilege, uid, m_isSlave, result);
+    int ret = serviceImpl.appHasPrivilege(appId, privilege, uid, result);
 
     Serialization::Serialize(send, ret);
     if (ret == SECURITY_MANAGER_API_SUCCESS)
@@ -365,7 +336,7 @@ void Service::processApplyPrivateSharing(MessageBuffer &recv, MessageBuffer &sen
     Deserialization::Deserialize(recv, ownerAppId);
     Deserialization::Deserialize(recv, targetAppId);
     Deserialization::Deserialize(recv, paths);
-    int ret = serviceImpl.applyPrivatePathSharing(ownerAppId, targetAppId, paths, m_isSlave);
+    int ret = serviceImpl.applyPrivatePathSharing(ownerAppId, targetAppId, paths);
     Serialization::Serialize(send, ret);
 }
 
@@ -376,7 +347,7 @@ void Service::processDropPrivateSharing(MessageBuffer &recv, MessageBuffer &send
     Deserialization::Deserialize(recv, ownerAppId);
     Deserialization::Deserialize(recv, targetAppId);
     Deserialization::Deserialize(recv, paths);
-    int ret = serviceImpl.dropPrivatePathSharing(ownerAppId, targetAppId, paths, m_isSlave);
+    int ret = serviceImpl.dropPrivatePathSharing(ownerAppId, targetAppId, paths);
     Serialization::Serialize(send, ret);
 }
 } // namespace SecurityManager

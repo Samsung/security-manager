@@ -1,7 +1,5 @@
 [Unit]
 Description=Start the security manager
-ConditionVirtualization=!lxc
-ConditionPathExists=!/usr/share/.zones/enabled
 
 [Service]
 Type=notify

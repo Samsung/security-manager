@@ -134,8 +134,6 @@ struct private_sharing_req {
 namespace SecurityManager {
 
 extern char const * const SERVICE_SOCKET;
-extern char const * const MASTER_SERVICE_SOCKET;
-extern char const * const SLAVE_SERVICE_SOCKET;
 
 enum class SecurityModuleCall
 {
@@ -155,21 +153,6 @@ enum class SecurityModuleCall
     GROUPS_GET,
     APP_HAS_PRIVILEGE,
     NOOP = 0x90,
-};
-
-enum class MasterSecurityModuleCall
-{
-    CYNARA_UPDATE_POLICY,
-    CYNARA_USER_INIT,
-    CYNARA_USER_REMOVE,
-    POLICY_UPDATE,
-    GET_CONFIGURED_POLICY,
-    GET_POLICY,
-    POLICY_GET_DESC,
-    SMACK_INSTALL_RULES,
-    SMACK_UNINSTALL_RULES,
-    SMACK_APPLY_PRIVATE_SHARING_RULES,
-    SMACK_DROP_PRIVATE_SHARING_RULES
 };
 
 } // namespace SecurityManager

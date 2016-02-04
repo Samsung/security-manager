@@ -49,7 +49,7 @@ private:
 
     int dropOnePrivateSharing(const std::string &ownerAppId, const std::string &ownerPkgId,
                               const std::vector<std::string> &ownerPkgContents, const std::string &targetAppId,
-                              const std::string &path, const std::string &zoneId, bool isSlave);
+                              const std::string &path);
 
 public:
     ServiceImpl();
@@ -60,22 +60,20 @@ public:
     *
     * @param[in] req installation request
     * @param[in] uid id of the requesting user
-    * @param[in] isSlave Indicates if function should be called under slave mode
     *
     * @return API return code, as defined in protocols.h
     */
-    int appInstall(const app_inst_req &req, uid_t uid, bool isSlave);
+    int appInstall(const app_inst_req &req, uid_t uid);
 
     /**
     * Process application uninstallation request.
     *
     * @param[in] req uninstallation request
     * @param[in] uid id of the requesting user
-    * @param[in] isSlave Indicates if function should be called under slave mode
     *
     * @return API return code, as defined in protocols.h
     */
-    int appUninstall(const std::string &appId, uid_t uid, bool isSlave);
+    int appUninstall(const std::string &appId, uid_t uid);
 
     /**
     * Process package id query.
@@ -98,13 +96,11 @@ public:
     * @param[in]  appId application identifier
     * @param[in]  uid id of the requesting user
     * @param[in]  pid id of the requesting process (to construct Cynara session id)
-    * @param[in]  isSlave Indicates if function should be called under slave mode
     * @param[out] gids returned set of allowed group ids
     *
     * @return API return code, as defined in protocols.h
     */
-    int getAppGroups(const std::string &appId, uid_t uid, pid_t pid, bool isSlave,
-            std::unordered_set<gid_t> &gids);
+    int getAppGroups(const std::string &appId, uid_t uid, pid_t pid, std::unordered_set<gid_t> &gids);
 
     /**
     * Process user adding request.
@@ -112,22 +108,20 @@ public:
     * @param[in] uidAdded uid of newly created user
     * @param[in] userType type of newly created user
     * @param[in] uid uid of requesting user
-    * @param[in] isSlave Indicates if function should be called under slave mode
     *
     * @return API return code, as defined in protocols.h
     */
-    int userAdd(uid_t uidAdded, int userType, uid_t uid, bool isSlave);
+    int userAdd(uid_t uidAdded, int userType, uid_t uid);
 
     /**
     * Process user deletion request.
     *
     * @param[in] uidDeleted uid of removed user
     * @param[in] uid uid of requesting user
-    * @param[in] isSlave Indicates if function should be called under slave mode
     *
     * @return API return code, as defined in protocols.h
     */
-    int userDelete(uid_t uidDeleted, uid_t uid, bool isSlave);
+    int userDelete(uid_t uidDeleted, uid_t uid);
 
     /**
     * Update policy in Cynara - proper privilege: http://tizen.org/privilege/systemsettings.admin
@@ -194,13 +188,11 @@ public:
      * @param[in]  appId application identifier
      * @param[in]  privilege privilege name
      * @param[in]  uid user identifier
-     * @param[in]  isSlave indicates if function should be called under slave mode
      * @param[out] result placeholder for check result
      *
      * @return API return code, as defined in protocols.h
      */
-    int appHasPrivilege(std::string appId, std::string privilege, uid_t uid,
-            bool isSlave, bool &result);
+    int appHasPrivilege(std::string appId, std::string privilege, uid_t uid, bool &result);
 
     /**
      * Process applying private path sharing between applications.
@@ -208,14 +200,12 @@ public:
      * @param[in] ownerAppId application owning paths
      * @param[in] targetAppId application which paths will be shared with
      * @param[in] paths vector of paths to be shared
-     * @param[in]  isSlave Indicates if function should be called under slave mode
      *
      * @return API return code, as defined in protocols.h
      */
     int applyPrivatePathSharing(const std::string &ownerAppId,
                                 const std::string &targetAppId,
-                                const std::vector<std::string> &paths,
-                                bool isSlave);
+                                const std::vector<std::string> &paths);
 
     /**
      * Process droping private path sharing between applications.
@@ -223,14 +213,13 @@ public:
      * @param[in] ownerAppId application owning paths
      * @param[in] targetAppId application which paths won't be anymore shared with
      * @param[in] paths vector of paths to be stopped being shared
-     * @param[in]  isSlave Indicates if function should be called under slave mode
      * @return API return code, as defined in protocols.h
      */
     int dropPrivatePathSharing(const std::string &ownerAppId,
                                const std::string &targetAppId,
-                               const std::vector<std::string> &paths,
-                               bool isSlave);
+                               const std::vector<std::string> &paths);
 };
+
 } /* namespace SecurityManager */
 
 #endif /* _SECURITY_MANAGER_SERVICE_IMPL_ */

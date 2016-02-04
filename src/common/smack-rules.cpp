@@ -38,7 +38,6 @@
 
 #include "smack-labels.h"
 #include "smack-rules.h"
-#include "zone-utils.h"
 
 namespace SecurityManager {
 
@@ -148,8 +147,7 @@ void SmackRules::saveToFile(const std::string &path) const
 void SmackRules::addFromTemplateFile(
         const std::string &appId,
         const std::string &pkgId,
-        const std::string &authorId,
-        const std::string &zoneId)
+        const std::string &authorId)
 {
     std::vector<std::string> templateRules;
     std::string line;
@@ -169,15 +167,14 @@ void SmackRules::addFromTemplateFile(
         ThrowMsg(SmackException::FileError, "Error reading template file: " << APP_RULES_TEMPLATE_FILE_PATH);
     }
 
-    addFromTemplate(templateRules, appId, pkgId, authorId, zoneId);
+    addFromTemplate(templateRules, appId, pkgId, authorId);
 }
 
 void SmackRules::addFromTemplate(
         const std::vector<std::string> &templateRules,
         const std::string &appId,
         const std::string &pkgId,
-        const std::string &authorId,
-        const std::string &zoneId)
+        const std::string &authorId)
 {
     for (auto rule : templateRules) {
         if (rule.empty())
@@ -206,18 +203,11 @@ void SmackRules::addFromTemplate(
                        SmackLabels::generateAuthorLabel(authorId));
         }
 
-        if (!zoneId.empty()) {
-            // FIXME replace with vasum calls. See zone-utils.h
-            subject = zoneSmackLabelGenerate(subject, zoneId);
-            object = zoneSmackLabelGenerate(object, zoneId);
-        }
-
         add(subject, object, permissions);
     }
 }
 
-void SmackRules::generatePackageCrossDeps(const std::vector<std::string> &pkgContents,
-        const std::string &zoneId)
+void SmackRules::generatePackageCrossDeps(const std::vector<std::string> &pkgContents)
 {
     LogDebug ("Generating cross-package rules");
 
@@ -229,28 +219,28 @@ void SmackRules::generatePackageCrossDeps(const std::vector<std::string> &pkgCon
             if (object == subject)
                 continue;
 
-            subjectLabel = zoneSmackLabelGenerate(SmackLabels::generateAppLabel(subject), zoneId);
-            objectLabel = zoneSmackLabelGenerate(SmackLabels::generateAppLabel(object), zoneId);
+            subjectLabel = SmackLabels::generateAppLabel(subject);
+            objectLabel = SmackLabels::generateAppLabel(object);
             LogDebug ("Trying to add rule subject: " << subjectLabel << " object: " << objectLabel << " perms: " << appsInPackagePerms);
             add(subjectLabel, objectLabel, appsInPackagePerms);
         }
     }
 }
 
-void SmackRules::generateAppToOtherPackagesDeps(const std::string appId,
-        const std::vector<std::string> &other2XPackages,
-        const std::string &zoneId)
+void SmackRules::generateAppToOtherPackagesDeps(
+        const std::string appId,
+        const std::vector<std::string> &other2XPackages)
 {
     // reverse: allow installed app to access others' contents
     // for every 2.X package
     for (const auto &object : other2XPackages) {
-        std::string otherObjectLabel = zoneSmackLabelGenerate(SmackLabels::generatePkgLabelOwnerRWothersRO(object), zoneId);
+        std::string otherObjectLabel = SmackLabels::generatePkgLabelOwnerRWothersRO(object);
 
         SmackRules packageRules;
         std::string accessPackageRulesPath = getPackageRulesFilePath(object);
         packageRules.loadFromFile(accessPackageRulesPath);
 
-        std::string subjectLabel = zoneSmackLabelGenerate(SmackLabels::generateAppLabel(appId), zoneId);
+        std::string subjectLabel = SmackLabels::generateAppLabel(appId);
         LogDebug("Addding cross app rule for newly installed subject " << subjectLabel << " to already installed 2.x package object: " << otherObjectLabel << " perms: " << SMACK_APP_CROSS_PKG_PERMS);
         packageRules.add(subjectLabel, otherObjectLabel, SMACK_APP_CROSS_PKG_PERMS);
         packageRules.saveToFile(accessPackageRulesPath);
@@ -262,18 +252,18 @@ void SmackRules::generateAppToOtherPackagesDeps(const std::string appId,
 /**
  * this below works in N^2 and should be replaced by an alternative mechanism
  */
-void SmackRules::generateAllowOther2XApplicationDeps(const std::string pkgId,
-        const std::vector<std::string> &other2XApps,
-        const std::string &zoneId)
+void SmackRules::generateAllowOther2XApplicationDeps(
+        const std::string pkgId,
+        const std::vector<std::string> &other2XApps)
 {
     LogDebug("Generating cross-package rules");
 
-    std::string objectLabel = zoneSmackLabelGenerate(SmackLabels::generatePkgLabelOwnerRWothersRO(pkgId), zoneId);
+    std::string objectLabel = SmackLabels::generatePkgLabelOwnerRWothersRO(pkgId);
     std::string appsInPackagePerms = SMACK_APP_IN_PACKAGE_PERMS;
 
     // allow other app to access installed package contents
     for (const auto &subject : other2XApps) {
-        std::string subjectLabel = zoneSmackLabelGenerate(SmackLabels::generateAppLabel(subject), zoneId);
+        std::string subjectLabel = SmackLabels::generateAppLabel(subject);
 
         LogDebug("Addding cross 2.x app rule subject: " << subjectLabel << " to newly installed object: "
             << objectLabel << " perms: " << SMACK_APP_CROSS_PKG_PERMS);
@@ -301,42 +291,29 @@ void SmackRules::installApplicationRules(
         const std::vector<std::string> &appsGranted,
         const std::vector<std::string> &accessPackages)
 {
-    installApplicationRules(appId, pkgId, authorId, pkgContents, appsGranted, accessPackages, std::string());
-}
-
-void SmackRules::installApplicationRules(
-        const std::string &appId,
-        const std::string &pkgId,
-        const std::string &authorId,
-        const std::vector<std::string> &pkgContents,
-        const std::vector<std::string> &appsGranted,
-        const std::vector<std::string> &accessPackages,
-        const std::string &zoneId)
-{
     SmackRules smackRules;
     std::string appPath = getApplicationRulesFilePath(appId);
 
-    smackRules.addFromTemplateFile(appId, pkgId, authorId, zoneId);
+    smackRules.addFromTemplateFile(appId, pkgId, authorId);
 
     if (smack_smackfs_path() != NULL)
         smackRules.apply();
 
     smackRules.saveToFile(appPath);
 
-    updatePackageRules(pkgId, pkgContents, appsGranted, zoneId);
-    generateAppToOtherPackagesDeps(appId, accessPackages, zoneId);
+    updatePackageRules(pkgId, pkgContents, appsGranted);
+    generateAppToOtherPackagesDeps(appId, accessPackages);
 }
 
 void SmackRules::updatePackageRules(const std::string &pkgId,
         const std::vector<std::string> &pkgContents,
-        const std::vector<std::string> &appsGranted,
-        const std::string &zoneId)
+        const std::vector<std::string> &appsGranted)
 {
     SmackRules smackRules;
     std::string pkgPath = getPackageRulesFilePath(pkgId);
 
-    smackRules.generatePackageCrossDeps(pkgContents, zoneId);
-    smackRules.generateAllowOther2XApplicationDeps(pkgId, appsGranted, zoneId);
+    smackRules.generatePackageCrossDeps(pkgContents);
+    smackRules.generateAllowOther2XApplicationDeps(pkgId, appsGranted);
 
     if (smack_smackfs_path() != NULL)
         smackRules.apply();
@@ -349,13 +326,14 @@ void SmackRules::uninstallPackageRules(const std::string &pkgId)
     uninstallRules(getPackageRulesFilePath(pkgId));
 }
 
-void SmackRules::uninstallApplicationRules(const std::string &appId,
-        const std::string &pkgId, std::vector<std::string> pkgContents,
-        const std::vector<std::string> &appsGranted,
-        const std::string &zoneId)
+void SmackRules::uninstallApplicationRules(
+        const std::string &appId,
+        const std::string &pkgId,
+        std::vector<std::string> pkgContents,
+        const std::vector<std::string> &appsGranted)
 {
     uninstallRules(getApplicationRulesFilePath(appId));
-    updatePackageRules(pkgId, pkgContents, appsGranted, zoneId);
+    updatePackageRules(pkgId, pkgContents, appsGranted);
 }
 
 void SmackRules::uninstallRules(const std::string &path)
@@ -402,25 +380,25 @@ void SmackRules::fixAuthorRules(const std::string &authorId) {
     rules.apply();
 }
 
-void SmackRules::applyPrivateSharingRules(const std::string &ownerPkgId,
-                                          const std::vector<std::string> &ownerPkgContents,
-                                          const std::string &targetAppId,
-                                          const std::string &pathLabel,
-                                          bool isPathSharedAlready,
-                                          bool isTargetSharingAlready,
-                                          const std::string &zoneId)
+void SmackRules::applyPrivateSharingRules(
+        const std::string &ownerPkgId,
+        const std::vector<std::string> &ownerPkgContents,
+        const std::string &targetAppId,
+        const std::string &pathLabel,
+        bool isPathSharedAlready,
+        bool isTargetSharingAlready)
 {
     SmackRules rules;
-    const std::string &targetLabel = zoneSmackLabelGenerate(SmackLabels::generateAppLabel(targetAppId), zoneId);
+    const std::string &targetLabel = SmackLabels::generateAppLabel(targetAppId);
     if (!isTargetSharingAlready) {
 
         rules.add(targetLabel,
-                  zoneSmackLabelGenerate(SmackLabels::generatePkgLabel(ownerPkgId), zoneId),
+                  SmackLabels::generatePkgLabel(ownerPkgId),
                   SMACK_APP_DIR_TARGET_PERMS);
     }
     if (!isPathSharedAlready) {
         for (const auto &app: ownerPkgContents) {
-            const std::string appLabel = zoneSmackLabelGenerate(SmackLabels::generateAppLabel(app), zoneId);
+            const std::string appLabel = SmackLabels::generateAppLabel(app);
             rules.add(appLabel, pathLabel, SMACK_APP_PATH_OWNER_PERMS);
         }
         rules.add(SMACK_USER, pathLabel, SMACK_APP_PATH_USER_PERMS);
@@ -430,24 +408,24 @@ void SmackRules::applyPrivateSharingRules(const std::string &ownerPkgId,
     rules.apply();
 }
 
-void SmackRules::dropPrivateSharingRules(const std::string &ownerPkgId,
-                                         const std::vector<std::string> &ownerPkgContents,
-                                         const std::string &targetAppId,
-                                         const std::string &pathLabel,
-                                         bool isPathSharedNoMore,
-                                         bool isTargetSharingNoMore,
-                                         const std::string &zoneId)
+void SmackRules::dropPrivateSharingRules(
+        const std::string &ownerPkgId,
+        const std::vector<std::string> &ownerPkgContents,
+        const std::string &targetAppId,
+        const std::string &pathLabel,
+        bool isPathSharedNoMore,
+        bool isTargetSharingNoMore)
 {
     SmackRules rules;
-    const std::string &targetLabel = zoneSmackLabelGenerate(SmackLabels::generateAppLabel(targetAppId), zoneId);
+    const std::string &targetLabel = SmackLabels::generateAppLabel(targetAppId);
     if (isTargetSharingNoMore) {
         rules.addModify(targetLabel,
-                  zoneSmackLabelGenerate(SmackLabels::generatePkgLabel(ownerPkgId), zoneId),
+                  SmackLabels::generatePkgLabel(ownerPkgId),
                   "", SMACK_APP_DIR_TARGET_PERMS);
     }
     if (isPathSharedNoMore) {
         for (const auto &app: ownerPkgContents) {
-            const std::string appLabel = zoneSmackLabelGenerate(SmackLabels::generateAppLabel(app), zoneId);
+            const std::string appLabel = SmackLabels::generateAppLabel(app);
             rules.addModify(appLabel, pathLabel, "", SMACK_APP_PATH_OWNER_PERMS);
         }
         rules.addModify(SMACK_USER, pathLabel, "", SMACK_APP_PATH_USER_PERMS);

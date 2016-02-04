@@ -89,8 +89,6 @@ cp LICENSE %{buildroot}%{_datadir}/license/libsecurity-manager-client
 mkdir -p %{buildroot}/%{_unitdir}/sockets.target.wants
 mkdir -p %{buildroot}/%{_unitdir}/sysinit.target.wants
 ln -s ../security-manager.socket %{buildroot}/%{_unitdir}/sockets.target.wants/security-manager.socket
-ln -s ../security-manager-master.socket %{buildroot}/%{_unitdir}/sockets.target.wants/security-manager-master.socket
-ln -s ../security-manager-slave.socket %{buildroot}/%{_unitdir}/sockets.target.wants/security-manager-slave.socket
 ln -s ../security-manager-cleanup.service %{buildroot}/%{_unitdir}/sysinit.target.wants/security-manager-cleanup.service
 
 %clean
@@ -142,12 +140,8 @@ fi
 
 %{_libdir}/libsecurity-manager-commons.so.*
 %attr(-,root,root) %{_unitdir}/security-manager.*
-%attr(-,root,root) %{_unitdir}/security-manager-master.*
-%attr(-,root,root) %{_unitdir}/security-manager-slave.*
 %attr(-,root,root) %{_unitdir}/security-manager-cleanup.*
 %attr(-,root,root) %{_unitdir}/sockets.target.wants/security-manager.*
-%attr(-,root,root) %{_unitdir}/sockets.target.wants/security-manager-master.*
-%attr(-,root,root) %{_unitdir}/sockets.target.wants/security-manager-slave.*
 %attr(-,root,root) %{_unitdir}/sysinit.target.wants/security-manager-cleanup.*
 %config(noreplace) %attr(0600,root,root) %{TZ_SYS_DB}/.security-manager.db
 %config(noreplace) %attr(0600,root,root) %{TZ_SYS_DB}/.security-manager.db-journal

@@ -42,10 +42,8 @@
 #include "smack-rules.h"
 #include "smack-labels.h"
 #include "security-manager.h"
-#include "zone-utils.h"
 
 #include "service_impl.h"
-#include "master-req.h"
 
 namespace SecurityManager {
 
@@ -278,23 +276,7 @@ bool ServiceImpl::installRequestAuthCheck(const app_inst_req &req, uid_t uid, st
     return true;
 }
 
-bool ServiceImpl::getZoneId(std::string &zoneId)
-{
-    if (!getZoneIdFromPid(getpid(), zoneId)) {
-        LogError("Failed to get zone ID from current PID");
-        return false;
-    }
-
-    // This function should be called under slave mode only - assumes, that we work inside zone
-    if (zoneId == ZONE_HOST) {
-        LogError("We should not run in host - refusing request");
-        return false;
-    }
-
-    return true;
-}
-
-int ServiceImpl::appInstall(const app_inst_req &req, uid_t uid, bool isSlave)
+int ServiceImpl::appInstall(const app_inst_req &req, uid_t uid)
 {
     std::vector<std::string> addedPermissions;
     std::vector<std::string> removedPermissions;
@@ -307,14 +289,6 @@ int ServiceImpl::appInstall(const app_inst_req &req, uid_t uid, bool isSlave)
     std::string authorId;
     // authorId contains id from database. It's not equal to value in request.
     // IMHO the id in request should be called authorName not authorId...
-
-    std::string zoneId;
-    if (isSlave) {
-        if (!getZoneId(zoneId)) {
-            LogError("Failed to get Zone ID.");
-            return SECURITY_MANAGER_API_ERROR_SERVER_ERROR;
-        }
-    }
 
     if (uid) {
         if (uid != req.uid) {
@@ -334,9 +308,10 @@ int ServiceImpl::appInstall(const app_inst_req &req, uid_t uid, bool isSlave)
     }
 
     try {
-        appLabel = zoneSmackLabelGenerate(SmackLabels::generateAppLabel(req.appId), zoneId);
+        appLabel = SmackLabels::generateAppLabel(req.appId);
+
         /* NOTE: we don't use pkgLabel here, but generate it for pkgId validation */
-        pkgLabel = zoneSmackLabelGenerate(SmackLabels::generatePkgLabel(req.pkgId), zoneId);
+        pkgLabel = SmackLabels::generatePkgLabel(req.pkgId);
         LogDebug("Install parameters: appId: " << req.appId << ", pkgId: " << req.pkgId
                  << ", uidstr " << uidstr
                  << ", app label: " << appLabel << ", pkg label: " << pkgLabel
@@ -357,16 +332,7 @@ int ServiceImpl::appInstall(const app_inst_req &req, uid_t uid, bool isSlave)
         PrivilegeDb::getInstance().GetAppIdsForPkgId(req.pkgId, pkgContents);
         PrivilegeDb::getInstance().GetAuthorIdForAppId(req.appId, authorId);
 
-        if (isSlave) {
-            int ret = MasterReq::CynaraPolicyUpdate(req.appId, uidstr, req.privileges);
-            if (ret != SECURITY_MANAGER_API_SUCCESS) {
-                PrivilegeDb::getInstance().RollbackTransaction();
-                LogError("Error while processing request on master: " << ret);
-                return ret;
-            }
-        } else {
-            CynaraAdmin::getInstance().UpdateAppPolicy(appLabel, uidstr, req.privileges);
-        }
+        CynaraAdmin::getInstance().UpdateAppPolicy(appLabel, uidstr, req.privileges);
 
         // if app is targetted to Tizen 2.X, give other 2.X apps RO rules to it's shared dir
         if(isTizen2XVersion(req.tizenVersion))
@@ -404,22 +370,12 @@ int ServiceImpl::appInstall(const app_inst_req &req, uid_t uid, bool isSlave)
         for (const auto &appPath : req.appPaths) {
             const std::string &path = appPath.first;
             app_install_path_type pathType = static_cast<app_install_path_type>(appPath.second);
-            SmackLabels::setupPath(req.pkgId, path, pathType, zoneId, authorId);
+            SmackLabels::setupPath(req.pkgId, path, pathType, authorId);
         }
 
-        if (isSlave) {
-            LogDebug("Requesting master to add rules for new appId: " << req.appId << " with pkgId: "
-                    << req.pkgId << ". Applications in package: " << pkgContents.size());
-            int ret = MasterReq::SmackInstallRules(req.appId, req.pkgId, authorId, pkgContents, allTizen2XApps, allTizen2XPackages);
-            if (ret != SECURITY_MANAGER_API_SUCCESS) {
-                LogError("Master failed to apply package-specific smack rules: " << ret);
-                return ret;
-            }
-        } else {
-            LogDebug("Adding Smack rules for new appId: " << req.appId << " with pkgId: "
-                    << req.pkgId << ". Applications in package: " << pkgContents.size());
-            SmackRules::installApplicationRules(req.appId, req.pkgId, authorId, pkgContents, allTizen2XApps, allTizen2XPackages);
-        }
+        LogDebug("Adding Smack rules for new appId: " << req.appId << " with pkgId: "
+                << req.pkgId << ". Applications in package: " << pkgContents.size());
+        SmackRules::installApplicationRules(req.appId, req.pkgId, authorId, pkgContents, allTizen2XApps, allTizen2XPackages);
     } catch (const SmackException::InvalidParam &e) {
         LogError("Invalid paramater during labeling: " << e.GetMessage());
         return SECURITY_MANAGER_API_ERROR_INPUT_PARAM;
@@ -429,7 +385,7 @@ int ServiceImpl::appInstall(const app_inst_req &req, uid_t uid, bool isSlave)
     } catch (const SecurityManager::Exception &e) {
         LogError("Security Manager exception: " << e.DumpToString());
         return SECURITY_MANAGER_API_ERROR_SERVER_ERROR;
-    }catch (const std::bad_alloc &e) {
+    } catch (const std::bad_alloc &e) {
         LogError("Memory allocation error: " << e.what());
         return SECURITY_MANAGER_API_ERROR_OUT_OF_MEMORY;
     }
@@ -437,7 +393,7 @@ int ServiceImpl::appInstall(const app_inst_req &req, uid_t uid, bool isSlave)
     return SECURITY_MANAGER_API_SUCCESS;
 }
 
-int ServiceImpl::appUninstall(const std::string &appId, uid_t uid, bool isSlave)
+int ServiceImpl::appUninstall(const std::string &appId, uid_t uid)
 {
     std::string pkgId;
     std::string tizenVersion;
@@ -452,14 +408,6 @@ int ServiceImpl::appUninstall(const std::string &appId, uid_t uid, bool isSlave)
     std::string authorId;
     int restoreAuthor = 0;
 
-    std::string zoneId;
-    if (isSlave) {
-        if (!getZoneId(zoneId)) {
-            LogError("Failed to get Zone ID.");
-            return SECURITY_MANAGER_API_ERROR_SERVER_ERROR;
-        }
-    }
-
     try {
         PrivilegeDb::getInstance().BeginTransaction();
         if (!PrivilegeDb::getInstance().GetAppPkgIdAndVer(appId, pkgId, tizenVersion)) {
@@ -468,7 +416,7 @@ int ServiceImpl::appUninstall(const std::string &appId, uid_t uid, bool isSlave)
             PrivilegeDb::getInstance().RollbackTransaction();
             appExists = false;
         } else {
-            smackLabel = zoneSmackLabelGenerate(SmackLabels::generateAppLabel(appId), zoneId);
+            smackLabel = SmackLabels::generateAppLabel(appId);
             LogDebug("Uninstall parameters: appId: " << appId << ", pkgId: " << pkgId
                      << ", uidstr " << uidstr << ", generated smack label: " << smackLabel);
 
@@ -486,16 +434,7 @@ int ServiceImpl::appUninstall(const std::string &appId, uid_t uid, bool isSlave)
             if(isTizen2XVersion(tizenVersion))
                 PrivilegeDb::getInstance().GetTizen2XApps(appId, allTizen2XApps);
 
-            if (isSlave) {
-                int ret = MasterReq::CynaraPolicyUpdate(appId, uidstr, std::vector<std::string>());
-                if (ret != SECURITY_MANAGER_API_SUCCESS) {
-                    PrivilegeDb::getInstance().RollbackTransaction();
-                    LogError("Error while processing request on master: " << ret);
-                    return ret;
-                }
-            } else {
-                CynaraAdmin::getInstance().UpdateAppPolicy(smackLabel, uidstr, std::vector<std::string>());
-            }
+            CynaraAdmin::getInstance().UpdateAppPolicy(smackLabel, uidstr, std::vector<std::string>());
 
             PrivilegeDb::getInstance().CommitTransaction();
             LogDebug("Application uninstallation commited to database");
@@ -523,32 +462,24 @@ int ServiceImpl::appUninstall(const std::string &appId, uid_t uid, bool isSlave)
 
     if (appExists) {
         try {
-            if (isSlave) {
-                LogDebug("Delegating Smack rules removal for deleted pkgId " << pkgId <<
-                         " to master");
-                int ret = MasterReq::SmackUninstallRules(appId, pkgId, pkgContents, allTizen2XApps, removeApp, removePkg);
-                if (ret != SECURITY_MANAGER_API_SUCCESS) {
-                    LogError("Error while processing uninstall request on master: " << ret);
-                    return ret;
-                }
-            } else {
-                if (removeApp) {
-                    LogDebug("Removing smack rules for deleted appId " << appId);
-                    SmackRules::uninstallApplicationRules(appId, pkgId, pkgContents, allTizen2XApps, zoneId);
-                }
-                if (removePkg) {
-                    LogDebug("Removing Smack rules for deleted pkgId " << pkgId);
-                    SmackRules::uninstallPackageRules(pkgId);
-                }
-                if (restoreAuthor)
-                    SmackRules::fixAuthorRules(authorId);
+            if (removeApp) {
+                LogDebug("Removing smack rules for deleted appId " << appId);
+                SmackRules::uninstallApplicationRules(appId, pkgId, pkgContents, allTizen2XApps);
             }
+
+            if (removePkg) {
+                LogDebug("Removing Smack rules for deleted pkgId " << pkgId);
+                SmackRules::uninstallPackageRules(pkgId);
+            }
+
+            if (restoreAuthor) {
+                LogDebug("Removing Smack rules for authorId " << authorId);
+                SmackRules::fixAuthorRules(authorId);
+            }
+
         } catch (const SmackException::Base &e) {
             LogError("Error while removing Smack rules for application: " << e.DumpToString());
             return SECURITY_MANAGER_API_ERROR_SETTING_FILE_LABEL_FAILED;
-        } catch (const SecurityManager::Exception &e) {
-            LogError("Security Manager error: " << e.DumpToString());
-            return SECURITY_MANAGER_API_ERROR_SERVER_ERROR;
         } catch (const std::bad_alloc &e) {
             LogError("Memory allocation error: " << e.what());
             return SECURITY_MANAGER_API_ERROR_OUT_OF_MEMORY;
@@ -577,18 +508,12 @@ int ServiceImpl::getPkgId(const std::string &appId, std::string &pkgId)
     return SECURITY_MANAGER_API_SUCCESS;
 }
 
-int ServiceImpl::getAppGroups(const std::string &appId, uid_t uid, pid_t pid, bool isSlave,
+int ServiceImpl::getAppGroups(
+        const std::string &appId,
+        uid_t uid,
+        pid_t pid,
         std::unordered_set<gid_t> &gids)
 {
-    // FIXME Temporary solution, see below
-    std::string zoneId;
-    if (isSlave) {
-        if (!getZoneId(zoneId)) {
-            LogError("Failed to get Zone ID.");
-            return SECURITY_MANAGER_API_ERROR_SERVER_ERROR;
-        }
-    }
-
     try {
         std::string pkgId;
         std::string smackLabel;
@@ -603,9 +528,7 @@ int ServiceImpl::getAppGroups(const std::string &appId, uid_t uid, pid_t pid, bo
         }
         LogDebug("pkgId: " << pkgId);
 
-        // FIXME getAppGroups should work without generating zone-specific labels when
-        //       Smack Namespaces will work
-        smackLabel = zoneSmackLabelGenerate(SmackLabels::generateAppLabel(appId), zoneId);
+        smackLabel = SmackLabels::generateAppLabel(appId);
         LogDebug("smack label: " << smackLabel);
 
         std::vector<std::string> privileges;
@@ -655,30 +578,20 @@ int ServiceImpl::getAppGroups(const std::string &appId, uid_t uid, pid_t pid, bo
     return SECURITY_MANAGER_API_SUCCESS;
 }
 
-int ServiceImpl::userAdd(uid_t uidAdded, int userType, uid_t uid, bool isSlave)
+int ServiceImpl::userAdd(uid_t uidAdded, int userType, uid_t uid)
 {
     if (uid != 0)
         return SECURITY_MANAGER_API_ERROR_AUTHENTICATION_FAILED;
 
-    if (isSlave) {
-        int ret = MasterReq::CynaraUserInit(uidAdded,
-                                            static_cast<security_manager_user_type>(userType));
-        if (ret != SECURITY_MANAGER_API_SUCCESS) {
-            LogError("Master failed to initialize user " << uidAdded << " of type " << userType);
-            return ret;
-        }
-    } else {
-        try {
-            CynaraAdmin::getInstance().UserInit(uidAdded, static_cast<security_manager_user_type>(userType));
-        } catch (CynaraException::InvalidParam &e) {
-            return SECURITY_MANAGER_API_ERROR_INPUT_PARAM;
-        }
+    try {
+        CynaraAdmin::getInstance().UserInit(uidAdded, static_cast<security_manager_user_type>(userType));
+    } catch (CynaraException::InvalidParam &e) {
+        return SECURITY_MANAGER_API_ERROR_INPUT_PARAM;
     }
-
     return SECURITY_MANAGER_API_SUCCESS;
 }
 
-int ServiceImpl::userDelete(uid_t uidDeleted, uid_t uid, bool isSlave)
+int ServiceImpl::userDelete(uid_t uidDeleted, uid_t uid)
 {
     int ret = SECURITY_MANAGER_API_SUCCESS;
     if (uid != 0)
@@ -694,22 +607,14 @@ int ServiceImpl::userDelete(uid_t uidDeleted, uid_t uid, bool isSlave)
     }
 
     for (auto &app: userApps) {
-        if (appUninstall(app, uidDeleted, isSlave) != SECURITY_MANAGER_API_SUCCESS) {
+        if (appUninstall(app, uidDeleted) != SECURITY_MANAGER_API_SUCCESS) {
         /*if uninstallation of this app fails, just go on trying to uninstall another ones.
         we do not have anything special to do about that matter - user will be deleted anyway.*/
             ret = SECURITY_MANAGER_API_ERROR_SERVER_ERROR;
         }
     }
 
-    if (isSlave) {
-        int ret = MasterReq::CynaraUserRemove(uidDeleted);
-        if (ret) {
-            LogError("Master failed to delete user " << uidDeleted);
-            return ret;
-        }
-    } else {
-        CynaraAdmin::getInstance().UserRemove(uidDeleted);
-    }
+    CynaraAdmin::getInstance().UserRemove(uidDeleted);
 
     return ret;
 }
@@ -1039,22 +944,14 @@ int ServiceImpl::policyGetGroups(std::vector<std::string> &groups)
     return ret;
 }
 
-int ServiceImpl::appHasPrivilege(std::string appId, std::string privilege,
-    uid_t uid, bool isSlave, bool &result)
+int ServiceImpl::appHasPrivilege(
+        std::string appId,
+        std::string privilege,
+        uid_t uid,
+        bool &result)
 {
     try {
-        // FIXME getAppGroups should work without generating zone-specific labels when
-        //       Smack Namespaces will work
-        std::string zoneId;
-        if (isSlave) {
-            if (!getZoneId(zoneId)) {
-                LogError("Failed to get Zone ID.");
-                return SECURITY_MANAGER_API_ERROR_SERVER_ERROR;
-            }
-        }
-
-        std::string appLabel = zoneSmackLabelGenerate(
-            SmackLabels::generateAppLabel(appId), zoneId);
+        std::string appLabel = SmackLabels::generateAppLabel(appId);
         std::string uidStr = std::to_string(uid);
         result = Cynara::getInstance().check(appLabel, privilege, uidStr, "");
         LogDebug("result = " << result);
@@ -1075,9 +972,12 @@ int ServiceImpl::appHasPrivilege(std::string appId, std::string privilege,
 }
 
 
-int ServiceImpl::dropOnePrivateSharing(const std::string &ownerAppId, const std::string &ownerPkgId,
-                              const std::vector<std::string> &ownerPkgContents, const std::string &targetAppId,
-                              const std::string &path, const std::string &zoneId, bool isSlave)
+int ServiceImpl::dropOnePrivateSharing(
+        const std::string &ownerAppId,
+        const std::string &ownerPkgId,
+        const std::vector<std::string> &ownerPkgContents,
+        const std::string &targetAppId,
+        const std::string &path)
 {
     int errorRet;
     try {
@@ -1090,15 +990,11 @@ int ServiceImpl::dropOnePrivateSharing(const std::string &ownerAppId, const std:
             return SECURITY_MANAGER_API_SUCCESS;
         }
         if (pathCount < 1) {
-            SmackLabels::setupPath(ownerPkgId, path, SECURITY_MANAGER_PATH_RW, zoneId);
+            SmackLabels::setupPath(ownerPkgId, path, SECURITY_MANAGER_PATH_RW);
         }
-        std::string pathLabel = zoneSmackLabelGenerate(SmackLabels::generateSharedPrivateLabel(ownerPkgId, path), zoneId);
-        if (isSlave) {
-            MasterReq::SmackDropPrivateSharingRules(ownerPkgId, ownerPkgContents, targetAppId, path, ownerTargetCount, pathCount);
-        } else {
-            SmackRules::dropPrivateSharingRules(ownerPkgId, ownerPkgContents, targetAppId, pathLabel,
-                    pathCount < 1, ownerTargetCount < 1, zoneId);
-        }
+        std::string pathLabel = SmackLabels::generateSharedPrivateLabel(ownerPkgId, path);
+        SmackRules::dropPrivateSharingRules(ownerPkgId, ownerPkgContents, targetAppId, pathLabel,
+                pathCount < 1, ownerTargetCount < 1);
         return SECURITY_MANAGER_API_SUCCESS;
     } catch (const SmackException::Base &e) {
         LogError("Error performing smack operation: " << e.GetMessage());
@@ -1116,22 +1012,15 @@ int ServiceImpl::dropOnePrivateSharing(const std::string &ownerAppId, const std:
     return errorRet;
 }
 
-int ServiceImpl::applyPrivatePathSharing(const std::string &ownerAppId,
-                            const std::string &targetAppId,
-                            const std::vector<std::string> &paths,
-                            bool isSlave)
+int ServiceImpl::applyPrivatePathSharing(
+        const std::string &ownerAppId,
+        const std::string &targetAppId,
+        const std::vector<std::string> &paths)
 {
     int errorRet;
     int sharingAdded = 0;
     std::string ownerPkgId;
     std::vector<std::string> pkgContents;
-    std::string zoneId;
-     if (isSlave) {
-         if (!getZoneId(zoneId)) {
-             LogError("Failed to get Zone ID.");
-             return SECURITY_MANAGER_API_ERROR_SERVER_ERROR;
-         }
-     }
 
     try {
         std::string targetPkgId;
@@ -1146,8 +1035,8 @@ int ServiceImpl::applyPrivatePathSharing(const std::string &ownerAppId,
 
         for(const auto &path : paths) {
             std::string pathLabel = SmackLabels::getSmackLabelFromPath(path);
-            if (pathLabel != zoneSmackLabelGenerate(SmackLabels::generatePkgLabel(ownerPkgId), zoneId)) {
-                std::string generatedPathLabel = zoneSmackLabelGenerate(SmackLabels::generateSharedPrivateLabel(ownerPkgId, path), zoneId);
+            if (pathLabel != SmackLabels::generatePkgLabel(ownerPkgId)) {
+                std::string generatedPathLabel = SmackLabels::generateSharedPrivateLabel(ownerPkgId, path);
                 if (generatedPathLabel != pathLabel) {
                     LogError("Path " << path << " has label " << pathLabel << " and dosen't belong"
                              " to application " << ownerAppId);
@@ -1171,7 +1060,7 @@ int ServiceImpl::applyPrivatePathSharing(const std::string &ownerAppId,
             PrivilegeDb::getInstance().GetTargetPathSharingCount(targetAppId, path, targetPathCount);
             PrivilegeDb::getInstance().GetPathSharingCount(path, pathCount);
             PrivilegeDb::getInstance().GetOwnerTargetSharingCount(ownerAppId, targetAppId, ownerTargetCount);
-            std::string pathLabel = zoneSmackLabelGenerate(SmackLabels::generateSharedPrivateLabel(ownerPkgId, path), zoneId);
+            std::string pathLabel = SmackLabels::generateSharedPrivateLabel(ownerPkgId, path);
             PrivilegeDb::getInstance().ApplyPrivateSharing(ownerAppId, targetAppId, path, pathLabel);
             sharingAdded++;
             if (targetPathCount > 0) {
@@ -1181,13 +1070,9 @@ int ServiceImpl::applyPrivatePathSharing(const std::string &ownerAppId,
             if (pathCount <= 0) {
                 SmackLabels::setupSharedPrivatePath(ownerPkgId, path);
             }
-            if (isSlave) {
-                MasterReq::SmackApplyPrivateSharingRules(ownerPkgId,
-                        pkgContents, targetAppId, path, ownerTargetCount, pathCount);
-            } else {
-                SmackRules::applyPrivateSharingRules(ownerPkgId, pkgContents, targetAppId,
-                        pathLabel, (pathCount > 0), (ownerTargetCount > 0), zoneId);
-            }
+
+            SmackRules::applyPrivateSharingRules(ownerPkgId, pkgContents, targetAppId,
+                    pathLabel, (pathCount > 0), (ownerTargetCount > 0));
         }
         trans.commit();
         return SECURITY_MANAGER_API_SUCCESS;
@@ -1206,25 +1091,18 @@ int ServiceImpl::applyPrivatePathSharing(const std::string &ownerAppId,
     }
     for (int i = 0; i < sharingAdded; i++) {
         const std::string &path = paths[i];
-        dropOnePrivateSharing(ownerAppId, ownerPkgId, pkgContents, targetAppId, path, zoneId, isSlave);
+        dropOnePrivateSharing(ownerAppId, ownerPkgId, pkgContents, targetAppId, path);
     }
     return errorRet;
 }
 
-int ServiceImpl::dropPrivatePathSharing(const std::string &ownerAppId,
-                           const std::string &targetAppId,
-                           const std::vector<std::string> &paths,
-                           bool isSlave)
+int ServiceImpl::dropPrivatePathSharing(
+        const std::string &ownerAppId,
+        const std::string &targetAppId,
+        const std::vector<std::string> &paths)
 {
     int errorRet;
     try {
-        std::string zoneId;
-        if (isSlave) {
-            if (!getZoneId(zoneId)) {
-                LogError("Failed to get Zone ID.");
-                return SECURITY_MANAGER_API_ERROR_SERVER_ERROR;
-            }
-        }
         std::string ownerPkgId, targetPkgId;
         if (!PrivilegeDb::getInstance().GetAppPkgId(ownerAppId, ownerPkgId)) {
             LogError(ownerAppId << " is not an installed application");
@@ -1237,8 +1115,8 @@ int ServiceImpl::dropPrivatePathSharing(const std::string &ownerAppId,
 
         for(const auto &path : paths) {
             std::string pathLabel = SmackLabels::getSmackLabelFromPath(path);
-            if (pathLabel != zoneSmackLabelGenerate(SmackLabels::generatePkgLabel(ownerPkgId), zoneId)) {
-                std::string generatedPathLabel = zoneSmackLabelGenerate(SmackLabels::generateSharedPrivateLabel(ownerPkgId, path), zoneId);
+            if (pathLabel != SmackLabels::generatePkgLabel(ownerPkgId)) {
+                std::string generatedPathLabel = SmackLabels::generateSharedPrivateLabel(ownerPkgId, path);
                 if (generatedPathLabel != pathLabel) {
                     LogError("Path " << path << " has label " << pathLabel << " and dosen't belong"
                              " to application " << ownerAppId);
@@ -1260,7 +1138,7 @@ int ServiceImpl::dropPrivatePathSharing(const std::string &ownerAppId,
         PrivilegeDb::getInstance().GetAppIdsForPkgId(ownerPkgId, pkgContents);
         ScopedTransaction trans;
         for (const auto &path : paths) {
-            int ret = dropOnePrivateSharing(ownerAppId, ownerPkgId, pkgContents, targetAppId, path, zoneId, isSlave);
+            int ret = dropOnePrivateSharing(ownerAppId, ownerPkgId, pkgContents, targetAppId, path);
             if (ret != SECURITY_MANAGER_API_SUCCESS) {
                 return ret;
             }
@@ -1283,5 +1161,5 @@ int ServiceImpl::dropPrivatePathSharing(const std::string &ownerAppId,
     return errorRet;
 }
 
-
 } /* namespace SecurityManager */
+
