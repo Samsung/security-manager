@@ -52,7 +52,7 @@ ClientOffline::ClientOffline()
             serviceLock->Unlock();
             Serialization::Serialize(send, static_cast<int>(SecurityModuleCall::NOOP));
             retval = sendToServer(SERVICE_SOCKET, send.Pop(), recv);
-            if (retval != SECURITY_MANAGER_API_SUCCESS) {
+            if (retval != SECURITY_MANAGER_SUCCESS) {
                 LogInfo("Socket activation attempt failed.");
                 serviceLock->Lock();
                 offlineMode = serviceLock->Locked();

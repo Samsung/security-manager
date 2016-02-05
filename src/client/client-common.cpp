@@ -64,7 +64,7 @@ int try_catch(const std::function<int()>& func)
     } catch (...) {
         LogError("Unknown exception occured");
     }
-    return SECURITY_MANAGER_API_ERROR_UNKNOWN;
+    return SECURITY_MANAGER_ERROR_UNKNOWN;
 }
 
 } // namespace SecurityMANAGER

@@ -84,7 +84,7 @@ bool Service::processOne(const ConnectionID &conn, MessageBuffer &buffer,
             switch (call_type) {
                 case SecurityModuleCall::NOOP:
                     LogDebug("call_type: SecurityModuleCall::NOOP");
-                    Serialization::Serialize(send, SECURITY_MANAGER_API_SUCCESS);
+                    Serialization::Serialize(send, static_cast<int>(SECURITY_MANAGER_SUCCESS));
                     break;
                 case SecurityModuleCall::APP_INSTALL:
                     LogDebug("call_type: SecurityModuleCall::APP_INSTALL");
@@ -195,7 +195,7 @@ void Service::processGetPkgId(MessageBuffer &buffer, MessageBuffer &send)
     Deserialization::Deserialize(buffer, appId);
     ret = serviceImpl.getPkgId(appId, pkgId);
     Serialization::Serialize(send, ret);
-    if (ret == SECURITY_MANAGER_API_SUCCESS)
+    if (ret == SECURITY_MANAGER_SUCCESS)
         Serialization::Serialize(send, pkgId);
 }
 
@@ -208,7 +208,7 @@ void Service::processGetAppGroups(MessageBuffer &buffer, MessageBuffer &send, ui
     Deserialization::Deserialize(buffer, appId);
     ret = serviceImpl.getAppGroups(appId, uid, pid, gids);
     Serialization::Serialize(send, ret);
-    if (ret == SECURITY_MANAGER_API_SUCCESS) {
+    if (ret == SECURITY_MANAGER_SUCCESS) {
         Serialization::Serialize(send, static_cast<int>(gids.size()));
         for (const auto &gid : gids) {
             Serialization::Serialize(send, gid);
@@ -291,7 +291,7 @@ void Service::processPolicyGetDesc(MessageBuffer &send)
     ret = serviceImpl.policyGetDesc(descriptions);
 
     Serialization::Serialize(send, ret);
-    if (ret == SECURITY_MANAGER_API_SUCCESS) {
+    if (ret == SECURITY_MANAGER_SUCCESS) {
         Serialization::Serialize(send, static_cast<int>(descriptions.size()));
 
         for(std::vector<std::string>::size_type i = 0; i != descriptions.size(); i++) {
@@ -306,7 +306,7 @@ void Service::processGroupsGet(MessageBuffer &send)
     int ret = serviceImpl.policyGetGroups(groups);
 
     Serialization::Serialize(send, ret);
-    if (ret == SECURITY_MANAGER_API_SUCCESS) {
+    if (ret == SECURITY_MANAGER_SUCCESS) {
         Serialization::Serialize(send, groups);
     }
 }
@@ -325,7 +325,7 @@ void Service::processAppHasPrivilege(MessageBuffer &recv, MessageBuffer &send)
     int ret = serviceImpl.appHasPrivilege(appId, privilege, uid, result);
 
     Serialization::Serialize(send, ret);
-    if (ret == SECURITY_MANAGER_API_SUCCESS)
+    if (ret == SECURITY_MANAGER_SUCCESS)
         Serialization::Serialize(send, static_cast<int>(result));
 }
 

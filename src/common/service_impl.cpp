@@ -71,7 +71,7 @@ static inline int validatePolicy(policy_entry &policyEntry, std::string uidStr, 
         if (policyEntry.appId.empty()
             || policyEntry.privilege.empty()) {
             LogError("Bad admin update request");
-            return SECURITY_MANAGER_API_ERROR_BAD_REQUEST;
+            return SECURITY_MANAGER_ERROR_BAD_REQUEST;
         };
 
         if (!policyEntry.maxLevel.compare(SECURITY_MANAGER_DELETE)) {
@@ -81,7 +81,7 @@ static inline int validatePolicy(policy_entry &policyEntry, std::string uidStr, 
                 level = CynaraAdmin::getInstance().convertToPolicyType(policyEntry.maxLevel);
             } catch (const std::out_of_range& e) {
                 LogError("policy max level cannot be: " << policyEntry.maxLevel);
-                return SECURITY_MANAGER_API_ERROR_INPUT_PARAM;
+                return SECURITY_MANAGER_ERROR_INPUT_PARAM;
             };
         };
         forAdmin = true;
@@ -93,7 +93,7 @@ static inline int validatePolicy(policy_entry &policyEntry, std::string uidStr, 
             || policyEntry.appId.empty()
             || policyEntry.privilege.empty()) {
             LogError("Bad privacy manager update request");
-            return SECURITY_MANAGER_API_ERROR_BAD_REQUEST;
+            return SECURITY_MANAGER_ERROR_BAD_REQUEST;
         };
 
         if (!policyEntry.currentLevel.compare(SECURITY_MANAGER_DELETE)) {
@@ -103,13 +103,13 @@ static inline int validatePolicy(policy_entry &policyEntry, std::string uidStr, 
                 level = CynaraAdmin::getInstance().convertToPolicyType(policyEntry.currentLevel);
             } catch (const std::out_of_range& e) {
                 LogError("policy current level cannot be: " << policyEntry.currentLevel);
-                return SECURITY_MANAGER_API_ERROR_INPUT_PARAM;
+                return SECURITY_MANAGER_ERROR_INPUT_PARAM;
             };
         };
         forAdmin = false;
 
     } else { //neither => bad request
-        return SECURITY_MANAGER_API_ERROR_BAD_REQUEST;
+        return SECURITY_MANAGER_ERROR_BAD_REQUEST;
     };
 
     if (!policyEntry.user.compare(SECURITY_MANAGER_ANY))
@@ -126,7 +126,7 @@ static inline int validatePolicy(policy_entry &policyEntry, std::string uidStr, 
         (forAdmin)?CynaraAdmin::Buckets.at(Bucket::ADMIN):CynaraAdmin::Buckets.at(Bucket::PRIVACY_MANAGER)));
 
     LogDebug("Policy update request authenticated and validated successfully");
-    return SECURITY_MANAGER_API_SUCCESS;
+    return SECURITY_MANAGER_SUCCESS;
 }
 
 bool isTizen2XVersion(const std::string &version)
@@ -294,7 +294,7 @@ int ServiceImpl::appInstall(const app_inst_req &req, uid_t uid)
         if (uid != req.uid) {
             LogError("User " << uid <<
                      " is denied to install application for user " << req.uid);
-            return SECURITY_MANAGER_API_ERROR_ACCESS_DENIED;
+            return SECURITY_MANAGER_ERROR_ACCESS_DENIED;
         }
     } else {
         if (req.uid)
@@ -304,7 +304,7 @@ int ServiceImpl::appInstall(const app_inst_req &req, uid_t uid)
 
     if (!installRequestAuthCheck(req, uid, appPath)) {
         LogError("Request from uid " << uid << " for app installation denied");
-        return SECURITY_MANAGER_API_ERROR_AUTHENTICATION_FAILED;
+        return SECURITY_MANAGER_ERROR_AUTHENTICATION_FAILED;
     }
 
     try {
@@ -323,7 +323,7 @@ int ServiceImpl::appInstall(const app_inst_req &req, uid_t uid)
         if (ret == true && pkg != req.pkgId) {
             LogError("Application already installed with different package id");
             PrivilegeDb::getInstance().RollbackTransaction();
-            return SECURITY_MANAGER_API_ERROR_INPUT_PARAM;
+            return SECURITY_MANAGER_ERROR_INPUT_PARAM;
         }
 
         PrivilegeDb::getInstance().AddApplication(req.appId, req.pkgId, uid, req.tizenVersion, req.authorId);
@@ -343,23 +343,23 @@ int ServiceImpl::appInstall(const app_inst_req &req, uid_t uid)
         LogDebug("Application installation commited to database");
     } catch (const PrivilegeDb::Exception::IOError &e) {
         LogError("Cannot access application database: " << e.DumpToString());
-        return SECURITY_MANAGER_API_ERROR_SERVER_ERROR;
+        return SECURITY_MANAGER_ERROR_SERVER_ERROR;
     } catch (const PrivilegeDb::Exception::InternalError &e) {
         PrivilegeDb::getInstance().RollbackTransaction();
         LogError("Error while saving application info to database: " << e.DumpToString());
-        return SECURITY_MANAGER_API_ERROR_SERVER_ERROR;
+        return SECURITY_MANAGER_ERROR_SERVER_ERROR;
     } catch (const CynaraException::Base &e) {
         PrivilegeDb::getInstance().RollbackTransaction();
         LogError("Error while setting Cynara rules for application: " << e.DumpToString());
-        return SECURITY_MANAGER_API_ERROR_SERVER_ERROR;
+        return SECURITY_MANAGER_ERROR_SERVER_ERROR;
     } catch (const SmackException::InvalidLabel &e) {
         PrivilegeDb::getInstance().RollbackTransaction();
         LogError("Error while generating Smack labels: " << e.DumpToString());
-        return SECURITY_MANAGER_API_ERROR_SERVER_ERROR;
+        return SECURITY_MANAGER_ERROR_SERVER_ERROR;
     } catch (const std::bad_alloc &e) {
         PrivilegeDb::getInstance().RollbackTransaction();
         LogError("Memory allocation while setting Cynara rules for application: " << e.what());
-        return SECURITY_MANAGER_API_ERROR_OUT_OF_MEMORY;
+        return SECURITY_MANAGER_ERROR_MEMORY;
     }
 
     try {
@@ -378,19 +378,19 @@ int ServiceImpl::appInstall(const app_inst_req &req, uid_t uid)
         SmackRules::installApplicationRules(req.appId, req.pkgId, authorId, pkgContents, allTizen2XApps, allTizen2XPackages);
     } catch (const SmackException::InvalidParam &e) {
         LogError("Invalid paramater during labeling: " << e.GetMessage());
-        return SECURITY_MANAGER_API_ERROR_INPUT_PARAM;
+        return SECURITY_MANAGER_ERROR_INPUT_PARAM;
     } catch (const SmackException::Base &e) {
         LogError("Error while applying Smack policy for application: " << e.DumpToString());
-        return SECURITY_MANAGER_API_ERROR_SETTING_FILE_LABEL_FAILED;
+        return SECURITY_MANAGER_ERROR_SETTING_FILE_LABEL_FAILED;
     } catch (const SecurityManager::Exception &e) {
         LogError("Security Manager exception: " << e.DumpToString());
-        return SECURITY_MANAGER_API_ERROR_SERVER_ERROR;
+        return SECURITY_MANAGER_ERROR_SERVER_ERROR;
     } catch (const std::bad_alloc &e) {
         LogError("Memory allocation error: " << e.what());
-        return SECURITY_MANAGER_API_ERROR_OUT_OF_MEMORY;
+        return SECURITY_MANAGER_ERROR_MEMORY;
     }
 
-    return SECURITY_MANAGER_API_SUCCESS;
+    return SECURITY_MANAGER_SUCCESS;
 }
 
 int ServiceImpl::appUninstall(const std::string &appId, uid_t uid)
@@ -441,23 +441,23 @@ int ServiceImpl::appUninstall(const std::string &appId, uid_t uid)
         }
     } catch (const PrivilegeDb::Exception::IOError &e) {
         LogError("Cannot access application database: " << e.DumpToString());
-        return SECURITY_MANAGER_API_ERROR_SERVER_ERROR;
+        return SECURITY_MANAGER_ERROR_SERVER_ERROR;
     } catch (const PrivilegeDb::Exception::InternalError &e) {
         PrivilegeDb::getInstance().RollbackTransaction();
         LogError("Error while removing application info from database: " << e.DumpToString());
-        return SECURITY_MANAGER_API_ERROR_SERVER_ERROR;
+        return SECURITY_MANAGER_ERROR_SERVER_ERROR;
     } catch (const CynaraException::Base &e) {
         PrivilegeDb::getInstance().RollbackTransaction();
         LogError("Error while setting Cynara rules for application: " << e.DumpToString());
-        return SECURITY_MANAGER_API_ERROR_SERVER_ERROR;
+        return SECURITY_MANAGER_ERROR_SERVER_ERROR;
     } catch (const SmackException::InvalidLabel &e) {
         PrivilegeDb::getInstance().RollbackTransaction();
         LogError("Error while generating Smack labels: " << e.DumpToString());
-        return SECURITY_MANAGER_API_ERROR_SERVER_ERROR;
+        return SECURITY_MANAGER_ERROR_SERVER_ERROR;
     } catch (const std::bad_alloc &e) {
         PrivilegeDb::getInstance().RollbackTransaction();
         LogError("Memory allocation while setting Cynara rules for application: " << e.what());
-        return SECURITY_MANAGER_API_ERROR_OUT_OF_MEMORY;
+        return SECURITY_MANAGER_ERROR_MEMORY;
     }
 
     if (appExists) {
@@ -479,14 +479,14 @@ int ServiceImpl::appUninstall(const std::string &appId, uid_t uid)
 
         } catch (const SmackException::Base &e) {
             LogError("Error while removing Smack rules for application: " << e.DumpToString());
-            return SECURITY_MANAGER_API_ERROR_SETTING_FILE_LABEL_FAILED;
+            return SECURITY_MANAGER_ERROR_SETTING_FILE_LABEL_FAILED;
         } catch (const std::bad_alloc &e) {
             LogError("Memory allocation error: " << e.what());
-            return SECURITY_MANAGER_API_ERROR_OUT_OF_MEMORY;
+            return SECURITY_MANAGER_ERROR_MEMORY;
         }
     }
 
-    return SECURITY_MANAGER_API_SUCCESS;
+    return SECURITY_MANAGER_SUCCESS;
 }
 
 int ServiceImpl::getPkgId(const std::string &appId, std::string &pkgId)
@@ -496,16 +496,16 @@ int ServiceImpl::getPkgId(const std::string &appId, std::string &pkgId)
     try {
         if (!PrivilegeDb::getInstance().GetAppPkgId(appId, pkgId)) {
             LogWarning("Application " << appId << " not found in database");
-            return SECURITY_MANAGER_API_ERROR_NO_SUCH_OBJECT;
+            return SECURITY_MANAGER_ERROR_NO_SUCH_OBJECT;
         } else {
             LogDebug("pkgId: " << pkgId);
         }
     } catch (const PrivilegeDb::Exception::Base &e) {
         LogError("Error while getting pkgId from database: " << e.DumpToString());
-        return SECURITY_MANAGER_API_ERROR_SERVER_ERROR;
+        return SECURITY_MANAGER_ERROR_SERVER_ERROR;
     }
 
-    return SECURITY_MANAGER_API_SUCCESS;
+    return SECURITY_MANAGER_SUCCESS;
 }
 
 int ServiceImpl::getAppGroups(
@@ -524,7 +524,7 @@ int ServiceImpl::getAppGroups(
 
         if (!PrivilegeDb::getInstance().GetAppPkgId(appId, pkgId)) {
             LogWarning("Application " << appId << " not found in database");
-            return SECURITY_MANAGER_API_ERROR_NO_SUCH_OBJECT;
+            return SECURITY_MANAGER_ERROR_NO_SUCH_OBJECT;
         }
         LogDebug("pkgId: " << pkgId);
 
@@ -563,39 +563,39 @@ int ServiceImpl::getAppGroups(
         }
     } catch (const PrivilegeDb::Exception::Base &e) {
         LogError("Database error: " << e.DumpToString());
-        return SECURITY_MANAGER_API_ERROR_SERVER_ERROR;
+        return SECURITY_MANAGER_ERROR_SERVER_ERROR;
     } catch (const CynaraException::Base &e) {
         LogError("Error while querying Cynara for permissions: " << e.DumpToString());
-        return SECURITY_MANAGER_API_ERROR_SERVER_ERROR;
+        return SECURITY_MANAGER_ERROR_SERVER_ERROR;
     } catch (const SmackException::InvalidLabel &e) {
         LogError("Error while generating Smack labels: " << e.DumpToString());
-        return SECURITY_MANAGER_API_ERROR_SERVER_ERROR;
+        return SECURITY_MANAGER_ERROR_SERVER_ERROR;
     } catch (const std::bad_alloc &e) {
         LogError("Memory allocation failed: " << e.what());
-        return SECURITY_MANAGER_API_ERROR_OUT_OF_MEMORY;
+        return SECURITY_MANAGER_ERROR_MEMORY;
     }
 
-    return SECURITY_MANAGER_API_SUCCESS;
+    return SECURITY_MANAGER_SUCCESS;
 }
 
 int ServiceImpl::userAdd(uid_t uidAdded, int userType, uid_t uid)
 {
     if (uid != 0)
-        return SECURITY_MANAGER_API_ERROR_AUTHENTICATION_FAILED;
+        return SECURITY_MANAGER_ERROR_AUTHENTICATION_FAILED;
 
     try {
         CynaraAdmin::getInstance().UserInit(uidAdded, static_cast<security_manager_user_type>(userType));
     } catch (CynaraException::InvalidParam &e) {
-        return SECURITY_MANAGER_API_ERROR_INPUT_PARAM;
+        return SECURITY_MANAGER_ERROR_INPUT_PARAM;
     }
-    return SECURITY_MANAGER_API_SUCCESS;
+    return SECURITY_MANAGER_SUCCESS;
 }
 
 int ServiceImpl::userDelete(uid_t uidDeleted, uid_t uid)
 {
-    int ret = SECURITY_MANAGER_API_SUCCESS;
+    int ret = SECURITY_MANAGER_SUCCESS;
     if (uid != 0)
-        return SECURITY_MANAGER_API_ERROR_AUTHENTICATION_FAILED;
+        return SECURITY_MANAGER_ERROR_AUTHENTICATION_FAILED;
 
     /*Uninstall all user apps*/
     std::vector<std::string> userApps;
@@ -603,14 +603,14 @@ int ServiceImpl::userDelete(uid_t uidDeleted, uid_t uid)
         PrivilegeDb::getInstance().GetUserApps(uidDeleted, userApps);
     } catch (const PrivilegeDb::Exception::Base &e) {
         LogError("Error while getting user apps from database: " << e.DumpToString());
-        return SECURITY_MANAGER_API_ERROR_SERVER_ERROR;
+        return SECURITY_MANAGER_ERROR_SERVER_ERROR;
     }
 
     for (auto &app: userApps) {
-        if (appUninstall(app, uidDeleted) != SECURITY_MANAGER_API_SUCCESS) {
+        if (appUninstall(app, uidDeleted) != SECURITY_MANAGER_SUCCESS) {
         /*if uninstallation of this app fails, just go on trying to uninstall another ones.
         we do not have anything special to do about that matter - user will be deleted anyway.*/
-            ret = SECURITY_MANAGER_API_ERROR_SERVER_ERROR;
+            ret = SECURITY_MANAGER_ERROR_SERVER_ERROR;
         }
     }
 
@@ -633,12 +633,12 @@ int ServiceImpl::policyUpdate(const std::vector<policy_entry> &policyEntries, ui
 
         if (policyEntries.size() == 0) {
             LogError("Validation failed: policy update request is empty");
-            return SECURITY_MANAGER_API_ERROR_BAD_REQUEST;
+            return SECURITY_MANAGER_ERROR_BAD_REQUEST;
         };
 
         if (!Cynara::getInstance().check(smackLabel, SELF_PRIVILEGE, uidStr, pidStr)) {
             LogError("Not enough permission to call: " << __FUNCTION__);
-            return SECURITY_MANAGER_API_ERROR_ACCESS_DENIED;
+            return SECURITY_MANAGER_ERROR_ACCESS_DENIED;
         };
 
         std::vector<CynaraAdminPolicy> validatedPolicies;
@@ -652,13 +652,13 @@ int ServiceImpl::policyUpdate(const std::vector<policy_entry> &policyEntries, ui
                 isAdmin = Cynara::getInstance().check(smackLabel, ADMIN_PRIVILEGE, uidStr, pidStr)?IS_ADMIN:IS_NOT_ADMIN;
             };
 
-            if (ret == SECURITY_MANAGER_API_SUCCESS) {
+            if (ret == SECURITY_MANAGER_SUCCESS) {
                 if (!forAdmin
                     || (forAdmin && (isAdmin == IS_ADMIN))) {
                     validatedPolicies.push_back(std::move(cyap));
                 } else {
                     LogError("Not enough privilege to enforce admin policy");
-                    return SECURITY_MANAGER_API_ERROR_ACCESS_DENIED;
+                    return SECURITY_MANAGER_ERROR_ACCESS_DENIED;
                 };
 
             } else
@@ -670,13 +670,13 @@ int ServiceImpl::policyUpdate(const std::vector<policy_entry> &policyEntries, ui
 
     } catch (const CynaraException::Base &e) {
         LogError("Error while updating Cynara rules: " << e.DumpToString());
-        return SECURITY_MANAGER_API_ERROR_SERVER_ERROR;
+        return SECURITY_MANAGER_ERROR_SERVER_ERROR;
     } catch (const std::bad_alloc &e) {
         LogError("Memory allocation error while updating Cynara rules: " << e.what());
-        return SECURITY_MANAGER_API_ERROR_SERVER_ERROR;
+        return SECURITY_MANAGER_ERROR_SERVER_ERROR;
     }
 
-    return SECURITY_MANAGER_API_SUCCESS;
+    return SECURITY_MANAGER_SUCCESS;
 }
 
 int ServiceImpl::getConfiguredPolicy(bool forAdmin, const policy_entry &filter, uid_t uid, pid_t pid,
@@ -688,7 +688,7 @@ int ServiceImpl::getConfiguredPolicy(bool forAdmin, const policy_entry &filter, 
 
         if (!Cynara::getInstance().check(smackLabel, SELF_PRIVILEGE, uidStr, pidStr)) {
             LogError("Not enough permission to call: " << __FUNCTION__);
-            return SECURITY_MANAGER_API_ERROR_ACCESS_DENIED;
+            return SECURITY_MANAGER_ERROR_ACCESS_DENIED;
         };
 
         LogDebug("Filter is: C: " << filter.appId
@@ -710,7 +710,7 @@ int ServiceImpl::getConfiguredPolicy(bool forAdmin, const policy_entry &filter, 
         if (forAdmin) {
             if (!Cynara::getInstance().check(smackLabel, ADMIN_PRIVILEGE, uidStr, pidStr)) {
                 LogError("Not enough privilege to access admin enforced policies: " << __FUNCTION__);
-                return SECURITY_MANAGER_API_ERROR_ACCESS_DENIED;
+                return SECURITY_MANAGER_ERROR_ACCESS_DENIED;
                 };
 
             //Fetch privileges from ADMIN bucket
@@ -776,17 +776,17 @@ int ServiceImpl::getConfiguredPolicy(bool forAdmin, const policy_entry &filter, 
 
     } catch (const CynaraException::Base &e) {
         LogError("Error while listing Cynara rules: " << e.DumpToString());
-        return SECURITY_MANAGER_API_ERROR_SERVER_ERROR;
+        return SECURITY_MANAGER_ERROR_SERVER_ERROR;
     } catch (const SmackException::InvalidLabel &e) {
         LogError("Error while generating Smack labels: " << e.DumpToString());
-        return SECURITY_MANAGER_API_ERROR_SERVER_ERROR;
+        return SECURITY_MANAGER_ERROR_SERVER_ERROR;
     } catch (const std::bad_alloc &e) {
         LogError("Memory allocation error while listing Cynara rules: " << e.what());
-        return SECURITY_MANAGER_API_ERROR_SERVER_ERROR;
+        return SECURITY_MANAGER_ERROR_SERVER_ERROR;
     }
 
 
-    return SECURITY_MANAGER_API_SUCCESS;
+    return SECURITY_MANAGER_SUCCESS;
 }
 
 int ServiceImpl::getPolicy(const policy_entry &filter, uid_t uid, pid_t pid, const std::string &smackLabel, std::vector<policy_entry> &policyEntries)
@@ -797,7 +797,7 @@ int ServiceImpl::getPolicy(const policy_entry &filter, uid_t uid, pid_t pid, con
 
         if (!Cynara::getInstance().check(smackLabel, SELF_PRIVILEGE, uidStr, pidStr)) {
             LogWarning("Not enough permission to call: " << __FUNCTION__);
-            return SECURITY_MANAGER_API_ERROR_ACCESS_DENIED;
+            return SECURITY_MANAGER_ERROR_ACCESS_DENIED;
         };
 
         LogDebug("Filter is: C: " << filter.appId
@@ -895,36 +895,36 @@ int ServiceImpl::getPolicy(const policy_entry &filter, uid_t uid, pid_t pid, con
 
     } catch (const CynaraException::Base &e) {
         LogError("Error while listing Cynara rules: " << e.DumpToString());
-        return SECURITY_MANAGER_API_ERROR_SERVER_ERROR;
+        return SECURITY_MANAGER_ERROR_SERVER_ERROR;
     } catch (const SmackException::InvalidLabel &e) {
         LogError("Error while generating Smack labels: " << e.DumpToString());
-        return SECURITY_MANAGER_API_ERROR_SERVER_ERROR;
+        return SECURITY_MANAGER_ERROR_SERVER_ERROR;
     } catch (const std::bad_alloc &e) {
         LogError("Memory allocation error while listing Cynara rules: " << e.what());
-        return SECURITY_MANAGER_API_ERROR_SERVER_ERROR;
+        return SECURITY_MANAGER_ERROR_SERVER_ERROR;
     }
 
-    return SECURITY_MANAGER_API_SUCCESS;
+    return SECURITY_MANAGER_SUCCESS;
 }
 
 int ServiceImpl::policyGetDesc(std::vector<std::string> &levels)
 {
-    int ret = SECURITY_MANAGER_API_SUCCESS;
+    int ret = SECURITY_MANAGER_SUCCESS;
 
     try {
         CynaraAdmin::getInstance().ListPoliciesDescriptions(levels);
     } catch (const CynaraException::OutOfMemory &e) {
         LogError("Error - out of memory while querying Cynara for policy descriptions list: " << e.DumpToString());
-        return SECURITY_MANAGER_API_ERROR_OUT_OF_MEMORY;
+        return SECURITY_MANAGER_ERROR_MEMORY;
     } catch (const CynaraException::InvalidParam &e) {
         LogError("Error - invalid parameter while querying Cynara for policy descriptions list: " << e.DumpToString());
-        return SECURITY_MANAGER_API_ERROR_INPUT_PARAM;
+        return SECURITY_MANAGER_ERROR_INPUT_PARAM;
     } catch (const CynaraException::ServiceNotAvailable &e) {
         LogError("Error - service not available while querying Cynara for policy descriptions list: " << e.DumpToString());
-        return SECURITY_MANAGER_API_ERROR_NO_SUCH_SERVICE;
+        return SECURITY_MANAGER_ERROR_NO_SUCH_SERVICE;
     } catch (const CynaraException::Base &e) {
         LogError("Error while getting policy descriptions list from Cynara: " << e.DumpToString());
-        return SECURITY_MANAGER_API_ERROR_SERVER_ERROR;
+        return SECURITY_MANAGER_ERROR_SERVER_ERROR;
     }
 
     return ret;
@@ -932,13 +932,13 @@ int ServiceImpl::policyGetDesc(std::vector<std::string> &levels)
 
 int ServiceImpl::policyGetGroups(std::vector<std::string> &groups)
 {
-    int ret = SECURITY_MANAGER_API_SUCCESS;
+    int ret = SECURITY_MANAGER_SUCCESS;
 
     try {
         PrivilegeDb::getInstance().GetGroups(groups);
     } catch (const PrivilegeDb::Exception::Base &e) {
         LogError("Error while getting groups from database: " << e.DumpToString());
-        return SECURITY_MANAGER_API_ERROR_SERVER_ERROR;
+        return SECURITY_MANAGER_ERROR_SERVER_ERROR;
     }
 
     return ret;
@@ -957,18 +957,18 @@ int ServiceImpl::appHasPrivilege(
         LogDebug("result = " << result);
     } catch (const CynaraException::Base &e) {
         LogError("Error while querying Cynara for permissions: " << e.DumpToString());
-        return SECURITY_MANAGER_API_ERROR_SERVER_ERROR;
+        return SECURITY_MANAGER_ERROR_SERVER_ERROR;
     } catch (const SmackException::InvalidLabel &e) {
         LogError("Error while generating Smack labels: " << e.DumpToString());
-        return SECURITY_MANAGER_API_ERROR_SERVER_ERROR;
+        return SECURITY_MANAGER_ERROR_SERVER_ERROR;
     } catch (const std::bad_alloc &e) {
         LogError("Memory allocation failed: " << e.what());
-        return SECURITY_MANAGER_API_ERROR_OUT_OF_MEMORY;
+        return SECURITY_MANAGER_ERROR_MEMORY;
     } catch (...) {
         LogError("Unknown exception thrown");
-        return SECURITY_MANAGER_API_ERROR_UNKNOWN;
+        return SECURITY_MANAGER_ERROR_UNKNOWN;
     }
-    return SECURITY_MANAGER_API_SUCCESS;
+    return SECURITY_MANAGER_SUCCESS;
 }
 
 
@@ -987,7 +987,7 @@ int ServiceImpl::dropOnePrivateSharing(
         PrivilegeDb::getInstance().GetPathSharingCount(path, pathCount);
         PrivilegeDb::getInstance().GetOwnerTargetSharingCount(ownerAppId, targetAppId, ownerTargetCount);
         if (targetPathCount > 0) {
-            return SECURITY_MANAGER_API_SUCCESS;
+            return SECURITY_MANAGER_SUCCESS;
         }
         if (pathCount < 1) {
             SmackLabels::setupPath(ownerPkgId, path, SECURITY_MANAGER_PATH_RW);
@@ -995,19 +995,19 @@ int ServiceImpl::dropOnePrivateSharing(
         std::string pathLabel = SmackLabels::generateSharedPrivateLabel(ownerPkgId, path);
         SmackRules::dropPrivateSharingRules(ownerPkgId, ownerPkgContents, targetAppId, pathLabel,
                 pathCount < 1, ownerTargetCount < 1);
-        return SECURITY_MANAGER_API_SUCCESS;
+        return SECURITY_MANAGER_SUCCESS;
     } catch (const SmackException::Base &e) {
         LogError("Error performing smack operation: " << e.GetMessage());
-        errorRet = SECURITY_MANAGER_API_ERROR_SERVER_ERROR;
+        errorRet = SECURITY_MANAGER_ERROR_SERVER_ERROR;
     } catch (const std::bad_alloc &e) {
         LogError("Memory allocation failed: " << e.what());
-        errorRet = SECURITY_MANAGER_API_ERROR_OUT_OF_MEMORY;
+        errorRet = SECURITY_MANAGER_ERROR_MEMORY;
     } catch (const std::exception &e) {
         LogError("Some exception thrown : " << e.what());
-        errorRet = SECURITY_MANAGER_API_ERROR_UNKNOWN;
+        errorRet = SECURITY_MANAGER_ERROR_UNKNOWN;
     } catch (...) {
         LogError("Unknown exception thrown");
-        errorRet = SECURITY_MANAGER_API_ERROR_UNKNOWN;
+        errorRet = SECURITY_MANAGER_ERROR_UNKNOWN;
     }
     return errorRet;
 }
@@ -1026,11 +1026,11 @@ int ServiceImpl::applyPrivatePathSharing(
         std::string targetPkgId;
         if (!PrivilegeDb::getInstance().GetAppPkgId(ownerAppId, ownerPkgId)) {
             LogError(ownerAppId << " is not an installed application");
-            return SECURITY_MANAGER_API_ERROR_APP_UNKNOWN;
+            return SECURITY_MANAGER_ERROR_APP_UNKNOWN;
         }
         if (!PrivilegeDb::getInstance().GetAppPkgId(targetAppId, targetPkgId)) {
             LogError(targetAppId << " is not an installed application");
-            return SECURITY_MANAGER_API_ERROR_APP_UNKNOWN;
+            return SECURITY_MANAGER_ERROR_APP_UNKNOWN;
         }
 
         for(const auto &path : paths) {
@@ -1040,18 +1040,18 @@ int ServiceImpl::applyPrivatePathSharing(
                 if (generatedPathLabel != pathLabel) {
                     LogError("Path " << path << " has label " << pathLabel << " and dosen't belong"
                              " to application " << ownerAppId);
-                    return SECURITY_MANAGER_API_ERROR_APP_NOT_PATH_OWNER;
+                    return SECURITY_MANAGER_ERROR_APP_NOT_PATH_OWNER;
                 }
             }
         }
         if (ownerAppId == targetAppId) {
             LogDebug("Owner application is the same as target application");
-            return SECURITY_MANAGER_API_SUCCESS;
+            return SECURITY_MANAGER_SUCCESS;
         }
 
         if (ownerPkgId == targetPkgId) {
             LogDebug("Owner and target belong to the same package");
-            return SECURITY_MANAGER_API_SUCCESS;
+            return SECURITY_MANAGER_SUCCESS;
         }
         ScopedTransaction trans;
         PrivilegeDb::getInstance().GetAppIdsForPkgId(ownerPkgId, pkgContents);
@@ -1075,19 +1075,19 @@ int ServiceImpl::applyPrivatePathSharing(
                     pathLabel, (pathCount > 0), (ownerTargetCount > 0));
         }
         trans.commit();
-        return SECURITY_MANAGER_API_SUCCESS;
+        return SECURITY_MANAGER_SUCCESS;
     } catch (const SmackException::Base &e) {
         LogError("Error performing smack operation: " << e.GetMessage());
-        errorRet = SECURITY_MANAGER_API_ERROR_SERVER_ERROR;
+        errorRet = SECURITY_MANAGER_ERROR_SERVER_ERROR;
     } catch (const std::bad_alloc &e) {
         LogError("Memory allocation failed: " << e.what());
-        errorRet = SECURITY_MANAGER_API_ERROR_OUT_OF_MEMORY;
+        errorRet = SECURITY_MANAGER_ERROR_MEMORY;
     } catch (const std::exception &e) {
         LogError("Some exception thrown : " << e.what());
-        errorRet = SECURITY_MANAGER_API_ERROR_UNKNOWN;
+        errorRet = SECURITY_MANAGER_ERROR_UNKNOWN;
     } catch (...) {
         LogError("Unknown exception thrown");
-        errorRet = SECURITY_MANAGER_API_ERROR_UNKNOWN;
+        errorRet = SECURITY_MANAGER_ERROR_UNKNOWN;
     }
     for (int i = 0; i < sharingAdded; i++) {
         const std::string &path = paths[i];
@@ -1106,11 +1106,11 @@ int ServiceImpl::dropPrivatePathSharing(
         std::string ownerPkgId, targetPkgId;
         if (!PrivilegeDb::getInstance().GetAppPkgId(ownerAppId, ownerPkgId)) {
             LogError(ownerAppId << " is not an installed application");
-            return SECURITY_MANAGER_API_ERROR_APP_UNKNOWN;
+            return SECURITY_MANAGER_ERROR_APP_UNKNOWN;
         }
         if (!PrivilegeDb::getInstance().GetAppPkgId(targetAppId, targetPkgId)) {
             LogError(targetAppId << " is not an installed application");
-            return SECURITY_MANAGER_API_ERROR_APP_UNKNOWN;
+            return SECURITY_MANAGER_ERROR_APP_UNKNOWN;
         }
 
         for(const auto &path : paths) {
@@ -1120,18 +1120,18 @@ int ServiceImpl::dropPrivatePathSharing(
                 if (generatedPathLabel != pathLabel) {
                     LogError("Path " << path << " has label " << pathLabel << " and dosen't belong"
                              " to application " << ownerAppId);
-                    return SECURITY_MANAGER_API_ERROR_APP_NOT_PATH_OWNER;
+                    return SECURITY_MANAGER_ERROR_APP_NOT_PATH_OWNER;
                 }
             }
         }
         if (ownerAppId == targetAppId) {
             LogDebug("Owner application is the same as target application");
-            return SECURITY_MANAGER_API_SUCCESS;
+            return SECURITY_MANAGER_SUCCESS;
         }
 
         if (ownerPkgId == targetPkgId) {
             LogDebug("Owner and target belong to the same package");
-            return SECURITY_MANAGER_API_SUCCESS;
+            return SECURITY_MANAGER_SUCCESS;
         }
 
         std::vector<std::string> pkgContents;
@@ -1139,24 +1139,24 @@ int ServiceImpl::dropPrivatePathSharing(
         ScopedTransaction trans;
         for (const auto &path : paths) {
             int ret = dropOnePrivateSharing(ownerAppId, ownerPkgId, pkgContents, targetAppId, path);
-            if (ret != SECURITY_MANAGER_API_SUCCESS) {
+            if (ret != SECURITY_MANAGER_SUCCESS) {
                 return ret;
             }
         }
         trans.commit();
-        return SECURITY_MANAGER_API_SUCCESS;
+        return SECURITY_MANAGER_SUCCESS;
     } catch (const SmackException::Base &e) {
         LogError("Error performing smack operation: " << e.GetMessage());
-        errorRet = SECURITY_MANAGER_API_ERROR_SERVER_ERROR;
+        errorRet = SECURITY_MANAGER_ERROR_SERVER_ERROR;
     } catch (const std::bad_alloc &e) {
         LogError("Memory allocation failed: " << e.what());
-        errorRet = SECURITY_MANAGER_API_ERROR_OUT_OF_MEMORY;
+        errorRet = SECURITY_MANAGER_ERROR_MEMORY;
     } catch (const std::exception &e) {
         LogError("Some exception thrown : " << e.what());
-        errorRet = SECURITY_MANAGER_API_ERROR_UNKNOWN;
+        errorRet = SECURITY_MANAGER_ERROR_UNKNOWN;
     } catch (...) {
         LogError("Unknown exception thrown");
-        errorRet = SECURITY_MANAGER_API_ERROR_UNKNOWN;
+        errorRet = SECURITY_MANAGER_ERROR_UNKNOWN;
     }
     return errorRet;
 }
