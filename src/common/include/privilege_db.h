@@ -71,7 +71,6 @@ enum class StmtType {
     EGetAppsInPkg,
     EGetGroups,
     EGetAuthorIdAppId,
-    ERemoveAuthors,
     EAuthorIdExists,
 };
 
@@ -127,7 +126,6 @@ private:
         { StmtType::EGetAppsInPkg, " SELECT app_name FROM app_pkg_view WHERE pkg_name = ?" },
         { StmtType::EGetGroups, "SELECT DISTINCT group_name FROM privilege_group_view" },
         { StmtType::EGetAuthorIdAppId, "SELECT author_id FROM app_pkg_view WHERE app_name = ?"},
-        { StmtType::ERemoveAuthors, "DELETE FROM author where author_id IN (SELECT author_id from author LEFT JOIN APP USING(author_id) where app_id is NULL)"},
         { StmtType::EAuthorIdExists, "SELECT count(*) FROM author where author_id=?"},
     };
 
@@ -173,6 +171,16 @@ private:
      *
      */
     bool PkgIdExists(const std::string &pkgId);
+
+    /**
+     * Check if authorId is already registered in database
+     *
+     * @param authorId - package identifier
+     * @exception DB::SqlConnection::Exception::InternalError on internal error
+     * @return true if authorId exists in the database
+     *
+     */
+    bool AuthorIdExists(const std::string &authorId);
 
 public:
     class Exception
@@ -275,10 +283,15 @@ public:
      * @param uid - user identifier whose application is going to be uninstalled
      * @param[out] appIdIsNoMore - return info if appId is in the database
      * @param[out] pkgIdIsNoMore - return info if pkgId is in the database
+     * @param[out] authorIdIsNoMore - return info if authorId is in the database
      * @exception DB::SqlConnection::Exception::InternalError on internal error
      */
-    void RemoveApplication(const std::string &appId, uid_t uid,
-        bool &appIdIsNoMore, bool &pkgIdIsNoMore);
+    void RemoveApplication(
+            const std::string &appId,
+            uid_t uid,
+            bool &appIdIsNoMore,
+            bool &pkgIdIsNoMore,
+            bool &authorIdIsNoMore);
 
     /**
      * Remove privileges assigned to application
@@ -434,9 +447,6 @@ public:
      */
     void GetAuthorIdForAppId(const std::string &appId,
         std::string &authorId);
-
-    void RemoveAuthor();
-    void AuthorIdExists(const std::string &authorId, int &result);
 
     /**
      * Retrieve list of resource groups

@@ -206,15 +206,23 @@ void PrivilegeDb::AddApplication(
     });
 }
 
-void PrivilegeDb::RemoveApplication(const std::string &appId, uid_t uid,
-        bool &appIdIsNoMore, bool &pkgIdIsNoMore)
+void PrivilegeDb::RemoveApplication(
+        const std::string &appId,
+        uid_t uid,
+        bool &appIdIsNoMore,
+        bool &pkgIdIsNoMore,
+        bool &authorIdIsNoMore)
 {
     try_catch<void>([&] {
         std::string pkgId;
+        std::string authorId;
         if (!GetAppPkgId(appId, pkgId)) {
             pkgIdIsNoMore = false;
             return;
         }
+
+        authorIdIsNoMore = false;
+        GetAuthorIdForAppId(appId, authorId);
 
         auto command = getStatement(StmtType::ERemoveApplication);
         command->BindString(1, appId);
@@ -229,6 +237,10 @@ void PrivilegeDb::RemoveApplication(const std::string &appId, uid_t uid,
 
         appIdIsNoMore = !(this->AppIdExists(appId));
         pkgIdIsNoMore = !(this->PkgIdExists(pkgId));
+
+        if (!authorId.empty()) {
+            authorIdIsNoMore = !(this->AuthorIdExists(authorId));
+        }
     });
 }
 
@@ -491,26 +503,21 @@ void PrivilegeDb::GetAuthorIdForAppId(const std::string &appId,
     });
 }
 
-void PrivilegeDb::RemoveAuthor() {
-    try_catch<void>([&] {
-        auto command = getStatement(StmtType::ERemoveAuthors);
-        command->Step();
-    });
-}
-
-void PrivilegeDb::AuthorIdExists(const std::string &authorId, int &result) {
-    try_catch<void>([&] {
-        auto command = getStatement(StmtType::EAuthorIdExists);
-        result = 0;
+bool PrivilegeDb::AuthorIdExists(const std::string &authorId) {
+    return try_catch<bool>([&]() -> bool {
+        int result = 0;
 
         if (authorId.empty())
-            return;
+            return false;
+
+        auto command = getStatement(StmtType::EAuthorIdExists);
 
         command->BindInteger(1, std::atoi(authorId.c_str()));
         if (command->Step()) {
             result = command->GetColumnInteger(0);
         }
         LogDebug("For author: " << authorId << " found " << result << " rows");
+        return result;
     });
 }
 

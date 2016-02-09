@@ -45,6 +45,8 @@ const char *const SMACK_APP_LABEL_TEMPLATE     = "~APP~";
 const char *const SMACK_PKG_LABEL_TEMPLATE     = "~PKG~";
 const char *const SMACK_AUTHOR_LABEL_TEMPLATE  = "~AUTHOR~";
 const char *const APP_RULES_TEMPLATE_FILE_PATH = tzplatform_mkpath4(TZ_SYS_SHARE, "security-manager", "policy", "app-rules-template.smack");
+const char *const AUTHOR_RULES_TEMPLATE_FILE_PATH =
+    tzplatform_mkpath4(TZ_SYS_SHARE, "security-manager", "policy", "author-rules-template.smack");
 const char *const SMACK_APP_IN_PACKAGE_PERMS   = "rwxat";
 const char *const SMACK_APP_CROSS_PKG_PERMS    = "rx";
 const char *const SMACK_APP_PATH_OWNER_PERMS = "rwxat";
@@ -145,17 +147,18 @@ void SmackRules::saveToFile(const std::string &path) const
 }
 
 void SmackRules::addFromTemplateFile(
+        const std::string &templatePath,
         const std::string &appId,
         const std::string &pkgId,
         const std::string &authorId)
 {
-    std::vector<std::string> templateRules;
+    RuleVector templateRules;
     std::string line;
-    std::ifstream templateRulesFile(APP_RULES_TEMPLATE_FILE_PATH);
+    std::ifstream templateRulesFile(templatePath);
 
     if (!templateRulesFile.is_open()) {
-        LogError("Cannot open rules template file: " << APP_RULES_TEMPLATE_FILE_PATH);
-        ThrowMsg(SmackException::FileError, "Cannot open rules template file: " << APP_RULES_TEMPLATE_FILE_PATH);
+        LogError("Cannot open rules template file: " << templatePath);
+        ThrowMsg(SmackException::FileError, "Cannot open rules template file: " << templatePath);
     }
 
     while (std::getline(templateRulesFile, line)) {
@@ -163,24 +166,32 @@ void SmackRules::addFromTemplateFile(
     }
 
     if (templateRulesFile.bad()) {
-        LogError("Error reading template file: " << APP_RULES_TEMPLATE_FILE_PATH);
-        ThrowMsg(SmackException::FileError, "Error reading template file: " << APP_RULES_TEMPLATE_FILE_PATH);
+        LogError("Error reading template file: " << templatePath);
+        ThrowMsg(SmackException::FileError, "Error reading template file: " << templatePath);
     }
 
     addFromTemplate(templateRules, appId, pkgId, authorId);
 }
 
 void SmackRules::addFromTemplate(
-        const std::vector<std::string> &templateRules,
+        const RuleVector &templateRules,
         const std::string &appId,
         const std::string &pkgId,
         const std::string &authorId)
 {
+    if (appId.empty() || pkgId.empty()) {
+        LogError("Neither appId nor pkgId may be empty.");
+        ThrowMsg(SmackException::InvalidParam, "Neither appId nor pkgId may be empty.");
+    }
+
+    std::string appLabel = SmackLabels::generateAppLabel(appId);
+    std::string pkgLabel = SmackLabels::generatePkgLabel(pkgId);
+
+    std::string authorLabel =
+            authorId.empty() ? std::string() : SmackLabels::generateAuthorLabel(authorId);
+
     for (auto rule : templateRules) {
         if (rule.empty())
-            continue;
-
-        if (authorId.empty() && rule.find(SMACK_AUTHOR_LABEL_TEMPLATE) != std::string::npos)
             continue;
 
         std::stringstream stream(rule);
@@ -192,16 +203,14 @@ void SmackRules::addFromTemplate(
             ThrowMsg(SmackException::FileError, "Invalid rule template: " << rule);
         }
 
-        strReplace(subject, SMACK_APP_LABEL_TEMPLATE, SmackLabels::generateAppLabel(appId));
-        strReplace(subject, SMACK_PKG_LABEL_TEMPLATE, SmackLabels::generatePkgLabel(pkgId));
-        strReplace(object,  SMACK_APP_LABEL_TEMPLATE, SmackLabels::generateAppLabel(appId));
-        strReplace(object,  SMACK_PKG_LABEL_TEMPLATE, SmackLabels::generatePkgLabel(pkgId));
+        strReplace(subject, SMACK_APP_LABEL_TEMPLATE, appLabel);
+        strReplace(subject, SMACK_PKG_LABEL_TEMPLATE, pkgLabel);
+        strReplace(object,  SMACK_APP_LABEL_TEMPLATE, appLabel);
+        strReplace(object,  SMACK_PKG_LABEL_TEMPLATE, pkgLabel);
+        strReplace(object,  SMACK_AUTHOR_LABEL_TEMPLATE, authorLabel);
 
-        if (!authorId.empty()) {
-            strReplace(object,
-                       SMACK_AUTHOR_LABEL_TEMPLATE,
-                       SmackLabels::generateAuthorLabel(authorId));
-        }
+        if (subject.empty() || object.empty())
+            continue;
 
         add(subject, object, permissions);
     }
@@ -283,6 +292,27 @@ std::string SmackRules::getApplicationRulesFilePath(const std::string &appId)
     return path;
 }
 
+std::string SmackRules::getAuthorRulesFilePath(const std::string &authorId)
+{
+    return tzplatform_mkpath3(TZ_SYS_SMACK, "accesses.d", ("author_" + authorId).c_str());
+}
+
+void SmackRules::useTemplate(
+        const std::string &templatePath,
+        const std::string &outputPath,
+        const std::string &appId,
+        const std::string &pkgId,
+        const std::string &authorId)
+{
+    SmackRules smackRules;
+    smackRules.addFromTemplateFile(templatePath, appId, pkgId, authorId);
+
+    if (smack_smackfs_path() != NULL)
+        smackRules.apply();
+
+    smackRules.saveToFile(outputPath);
+}
+
 void SmackRules::installApplicationRules(
         const std::string &appId,
         const std::string &pkgId,
@@ -291,15 +321,10 @@ void SmackRules::installApplicationRules(
         const std::vector<std::string> &appsGranted,
         const std::vector<std::string> &accessPackages)
 {
-    SmackRules smackRules;
-    std::string appPath = getApplicationRulesFilePath(appId);
+    useTemplate(APP_RULES_TEMPLATE_FILE_PATH, getApplicationRulesFilePath(appId), appId, pkgId, authorId);
 
-    smackRules.addFromTemplateFile(appId, pkgId, authorId);
-
-    if (smack_smackfs_path() != NULL)
-        smackRules.apply();
-
-    smackRules.saveToFile(appPath);
+    if (!authorId.empty())
+        useTemplate(AUTHOR_RULES_TEMPLATE_FILE_PATH, getAuthorRulesFilePath(authorId), appId, pkgId, authorId);
 
     updatePackageRules(pkgId, pkgContents, appsGranted);
     generateAppToOtherPackagesDeps(appId, accessPackages);
@@ -372,12 +397,9 @@ void SmackRules::strReplace(std::string &haystack, const std::string &needle,
         haystack.replace(pos, needle.size(), replace);
 }
 
-void SmackRules::fixAuthorRules(const std::string &authorId) {
-    SmackRules rules;
-    std::string authorLabel = SmackLabels::generateAuthorLabel(authorId);
-    rules.add("User", authorLabel, "rwxat");
-    rules.add("System", authorLabel, "rwxat");
-    rules.apply();
+void SmackRules::uninstallAuthorRules(const std::string &authorId)
+{
+    uninstallRules(getAuthorRulesFilePath(authorId));
 }
 
 void SmackRules::applyPrivateSharingRules(

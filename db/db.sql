@@ -142,6 +142,7 @@ INSTEAD OF DELETE ON app_pkg_view
 BEGIN
     DELETE FROM app WHERE app_id=OLD.app_id AND uid=OLD.uid;
     DELETE FROM pkg WHERE pkg_id NOT IN (SELECT DISTINCT pkg_id from app);
+    DELETE FROM author WHERE author_id NOT IN (SELECT author_id FROM app WHERE author_id IS NOT NULL);
 END;
 
 DROP VIEW IF EXISTS app_private_sharing_view;

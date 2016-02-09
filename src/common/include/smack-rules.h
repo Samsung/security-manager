@@ -36,6 +36,9 @@ namespace SecurityManager {
 class SmackRules
 {
 public:
+    typedef std::string Rule;
+    typedef std::vector<Rule> RuleVector;
+
     SmackRules();
     virtual ~SmackRules();
 
@@ -46,12 +49,13 @@ public:
     void loadFromFile(const std::string &path);
 
     void addFromTemplate(
-            const std::vector<std::string> &templateRules,
+            const RuleVector &templateRules,
             const std::string &appId,
             const std::string &pkgId,
             const std::string &authorId);
 
     void addFromTemplateFile(
+            const std::string &templatePath,
             const std::string &appId,
             const std::string &pkgId,
             const std::string &authorId);
@@ -148,8 +152,12 @@ public:
             const std::vector<std::string> &pkgContents,
             const std::vector<std::string> &appsGranted);
 
-    /* Temporary fix for authors rules */
-    static void fixAuthorRules(const std::string &authorId);
+    /**
+     * Uninstall author-specific smack rules.
+     *
+     * param[in] authorId - identification (datbase key) of the author
+     */
+    static void uninstallAuthorRules(const std::string &authorId);
 
     /**
      * Add rules related to private path sharing rules
@@ -200,6 +208,13 @@ public:
     static void updatePackageRules(const std::string &pkgId, const std::vector<std::string> &pkgContents);
 
 private:
+    static void useTemplate(
+            const std::string &templatePath,
+            const std::string &outputPath,
+            const std::string &appId,
+            const std::string &pkgId,
+            const std::string &authorId);
+
     /**
      * Create a path for package rules
      *
@@ -210,6 +225,11 @@ private:
      * Create a path for application rules
      */
     static std::string getApplicationRulesFilePath(const std::string &appId);
+
+    /**
+     * Create a path for author rules
+     */
+    static std::string getAuthorRulesFilePath(const std::string &authorId);
 
     /**
      * Uninstall rules inside a specified file path
