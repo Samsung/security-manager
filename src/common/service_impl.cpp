@@ -462,19 +462,19 @@ int ServiceImpl::appUninstall(const std::string &appId, uid_t uid)
         try {
             if (removeApp) {
                 LogDebug("Removing smack rules for deleted appId " << appId);
-                SmackRules::uninstallApplicationRules(appId, pkgId, pkgContents, allTizen2XApps);
-            }
-
-            if (removePkg) {
-                LogDebug("Removing Smack rules for deleted pkgId " << pkgId);
+                SmackRules::uninstallApplicationRules(appId);
+                LogDebug("Pkg rules are deprecated. We must uninstall them. pkgId " << pkgId);
                 SmackRules::uninstallPackageRules(pkgId);
+                if (!removePkg) {
+                    LogDebug("Creating new rules for pkgId " << pkgId);
+                    SmackRules::updatePackageRules(pkgId, pkgContents, allTizen2XApps);
+                }
             }
 
             if (removeAuthor) {
                 LogDebug("Removing Smack rules for authorId " << authorId);
                 SmackRules::uninstallAuthorRules(authorId);
             }
-
         } catch (const SmackException::Base &e) {
             LogError("Error while removing Smack rules for application: " << e.DumpToString());
             return SECURITY_MANAGER_ERROR_SETTING_FILE_LABEL_FAILED;

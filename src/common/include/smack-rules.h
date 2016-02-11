@@ -62,7 +62,7 @@ public:
 
     void apply() const;
     void clear() const;
-    void saveToFile(const std::string &path) const;
+    void saveToFile(const std::string &path, bool truncFile = true) const;
 
     /**
      * Create cross dependencies for all applications in a package
@@ -126,15 +126,8 @@ public:
     * removes them for persistent storage.
     *
     * @param[in] appId - application id
-    * @param[in] pkgId - package id that the application belongs to
-    * @param[in] appsInPkg - a list of other applications in the same package id that the application belongs to
-    * @param[in] appsGranted - list of 2.x apps granted access
     */
-    static void uninstallApplicationRules(
-            const std::string &appId,
-            const std::string &pkgId,
-            std::vector<std::string> appsInPkg,
-            const std::vector<std::string> &appsGranted);
+    static void uninstallApplicationRules(const std::string &appId);
 
     /**
      * Update package specific rules
@@ -143,7 +136,7 @@ public:
      * need to exist currently for all application in that
      * package
      *
-     * @param[in] pkgId - id of the package to update
+     * @param[in] pkgId - package id that the application is in
      * @param[in] pkgContents - list of all applications in the package
      * @param[in] appsGranted - list of 2.x apps granted access
      */
@@ -225,6 +218,11 @@ private:
      * Create a path for application rules
      */
     static std::string getApplicationRulesFilePath(const std::string &appId);
+
+    /**
+     * Create a path for application rules
+     */
+    static std::string getPkgRulesFilePath(const std::string &pkgId);
 
     /**
      * Create a path for author rules

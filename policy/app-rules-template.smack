@@ -1,16 +1,10 @@
 System ~APP~ rwx
-System ~PKG~ rwxat
-System ~PKG~::RO rwxat
-System ~PKG~::SharedRO rwxat
 ~APP~ System wx
 ~APP~ System::Shared rxl
 ~APP~ System::Run rwxat
 ~APP~ System::Log rwxa
 ~APP~ _ l
 User ~APP~ rwx
-User ~PKG~ rwxat
-User ~PKG~::RO rwxat
-User ~PKG~::SharedRO rwxat
 ~APP~ User wx
 ~APP~ User::Home rxl
 ~APP~ User::App::Shared rwxat

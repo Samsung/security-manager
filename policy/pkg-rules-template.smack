@@ -1,0 +1,7 @@
+System ~PKG~ rwxat
+System ~PKG~::RO rwxat
+System ~PKG~::SharedRO rwxat
+User ~PKG~ rwxat
+User ~PKG~::RO rwxat
+User ~PKG~::SharedRO rwxat
+

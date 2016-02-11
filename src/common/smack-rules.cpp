@@ -45,6 +45,7 @@ const char *const SMACK_APP_LABEL_TEMPLATE     = "~APP~";
 const char *const SMACK_PKG_LABEL_TEMPLATE     = "~PKG~";
 const char *const SMACK_AUTHOR_LABEL_TEMPLATE  = "~AUTHOR~";
 const char *const APP_RULES_TEMPLATE_FILE_PATH = tzplatform_mkpath4(TZ_SYS_SHARE, "security-manager", "policy", "app-rules-template.smack");
+const char *const PKG_RULES_TEMPLATE_FILE_PATH = tzplatform_mkpath4(TZ_SYS_SHARE, "security-manager", "policy", "pkg-rules-template.smack");
 const char *const AUTHOR_RULES_TEMPLATE_FILE_PATH =
     tzplatform_mkpath4(TZ_SYS_SHARE, "security-manager", "policy", "author-rules-template.smack");
 const char *const SMACK_APP_IN_PACKAGE_PERMS   = "rwxat";
@@ -117,11 +118,12 @@ void SmackRules::loadFromFile(const std::string &path)
     }
 }
 
-void SmackRules::saveToFile(const std::string &path) const
+void SmackRules::saveToFile(const std::string &path, bool truncFile) const
 {
     int fd;
+    int flags = O_CREAT | O_WRONLY | (truncFile ? O_TRUNC : O_APPEND);
 
-    fd = TEMP_FAILURE_RETRY(open(path.c_str(), O_CREAT | O_WRONLY | O_TRUNC, 0644));
+    fd = TEMP_FAILURE_RETRY(open(path.c_str(), flags, 0644));
     if (fd == -1) {
         LogError("Failed to create file: " << path);
         ThrowMsg(SmackException::FileError, "Failed to create file: " << path);
@@ -179,16 +181,18 @@ void SmackRules::addFromTemplate(
         const std::string &pkgId,
         const std::string &authorId)
 {
-    if (appId.empty() || pkgId.empty()) {
-        LogError("Neither appId nor pkgId may be empty.");
-        ThrowMsg(SmackException::InvalidParam, "Neither appId nor pkgId may be empty.");
-    }
+    std::string appLabel;
+    std::string pkgLabel;
+    std::string authorLabel;
 
-    std::string appLabel = SmackLabels::generateAppLabel(appId);
-    std::string pkgLabel = SmackLabels::generatePkgLabel(pkgId);
+    if (!appId.empty())
+        appLabel = SmackLabels::generateAppLabel(appId);
 
-    std::string authorLabel =
-            authorId.empty() ? std::string() : SmackLabels::generateAuthorLabel(authorId);
+    if (!pkgId.empty())
+        pkgLabel = SmackLabels::generatePkgLabel(pkgId);
+
+    if (!authorId.empty())
+        authorLabel = SmackLabels::generateAuthorLabel(authorId);
 
     for (auto rule : templateRules) {
         if (rule.empty())
@@ -330,10 +334,13 @@ void SmackRules::installApplicationRules(
     generateAppToOtherPackagesDeps(appId, accessPackages);
 }
 
-void SmackRules::updatePackageRules(const std::string &pkgId,
+void SmackRules::updatePackageRules(
+        const std::string &pkgId,
         const std::vector<std::string> &pkgContents,
         const std::vector<std::string> &appsGranted)
 {
+    useTemplate(PKG_RULES_TEMPLATE_FILE_PATH, getPackageRulesFilePath(pkgId), std::string(), pkgId, std::string());
+
     SmackRules smackRules;
     std::string pkgPath = getPackageRulesFilePath(pkgId);
 
@@ -343,7 +350,7 @@ void SmackRules::updatePackageRules(const std::string &pkgId,
     if (smack_smackfs_path() != NULL)
         smackRules.apply();
 
-    smackRules.saveToFile(pkgPath);
+    smackRules.saveToFile(pkgPath, false);
 }
 
 void SmackRules::uninstallPackageRules(const std::string &pkgId)
@@ -351,14 +358,9 @@ void SmackRules::uninstallPackageRules(const std::string &pkgId)
     uninstallRules(getPackageRulesFilePath(pkgId));
 }
 
-void SmackRules::uninstallApplicationRules(
-        const std::string &appId,
-        const std::string &pkgId,
-        std::vector<std::string> pkgContents,
-        const std::vector<std::string> &appsGranted)
+void SmackRules::uninstallApplicationRules(const std::string &appId)
 {
     uninstallRules(getApplicationRulesFilePath(appId));
-    updatePackageRules(pkgId, pkgContents, appsGranted);
 }
 
 void SmackRules::uninstallRules(const std::string &path)
