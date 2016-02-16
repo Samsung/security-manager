@@ -1,7 +1,7 @@
 Name:       security-manager
 Summary:    Security manager and utilities
 Version:    1.1.0
-Release:    1
+Release:    2
 Group:      Security/Service
 License:    Apache-2.0
 Source0:    %{name}-%{version}.tar.gz
