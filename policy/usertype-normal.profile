@@ -21,8 +21,6 @@
 *	http://tizen.org/privilege/contact.read
 *	http://tizen.org/privilege/contact.write
 *	http://tizen.org/privilege/content.write
-*	http://tizen.org/privilege/d2d.admin
-*	http://tizen.org/privilege/d2d.appcontrol
 *	http://tizen.org/privilege/d2d.datasharing
 *	http://tizen.org/privilege/datasharing
 *	http://tizen.org/privilege/display
@@ -72,6 +70,7 @@
 *	http://tizen.org/privilege/telephony
 *	http://tizen.org/privilege/telephony.admin
 *	http://tizen.org/privilege/tethering.admin
+*	http://tizen.org/privilege/use_ir
 *	http://tizen.org/privilege/volume.set
 *	http://tizen.org/privilege/web-history.admin
 *	http://tizen.org/privilege/widget.viewer
