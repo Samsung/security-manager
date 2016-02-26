@@ -32,6 +32,7 @@
 #include <memory>
 #include <fts.h>
 #include <cstring>
+#include <cstdlib>
 #include <fstream>
 #include <string>
 #include <sstream>
@@ -240,7 +241,8 @@ std::string generatePkgROLabel(const std::string &pkgId)
     return label;
 }
 
-std::string generateSharedPrivateLabel(const std::string &pkgId, const std::string &path) {
+std::string generateSharedPrivateLabel(const std::string &pkgId, const std::string &path)
+{
     // Prefix $1$ causes crypt() to use MD5 function
     std::string label = "User::Pkg::";
     std::string salt = "$1$" + pkgId;
@@ -259,14 +261,29 @@ std::string generateSharedPrivateLabel(const std::string &pkgId, const std::stri
 std::string getSmackLabelFromSocket(int socketFd)
 {
     char *label = nullptr;
-
     ssize_t labelSize = smack_new_label_from_socket(socketFd, &label);
+    std::unique_ptr<char, void(*)(void *)> labelPtr(label, free);
+
     if (labelSize < 0) {
         ThrowMsg(SmackException::Base,
                 "smack_new_label_from_socket error for socket: " << socketFd);
     }
 
-    return label;
+    return std::string(labelPtr.get(), labelSize);
+}
+
+std::string getSmackLabelFromPath(const std::string &path)
+{
+    char *label = nullptr;
+    ssize_t labelSize = smack_new_label_from_path(path.c_str(), XATTR_NAME_SMACK, true, &label);
+    std::unique_ptr<char, void(*)(void *)> labelPtr(label, free);
+
+    if (labelSize < 0) {
+        ThrowMsg(SmackException::FileError,
+                "smack_new_label_from_path error for path: " << path);
+    }
+
+    return std::string(labelPtr.get(), labelSize);
 }
 
 std::string getSmackLabelFromPid(pid_t pid)
@@ -287,22 +304,14 @@ std::string getSmackLabelFromPid(pid_t pid)
     return result;
 }
 
-std::string generateAuthorLabel(const std::string &authorId) {
+std::string generateAuthorLabel(const std::string &authorId)
+{
     if (authorId.empty()) {
         LogError("Author was not set. It's not possible to generate label for unknown author.");
         ThrowMsg(SmackException::InvalidLabel, "Could not generate valid label without authorId");
     }
 
     return "User::Author::" + authorId;
-}
-
-std::string getSmackLabelFromPath(const std::string &path) {
-    char label[SMACK_LABEL_LEN];
-    ssize_t realLen;
-    if ((realLen = lgetxattr(path.c_str(), XATTR_NAME_SMACK, label, SMACK_LABEL_LEN)) < 0) {
-        ThrowMsg(SmackException::FileError, "lgetxattr failed");
-    }
-    return std::string(label, label+realLen);
 }
 
 } // namespace SmackLabels
