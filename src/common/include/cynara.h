@@ -160,14 +160,14 @@ public:
      * List Cynara policies that match selected criteria in given bucket.
      *
      * @param bucketName name of the bucket to search policies in
-     * @param appId string with id of app to match in search
+     * @param label string with label of app to match in search
      * @param user user string to match in search
      * @param privilege privilege string to match in search
      * @param policies empty vector for results of policies filtering.
      *
      */
     void ListPolicies(const std::string &bucketName,
-        const std::string &appId,
+        const std::string &label,
         const std::string &user,
         const std::string &privilege,
         std::vector<CynaraAdminPolicy> &policies);

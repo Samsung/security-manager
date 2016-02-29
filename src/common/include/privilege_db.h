@@ -52,10 +52,10 @@ enum class StmtType {
     ERemoveApplication,
     EAddAppPrivileges,
     ERemoveAppPrivileges,
-    EPkgIdExists,
-    EAppIdExists,
-    EGetPkgId,
-    EGetPkgIdAndVer,
+    EPkgNameExists,
+    EAppNameExists,
+    EGetAppPkgName,
+    EGetAppVersion,
     EGetPathSharedCount,
     EGetTargetPathSharedCount,
     EGetOwnerTargetSharedCount,
@@ -70,7 +70,7 @@ enum class StmtType {
     EGetAllTizen2XPackages,
     EGetAppsInPkg,
     EGetGroups,
-    EGetAuthorIdAppId,
+    EGetAppAuthorId,
     EAuthorIdExists,
 };
 
@@ -107,10 +107,10 @@ private:
         { StmtType::ERemoveApplication, "DELETE FROM app_pkg_view WHERE app_name=? AND uid=?" },
         { StmtType::EAddAppPrivileges, "INSERT INTO app_privilege_view (app_name, uid, privilege_name) VALUES (?, ?, ?)" },
         { StmtType::ERemoveAppPrivileges, "DELETE FROM app_privilege_view WHERE app_name=? AND uid=?" },
-        { StmtType::EPkgIdExists, "SELECT * FROM pkg WHERE name=?" },
-        { StmtType::EAppIdExists, "SELECT * FROM app WHERE name=?" },
-        { StmtType::EGetPkgId, "SELECT pkg_name FROM app_pkg_view WHERE app_name = ?" },
-        { StmtType::EGetPkgIdAndVer, "SELECT pkg_name, version FROM app_pkg_view WHERE app_name = ?" },
+        { StmtType::EPkgNameExists, "SELECT count(*) FROM pkg WHERE name=?" },
+        { StmtType::EAppNameExists, "SELECT count(*) FROM app WHERE name=?" },
+        { StmtType::EGetAppPkgName, "SELECT pkg_name FROM app_pkg_view WHERE app_name = ?" },
+        { StmtType::EGetAppVersion, "SELECT version FROM app_pkg_view WHERE app_name = ?" },
         { StmtType::EGetPathSharedCount, "SELECT COUNT(*) FROM app_private_sharing_view WHERE path = ?"},
         { StmtType::EGetTargetPathSharedCount, "SELECT COUNT(*) FROM app_private_sharing_view WHERE target_app_name = ? AND path = ?"},
         { StmtType::EGetOwnerTargetSharedCount, "SELECT COUNT(*) FROM app_private_sharing_view WHERE owner_app_name = ? AND target_app_name = ?"},
@@ -125,7 +125,7 @@ private:
         { StmtType::EGetAllTizen2XPackages,  "SELECT DISTINCT pkg_name FROM app_pkg_view WHERE version LIKE '2.%%' AND app_name <> ?" },
         { StmtType::EGetAppsInPkg, " SELECT app_name FROM app_pkg_view WHERE pkg_name = ?" },
         { StmtType::EGetGroups, "SELECT DISTINCT group_name FROM privilege_group_view" },
-        { StmtType::EGetAuthorIdAppId, "SELECT author_id FROM app_pkg_view WHERE app_name = ?"},
+        { StmtType::EGetAppAuthorId, "SELECT author_id FROM app_pkg_view WHERE app_name = ? AND author_id IS NOT NULL"},
         { StmtType::EAuthorIdExists, "SELECT count(*) FROM author where author_id=?"},
     };
 
@@ -151,36 +151,6 @@ private:
      * @return wrapped prepared query
      */
     StatementWrapper getStatement(StmtType queryType);
-
-    /**
-     * Check if appId is registered in database
-     *
-     * @param appId - package identifier
-     * @exception DB::SqlConnection::Exception::InternalError on internal error
-     * @return true if appId exists in the database
-     *
-     */
-    bool AppIdExists(const std::string &appId);
-
-    /**
-     * Check if pkgId is already registered in database
-     *
-     * @param pkgId - package identifier
-     * @exception DB::SqlConnection::Exception::InternalError on internal error
-     * @return true if pkgId exists in the database
-     *
-     */
-    bool PkgIdExists(const std::string &pkgId);
-
-    /**
-     * Check if authorId is already registered in database
-     *
-     * @param authorId - package identifier
-     * @exception DB::SqlConnection::Exception::InternalError on internal error
-     * @return true if authorId exists in the database
-     *
-     */
-    bool AuthorIdExists(const std::string &authorId);
 
 public:
     class Exception
@@ -217,61 +187,87 @@ public:
     void RollbackTransaction(void);
 
     /**
+     * Check if appName is registered in database
+     *
+     * @param appName - package identifier
+     * @exception DB::SqlConnection::Exception::InternalError on internal error
+     *
+     */
+    bool AppNameExists(const std::string &appName);
+
+    /**
+     * Check if pkgName is already registered in database
+     *
+     * @param pkgName - package identifier
+     * @exception DB::SqlConnection::Exception::InternalError on internal error
+     * @return true if pkgName exists in the database
+     *
+     */
+    bool PkgNameExists(const std::string &pkgName);
+
+    /**
+     * Check if authorId is already registered in database
+     *
+     * @param authorId numerical author identifier
+     * @exception DB::SqlConnection::Exception::InternalError on internal error
+     * @return true if authorId exists in the database
+     *
+     */
+    bool AuthorIdExists(int authorId);
+
+    /**
      * Return package id associated with a given application id
      *
-     * @param appId - application identifier
-     * @param[out] pkgId - return application's pkgId
-     * @return true is application exists, false otherwise
+     * @param appName - application identifier
+     * @param[out] pkgName - return application's package identifier
      * @exception DB::SqlConnection::Exception::InternalError on internal error
      */
-    bool GetAppPkgId(const std::string &appId, std::string &pkgId);
+    void GetAppPkgName(const std::string &appName, std::string &pkgName);
 
     /**
-     * Return package id and tizen version associated with a given application id
+     * Return Tizen version associated with a given application identifier
      *
-     * @param appId - application identifier
-     * @param[out] pkgId - return application's pkgId
-     * @param[out] tizenVer - return application's target tizen version
-     * @return true is application exists, false otherwise
+     * @param appName - application identifier
+     * @param[out] tizenVer - return application's target Tizen version
      * @exception DB::SqlConnection::Exception::InternalError on internal error
      */
-    bool GetAppPkgIdAndVer(const std::string &appId, std::string &pkgId, std::string &tizenVer);
+    void GetAppVersion(const std::string &appName, std::string &tizenVer);
 
     /**
-     * Retrieve list of privileges assigned to a pkgId
+     * Retrieve list of privileges assigned to a package
      *
-     * @param pkgId - package identifier
+     * @param pkgName - package identifier
      * @param uid - user identifier for whom privileges will be retrieved
-     * @param[out] currentPrivileges - list of current privileges assigned to pkgId
+     * @param[out] currentPrivileges - list of current privileges assigned to the package
      * @exception DB::SqlConnection::Exception::InternalError on internal error
      */
-    void GetPkgPrivileges(const std::string &pkgId, uid_t uid,
+    void GetPkgPrivileges(const std::string &pkgName, uid_t uid,
             std::vector<std::string> &currentPrivilege);
 
     /**
-     * Retrieve list of privileges assigned to an appId
+     * Retrieve list of privileges assigned to an appName
      *
-     * @param appId - application identifier
+     * @param appName - application identifier
      * @param uid - user identifier for whom privileges will be retrieved
-     * @param[out] currentPrivileges - list of current privileges assigned to appId
+     * @param[out] currentPrivileges - list of current privileges assigned to appName
      * @exception DB::SqlConnection::Exception::InternalError on internal error
      */
-    void GetAppPrivileges(const std::string &appId, uid_t uid,
+    void GetAppPrivileges(const std::string &appName, uid_t uid,
         std::vector<std::string> &currentPrivileges);
 
     /**
      * Add an application into the database
      *
-     * @param appId - application identifier
-     * @param pkgId - package identifier
+     * @param appName - application identifier
+     * @param pkgName - package identifier
      * @param uid - user identifier for whom application is going to be installed
      * @param targetTizenVer - target tizen version for application
      * @param author - author identifier
      * @exception DB::SqlConnection::Exception::InternalError on internal error
      */
     void AddApplication(
-            const std::string &appId,
-            const std::string &pkgId,
+            const std::string &appName,
+            const std::string &pkgName,
             uid_t uid,
             const std::string &targetTizenVer,
             const std::string &authorId);
@@ -279,39 +275,39 @@ public:
     /**
      * Remove an application from the database
      *
-     * @param appId - application identifier
+     * @param appName - application identifier
      * @param uid - user identifier whose application is going to be uninstalled
-     * @param[out] appIdIsNoMore - return info if appId is in the database
-     * @param[out] pkgIdIsNoMore - return info if pkgId is in the database
-     * @param[out] authorIdIsNoMore - return info if authorId is in the database
+     * @param[out] appNameIsNoMore - return info if appName is in the database
+     * @param[out] pkgNameIsNoMore - return info if pkgName is in the database
+     * @param[out] authorNameIsNoMore - return info if authorName is in the database
      * @exception DB::SqlConnection::Exception::InternalError on internal error
      */
     void RemoveApplication(
-            const std::string &appId,
+            const std::string &appName,
             uid_t uid,
-            bool &appIdIsNoMore,
-            bool &pkgIdIsNoMore,
-            bool &authorIdIsNoMore);
+            bool &appNameIsNoMore,
+            bool &pkgNameIsNoMore,
+            bool &authorNameIsNoMore);
 
     /**
      * Remove privileges assigned to application
      *
-     * @param appId - application identifier
+     * @param appName - application identifier
      * @param uid - user identifier for whom privileges will be removed
      * @exception DB::SqlConnection::Exception::InternalError on internal error
      */
-    void RemoveAppPrivileges(const std::string &appId, uid_t uid);
+    void RemoveAppPrivileges(const std::string &appName, uid_t uid);
 
     /**
      * Update privileges assigned to application
      * To assure data integrity this method must be called inside db transaction.
      *
-     * @param appId - application identifier
+     * @param appName - application identifier
      * @param uid - user identifier for whom privileges will be updated
      * @param privileges - list of privileges to assign
      * @exception DB::SqlConnection::Exception::InternalError on internal error
      */
-    void UpdateAppPrivileges(const std::string &appId, uid_t uid,
+    void UpdateAppPrivileges(const std::string &appName, uid_t uid,
             const std::vector<std::string> &privileges);
 
     /**
@@ -326,47 +322,47 @@ public:
     /**
      * Get count of existing sharing between given applications
      *
-     * @param ownerAppId - application identifier
-     * @param targetAppId - application identifier
+     * @param ownerAppName - application identifier
+     * @param targetAppName - application identifier
      * @param[out] count - count of sharing
      * @exception DB::SqlConnection::Exception::InternalError on internal error
      */
-    void GetOwnerTargetSharingCount(const std::string &ownerAppId, const std::string &targetAppId,
+    void GetOwnerTargetSharingCount(const std::string &ownerAppName, const std::string &targetAppName,
                                     int &count);
 
     /**
      * Get count of existing path sharing with target application
      *
-     * @param targetAppId - application identifier
+     * @param targetAppName - application identifier
      * @param path - user identifier for whom privileges will be updated
      * @param[out] count - count of sharing
      * @exception DB::SqlConnection::Exception::InternalError on internal error
      */
-    void GetTargetPathSharingCount(const std::string &targetAppId,
+    void GetTargetPathSharingCount(const std::string &targetAppName,
                                    const std::string &path,
                                    int &count);
 
     /**
      * Add information about path sharing between owner application and target application
      *
-     * @param ownerAppId - application identifier
-     * @param targetAppId - application identifier
+     * @param ownerAppName - application identifier
+     * @param targetAppName - application identifier
      * @param path - path name
      * @param pathLabel - label of path
      * @exception DB::SqlConnection::Exception::InternalError on internal error
      */
-    void ApplyPrivateSharing(const std::string &ownerAppId, const std::string &targetAppId,
+    void ApplyPrivateSharing(const std::string &ownerAppName, const std::string &targetAppName,
                              const std::string &path, const std::string &pathLabel);
 
     /**
      * Remove information about path sharing between owner application and target application
      *
-     * @param ownerAppId - application identifier
-     * @param targetAppId - application identifier
+     * @param ownerAppName - application identifier
+     * @param targetAppName - application identifier
      * @param path - path name
      * @exception DB::SqlConnection::Exception::InternalError on internal error
      */
-    void DropPrivateSharing(const std::string &ownerAppId, const std::string &targetAppId,
+    void DropPrivateSharing(const std::string &ownerAppName, const std::string &targetAppName,
                             const std::string &path);
 
     /**
@@ -404,34 +400,35 @@ public:
      * @exception DB::SqlConnection::Exception::InternalError on internal error
      */
     void GetUserApps(uid_t uid, std::vector<std::string> &apps);
+
     /**
      * Retrieve a list of all application ids for a package id
      *
-     * @param pkgId - package id
-     * @param[out] appIds - list of application ids for the package id
+     * @param pkgName - package identifier
+     * @param[out] appNames - list of application identifiers for the package
      * @exception DB::SqlConnection::Exception::InternalError on internal error
      */
-    void GetAppIdsForPkgId (const std::string &pkgId,
-        std::vector<std::string> &appIds);
+    void GetPkgApps(const std::string &pkgName, std::vector<std::string> &appNames);
+
     /**
      * Retrieve list of all apps excluding one specified (typically action originator)
      *
      * @param origApp - do not include specific application name in the list
-     * @param[out] apps - vector of appId describing installed 2.x apps,
+     * @param[out] apps - vector of application identifiers describing installed 2.x apps,
      *                    this parameter do not need to be empty, but
      *                    it is being overwritten during function call.
      * @exception DB::SqlConnection::Exception::InternalError on internal error
      */
-    void GetTizen2XApps(const std::string& origApp, std::vector<std::string> &apps);
+    void GetTizen2XApps(const std::string &origApp, std::vector<std::string> &apps);
 
     /**
      * Retrieve list of all apps and packages excluding one specified (typically action originator)
      *
      * @param origApp - do not include specific application name in the list
-     * @param[out] apps - vector of appId describing installed 2.x apps,
+     * @param[out] apps - vector of app identifiers describing installed 2.x apps,
      *                    this parameter do not need to be empty, but
      *                    it is being overwritten during function call.
-     * @param[out] packages - vector of pkgId describing installed 2.x packages,
+     * @param[out] packages - vector of package identifiers describing installed 2.x packages,
      *                    this parameter do not need to be empty, but
      *                    it is being overwritten during function call.
      * @exception DB::SqlConnection::Exception::InternalError on internal error
@@ -441,12 +438,12 @@ public:
 
     /* Retrive an id of an author from database
      *
-     * @param appId - application id
-     * @param[out] authorId - integer connected with author name
+     * @param appName[in] application identifier
+     * @param authorId[out] author id associated with the application, or -1 if no
+     *                      author was assigned during installation
      * @exception DB::SqlConnection::Exception::InternalError on internal error
      */
-    void GetAuthorIdForAppId(const std::string &appId,
-        std::string &authorId);
+    void GetAppAuthorId(const std::string &appName, int &authorId);
 
     /**
      * Retrieve list of resource groups

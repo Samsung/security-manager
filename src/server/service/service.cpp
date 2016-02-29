@@ -94,8 +94,8 @@ bool Service::processOne(const ConnectionID &conn, MessageBuffer &buffer,
                     LogDebug("call_type: SecurityModuleCall::APP_UNINSTALL");
                     processAppUninstall(buffer, send, uid);
                     break;
-                case SecurityModuleCall::APP_GET_PKGID:
-                    processGetPkgId(buffer, send);
+                case SecurityModuleCall::APP_GET_PKG_NAME:
+                    processGetPkgName(buffer, send);
                     break;
                 case SecurityModuleCall::APP_GET_GROUPS:
                     processGetAppGroups(buffer, send, uid, pid);
@@ -168,45 +168,45 @@ void Service::processAppInstall(MessageBuffer &buffer, MessageBuffer &send, uid_
 {
     app_inst_req req;
 
-    Deserialization::Deserialize(buffer, req.appId);
-    Deserialization::Deserialize(buffer, req.pkgId);
+    Deserialization::Deserialize(buffer, req.appName);
+    Deserialization::Deserialize(buffer, req.pkgName);
     Deserialization::Deserialize(buffer, req.privileges);
     Deserialization::Deserialize(buffer, req.appPaths);
     Deserialization::Deserialize(buffer, req.uid);
     Deserialization::Deserialize(buffer, req.tizenVersion);
-    Deserialization::Deserialize(buffer, req.authorId);
+    Deserialization::Deserialize(buffer, req.authorName);
     Serialization::Serialize(send, serviceImpl.appInstall(req, uid));
 }
 
 void Service::processAppUninstall(MessageBuffer &buffer, MessageBuffer &send, uid_t uid)
 {
-    std::string appId;
+    std::string appName;
 
-    Deserialization::Deserialize(buffer, appId);
-    Serialization::Serialize(send, serviceImpl.appUninstall(appId, uid));
+    Deserialization::Deserialize(buffer, appName);
+    Serialization::Serialize(send, serviceImpl.appUninstall(appName, uid));
 }
 
-void Service::processGetPkgId(MessageBuffer &buffer, MessageBuffer &send)
+void Service::processGetPkgName(MessageBuffer &buffer, MessageBuffer &send)
 {
-    std::string appId;
-    std::string pkgId;
+    std::string appName;
+    std::string pkgName;
     int ret;
 
-    Deserialization::Deserialize(buffer, appId);
-    ret = serviceImpl.getPkgId(appId, pkgId);
+    Deserialization::Deserialize(buffer, appName);
+    ret = serviceImpl.getPkgName(appName, pkgName);
     Serialization::Serialize(send, ret);
     if (ret == SECURITY_MANAGER_SUCCESS)
-        Serialization::Serialize(send, pkgId);
+        Serialization::Serialize(send, pkgName);
 }
 
 void Service::processGetAppGroups(MessageBuffer &buffer, MessageBuffer &send, uid_t uid, pid_t pid)
 {
-    std::string appId;
+    std::string appName;
     std::unordered_set<gid_t> gids;
     int ret;
 
-    Deserialization::Deserialize(buffer, appId);
-    ret = serviceImpl.getAppGroups(appId, uid, pid, gids);
+    Deserialization::Deserialize(buffer, appName);
+    ret = serviceImpl.getAppGroups(appName, uid, pid, gids);
     Serialization::Serialize(send, ret);
     if (ret == SECURITY_MANAGER_SUCCESS) {
         Serialization::Serialize(send, static_cast<int>(gids.size()));
@@ -313,16 +313,16 @@ void Service::processGroupsGet(MessageBuffer &send)
 
 void Service::processAppHasPrivilege(MessageBuffer &recv, MessageBuffer &send)
 {
-    std::string appId;
+    std::string appName;
     std::string privilege;
     uid_t uid;
 
-    Deserialization::Deserialize(recv, appId);
+    Deserialization::Deserialize(recv, appName);
     Deserialization::Deserialize(recv, privilege);
     Deserialization::Deserialize(recv, uid);
 
     bool result;
-    int ret = serviceImpl.appHasPrivilege(appId, privilege, uid, result);
+    int ret = serviceImpl.appHasPrivilege(appName, privilege, uid, result);
 
     Serialization::Serialize(send, ret);
     if (ret == SECURITY_MANAGER_SUCCESS)
@@ -331,23 +331,23 @@ void Service::processAppHasPrivilege(MessageBuffer &recv, MessageBuffer &send)
 
 void Service::processApplyPrivateSharing(MessageBuffer &recv, MessageBuffer &send)
 {
-    std::string ownerAppId, targetAppId;
+    std::string ownerAppName, targetAppName;
     std::vector<std::string> paths;
-    Deserialization::Deserialize(recv, ownerAppId);
-    Deserialization::Deserialize(recv, targetAppId);
+    Deserialization::Deserialize(recv, ownerAppName);
+    Deserialization::Deserialize(recv, targetAppName);
     Deserialization::Deserialize(recv, paths);
-    int ret = serviceImpl.applyPrivatePathSharing(ownerAppId, targetAppId, paths);
+    int ret = serviceImpl.applyPrivatePathSharing(ownerAppName, targetAppName, paths);
     Serialization::Serialize(send, ret);
 }
 
 void Service::processDropPrivateSharing(MessageBuffer &recv, MessageBuffer &send)
 {
-    std::string ownerAppId, targetAppId;
+    std::string ownerAppName, targetAppName;
     std::vector<std::string> paths;
-    Deserialization::Deserialize(recv, ownerAppId);
-    Deserialization::Deserialize(recv, targetAppId);
+    Deserialization::Deserialize(recv, ownerAppName);
+    Deserialization::Deserialize(recv, targetAppName);
     Deserialization::Deserialize(recv, paths);
-    int ret = serviceImpl.dropPrivatePathSharing(ownerAppId, targetAppId, paths);
+    int ret = serviceImpl.dropPrivatePathSharing(ownerAppName, targetAppName, paths);
     Serialization::Serialize(send, ret);
 }
 } // namespace SecurityManager

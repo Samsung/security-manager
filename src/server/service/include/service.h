@@ -76,12 +76,12 @@ private:
     void processAppUninstall(MessageBuffer &buffer, MessageBuffer &send, uid_t uid);
 
     /**
-     * Process getting package id from app id
+     * Process getting package identifier from an app identifier
      *
      * @param  buffer Raw received data buffer
      * @param  send   Raw data buffer to be sent
      */
-    void processGetPkgId(MessageBuffer &buffer, MessageBuffer &send);
+    void processGetPkgName(MessageBuffer &buffer, MessageBuffer &send);
 
     /**
      * Process getting permitted group ids for app id

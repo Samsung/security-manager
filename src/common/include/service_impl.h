@@ -47,8 +47,10 @@ private:
 
     static bool getZoneId(std::string &zoneId);
 
-    int dropOnePrivateSharing(const std::string &ownerAppId, const std::string &ownerPkgId,
-                              const std::vector<std::string> &ownerPkgContents, const std::string &targetAppId,
+    int dropOnePrivateSharing(const std::string &ownerAppName,
+                              const std::string &ownerPkgName,
+                              const std::vector<std::string> &ownerPkgContents,
+                              const std::string &targetAppName,
                               const std::string &path);
 
 public:
@@ -68,39 +70,39 @@ public:
     /**
     * Process application uninstallation request.
     *
-    * @param[in] req uninstallation request
+    * @param[in] appName application identifier
     * @param[in] uid id of the requesting user
     *
     * @return API return code, as defined in protocols.h
     */
-    int appUninstall(const std::string &appId, uid_t uid);
+    int appUninstall(const std::string &appName, uid_t uid);
 
     /**
     * Process package id query.
     * Retrieves the package id associated with given application id.
     *
-    * @param[in] appId application identifier
-    * @param[out] pkgId returned package identifier
+    * @param[in] appName application identifier
+    * @param[out] pkgName returned package identifier
     *
     * @return API return code, as defined in protocols.h
     */
-    int getPkgId(const std::string &appId, std::string &pkgId);
+    int getPkgName(const std::string &appName, std::string &pkgName);
 
     /**
     * Process query for supplementary groups allowed for the application.
-    * For given appId and uid, calculate allowed privileges that give
+    * For given \ref appName and \ref uid, calculate allowed privileges that give
     * direct access to file system resources. For each permission Cynara will be
     * queried.
     * Returns set of group ids that are permitted.
     *
-    * @param[in]  appId application identifier
+    * @param[in]  appName application identifier
     * @param[in]  uid id of the requesting user
     * @param[in]  pid id of the requesting process (to construct Cynara session id)
     * @param[out] gids returned set of allowed group ids
     *
     * @return API return code, as defined in protocols.h
     */
-    int getAppGroups(const std::string &appId, uid_t uid, pid_t pid, std::unordered_set<gid_t> &gids);
+    int getAppGroups(const std::string &appName, uid_t uid, pid_t pid, std::unordered_set<gid_t> &gids);
 
     /**
     * Process user adding request.
@@ -183,40 +185,40 @@ public:
     int policyGetGroups(std::vector<std::string> &groups);
 
     /**
-     * Process checking application's privilege access based on app_id
+     * Process checking application's privilege access based on app_name
      *
-     * @param[in]  appId application identifier
+     * @param[in]  appName application identifier
      * @param[in]  privilege privilege name
      * @param[in]  uid user identifier
      * @param[out] result placeholder for check result
      *
      * @return API return code, as defined in protocols.h
      */
-    int appHasPrivilege(std::string appId, std::string privilege, uid_t uid, bool &result);
+    int appHasPrivilege(std::string appName, std::string privilege, uid_t uid, bool &result);
 
     /**
      * Process applying private path sharing between applications.
      *
-     * @param[in] ownerAppId application owning paths
-     * @param[in] targetAppId application which paths will be shared with
+     * @param[in] ownerAppName application owning paths
+     * @param[in] targetAppName application which paths will be shared with
      * @param[in] paths vector of paths to be shared
      *
      * @return API return code, as defined in protocols.h
      */
-    int applyPrivatePathSharing(const std::string &ownerAppId,
-                                const std::string &targetAppId,
+    int applyPrivatePathSharing(const std::string &ownerAppName,
+                                const std::string &targetAppName,
                                 const std::vector<std::string> &paths);
 
     /**
      * Process droping private path sharing between applications.
      *
-     * @param[in] ownerAppId application owning paths
-     * @param[in] targetAppId application which paths won't be anymore shared with
+     * @param[in] ownerAppName application owning paths
+     * @param[in] targetAppName application which paths won't be anymore shared with
      * @param[in] paths vector of paths to be stopped being shared
      * @return API return code, as defined in protocols.h
      */
-    int dropPrivatePathSharing(const std::string &ownerAppId,
-                               const std::string &targetAppId,
+    int dropPrivatePathSharing(const std::string &ownerAppName,
+                               const std::string &targetAppName,
                                const std::vector<std::string> &paths);
 };
 

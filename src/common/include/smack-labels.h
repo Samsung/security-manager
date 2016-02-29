@@ -37,32 +37,32 @@ namespace SmackLabels {
 /**
  * Sets Smack labels on a directory and its contents, recursively.
  *
- * @param pkgId[in] application's package identifier
+ * @param pkgName[in] application's package identifier
  * @param path[in] path to a file or directory to setup
  * @param pathType[in] type of path to setup. See description of
  *         app_install_path_type in security-manager.h for details
  */
 void setupPath(
-        const std::string &pkgId,
+        const std::string &pkgName,
         const std::string &path,
         app_install_path_type pathType,
-        const std::string &authorId = std::string());
+        const int authorId = -1);
 
 /**
  * Sets Smack labels on a <ROOT_APP>/<pkg_id> non-recursively
  *
- * @param pkgId[in] package identifier
+ * @param pkgName[in] package identifier
  * @param basePath[in] <ROOT_APP> path
  */
-void setupAppBasePath(const std::string &pkgId, const std::string &basePath);
+void setupAppBasePath(const std::string &pkgName, const std::string &basePath);
 
 /**
  * Changes Smack label on path to enable private sharing
  *
- * @param pkgId[in] package identifier
+ * @param pkgName[in] package identifier
  * @param path[in] path
  */
-void setupSharedPrivatePath(const std::string &pkgId, const std::string &path);
+void setupSharedPrivatePath(const std::string &pkgName, const std::string &path);
 
 /**
  * Generates application name for a label fetched from Cynara
@@ -73,46 +73,46 @@ void setupSharedPrivatePath(const std::string &pkgId, const std::string &path);
 std::string generateAppNameFromLabel(const std::string &label);
 
 /**
- * Generates label for an application with an application ID read from @ref appId.
+ * Generates label for an application identifier
  *
- * @param[in] appId application's identifier
+ * @param[in] appName application identifier
  * @return resulting Smack label
 */
-std::string generateAppLabel(const std::string &appId);
+std::string generateAppLabel(const std::string &appName);
 
 /**
- * Generates label for an application with an pkgId, specific
+ * Generates label for an application with @ref pkgName, specific
  * for folders that can be modified by owner and other apps can only read it.
  *
- * @param[in] pkgId application's package identifier
+ * @param[in] pkgName application package identifier
  * @return resulting Smack label
 */
-std::string generatePkgLabelOwnerRWothersRO(const std::string &pkgId);
+std::string generatePkgLabelOwnerRWothersRO(const std::string &pkgName);
 
 /**
- * Generates label for an application with a package ID read from @ref pkgId.
+ * Generates label for a package identifier
  *
- * @param[in] pkgId
+ * @param[in] pkgName package identifier
  * @return resulting Smack label
  */
-std::string generatePkgLabel(const std::string &pkgId);
+std::string generatePkgLabel(const std::string &pkgName);
 
 /**
- * Generates label for private application RO files with package ID @ref pkgId
+ * Generates label for private application RO files with package identifier @ref pkgName
  *
- * @param[in] pkgId
+ * @param[in] pkgName package identifier
  * @return resulting Smack label
  */
-std::string generatePkgROLabel(const std::string &pkgId);
+std::string generatePkgROLabel(const std::string &pkgName);
 
 /**
  * Generates unique label per path for private path sharing.
  *
- * @param[in] pkgId
+ * @param[in] pkgName
  * @param[in] path
  * @return resulting Smack label
  */
-std::string generateSharedPrivateLabel(const std::string &pkgId, const std::string &path);
+std::string generateSharedPrivateLabel(const std::string &pkgName, const std::string &path);
 
 /*
  * Generates label for trusted paths. Trusted paths are paths where all application
@@ -121,7 +121,7 @@ std::string generateSharedPrivateLabel(const std::string &pkgId, const std::stri
  * @param[in] authorId
  * @return resulting Smack label
  */
-std::string generateAuthorLabel(const std::string &authorId);
+std::string generateAuthorLabel(const int authorId);
 
 /**
  * Returns smack label for given socket

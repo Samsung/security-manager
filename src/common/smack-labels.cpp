@@ -132,22 +132,22 @@ static void labelDir(const std::string &path, const std::string &label,
 }
 
 void setupPath(
-        const std::string &pkgId,
+        const std::string &pkgName,
         const std::string &path,
         app_install_path_type pathType,
-        const std::string &authorId)
+        const int authorId)
 {
     std::string label;
     bool label_executables, label_transmute;
 
     switch (pathType) {
     case SECURITY_MANAGER_PATH_RW:
-        label = generatePkgLabel(pkgId);
+        label = generatePkgLabel(pkgName);
         label_executables = false;
         label_transmute = true;
         break;
     case SECURITY_MANAGER_PATH_RO:
-        label = generatePkgROLabel(pkgId);
+        label = generatePkgROLabel(pkgName);
         label_executables = false;
         label_transmute = false;
         break;
@@ -157,12 +157,12 @@ void setupPath(
         label_transmute = true;
         break;
     case SECURITY_MANAGER_PATH_OWNER_RW_OTHER_RO:
-        label = generatePkgLabelOwnerRWothersRO(pkgId);
+        label = generatePkgLabelOwnerRWothersRO(pkgName);
         label_executables = false;
         label_transmute = true;
         break;
     case SECURITY_MANAGER_PATH_TRUSTED_RW:
-        if (authorId.empty())
+        if (authorId < 0)
             ThrowMsg(SmackException::InvalidParam, "You must define author to use PATH_TRUSED_RW");
         label = generateAuthorLabel(authorId);
         label_executables = false;
@@ -175,14 +175,14 @@ void setupPath(
     return labelDir(path, label, label_transmute, label_executables);
 }
 
-void setupAppBasePath(const std::string &pkgId, const std::string &basePath)
+void setupAppBasePath(const std::string &pkgName, const std::string &basePath)
 {
-    std::string pkgPath = basePath + "/" + pkgId;
+    std::string pkgPath = basePath + "/" + pkgName;
     pathSetSmack(pkgPath.c_str(), LABEL_FOR_APP_PUBLIC_RO_PATH, XATTR_NAME_SMACK);
 }
 
-void setupSharedPrivatePath(const std::string &pkgId, const std::string &path) {
-    pathSetSmack(path.c_str(), generateSharedPrivateLabel(pkgId, path), XATTR_NAME_SMACK);
+void setupSharedPrivatePath(const std::string &pkgName, const std::string &path) {
+    pathSetSmack(path.c_str(), generateSharedPrivateLabel(pkgName, path), XATTR_NAME_SMACK);
 }
 
 std::string generateAppNameFromLabel(const std::string &label)
@@ -190,62 +190,62 @@ std::string generateAppNameFromLabel(const std::string &label)
     static const char prefix[] = "User::App::";
 
     if (label.compare(0, sizeof(prefix) - 1, prefix))
-        ThrowMsg(SmackException::InvalidLabel, "Cannot extract appId from Smack label " << label);
+        ThrowMsg(SmackException::InvalidLabel, "Cannot extract appName from Smack label " << label);
 
     std::string ret = label.substr(sizeof(prefix) - 1);
 
     if (ret.size() == 0) {
-        ThrowMsg(SmackException::InvalidLabel, "No appId in Smack label " << label);
+        ThrowMsg(SmackException::InvalidLabel, "No appName in Smack label " << label);
     }
 
     return ret;
 }
 
-std::string generateAppLabel(const std::string &appId)
+std::string generateAppLabel(const std::string &appName)
 {
-    std::string label = "User::App::" + appId;
+    std::string label = "User::App::" + appName;
 
     if (smack_label_length(label.c_str()) <= 0)
-        ThrowMsg(SmackException::InvalidLabel, "Invalid Smack label generated from appId " << appId);
+        ThrowMsg(SmackException::InvalidLabel, "Invalid Smack label generated from appName " << appName);
 
     return label;
 }
 
-std::string generatePkgLabelOwnerRWothersRO(const std::string &pkgId)
+std::string generatePkgLabelOwnerRWothersRO(const std::string &pkgName)
 {
-    std::string label = "User::Pkg::" + pkgId + "::SharedRO";
+    std::string label = "User::Pkg::" + pkgName + "::SharedRO";
 
     if (smack_label_length(label.c_str()) <= 0)
-        ThrowMsg(SmackException::InvalidLabel, "Invalid Smack label generated from pkgId " << pkgId);
+        ThrowMsg(SmackException::InvalidLabel, "Invalid Smack label generated from pkgName " << pkgName);
 
     return label;
 }
 
-std::string generatePkgLabel(const std::string &pkgId)
+std::string generatePkgLabel(const std::string &pkgName)
 {
-    std::string label = "User::Pkg::" + pkgId;
+    std::string label = "User::Pkg::" + pkgName;
 
     if (smack_label_length(label.c_str()) <= 0)
-        ThrowMsg(SmackException::InvalidLabel, "Invalid Smack label generated from pkgId " << pkgId);
+        ThrowMsg(SmackException::InvalidLabel, "Invalid Smack label generated from pkgName " << pkgName);
 
     return label;
 }
 
-std::string generatePkgROLabel(const std::string &pkgId)
+std::string generatePkgROLabel(const std::string &pkgName)
 {
-    std::string label = "User::Pkg::" + pkgId + "::RO";
+    std::string label = "User::Pkg::" + pkgName + "::RO";
 
     if (smack_label_length(label.c_str()) <= 0)
-        ThrowMsg(SmackException::InvalidLabel, "Invalid Smack label generated from pkgId " << pkgId);
+        ThrowMsg(SmackException::InvalidLabel, "Invalid Smack label generated from pkgName " << pkgName);
 
     return label;
 }
 
-std::string generateSharedPrivateLabel(const std::string &pkgId, const std::string &path)
+std::string generateSharedPrivateLabel(const std::string &pkgName, const std::string &path)
 {
     // Prefix $1$ causes crypt() to use MD5 function
     std::string label = "User::Pkg::";
-    std::string salt = "$1$" + pkgId;
+    std::string salt = "$1$" + pkgName;
 
     const char * cryptLabel = crypt(path.c_str(), salt.c_str());
     if (!cryptLabel) {
@@ -304,14 +304,14 @@ std::string getSmackLabelFromPid(pid_t pid)
     return result;
 }
 
-std::string generateAuthorLabel(const std::string &authorId)
+std::string generateAuthorLabel(const int authorId)
 {
-    if (authorId.empty()) {
+    if (authorId < 0) {
         LogError("Author was not set. It's not possible to generate label for unknown author.");
         ThrowMsg(SmackException::InvalidLabel, "Could not generate valid label without authorId");
     }
 
-    return "User::Author::" + authorId;
+    return "User::Author::" + std::to_string(authorId);
 }
 
 } // namespace SmackLabels

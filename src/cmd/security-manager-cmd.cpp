@@ -210,9 +210,9 @@ static void parseInstallOptions(int argc, char *argv[],
     parseCommandOptions(argc, argv, getInstallOptions(), vm);
 
     if (vm.count("app"))
-        req.appId = vm["app"].as<std::string>();
+        req.appName = vm["app"].as<std::string>();
     if (vm.count("pkg"))
-        req.pkgId = vm["pkg"].as<std::string>();
+        req.pkgName = vm["pkg"].as<std::string>();
     if (vm.count("path")) {
         const std::vector<std::string> paths =
             vm["path"].as<std::vector<std::string> >();
@@ -237,7 +237,7 @@ static void parseInstallOptions(int argc, char *argv[],
     if (vm.count("uid"))
         req.uid = vm["uid"].as<uid_t>();
     if (vm.count("author-id")) {
-        req.authorId = vm["author-id"].as<std::string>();
+        req.authorName = vm["author-id"].as<std::string>();
     }
 
 }
@@ -266,15 +266,15 @@ static int installApp(const struct app_inst_req &req)
 
     ret = security_manager_app_install(&req);
     if (SECURITY_MANAGER_SUCCESS == ret) {
-        std::cout << "Application " << req.appId <<
+        std::cout << "Application " << req.appName <<
                   " installed successfully." << std::endl;
-        LogDebug("Application " << req.appId <<
+        LogDebug("Application " << req.appName <<
                  " installed successfully.");
     } else {
-        std::cout << "Failed to install " << req.appId << " application: " <<
+        std::cout << "Failed to install " << req.appName << " application: " <<
                   security_manager_strerror(static_cast<lib_retcode>(ret)) <<
                   " (" << ret << ")." << std::endl;
-        LogError("Failed to install " << req.appId << " application: " <<
+        LogError("Failed to install " << req.appName << " application: " <<
                  security_manager_strerror(static_cast<lib_retcode>(ret)) <<
                  " (" << ret << ")." << std::endl);
     }

@@ -33,13 +33,13 @@
 #include <security-manager-types.h>
 
 struct app_inst_req {
-    std::string appId;
-    std::string pkgId;
+    std::string appName;
+    std::string pkgName;
     std::vector<std::string> privileges;
     std::vector<std::pair<std::string, int>> appPaths;
     uid_t uid;
     std::string tizenVersion;
-    std::string authorId;
+    std::string authorName;
 };
 
 struct user_req {
@@ -48,8 +48,8 @@ struct user_req {
 };
 
 struct private_sharing_req {
-    std::string ownerAppId;
-    std::string targetAppId;
+    std::string ownerAppName;
+    std::string targetAppName;
     std::vector<std::string> paths;
 };
 
@@ -61,7 +61,7 @@ enum class SecurityModuleCall
 {
     APP_INSTALL,
     APP_UNINSTALL,
-    APP_GET_PKGID,
+    APP_GET_PKG_NAME,
     APP_GET_GROUPS,
     APP_APPLY_PRIVATE_SHARING,
     APP_DROP_PRIVATE_SHARING,
@@ -83,13 +83,13 @@ using namespace SecurityManager;
 
 struct policy_entry : ISerializable {
     std::string user;           // uid converted to string
-    std::string appId;          // application identifier
+    std::string appName;        // application identifier
     std::string privilege;      // Cynara privilege
     std::string currentLevel;   // current level of privielege, or level asked to be set in privacy manager bucket
     std::string maxLevel;       // holds read maximum policy status or status to be set in admin bucket
 
     policy_entry() : user(std::to_string(getuid())),
-                    appId(SECURITY_MANAGER_ANY),
+                    appName(SECURITY_MANAGER_ANY),
                     privilege(SECURITY_MANAGER_ANY),
                     currentLevel(""),
                     maxLevel("")
@@ -97,7 +97,7 @@ struct policy_entry : ISerializable {
 
     policy_entry(IStream &stream) {
         Deserialization::Deserialize(stream, user);
-        Deserialization::Deserialize(stream, appId);
+        Deserialization::Deserialize(stream, appName);
         Deserialization::Deserialize(stream, privilege);
         Deserialization::Deserialize(stream, currentLevel);
         Deserialization::Deserialize(stream, maxLevel);
@@ -105,7 +105,7 @@ struct policy_entry : ISerializable {
 
     virtual void Serialize(IStream &stream) const {
         Serialization::Serialize(stream,
-            user, appId, privilege, currentLevel, maxLevel);
+            user, appName, privilege, currentLevel, maxLevel);
     }
 
 };

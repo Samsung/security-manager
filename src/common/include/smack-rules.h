@@ -50,15 +50,15 @@ public:
 
     void addFromTemplate(
             const RuleVector &templateRules,
-            const std::string &appId,
-            const std::string &pkgId,
-            const std::string &authorId);
+            const std::string &appName,
+            const std::string &pkgName,
+            const int authorId);
 
     void addFromTemplateFile(
             const std::string &templatePath,
-            const std::string &appId,
-            const std::string &pkgId,
-            const std::string &authorId);
+            const std::string &appName,
+            const std::string &pkgName,
+            const int authorId);
 
     void apply() const;
     void clear() const;
@@ -77,11 +77,11 @@ public:
     /**
      * Create cross dependencies for all other 2.X applications
      *
-     * @param[in] pkgId - installed package id to access it's shared dir
+     * @param[in] pkgName - installed package identifier to access it's shared dir
      * @param[in] other2XApps - list of 2.x apps to grant access
      */
     void generateAllowOther2XApplicationDeps(
-            const std::string pkgId,
+            const std::string pkgName,
             const std::vector<std::string> &other2XApps);
 
     /**
@@ -90,17 +90,17 @@ public:
      * Function creates smack rules using predefined template. Rules are applied
      * to the kernel and saved on persistent storage so they are loaded on system boot.
      *
-     * @param[in] appId - application id that is beeing installed
-     * @param[in] pkgId - package id that the application is in
+     * @param[in] appName - application identifier
+     * @param[in] pkgName - package identifier
      * @param[in] authorId - author id of application
      * @param[in] pkgContents - list of all applications in the package
      * @param[in] appsGranted - list of 2.x apps granted access
      * @param[in] accessPackages - list of 2.x packages to be accessed
      */
     static void installApplicationRules(
-            const std::string &appId,
-            const std::string &pkgId,
-            const std::string &authorId,
+            const std::string &appName,
+            const std::string &pkgName,
+            const int authorId,
             const std::vector<std::string> &pkgContents,
             const std::vector<std::string> &appsGranted,
             const std::vector<std::string> &accessPackages);
@@ -111,13 +111,9 @@ public:
      * Function loads package-specific smack rules, revokes them from the kernel
      * and removes them from the persistent storage.
      *
-     * @param[in] pkgId - package identifier
+     * @param[in] pkgName - package identifier
      */
-    static void uninstallPackageRules(const std::string &pkgId);
-
-    /* FIXME: Remove this function if real pkgId instead of "User" label will be used
-     * in generateAppLabel(). */
-    static void addMissingRulesFix();
+    static void uninstallPackageRules(const std::string &pkgName);
 
     /**
     * Uninstall application-specific smack rules.
@@ -125,9 +121,9 @@ public:
     * Function removes application specific rules from the kernel, and
     * removes them for persistent storage.
     *
-    * @param[in] appId - application id
+    * @param[in] appName - application identifier
     */
-    static void uninstallApplicationRules(const std::string &appId);
+    static void uninstallApplicationRules(const std::string &appName);
 
     /**
      * Update package specific rules
@@ -136,12 +132,12 @@ public:
      * need to exist currently for all application in that
      * package
      *
-     * @param[in] pkgId - package id that the application is in
+     * @param[in] pkgName - package identifier that the application is in
      * @param[in] pkgContents - list of all applications in the package
      * @param[in] appsGranted - list of 2.x apps granted access
      */
     static void updatePackageRules(
-            const std::string &pkgId,
+            const std::string &pkgName,
             const std::vector<std::string> &pkgContents,
             const std::vector<std::string> &appsGranted);
 
@@ -150,7 +146,7 @@ public:
      *
      * param[in] authorId - identification (datbase key) of the author
      */
-    static void uninstallAuthorRules(const std::string &authorId);
+    static void uninstallAuthorRules(const int authorId);
 
     /**
      * Add rules related to private path sharing rules
@@ -159,18 +155,18 @@ public:
      * If isPathSharedAlready, no rule for owner, User or System to path label will be applied.
      * If isTargetSharingAlready, no rule for directory traversing is set for target.
      *
-     * @param[in] ownerAppId - package id of path owner
+     * @param[in] ownerPkgName - package identifier of path owner
      * @param[in] ownerPkgContents - vector of application ids contained in package which owner
      *                               application belongs to
-     * @param[in] targetAppId - id of the target application
+     * @param[in] targetAppName - application identifier of the target application
      * @param[in] pathLabel - a list of all applications in the package
      * @param[in] isPathSharedAlready - flag indicated, if path has been shared before
      * @param[in] isTargetSharingAlready - flag indicated, if target is already sharing anything
      *                                     with owner
      */
-    static void applyPrivateSharingRules(const std::string &ownerPkgId,
+    static void applyPrivateSharingRules(const std::string &ownerPkgName,
                                          const std::vector<std::string> &ownerPkgContents,
-                                         const std::string &targetAppId,
+                                         const std::string &targetAppName,
                                          const std::string &pathLabel,
                                          bool isPathSharedAlready,
                                          bool isTargetSharingAlready);
@@ -182,52 +178,52 @@ public:
      * be removed.
      * If isTargetSharingNoMore, rule for directory traversing is removed for target.
      *
-     * @param[in] ownerAppId - package id of path owner
+     * @param[in] ownerPkgName - package identifier of path owner
      * @param[in] ownerPkgContents - vector of application ids contained in package which owner
      *                               application belongs to
-     * @param[in] targetAppId - id of the target application
+     * @param[in] targetAppName - application identifier of the target application
      * @param[in] pathLabel - a list of all applications in the package
      * @param[in] isPathSharedNoMore - flag indicated, if path is not shared anymore
      * @param[in] isTargetSharingNoMore - flag indicated, if target is not sharing anything
      *                                    with owner
      */
-    static void dropPrivateSharingRules(const std::string &ownerPkgId,
+    static void dropPrivateSharingRules(const std::string &ownerPkgName,
                                         const std::vector<std::string> &ownerPkgContents,
-                                        const std::string &targetAppId,
+                                        const std::string &targetAppName,
                                         const std::string &pathLabel,
                                         bool isPathSharedNoMore,
                                         bool isTargetSharingNoMore);
 
-    static void updatePackageRules(const std::string &pkgId, const std::vector<std::string> &pkgContents);
+    static void updatePackageRules(const std::string &pkgName, const std::vector<std::string> &pkgContents);
 
 private:
     static void useTemplate(
             const std::string &templatePath,
             const std::string &outputPath,
-            const std::string &appId,
-            const std::string &pkgId,
-            const std::string &authorId);
+            const std::string &appName,
+            const std::string &pkgName,
+            const int authorId = -1);
 
     /**
      * Create a path for package rules
      *
      */
-    static std::string getPackageRulesFilePath(const std::string &pkgId);
+    static std::string getPackageRulesFilePath(const std::string &pkgName);
 
     /**
      * Create a path for application rules
      */
-    static std::string getApplicationRulesFilePath(const std::string &appId);
+    static std::string getApplicationRulesFilePath(const std::string &appName);
 
     /**
      * Create a path for application rules
      */
-    static std::string getPkgRulesFilePath(const std::string &pkgId);
+    static std::string getPkgRulesFilePath(const std::string &pkgName);
 
     /**
      * Create a path for author rules
      */
-    static std::string getAuthorRulesFilePath(const std::string &authorId);
+    static std::string getAuthorRulesFilePath(int authorId);
 
     /**
      * Uninstall rules inside a specified file path
@@ -237,16 +233,16 @@ private:
      *
      * @param[in] path - path to the file that contains the rules
      */
-    static void uninstallRules (const std::string &path);
+    static void uninstallRules(const std::string &path);
 
     /**
      * Allow application to access other packages shared directory.
      *
-     * @param[in] path - path to the file that contains the rules
+     * @param[in] appName - application identifier
      * @param[in] other2XPackages - list of 2.x packages to be accessed
      */
     static void generateAppToOtherPackagesDeps(
-            const std::string appId,
+            const std::string appName,
             const std::vector<std::string> &other2XPackages);
 
     /**

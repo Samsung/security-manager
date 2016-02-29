@@ -127,105 +127,107 @@ void PrivilegeDb::RollbackTransaction(void)
     });
 }
 
-bool PrivilegeDb::PkgIdExists(const std::string &pkgId)
+bool PrivilegeDb::PkgNameExists(const std::string &pkgName)
 {
     return try_catch<bool>([&] {
-        auto command = getStatement(StmtType::EPkgIdExists);
-        command->BindString(1, pkgId);
-        return command->Step();
+        auto command = getStatement(StmtType::EPkgNameExists);
+        int cnt = 0;
+
+        command->BindString(1, pkgName);
+        if (command->Step())
+            cnt = command->GetColumnInteger(0);
+
+        LogDebug("PkgName " << pkgName  << " found in " << cnt << " entries in db");
+
+        return (cnt > 0);
     });
 }
 
-bool PrivilegeDb::AppIdExists(const std::string &appId)
+bool PrivilegeDb::AppNameExists(const std::string &appName)
 {
     return try_catch<bool>([&] {
-        auto command = getStatement(StmtType::EAppIdExists);
-        command->BindString(1, appId);
-        return command->Step();
+        auto command = getStatement(StmtType::EAppNameExists);
+        int cnt = 0;
+
+        command->BindString(1, appName);
+        if (command->Step())
+            cnt = command->GetColumnInteger(0);
+
+        LogDebug("AppName " << appName << " found in " << cnt << " entries in db");
+
+        return (cnt > 0);
     });
 }
 
-bool PrivilegeDb::GetAppPkgId(const std::string &appId, std::string &pkgId)
+void PrivilegeDb::GetAppPkgName(const std::string &appName, std::string &pkgName)
 {
-    return try_catch<bool>([&] {
-        auto command = getStatement(StmtType::EGetPkgId);
-        command->BindString(1, appId);
+    return try_catch<void>([&] {
+        pkgName.clear();
 
-        if (!command->Step()) {
-            // No application with such appId
-            return false;
-        }
+        auto command = getStatement(StmtType::EGetAppPkgName);
+        command->BindString(1, appName);
 
-        // application package found in the database, get it
-        pkgId = command->GetColumnString(0);
-
-        return true;
+        if (command->Step())
+            pkgName = command->GetColumnString(0);
     });
 }
 
-bool PrivilegeDb::GetAppPkgIdAndVer(const std::string &appId, std::string &pkgId, std::string &tizenVer)
+void PrivilegeDb::GetAppVersion(const std::string &appName, std::string &tizenVer)
 {
-    return try_catch<bool>([&] {
-        auto command = getStatement(StmtType::EGetPkgIdAndVer);
-        command->BindString(1, appId);
+    return try_catch<void>([&] {
+        tizenVer.clear();
 
-        if (!command->Step()) {
-            // No application with such appId
-            return false;
-        }
+        auto command = getStatement(StmtType::EGetAppVersion);
+        command->BindString(1, appName);
 
-        // application package found in the database, get it
-        pkgId = command->GetColumnString(0);
-        tizenVer = command->GetColumnString(1);
-
-        return true;
+        if (command->Step())
+            tizenVer = command->GetColumnString(0);
     });
 }
 
 void PrivilegeDb::AddApplication(
-        const std::string &appId,
-        const std::string &pkgId,
+        const std::string &appName,
+        const std::string &pkgName,
         uid_t uid,
         const std::string &targetTizenVer,
-        const std::string &authorId)
+        const std::string &authorName)
 {
     try_catch<void>([&] {
         auto command = getStatement(StmtType::EAddApplication);
-        command->BindString(1, appId);
-        command->BindString(2, pkgId);
+        command->BindString(1, appName);
+        command->BindString(2, pkgName);
         command->BindInteger(3, static_cast<unsigned int>(uid));
         command->BindString(4, targetTizenVer);
-        authorId.empty() ? command->BindNull(5) : command->BindString(5, authorId);
+        authorName.empty() ? command->BindNull(5) : command->BindString(5, authorName);
 
         if (command->Step()) {
             LogDebug("Unexpected SQLITE_ROW answer to query: " <<
                     Queries.at(StmtType::EAddApplication));
         };
 
-        LogDebug("Added appId: " << appId << ", pkgId: " << pkgId);
+        LogDebug("Added appName: " << appName << ", pkgName: " << pkgName);
     });
 }
 
 void PrivilegeDb::RemoveApplication(
-        const std::string &appId,
+        const std::string &appName,
         uid_t uid,
-        bool &appIdIsNoMore,
-        bool &pkgIdIsNoMore,
-        bool &authorIdIsNoMore)
+        bool &appNameIsNoMore,
+        bool &pkgNameIsNoMore,
+        bool &authorNameIsNoMore)
 {
     try_catch<void>([&] {
-        std::string pkgId;
-        std::string authorId;
-        if (!GetAppPkgId(appId, pkgId)) {
-            pkgIdIsNoMore = false;
+        if (!AppNameExists(appName))
             return;
-        }
 
-        authorIdIsNoMore = false;
-        GetAuthorIdForAppId(appId, authorId);
+        std::string pkgName;
+        GetAppPkgName(appName, pkgName);
+
+        int authorId;
+        GetAppAuthorId(appName, authorId);
 
         auto command = getStatement(StmtType::ERemoveApplication);
-        command->BindString(1, appId);
+        command->BindString(1, appName);
         command->BindInteger(2, static_cast<unsigned int>(uid));
 
         if (command->Step()) {
@@ -233,18 +235,16 @@ void PrivilegeDb::RemoveApplication(
                     Queries.at(StmtType::ERemoveApplication));
         };
 
-        LogDebug("Removed appId: " << appId);
+        LogDebug("Removed appName: " << appName);
 
-        appIdIsNoMore = !(this->AppIdExists(appId));
-        pkgIdIsNoMore = !(this->PkgIdExists(pkgId));
-
-        if (!authorId.empty()) {
-            authorIdIsNoMore = !(this->AuthorIdExists(authorId));
-        }
+        appNameIsNoMore = !(AppNameExists(appName));
+        pkgNameIsNoMore = !(PkgNameExists(pkgName));
+        authorNameIsNoMore = !(AuthorIdExists(authorId));
     });
 }
 
-void PrivilegeDb::GetPathSharingCount(const std::string &path, int &count) {
+void PrivilegeDb::GetPathSharingCount(const std::string &path, int &count)
+{
     try_catch<void>([&] {
         auto command = getStatement(StmtType::EGetPathSharedCount);
         command->BindString(1, path);
@@ -253,38 +253,41 @@ void PrivilegeDb::GetPathSharingCount(const std::string &path, int &count) {
         count = command->GetColumnInteger(0);
     });
 }
-void PrivilegeDb::GetOwnerTargetSharingCount(const std::string &ownerAppId, const std::string &targetAppId,
-                                int &count)
+
+void PrivilegeDb::GetOwnerTargetSharingCount(const std::string &ownerAppName,
+    const std::string &targetAppName, int &count)
 {
     try_catch<void>([&] {
         auto command = getStatement(StmtType::EGetOwnerTargetSharedCount);
-        command->BindString(1, ownerAppId);
-        command->BindString(2, targetAppId);
+        command->BindString(1, ownerAppName);
+        command->BindString(2, targetAppName);
 
         command->Step();
         count = command->GetColumnInteger(0);
     });
 }
-void PrivilegeDb::GetTargetPathSharingCount(const std::string &targetAppId,
-                               const std::string &path,
-                               int &count)
+
+void PrivilegeDb::GetTargetPathSharingCount(const std::string &targetAppName,
+    const std::string &path, int &count)
 {
     try_catch<void>([&] {
         auto command = getStatement(StmtType::EGetTargetPathSharedCount);
-        command->BindString(1, targetAppId);
+        command->BindString(1, targetAppName);
         command->BindString(2, path);
 
         command->Step();
         count = command->GetColumnInteger(0);
     });
 }
-void PrivilegeDb::ApplyPrivateSharing(const std::string &ownerAppId, const std::string &targetAppId,
-                         const std::string &path, const std::string &pathLabel)
+
+void PrivilegeDb::ApplyPrivateSharing(const std::string &ownerAppName,
+    const std::string &targetAppName, const std::string &path,
+    const std::string &pathLabel)
 {
     try_catch<void>([&] {
         auto command = getStatement(StmtType::EAddPrivatePathSharing);
-        command->BindString(1, ownerAppId);
-        command->BindString(2, targetAppId);
+        command->BindString(1, ownerAppName);
+        command->BindString(2, targetAppName);
         command->BindString(3, path);
         command->BindString(4, pathLabel);
 
@@ -292,13 +295,13 @@ void PrivilegeDb::ApplyPrivateSharing(const std::string &ownerAppId, const std::
     });
 }
 
-void PrivilegeDb::DropPrivateSharing(const std::string &ownerAppId, const std::string &targetAppId,
-                            const std::string &path)
+void PrivilegeDb::DropPrivateSharing(const std::string &ownerAppName,
+    const std::string &targetAppName, const std::string &path)
 {
     try_catch<void>([&] {
         auto command = getStatement(StmtType::ERemovePrivatePathSharing);
-        command->BindString(1, ownerAppId);
-        command->BindString(2, targetAppId);
+        command->BindString(1, ownerAppName);
+        command->BindString(2, targetAppName);
         command->BindString(3, path);
 
         command->Step();
@@ -330,12 +333,12 @@ void PrivilegeDb::ClearPrivateSharing() {
     });
 }
 
-void PrivilegeDb::GetPkgPrivileges(const std::string &pkgId, uid_t uid,
+void PrivilegeDb::GetPkgPrivileges(const std::string &pkgName, uid_t uid,
         std::vector<std::string> &currentPrivileges)
 {
     try_catch<void>([&] {
         auto command = getStatement(StmtType::EGetPkgPrivileges);
-        command->BindString(1, pkgId);
+        command->BindString(1, pkgName);
         command->BindInteger(2, static_cast<unsigned int>(uid));
 
         while (command->Step()) {
@@ -346,13 +349,13 @@ void PrivilegeDb::GetPkgPrivileges(const std::string &pkgId, uid_t uid,
     });
 }
 
-void PrivilegeDb::GetAppPrivileges(const std::string &appId, uid_t uid,
+void PrivilegeDb::GetAppPrivileges(const std::string &appName, uid_t uid,
         std::vector<std::string> &currentPrivileges)
 {
     try_catch<void>([&] {
         auto command = getStatement(StmtType::EGetAppPrivileges);
 
-        command->BindString(1, appId);
+        command->BindString(1, appName);
         command->BindInteger(2, static_cast<unsigned int>(uid));
         currentPrivileges.clear();
 
@@ -364,36 +367,36 @@ void PrivilegeDb::GetAppPrivileges(const std::string &appId, uid_t uid,
     });
 }
 
-void PrivilegeDb::RemoveAppPrivileges(const std::string &appId, uid_t uid)
+void PrivilegeDb::RemoveAppPrivileges(const std::string &appName, uid_t uid)
 {
     try_catch<void>([&] {
         auto command = getStatement(StmtType::ERemoveAppPrivileges);
-        command->BindString(1, appId);
+        command->BindString(1, appName);
         command->BindInteger(2, static_cast<unsigned int>(uid));
         if (command->Step()) {
             LogDebug("Unexpected SQLITE_ROW answer to query: " <<
                     Queries.at(StmtType::ERemoveAppPrivileges));
         }
 
-        LogDebug("Removed all privileges for appId: " << appId);
+        LogDebug("Removed all privileges for appName: " << appName);
     });
 }
 
-void PrivilegeDb::UpdateAppPrivileges(const std::string &appId, uid_t uid,
+void PrivilegeDb::UpdateAppPrivileges(const std::string &appName, uid_t uid,
         const std::vector<std::string> &privileges)
 {
     try_catch<void>([&] {
         auto command = getStatement(StmtType::EAddAppPrivileges);
-        command->BindString(1, appId);
+        command->BindString(1, appName);
         command->BindInteger(2, static_cast<unsigned int>(uid));
 
-        RemoveAppPrivileges(appId, uid);
+        RemoveAppPrivileges(appName, uid);
 
         for (const auto &privilege : privileges) {
             command->BindString(3, privilege);
             command->Step();
             command->Reset();
-            LogDebug("Added privilege: " << privilege << " to appId: " << appId);
+            LogDebug("Added privilege: " << privilege << " to appName: " << appName);
         }
     });
 }
@@ -469,55 +472,52 @@ void PrivilegeDb::GetTizen2XAppsAndPackages(const std::string& origApp,
      });
 }
 
-void PrivilegeDb::GetAppIdsForPkgId(const std::string &pkgId,
-        std::vector<std::string> &appIds)
+void PrivilegeDb::GetPkgApps(const std::string &pkgName,
+        std::vector<std::string> &appNames)
 {
     try_catch<void>([&] {
         auto command = getStatement(StmtType::EGetAppsInPkg);
 
-        command->BindString(1, pkgId);
-        appIds.clear();
+        command->BindString(1, pkgName);
+        appNames.clear();
 
         while (command->Step()) {
-            std::string appId = command->GetColumnString (0);
-            LogDebug ("Got appid: " << appId << " for pkgId " << pkgId);
-            appIds.push_back(appId);
+            std::string appName = command->GetColumnString(0);
+            LogDebug ("Got appName: " << appName << " for pkgName " << pkgName);
+            appNames.push_back(appName);
         };
     });
 }
 
-void PrivilegeDb::GetAuthorIdForAppId(const std::string &appId,
-        std::string &authorId)
+void PrivilegeDb::GetAppAuthorId(const std::string &appName, int &authorId)
 {
     try_catch<void>([&] {
-        authorId.clear();
-        auto command = getStatement(StmtType::EGetAuthorIdAppId);
+        auto command = getStatement(StmtType::EGetAppAuthorId);
 
-        command->BindString(1, appId);
+        command->BindString(1, appName);
         if (command->Step()) {
-            authorId = command->GetColumnString(0);
-            LogDebug("Got authorid: " << authorId << " for appId " << appId);
+            authorId = command->GetColumnInteger(0);
+            LogDebug("Got authorid: " << authorId << " for appName " << appName);
         } else {
-            LogDebug("No authorid found for appId " << appId);
+            authorId = -1;
+            LogDebug("No authorid found for appName " << appName);
         }
     });
 }
 
-bool PrivilegeDb::AuthorIdExists(const std::string &authorId) {
+bool PrivilegeDb::AuthorIdExists(int authorId)
+{
     return try_catch<bool>([&]() -> bool {
-        int result = 0;
-
-        if (authorId.empty())
-            return false;
-
         auto command = getStatement(StmtType::EAuthorIdExists);
+        int cnt = 0;
 
-        command->BindInteger(1, std::atoi(authorId.c_str()));
-        if (command->Step()) {
-            result = command->GetColumnInteger(0);
-        }
-        LogDebug("For author: " << authorId << " found " << result << " rows");
-        return result;
+        command->BindInteger(1, authorId);
+        if (command->Step())
+            cnt = command->GetColumnInteger(0);
+
+        LogDebug("AuthorId " << authorId << " found in " << cnt << " entries in db");
+
+        return (cnt > 0);
     });
 }
 

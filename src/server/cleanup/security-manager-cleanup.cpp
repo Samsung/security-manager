@@ -34,12 +34,14 @@
 namespace {
 const std::string tmp_flag = "/tmp/sm-cleanup-tmp-flag";
 
-bool fileExists(const std::string &path) {
+bool fileExists(const std::string &path)
+{
     struct stat buffer;
     return stat(path.c_str(), &buffer) == 0 && S_ISREG(buffer.st_mode);
 }
 
-bool createFile(const std::string &path) {
+bool createFile(const std::string &path)
+{
     int fd;
     mode_t mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
     fd = TEMP_FAILURE_RETRY(creat(path.c_str(), mode));
@@ -48,25 +50,29 @@ bool createFile(const std::string &path) {
         return false;
     }
     close(fd);
+
     return true;
 }
 
 } //namespace anonymous
 
-int main(void) {
+int main(void)
+{
     using namespace SecurityManager;
+
     if (fileExists(tmp_flag))
         return EXIT_SUCCESS;
+
     try {
         std::map<std::string, std::vector<std::string>> appPathMap;
         PrivilegeDb::getInstance().GetAllPrivateSharing(appPathMap);
         for (auto &appPaths : appPathMap) {
             try {
-                std::string appPkgId;
-                PrivilegeDb::getInstance().GetAppPkgId(appPaths.first, appPkgId);
+                std::string pkgName;
+                PrivilegeDb::getInstance().GetAppPkgName(appPaths.first, pkgName);
                 for (const auto &path : appPaths.second) {
                     //FIXME Make this service run as slave and master
-                    SmackLabels::setupPath(appPkgId, path, SECURITY_MANAGER_PATH_RW, "");
+                    SmackLabels::setupPath(pkgName, path, SECURITY_MANAGER_PATH_RW);
                 }
             } catch (const SecurityManager::Exception &e) {
                 LogError("Got SecurityManager exception: " << e.GetMessage() << ", ignoring");
@@ -82,7 +88,9 @@ int main(void) {
     } catch (...) {
         std::cerr << "Unknown exception thrown" << std::endl;
     }
+
     if (!createFile(tmp_flag))
         return EXIT_FAILURE;
+
     return EXIT_SUCCESS;
 }

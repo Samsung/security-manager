@@ -123,33 +123,33 @@ int security_manager_app_inst_req_set_target_version(app_inst_req *p_req, const 
 }
 
 SECURITY_MANAGER_API
-int security_manager_app_inst_req_set_author_id(app_inst_req *p_req, const char *author_id)
+int security_manager_app_inst_req_set_author_id(app_inst_req *p_req, const char *author_name)
 {
-    if (!p_req || !author_id || strlen(author_id) == 0)
+    if (!p_req || !author_name || strlen(author_name) == 0)
         return SECURITY_MANAGER_ERROR_INPUT_PARAM;
 
-    p_req->authorId.assign(author_id);
+    p_req->authorName.assign(author_name);
     return SECURITY_MANAGER_SUCCESS;
 }
 
 SECURITY_MANAGER_API
-int security_manager_app_inst_req_set_app_id(app_inst_req *p_req, const char *app_id)
+int security_manager_app_inst_req_set_app_id(app_inst_req *p_req, const char *app_name)
 {
-    if (!p_req || !app_id)
+    if (!p_req || !app_name)
         return SECURITY_MANAGER_ERROR_INPUT_PARAM;
 
-    p_req->appId = app_id;
+    p_req->appName = app_name;
 
     return SECURITY_MANAGER_SUCCESS;
 }
 
 SECURITY_MANAGER_API
-int security_manager_app_inst_req_set_pkg_id(app_inst_req *p_req, const char *pkg_id)
+int security_manager_app_inst_req_set_pkg_id(app_inst_req *p_req, const char *pkg_name)
 {
-    if (!p_req || !pkg_id)
+    if (!p_req || !pkg_name)
         return SECURITY_MANAGER_ERROR_INPUT_PARAM;
 
-    p_req->pkgId = pkg_id;
+    p_req->pkgName = pkg_name;
 
     return SECURITY_MANAGER_SUCCESS;
 }
@@ -185,7 +185,7 @@ int security_manager_app_install(const app_inst_req *p_req)
         //checking parameters
         if (!p_req)
             return SECURITY_MANAGER_ERROR_INPUT_PARAM;
-        if (p_req->appId.empty() || p_req->pkgId.empty())
+        if (p_req->appName.empty() || p_req->pkgName.empty())
             return SECURITY_MANAGER_ERROR_REQ_NOT_COMPLETE;
 
         int retval;
@@ -198,13 +198,13 @@ int security_manager_app_install(const app_inst_req *p_req)
             //put data into buffer
             Serialization::Serialize(send,
                                      (int)SecurityModuleCall::APP_INSTALL,
-                                     p_req->appId,
-                                     p_req->pkgId,
+                                     p_req->appName,
+                                     p_req->pkgName,
                                      p_req->privileges,
                                      p_req->appPaths,
                                      p_req->uid,
                                      p_req->tizenVersion,
-                                     p_req->authorId);
+                                     p_req->authorName);
 
             //send buffer to server
             retval = sendToServer(SERVICE_SOCKET, send.Pop(), recv);
@@ -230,12 +230,12 @@ int security_manager_app_uninstall(const app_inst_req *p_req)
         //checking parameters
         if (!p_req)
             return SECURITY_MANAGER_ERROR_INPUT_PARAM;
-        if (p_req->appId.empty())
+        if (p_req->appName.empty())
             return SECURITY_MANAGER_ERROR_REQ_NOT_COMPLETE;
 
         //put data into buffer
         Serialization::Serialize(send, (int)SecurityModuleCall::APP_UNINSTALL,
-            p_req->appId);
+            p_req->appName);
 
         //send buffer to server
         int retval = sendToServer(SERVICE_SOCKET, send.Pop(), recv);
@@ -251,7 +251,7 @@ int security_manager_app_uninstall(const app_inst_req *p_req)
 }
 
 SECURITY_MANAGER_API
-int security_manager_get_app_pkgid(char **pkg_id, const char *app_id)
+int security_manager_get_app_pkgid(char **pkg_name, const char *app_name)
 {
     using namespace SecurityManager;
     MessageBuffer send, recv;
@@ -261,19 +261,19 @@ int security_manager_get_app_pkgid(char **pkg_id, const char *app_id)
     return try_catch([&]() -> int {
         //checking parameters
 
-        if (app_id == NULL) {
-            LogError("security_manager_app_get_pkgid: app_id is NULL");
+        if (app_name == NULL) {
+            LogError("security_manager_app_get_pkgid: app_name is NULL");
             return SECURITY_MANAGER_ERROR_INPUT_PARAM;
         }
 
-        if (pkg_id == NULL) {
-            LogError("security_manager_app_get_pkgid: pkg_id is NULL");
+        if (pkg_name == NULL) {
+            LogError("security_manager_app_get_pkgid: pkg_name is NULL");
             return SECURITY_MANAGER_ERROR_INPUT_PARAM;
         }
 
         //put data into buffer
-        Serialization::Serialize(send, static_cast<int>(SecurityModuleCall::APP_GET_PKGID),
-            std::string(app_id));
+        Serialization::Serialize(send, static_cast<int>(SecurityModuleCall::APP_GET_PKG_NAME),
+            std::string(app_name));
 
         //send buffer to server
         int retval = sendToServer(SERVICE_SOCKET, send.Pop(), recv);
@@ -287,16 +287,16 @@ int security_manager_get_app_pkgid(char **pkg_id, const char *app_id)
         if (retval != SECURITY_MANAGER_SUCCESS)
             return retval;
 
-        std::string pkgIdString;
-        Deserialization::Deserialize(recv, pkgIdString);
-        if (pkgIdString.empty()) {
-            LogError("Unexpected empty pkgId");
+        std::string pkgNameString;
+        Deserialization::Deserialize(recv, pkgNameString);
+        if (pkgNameString.empty()) {
+            LogError("Unexpected empty pkgName");
             return SECURITY_MANAGER_ERROR_UNKNOWN;
         }
 
-        *pkg_id = strdup(pkgIdString.c_str());
-        if (*pkg_id == NULL) {
-            LogError("Failed to allocate memory for pkgId");
+        *pkg_name = strdup(pkgNameString.c_str());
+        if (*pkg_name == NULL) {
+            LogError("Failed to allocate memory for pkgName");
             return SECURITY_MANAGER_ERROR_MEMORY;
         }
 
@@ -366,7 +366,7 @@ static bool setup_smack(const char *label)
 }
 
 SECURITY_MANAGER_API
-int security_manager_set_process_label_from_appid(const char *app_id)
+int security_manager_set_process_label_from_appid(const char *app_name)
 {
     int ret;
     std::string appLabel;
@@ -377,9 +377,9 @@ int security_manager_set_process_label_from_appid(const char *app_id)
         return SECURITY_MANAGER_SUCCESS;
 
     try {
-        appLabel = SecurityManager::SmackLabels::generateAppLabel(app_id);
+        appLabel = SecurityManager::SmackLabels::generateAppLabel(app_name);
     } catch (...) {
-        LogError("Failed to generate smack label for appId: " << app_id);
+        LogError("Failed to generate smack label for appName: " << app_name);
         return SECURITY_MANAGER_ERROR_NO_SUCH_OBJECT;
     }
 
@@ -392,7 +392,7 @@ int security_manager_set_process_label_from_appid(const char *app_id)
 }
 
 SECURITY_MANAGER_API
-int security_manager_set_process_groups_from_appid(const char *app_id)
+int security_manager_set_process_groups_from_appid(const char *app_name)
 {
     using namespace SecurityManager;
     MessageBuffer send, recv;
@@ -403,14 +403,14 @@ int security_manager_set_process_groups_from_appid(const char *app_id)
     return try_catch([&]() -> int {
         //checking parameters
 
-        if (app_id == nullptr) {
-            LogError("app_id is NULL");
+        if (app_name == nullptr) {
+            LogError("app_name is NULL");
             return SECURITY_MANAGER_ERROR_INPUT_PARAM;
         }
 
         //put data into buffer
         Serialization::Serialize(send, static_cast<int>(SecurityModuleCall::APP_GET_GROUPS),
-            std::string(app_id));
+            std::string(app_name));
 
         //send buffer to server
         int retval = sendToServer(SERVICE_SOCKET, send.Pop(), recv);
@@ -506,16 +506,16 @@ int security_manager_drop_process_privileges(void)
 }
 
 SECURITY_MANAGER_API
-int security_manager_prepare_app(const char *app_id)
+int security_manager_prepare_app(const char *app_name)
 {
     LogDebug("security_manager_prepare_app() called");
     int ret;
 
-    ret = security_manager_set_process_label_from_appid(app_id);
+    ret = security_manager_set_process_label_from_appid(app_name);
     if (ret != SECURITY_MANAGER_SUCCESS)
         return ret;
 
-    ret = security_manager_set_process_groups_from_appid(app_id);
+    ret = security_manager_set_process_groups_from_appid(app_name);
     if (ret != SECURITY_MANAGER_SUCCESS) {
         LogWarning("Unable to setup process groups for application. Privileges with direct access to resources will not work.");
         ret = SECURITY_MANAGER_SUCCESS;
@@ -783,11 +783,11 @@ void security_manager_policy_entry_free(policy_entry *p_entry)
 }
 
 SECURITY_MANAGER_API
-int security_manager_policy_entry_set_application(policy_entry *p_entry, const char *app_id)
+int security_manager_policy_entry_set_application(policy_entry *p_entry, const char *app_name)
 {
     if (!p_entry)
         return  SECURITY_MANAGER_ERROR_INPUT_PARAM;
-    p_entry->appId = app_id;
+    p_entry->appName = app_name;
     return  SECURITY_MANAGER_SUCCESS;
 }
 
@@ -848,7 +848,7 @@ const char *security_manager_policy_entry_get_user(policy_entry *p_entry)
 SECURITY_MANAGER_API
 const char *security_manager_policy_entry_get_application(policy_entry *p_entry)
 {
-    return p_entry ? p_entry->appId.c_str() : nullptr;
+    return p_entry ? p_entry->appName.c_str() : nullptr;
 }
 SECURITY_MANAGER_API
 const char *security_manager_policy_entry_get_privilege(policy_entry *p_entry)
@@ -1010,37 +1010,37 @@ void security_manager_groups_free(char **groups, size_t groups_count)
 
 static lib_retcode get_app_and_pkg_id_from_smack_label(
         const std::string &label,
-        char **pkg_id,
-        char **app_id)
+        char **pkg_name,
+        char **app_name)
 {
-    std::string appIdString;
+    std::string appNameString;
 
     try {
-        appIdString = SmackLabels::generateAppNameFromLabel(label);
+        appNameString = SmackLabels::generateAppNameFromLabel(label);
     } catch (const SmackException::InvalidLabel &) {
         return SECURITY_MANAGER_ERROR_NO_SUCH_OBJECT;
     }
 
-    if (app_id && !(*app_id = strdup(appIdString.c_str()))) {
+    if (app_name && !(*app_name = strdup(appNameString.c_str()))) {
         LogError("Memory allocation in strdup failed.");
         return SECURITY_MANAGER_ERROR_MEMORY;
     }
 
-    return pkg_id ? static_cast<lib_retcode>(security_manager_get_app_pkgid(pkg_id, appIdString.c_str()))
+    return pkg_name ? static_cast<lib_retcode>(security_manager_get_app_pkgid(pkg_name, appNameString.c_str()))
             : SECURITY_MANAGER_SUCCESS;
 }
 
 static int security_manager_identify_app(
         const std::function<std::string()> &getLabel,
-        char **pkg_id,
-        char **app_id)
+        char **pkg_name,
+        char **app_name)
 {
     using namespace SecurityManager;
 
     LogDebug(__PRETTY_FUNCTION__ << " called");
 
-    if (pkg_id == NULL && app_id == NULL) {
-        LogError("Both pkg_id and app_id are NULL");
+    if (pkg_name == NULL && app_name == NULL) {
+        LogError("Both pkg_name and app_name are NULL");
         return SECURITY_MANAGER_ERROR_INPUT_PARAM;
     }
 
@@ -1051,38 +1051,38 @@ static int security_manager_identify_app(
         return SECURITY_MANAGER_ERROR_NO_SUCH_OBJECT;
     }
 
-    return get_app_and_pkg_id_from_smack_label(label, pkg_id, app_id);
+    return get_app_and_pkg_id_from_smack_label(label, pkg_name, app_name);
 }
 
 SECURITY_MANAGER_API
-int security_manager_identify_app_from_socket(int sockfd, char **pkg_id, char **app_id)
+int security_manager_identify_app_from_socket(int sockfd, char **pkg_name, char **app_name)
 {
     return try_catch([&] {
         return security_manager_identify_app([&] {
             return SmackLabels::getSmackLabelFromSocket(sockfd);
-        }, pkg_id, app_id);
+        }, pkg_name, app_name);
     });
 }
 
 SECURITY_MANAGER_API
-int security_manager_identify_app_from_pid(pid_t pid, char **pkg_id, char **app_id)
+int security_manager_identify_app_from_pid(pid_t pid, char **pkg_name, char **app_name)
 {
     return try_catch([&] {
         return security_manager_identify_app([&] {
             return SmackLabels::getSmackLabelFromPid(pid);
-        }, pkg_id, app_id);
+        }, pkg_name, app_name);
     });
 }
 
 SECURITY_MANAGER_API
-int security_manager_app_has_privilege(const char *app_id, const char *privilege,
+int security_manager_app_has_privilege(const char *app_name, const char *privilege,
                                        uid_t uid, int *result)
 {
     using namespace SecurityManager;
     MessageBuffer send, recv;
     return try_catch([&]() -> int {
         Serialization::Serialize(send, static_cast<int>(SecurityModuleCall::APP_HAS_PRIVILEGE),
-            std::string(app_id), std::string(privilege), uid);
+            std::string(app_name), std::string(privilege), uid);
 
         int retval = sendToServer(SERVICE_SOCKET, send.Pop(), recv);
         if (retval != SECURITY_MANAGER_SUCCESS) {
@@ -1125,25 +1125,25 @@ void security_manager_private_sharing_req_free(private_sharing_req *p_req)
 }
 
 SECURITY_MANAGER_API
-int security_manager_private_sharing_req_set_owner_appid(private_sharing_req *p_req,
-                                                         const char *app_id)
+int security_manager_private_sharing_req_set_owner_appid(
+    private_sharing_req *p_req, const char *app_name)
 {
     return try_catch([&] {
-        if (!p_req || !app_id)
+        if (!p_req || !app_name)
                 return SECURITY_MANAGER_ERROR_INPUT_PARAM;
-        p_req->ownerAppId = app_id;
+        p_req->ownerAppName = app_name;
         return SECURITY_MANAGER_SUCCESS;
     });
 }
 
 SECURITY_MANAGER_API
-int security_manager_private_sharing_req_set_target_appid(private_sharing_req *p_req,
-                                                          const char *app_id)
+int security_manager_private_sharing_req_set_target_appid(
+    private_sharing_req *p_req, const char *app_name)
 {
     return try_catch([&] {
-        if (!p_req || !app_id)
+        if (!p_req || !app_name)
                 return SECURITY_MANAGER_ERROR_INPUT_PARAM;
-        p_req->targetAppId = app_id;
+        p_req->targetAppName = app_name;
         return SECURITY_MANAGER_SUCCESS;
     });
 }
@@ -1170,13 +1170,13 @@ int security_manager_private_sharing_apply(const private_sharing_req *p_req)
     return try_catch([&]() -> int {
         if (!p_req)
             return SECURITY_MANAGER_ERROR_INPUT_PARAM;
-        if (p_req->ownerAppId.empty() || p_req->targetAppId.empty() || p_req->paths.empty())
+        if (p_req->ownerAppName.empty() || p_req->targetAppName.empty() || p_req->paths.empty())
             return SECURITY_MANAGER_ERROR_REQ_NOT_COMPLETE;
 
         MessageBuffer send, recv;
         Serialization::Serialize(send, static_cast<int>(SecurityModuleCall::APP_APPLY_PRIVATE_SHARING));
-        Serialization::Serialize(send, p_req->ownerAppId);
-        Serialization::Serialize(send, p_req->targetAppId);
+        Serialization::Serialize(send, p_req->ownerAppName);
+        Serialization::Serialize(send, p_req->targetAppName);
         Serialization::Serialize(send, p_req->paths);
 
         //send buffer to server
@@ -1199,13 +1199,13 @@ int security_manager_private_sharing_drop(const private_sharing_req *p_req)
     return try_catch([&]() -> int {
         if (!p_req)
             return SECURITY_MANAGER_ERROR_INPUT_PARAM;
-        if (p_req->ownerAppId.empty() || p_req->targetAppId.empty() || p_req->paths.empty())
+        if (p_req->ownerAppName.empty() || p_req->targetAppName.empty() || p_req->paths.empty())
             return SECURITY_MANAGER_ERROR_REQ_NOT_COMPLETE;
 
         MessageBuffer send, recv;
         Serialization::Serialize(send, static_cast<int>(SecurityModuleCall::APP_DROP_PRIVATE_SHARING));
-        Serialization::Serialize(send, p_req->ownerAppId);
-        Serialization::Serialize(send, p_req->targetAppId);
+        Serialization::Serialize(send, p_req->ownerAppName);
+        Serialization::Serialize(send, p_req->targetAppName);
         Serialization::Serialize(send, p_req->paths);
 
         //send buffer to server

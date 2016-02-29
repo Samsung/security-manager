@@ -55,7 +55,7 @@ namespace {
 static inline int validatePolicy(policy_entry &policyEntry, std::string uidStr, bool &forAdmin, CynaraAdminPolicy &cyap)
 {
     LogDebug("Authenticating and validating policy update request for user with id: " << uidStr);
-    LogDebug("[policy_entry] app: " << policyEntry.appId
+    LogDebug("[policy_entry] app: " << policyEntry.appName
             << " user: " << policyEntry.user
             << " privilege: " << policyEntry.privilege
             << " current: " << policyEntry.currentLevel
@@ -68,7 +68,7 @@ static inline int validatePolicy(policy_entry &policyEntry, std::string uidStr, 
     int level;
 
     if (policyEntry.currentLevel.empty()) { //for admin
-        if (policyEntry.appId.empty()
+        if (policyEntry.appName.empty()
             || policyEntry.privilege.empty()) {
             LogError("Bad admin update request");
             return SECURITY_MANAGER_ERROR_BAD_REQUEST;
@@ -88,9 +88,9 @@ static inline int validatePolicy(policy_entry &policyEntry, std::string uidStr, 
 
     } else if (policyEntry.maxLevel.empty()) { //for self
         if (policyEntry.user.compare(uidStr)
-            || !policyEntry.appId.compare(SECURITY_MANAGER_ANY)
+            || !policyEntry.appName.compare(SECURITY_MANAGER_ANY)
             || !policyEntry.privilege.compare(SECURITY_MANAGER_ANY)
-            || policyEntry.appId.empty()
+            || policyEntry.appName.empty()
             || policyEntry.privilege.empty()) {
             LogError("Bad privacy manager update request");
             return SECURITY_MANAGER_ERROR_BAD_REQUEST;
@@ -118,8 +118,8 @@ static inline int validatePolicy(policy_entry &policyEntry, std::string uidStr, 
         policyEntry.privilege = CYNARA_ADMIN_WILDCARD;
 
     cyap = std::move(CynaraAdminPolicy(
-        policyEntry.appId.compare(SECURITY_MANAGER_ANY) ?
-            SmackLabels::generateAppLabel(policyEntry.appId) : CYNARA_ADMIN_WILDCARD,
+        policyEntry.appName.compare(SECURITY_MANAGER_ANY) ?
+            SmackLabels::generateAppLabel(policyEntry.appName) : CYNARA_ADMIN_WILDCARD,
         policyEntry.user,
         policyEntry.privilege,
         level,
@@ -255,7 +255,7 @@ bool ServiceImpl::installRequestAuthCheck(const app_inst_req &req, uid_t uid, st
 
     appPath = userAppDir;
     correctPath.clear();
-    correctPath << userAppDir << "/" << req.pkgId;
+    correctPath << userAppDir << "/" << req.pkgName;
     LogDebug("correctPath: " << correctPath.str());
 
     for (const auto &path : req.appPaths) {
@@ -286,9 +286,7 @@ int ServiceImpl::appInstall(const app_inst_req &req, uid_t uid)
     std::string appLabel;
     std::string pkgLabel;
     std::vector<std::string> allTizen2XApps, allTizen2XPackages;
-    std::string authorId;
-    // authorId contains id from database. It's not equal to value in request.
-    // IMHO the id in request should be called authorName not authorId...
+    int authorId;
 
     if (uid) {
         if (uid != req.uid) {
@@ -308,35 +306,34 @@ int ServiceImpl::appInstall(const app_inst_req &req, uid_t uid)
     }
 
     try {
-        appLabel = SmackLabels::generateAppLabel(req.appId);
+        appLabel = SmackLabels::generateAppLabel(req.appName);
 
-        /* NOTE: we don't use pkgLabel here, but generate it for pkgId validation */
-        pkgLabel = SmackLabels::generatePkgLabel(req.pkgId);
-        LogDebug("Install parameters: appId: " << req.appId << ", pkgId: " << req.pkgId
+        /* NOTE: we don't use pkgLabel here, but generate it for pkgName validation */
+        pkgLabel = SmackLabels::generatePkgLabel(req.pkgName);
+        LogDebug("Install parameters: appName: " << req.appName << ", pkgName: " << req.pkgName
                  << ", uidstr " << uidstr
                  << ", app label: " << appLabel << ", pkg label: " << pkgLabel
                  << ", target Tizen API ver: " << (req.tizenVersion.empty()?"unknown":req.tizenVersion));
 
         PrivilegeDb::getInstance().BeginTransaction();
         std::string pkg;
-        bool ret = PrivilegeDb::getInstance().GetAppPkgId(req.appId, pkg);
-        if (ret == true && pkg != req.pkgId) {
-            LogError("Application already installed with different package id");
+        PrivilegeDb::getInstance().GetAppPkgName(req.appName, pkg);
+        if (!pkg.empty() && pkg != req.pkgName) {
+            LogError("Application already installed with different package name");
             PrivilegeDb::getInstance().RollbackTransaction();
             return SECURITY_MANAGER_ERROR_INPUT_PARAM;
         }
 
-        PrivilegeDb::getInstance().AddApplication(req.appId, req.pkgId, uid, req.tizenVersion, req.authorId);
-        PrivilegeDb::getInstance().UpdateAppPrivileges(req.appId, uid, req.privileges);
+        PrivilegeDb::getInstance().AddApplication(req.appName, req.pkgName, uid, req.tizenVersion, req.authorName);
+        PrivilegeDb::getInstance().UpdateAppPrivileges(req.appName, uid, req.privileges);
         /* Get all application ids in the package to generate rules withing the package */
-        PrivilegeDb::getInstance().GetAppIdsForPkgId(req.pkgId, pkgContents);
-        PrivilegeDb::getInstance().GetAuthorIdForAppId(req.appId, authorId);
-
+        PrivilegeDb::getInstance().GetPkgApps(req.pkgName, pkgContents);
+        PrivilegeDb::getInstance().GetAppAuthorId(req.appName, authorId);
         CynaraAdmin::getInstance().UpdateAppPolicy(appLabel, uidstr, req.privileges);
 
         // if app is targetted to Tizen 2.X, give other 2.X apps RO rules to it's shared dir
         if(isTizen2XVersion(req.tizenVersion))
-            PrivilegeDb::getInstance().GetTizen2XAppsAndPackages(req.appId, allTizen2XApps, allTizen2XPackages);
+            PrivilegeDb::getInstance().GetTizen2XAppsAndPackages(req.appName, allTizen2XApps, allTizen2XPackages);
 
         // WTF? Why this commit is here? Shouldn't it be at the end of this function?
         PrivilegeDb::getInstance().CommitTransaction();
@@ -364,18 +361,18 @@ int ServiceImpl::appInstall(const app_inst_req &req, uid_t uid)
 
     try {
         if (!req.appPaths.empty())
-            SmackLabels::setupAppBasePath(req.pkgId, appPath);
+            SmackLabels::setupAppBasePath(req.pkgName, appPath);
 
         // register paths
         for (const auto &appPath : req.appPaths) {
             const std::string &path = appPath.first;
             app_install_path_type pathType = static_cast<app_install_path_type>(appPath.second);
-            SmackLabels::setupPath(req.pkgId, path, pathType, authorId);
+            SmackLabels::setupPath(req.pkgName, path, pathType, authorId);
         }
 
-        LogDebug("Adding Smack rules for new appId: " << req.appId << " with pkgId: "
-                << req.pkgId << ". Applications in package: " << pkgContents.size());
-        SmackRules::installApplicationRules(req.appId, req.pkgId, authorId, pkgContents, allTizen2XApps, allTizen2XPackages);
+        LogDebug("Adding Smack rules for new appName: " << req.appName << " with pkgName: "
+                << req.pkgName << ". Applications in package: " << pkgContents.size());
+        SmackRules::installApplicationRules(req.appName, req.pkgName, authorId, pkgContents, allTizen2XApps, allTizen2XPackages);
     } catch (const SmackException::InvalidParam &e) {
         LogError("Invalid paramater during labeling: " << e.GetMessage());
         return SECURITY_MANAGER_ERROR_INPUT_PARAM;
@@ -393,50 +390,52 @@ int ServiceImpl::appInstall(const app_inst_req &req, uid_t uid)
     return SECURITY_MANAGER_SUCCESS;
 }
 
-int ServiceImpl::appUninstall(const std::string &appId, uid_t uid)
+int ServiceImpl::appUninstall(const std::string &appName, uid_t uid)
 {
-    std::string pkgId;
+    std::string pkgName;
     std::string tizenVersion;
     std::string smackLabel;
     std::vector<std::string> pkgContents;
-    bool appExists = true;
     bool removeApp = false;
     bool removePkg = false;
     bool removeAuthor = false;
     std::string uidstr;
     std::vector<std::string> allTizen2XApps;
+    int authorId;
+
     checkGlobalUser(uid, uidstr);
-    std::string authorId;
 
     try {
         PrivilegeDb::getInstance().BeginTransaction();
-        if (!PrivilegeDb::getInstance().GetAppPkgIdAndVer(appId, pkgId, tizenVersion)) {
-            LogWarning("Application " << appId <<
+        PrivilegeDb::getInstance().GetAppPkgName(appName, pkgName);
+        if (pkgName.empty()) {
+            LogWarning("Application " << appName <<
                 " not found in database while uninstalling");
             PrivilegeDb::getInstance().RollbackTransaction();
-            appExists = false;
-        } else {
-            smackLabel = SmackLabels::generateAppLabel(appId);
-            LogDebug("Uninstall parameters: appId: " << appId << ", pkgId: " << pkgId
-                     << ", uidstr " << uidstr << ", generated smack label: " << smackLabel);
-
-            /* Before we remove the app from the database, let's fetch all apps in the package
-                that this app belongs to, this will allow us to remove all rules withing the
-                package that the app appears in */
-            PrivilegeDb::getInstance().GetAuthorIdForAppId(appId, authorId);
-            PrivilegeDb::getInstance().GetAppIdsForPkgId(pkgId, pkgContents);
-            PrivilegeDb::getInstance().UpdateAppPrivileges(appId, uid, std::vector<std::string>());
-            PrivilegeDb::getInstance().RemoveApplication(appId, uid, removeApp, removePkg, removeAuthor);
-
-            // if uninstalled app is targetted to Tizen 2.X, remove other 2.X apps RO rules it's shared dir
-            if(isTizen2XVersion(tizenVersion))
-                PrivilegeDb::getInstance().GetTizen2XApps(appId, allTizen2XApps);
-
-            CynaraAdmin::getInstance().UpdateAppPolicy(smackLabel, uidstr, std::vector<std::string>());
-
-            PrivilegeDb::getInstance().CommitTransaction();
-            LogDebug("Application uninstallation commited to database");
+            return SECURITY_MANAGER_SUCCESS;
         }
+
+        smackLabel = SmackLabels::generateAppLabel(appName);
+        LogDebug("Uninstall parameters: appName: " << appName << ", pkgName: " << pkgName
+                 << ", uidstr " << uidstr << ", generated smack label: " << smackLabel);
+
+        /* Before we remove the app from the database, let's fetch all apps in the package
+            that this app belongs to, this will allow us to remove all rules withing the
+            package that the app appears in */
+        PrivilegeDb::getInstance().GetAppAuthorId(appName, authorId);
+        PrivilegeDb::getInstance().GetPkgApps(pkgName, pkgContents);
+        PrivilegeDb::getInstance().UpdateAppPrivileges(appName, uid, std::vector<std::string>());
+        PrivilegeDb::getInstance().RemoveApplication(appName, uid, removeApp, removePkg, removeAuthor);
+
+        // if uninstalled app is targetted to Tizen 2.X, remove other 2.X apps RO rules it's shared dir
+        PrivilegeDb::getInstance().GetAppVersion(appName, tizenVersion);
+        if (isTizen2XVersion(tizenVersion))
+            PrivilegeDb::getInstance().GetTizen2XApps(appName, allTizen2XApps);
+
+        CynaraAdmin::getInstance().UpdateAppPolicy(smackLabel, uidstr, std::vector<std::string>());
+
+        PrivilegeDb::getInstance().CommitTransaction();
+        LogDebug("Application uninstallation commited to database");
     } catch (const PrivilegeDb::Exception::IOError &e) {
         LogError("Cannot access application database: " << e.DumpToString());
         return SECURITY_MANAGER_ERROR_SERVER_ERROR;
@@ -458,48 +457,47 @@ int ServiceImpl::appUninstall(const std::string &appId, uid_t uid)
         return SECURITY_MANAGER_ERROR_MEMORY;
     }
 
-    if (appExists) {
-        try {
-            if (removeApp) {
-                LogDebug("Removing smack rules for deleted appId " << appId);
-                SmackRules::uninstallApplicationRules(appId);
-                LogDebug("Pkg rules are deprecated. We must uninstall them. pkgId " << pkgId);
-                SmackRules::uninstallPackageRules(pkgId);
-                if (!removePkg) {
-                    LogDebug("Creating new rules for pkgId " << pkgId);
-                    SmackRules::updatePackageRules(pkgId, pkgContents, allTizen2XApps);
-                }
+    try {
+        if (removeApp) {
+            LogDebug("Removing smack rules for deleted appName " << appName);
+            SmackRules::uninstallApplicationRules(appName);
+            LogDebug("Pkg rules are deprecated. We must uninstall them. pkgName " << pkgName);
+            SmackRules::uninstallPackageRules(pkgName);
+            if (!removePkg) {
+                LogDebug("Creating new rules for pkgName " << pkgName);
+                SmackRules::updatePackageRules(pkgName, pkgContents, allTizen2XApps);
             }
-
-            if (removeAuthor) {
-                LogDebug("Removing Smack rules for authorId " << authorId);
-                SmackRules::uninstallAuthorRules(authorId);
-            }
-        } catch (const SmackException::Base &e) {
-            LogError("Error while removing Smack rules for application: " << e.DumpToString());
-            return SECURITY_MANAGER_ERROR_SETTING_FILE_LABEL_FAILED;
-        } catch (const std::bad_alloc &e) {
-            LogError("Memory allocation error: " << e.what());
-            return SECURITY_MANAGER_ERROR_MEMORY;
         }
+
+        if (authorId != -1 && removeAuthor) {
+            LogDebug("Removing Smack rules for authorId " << authorId);
+            SmackRules::uninstallAuthorRules(authorId);
+        }
+    } catch (const SmackException::Base &e) {
+        LogError("Error while removing Smack rules for application: " << e.DumpToString());
+        return SECURITY_MANAGER_ERROR_SETTING_FILE_LABEL_FAILED;
+    } catch (const std::bad_alloc &e) {
+        LogError("Memory allocation error: " << e.what());
+        return SECURITY_MANAGER_ERROR_MEMORY;
     }
 
     return SECURITY_MANAGER_SUCCESS;
 }
 
-int ServiceImpl::getPkgId(const std::string &appId, std::string &pkgId)
+int ServiceImpl::getPkgName(const std::string &appName, std::string &pkgName)
 {
-    LogDebug("appId: " << appId);
+    LogDebug("appName: " << appName);
 
     try {
-        if (!PrivilegeDb::getInstance().GetAppPkgId(appId, pkgId)) {
-            LogWarning("Application " << appId << " not found in database");
+        PrivilegeDb::getInstance().GetAppPkgName(appName, pkgName);
+        if (pkgName.empty()) {
+            LogWarning("Application " << appName << " not found in database");
             return SECURITY_MANAGER_ERROR_NO_SUCH_OBJECT;
         } else {
-            LogDebug("pkgId: " << pkgId);
+            LogDebug("pkgName: " << pkgName);
         }
     } catch (const PrivilegeDb::Exception::Base &e) {
-        LogError("Error while getting pkgId from database: " << e.DumpToString());
+        LogError("Error while getting pkgName from database: " << e.DumpToString());
         return SECURITY_MANAGER_ERROR_SERVER_ERROR;
     }
 
@@ -507,33 +505,34 @@ int ServiceImpl::getPkgId(const std::string &appId, std::string &pkgId)
 }
 
 int ServiceImpl::getAppGroups(
-        const std::string &appId,
+        const std::string &appName,
         uid_t uid,
         pid_t pid,
         std::unordered_set<gid_t> &gids)
 {
     try {
-        std::string pkgId;
+        std::string pkgName;
         std::string smackLabel;
         std::string uidStr = std::to_string(uid);
         std::string pidStr = std::to_string(pid);
 
-        LogDebug("appId: " << appId);
+        LogDebug("appName: " << appName);
 
-        if (!PrivilegeDb::getInstance().GetAppPkgId(appId, pkgId)) {
-            LogWarning("Application " << appId << " not found in database");
+        PrivilegeDb::getInstance().GetAppPkgName(appName, pkgName);
+        if (pkgName.empty()) {
+            LogWarning("Application " << appName << " not found in database");
             return SECURITY_MANAGER_ERROR_NO_SUCH_OBJECT;
         }
-        LogDebug("pkgId: " << pkgId);
+        LogDebug("pkgName: " << pkgName);
 
-        smackLabel = SmackLabels::generateAppLabel(appId);
+        smackLabel = SmackLabels::generateAppLabel(appName);
         LogDebug("smack label: " << smackLabel);
 
         std::vector<std::string> privileges;
-        PrivilegeDb::getInstance().GetPkgPrivileges(pkgId, uid, privileges);
+        PrivilegeDb::getInstance().GetPkgPrivileges(pkgName, uid, privileges);
         /*there is also a need of checking, if privilege is granted to all users*/
         size_t tmp = privileges.size();
-        PrivilegeDb::getInstance().GetPkgPrivileges(pkgId, getGlobalUserId(), privileges);
+        PrivilegeDb::getInstance().GetPkgPrivileges(pkgName, getGlobalUserId(), privileges);
         /*privileges needs to be sorted and with no duplications - for cynara sake*/
         std::inplace_merge(privileges.begin(), privileges.begin() + tmp, privileges.end());
         privileges.erase(unique(privileges.begin(), privileges.end()), privileges.end());
@@ -689,7 +688,7 @@ int ServiceImpl::getConfiguredPolicy(bool forAdmin, const policy_entry &filter, 
             return SECURITY_MANAGER_ERROR_ACCESS_DENIED;
         };
 
-        LogDebug("Filter is: C: " << filter.appId
+        LogDebug("Filter is: C: " << filter.appName
                     << ", U: " << filter.user
                     << ", P: " << filter.privilege
                     << ", current: " << filter.currentLevel
@@ -698,12 +697,12 @@ int ServiceImpl::getConfiguredPolicy(bool forAdmin, const policy_entry &filter, 
 
         std::vector<CynaraAdminPolicy> listOfPolicies;
 
-        //convert appId to smack label
-        std::string appLabel = filter.appId.compare(SECURITY_MANAGER_ANY) ? SmackLabels::generateAppLabel(filter.appId) : CYNARA_ADMIN_ANY;
+        //convert appName to smack label
+        std::string appLabel = filter.appName.compare(SECURITY_MANAGER_ANY) ? SmackLabels::generateAppLabel(filter.appName) : CYNARA_ADMIN_ANY;
         std::string user = filter.user.compare(SECURITY_MANAGER_ANY) ? filter.user : CYNARA_ADMIN_ANY;
         std::string privilege = filter.privilege.compare(SECURITY_MANAGER_ANY) ? filter.privilege : CYNARA_ADMIN_ANY;
 
-        LogDebug("App: " << filter.appId << ", Label: " << appLabel);
+        LogDebug("App: " << filter.appName << ", Label: " << appLabel);
 
         if (forAdmin) {
             if (!Cynara::getInstance().check(smackLabel, ADMIN_PRIVILEGE, uidStr, pidStr)) {
@@ -745,7 +744,7 @@ int ServiceImpl::getConfiguredPolicy(bool forAdmin, const policy_entry &filter, 
 
             policy_entry pe;
 
-            pe.appId = strcmp(policy.client, CYNARA_ADMIN_WILDCARD) ? SmackLabels::generateAppNameFromLabel(policy.client) : SECURITY_MANAGER_ANY;
+            pe.appName = strcmp(policy.client, CYNARA_ADMIN_WILDCARD) ? SmackLabels::generateAppNameFromLabel(policy.client) : SECURITY_MANAGER_ANY;
             pe.user =  strcmp(policy.user, CYNARA_ADMIN_WILDCARD) ? policy.user : SECURITY_MANAGER_ANY;
             pe.privilege = strcmp(policy.privilege, CYNARA_ADMIN_WILDCARD) ? policy.privilege : pe.privilege = SECURITY_MANAGER_ANY;
             pe.currentLevel = CynaraAdmin::getInstance().convertToPolicyDescription(policy.result);
@@ -762,7 +761,7 @@ int ServiceImpl::getConfiguredPolicy(bool forAdmin, const policy_entry &filter, 
 
 
             LogDebug(
-                "[policy_entry] app: " << pe.appId
+                "[policy_entry] app: " << pe.appName
                 << " user: " << pe.user
                 << " privilege: " << pe.privilege
                 << " current: " << pe.currentLevel
@@ -798,7 +797,7 @@ int ServiceImpl::getPolicy(const policy_entry &filter, uid_t uid, pid_t pid, con
             return SECURITY_MANAGER_ERROR_ACCESS_DENIED;
         };
 
-        LogDebug("Filter is: C: " << filter.appId
+        LogDebug("Filter is: C: " << filter.appName
                     << ", U: " << filter.user
                     << ", P: " << filter.privilege
                     << ", current: " << filter.currentLevel
@@ -830,29 +829,29 @@ int ServiceImpl::getPolicy(const policy_entry &filter, uid_t uid, pid_t pid, con
             std::string userStr = std::to_string(user);
             std::vector<std::string> listOfApps;
 
-            if (filter.appId.compare(SECURITY_MANAGER_ANY)) {
-                LogDebug("Limitting Cynara query to app: " << filter.appId);
-                listOfApps.push_back(filter.appId);
+            if (filter.appName.compare(SECURITY_MANAGER_ANY)) {
+                LogDebug("Limitting Cynara query to app: " << filter.appName);
+                listOfApps.push_back(filter.appName);
             } else {
                 PrivilegeDb::getInstance().GetUserApps(user, listOfApps);
                 LogDebug("Found apps: " << listOfApps.size());
             };
 
-            for (const std::string &appId : listOfApps) {
-                LogDebug("App: " << appId);
-                std::string smackLabelForApp = SmackLabels::generateAppLabel(appId);
+            for (const std::string &appName : listOfApps) {
+                LogDebug("App: " << appName);
+                std::string smackLabelForApp = SmackLabels::generateAppLabel(appName);
                 std::vector<std::string> listOfPrivileges;
 
                 // FIXME: also fetch privileges of global applications
                 // FIXME: fetch privileges from cynara, drop PrivilegeDb::GetAppPrivileges
-                PrivilegeDb::getInstance().GetAppPrivileges(appId, user, listOfPrivileges);
+                PrivilegeDb::getInstance().GetAppPrivileges(appName, user, listOfPrivileges);
 
                 if (filter.privilege.compare(SECURITY_MANAGER_ANY)) {
                     LogDebug("Limitting Cynara query to privilege: " << filter.privilege);
                     // FIXME: this filtering should be already performed by method fetching the privileges
                     if (std::find(listOfPrivileges.begin(), listOfPrivileges.end(),
                         filter.privilege) == listOfPrivileges.end()) {
-                        LogDebug("Application " << appId <<
+                        LogDebug("Application " << appName <<
                             " doesn't have the filteres privilege " << filter.privilege);
                         continue;
                     }
@@ -866,7 +865,7 @@ int ServiceImpl::getPolicy(const policy_entry &filter, uid_t uid, pid_t pid, con
                     LogDebug("Privilege: " << privilege);
                     policy_entry pe;
 
-                    pe.appId = appId;
+                    pe.appName = appName;
                     pe.user = userStr;
                     pe.privilege = privilege;
 
@@ -879,7 +878,7 @@ int ServiceImpl::getPolicy(const policy_entry &filter, uid_t uid, pid_t pid, con
                             smackLabelForApp, userStr, privilege));
 
                     LogDebug(
-                        "[policy_entry] app: " << pe.appId
+                        "[policy_entry] app: " << pe.appName
                         << " user: " << pe.user
                         << " privilege: " << pe.privilege
                         << " current: " << pe.currentLevel
@@ -943,13 +942,13 @@ int ServiceImpl::policyGetGroups(std::vector<std::string> &groups)
 }
 
 int ServiceImpl::appHasPrivilege(
-        std::string appId,
+        std::string appName,
         std::string privilege,
         uid_t uid,
         bool &result)
 {
     try {
-        std::string appLabel = SmackLabels::generateAppLabel(appId);
+        std::string appLabel = SmackLabels::generateAppLabel(appName);
         std::string uidStr = std::to_string(uid);
         result = Cynara::getInstance().check(appLabel, privilege, uidStr, "");
         LogDebug("result = " << result);
@@ -971,27 +970,27 @@ int ServiceImpl::appHasPrivilege(
 
 
 int ServiceImpl::dropOnePrivateSharing(
-        const std::string &ownerAppId,
-        const std::string &ownerPkgId,
+        const std::string &ownerAppName,
+        const std::string &ownerPkgName,
         const std::vector<std::string> &ownerPkgContents,
-        const std::string &targetAppId,
+        const std::string &targetAppName,
         const std::string &path)
 {
     int errorRet;
     try {
         int targetPathCount, pathCount, ownerTargetCount;
-        PrivilegeDb::getInstance().DropPrivateSharing(ownerAppId, targetAppId, path);
-        PrivilegeDb::getInstance().GetTargetPathSharingCount(targetAppId, path, targetPathCount);
+        PrivilegeDb::getInstance().DropPrivateSharing(ownerAppName, targetAppName, path);
+        PrivilegeDb::getInstance().GetTargetPathSharingCount(targetAppName, path, targetPathCount);
         PrivilegeDb::getInstance().GetPathSharingCount(path, pathCount);
-        PrivilegeDb::getInstance().GetOwnerTargetSharingCount(ownerAppId, targetAppId, ownerTargetCount);
+        PrivilegeDb::getInstance().GetOwnerTargetSharingCount(ownerAppName, targetAppName, ownerTargetCount);
         if (targetPathCount > 0) {
             return SECURITY_MANAGER_SUCCESS;
         }
         if (pathCount < 1) {
-            SmackLabels::setupPath(ownerPkgId, path, SECURITY_MANAGER_PATH_RW);
+            SmackLabels::setupPath(ownerPkgName, path, SECURITY_MANAGER_PATH_RW);
         }
-        std::string pathLabel = SmackLabels::generateSharedPrivateLabel(ownerPkgId, path);
-        SmackRules::dropPrivateSharingRules(ownerPkgId, ownerPkgContents, targetAppId, pathLabel,
+        std::string pathLabel = SmackLabels::generateSharedPrivateLabel(ownerPkgName, path);
+        SmackRules::dropPrivateSharingRules(ownerPkgName, ownerPkgContents, targetAppName, pathLabel,
                 pathCount < 1, ownerTargetCount < 1);
         return SECURITY_MANAGER_SUCCESS;
     } catch (const SmackException::Base &e) {
@@ -1011,66 +1010,69 @@ int ServiceImpl::dropOnePrivateSharing(
 }
 
 int ServiceImpl::applyPrivatePathSharing(
-        const std::string &ownerAppId,
-        const std::string &targetAppId,
+        const std::string &ownerAppName,
+        const std::string &targetAppName,
         const std::vector<std::string> &paths)
 {
     int errorRet;
     int sharingAdded = 0;
-    std::string ownerPkgId;
+    std::string ownerPkgName;
+    std::string targetPkgName;
     std::vector<std::string> pkgContents;
 
     try {
-        std::string targetPkgId;
-        if (!PrivilegeDb::getInstance().GetAppPkgId(ownerAppId, ownerPkgId)) {
-            LogError(ownerAppId << " is not an installed application");
+        PrivilegeDb::getInstance().GetAppPkgName(ownerAppName, ownerPkgName);
+        if (ownerPkgName.empty()) {
+            LogError(ownerAppName << " is not an installed application");
             return SECURITY_MANAGER_ERROR_APP_UNKNOWN;
         }
-        if (!PrivilegeDb::getInstance().GetAppPkgId(targetAppId, targetPkgId)) {
-            LogError(targetAppId << " is not an installed application");
+
+        PrivilegeDb::getInstance().GetAppPkgName(targetAppName, targetPkgName);
+        if (targetPkgName.empty()) {
+            LogError(targetAppName << " is not an installed application");
             return SECURITY_MANAGER_ERROR_APP_UNKNOWN;
         }
 
         for(const auto &path : paths) {
             std::string pathLabel = SmackLabels::getSmackLabelFromPath(path);
-            if (pathLabel != SmackLabels::generatePkgLabel(ownerPkgId)) {
-                std::string generatedPathLabel = SmackLabels::generateSharedPrivateLabel(ownerPkgId, path);
+            if (pathLabel != SmackLabels::generatePkgLabel(ownerPkgName)) {
+                std::string generatedPathLabel = SmackLabels::generateSharedPrivateLabel(ownerPkgName, path);
                 if (generatedPathLabel != pathLabel) {
                     LogError("Path " << path << " has label " << pathLabel << " and dosen't belong"
-                             " to application " << ownerAppId);
+                             " to application " << ownerAppName);
                     return SECURITY_MANAGER_ERROR_APP_NOT_PATH_OWNER;
                 }
             }
         }
-        if (ownerAppId == targetAppId) {
+        if (ownerAppName == targetAppName) {
             LogDebug("Owner application is the same as target application");
             return SECURITY_MANAGER_SUCCESS;
         }
 
-        if (ownerPkgId == targetPkgId) {
+        if (ownerPkgName == targetPkgName) {
             LogDebug("Owner and target belong to the same package");
             return SECURITY_MANAGER_SUCCESS;
         }
         ScopedTransaction trans;
-        PrivilegeDb::getInstance().GetAppIdsForPkgId(ownerPkgId, pkgContents);
+        PrivilegeDb::getInstance().GetPkgApps(ownerPkgName, pkgContents);
         for (const auto &path : paths) {
             int targetPathCount, pathCount, ownerTargetCount;
-            PrivilegeDb::getInstance().GetTargetPathSharingCount(targetAppId, path, targetPathCount);
+            PrivilegeDb::getInstance().GetTargetPathSharingCount(targetAppName, path, targetPathCount);
             PrivilegeDb::getInstance().GetPathSharingCount(path, pathCount);
-            PrivilegeDb::getInstance().GetOwnerTargetSharingCount(ownerAppId, targetAppId, ownerTargetCount);
-            std::string pathLabel = SmackLabels::generateSharedPrivateLabel(ownerPkgId, path);
-            PrivilegeDb::getInstance().ApplyPrivateSharing(ownerAppId, targetAppId, path, pathLabel);
+            PrivilegeDb::getInstance().GetOwnerTargetSharingCount(ownerAppName, targetAppName, ownerTargetCount);
+            std::string pathLabel = SmackLabels::generateSharedPrivateLabel(ownerPkgName, path);
+            PrivilegeDb::getInstance().ApplyPrivateSharing(ownerAppName, targetAppName, path, pathLabel);
             sharingAdded++;
             if (targetPathCount > 0) {
                 //Nothing to do, only counter needed incrementing
                 continue;
             }
             if (pathCount <= 0) {
-                SmackLabels::setupSharedPrivatePath(ownerPkgId, path);
+                SmackLabels::setupSharedPrivatePath(ownerPkgName, path);
             }
 
-            SmackRules::applyPrivateSharingRules(ownerPkgId, pkgContents, targetAppId,
-                    pathLabel, (pathCount > 0), (ownerTargetCount > 0));
+            SmackRules::applyPrivateSharingRules(ownerPkgName, pkgContents,
+                targetAppName, pathLabel, (pathCount > 0), (ownerTargetCount > 0));
         }
         trans.commit();
         return SECURITY_MANAGER_SUCCESS;
@@ -1087,56 +1089,63 @@ int ServiceImpl::applyPrivatePathSharing(
         LogError("Unknown exception thrown");
         errorRet = SECURITY_MANAGER_ERROR_UNKNOWN;
     }
+
     for (int i = 0; i < sharingAdded; i++) {
         const std::string &path = paths[i];
-        dropOnePrivateSharing(ownerAppId, ownerPkgId, pkgContents, targetAppId, path);
+        dropOnePrivateSharing(ownerAppName, ownerPkgName, pkgContents, targetAppName, path);
     }
+
     return errorRet;
 }
 
 int ServiceImpl::dropPrivatePathSharing(
-        const std::string &ownerAppId,
-        const std::string &targetAppId,
+        const std::string &ownerAppName,
+        const std::string &targetAppName,
         const std::vector<std::string> &paths)
 {
     int errorRet;
     try {
-        std::string ownerPkgId, targetPkgId;
-        if (!PrivilegeDb::getInstance().GetAppPkgId(ownerAppId, ownerPkgId)) {
-            LogError(ownerAppId << " is not an installed application");
+        std::string ownerPkgName;
+        PrivilegeDb::getInstance().GetAppPkgName(ownerAppName, ownerPkgName);
+        if (ownerPkgName.empty()) {
+            LogError(ownerAppName << " is not an installed application");
             return SECURITY_MANAGER_ERROR_APP_UNKNOWN;
         }
-        if (!PrivilegeDb::getInstance().GetAppPkgId(targetAppId, targetPkgId)) {
-            LogError(targetAppId << " is not an installed application");
+
+        std::string targetPkgName;
+        PrivilegeDb::getInstance().GetAppPkgName(targetAppName, targetPkgName);
+        if (targetPkgName.empty()) {
+            LogError(targetAppName << " is not an installed application");
             return SECURITY_MANAGER_ERROR_APP_UNKNOWN;
         }
 
         for(const auto &path : paths) {
             std::string pathLabel = SmackLabels::getSmackLabelFromPath(path);
-            if (pathLabel != SmackLabels::generatePkgLabel(ownerPkgId)) {
-                std::string generatedPathLabel = SmackLabels::generateSharedPrivateLabel(ownerPkgId, path);
+            if (pathLabel != SmackLabels::generatePkgLabel(ownerPkgName)) {
+                std::string generatedPathLabel = SmackLabels::generateSharedPrivateLabel(ownerPkgName, path);
                 if (generatedPathLabel != pathLabel) {
                     LogError("Path " << path << " has label " << pathLabel << " and dosen't belong"
-                             " to application " << ownerAppId);
+                             " to application " << ownerAppName);
                     return SECURITY_MANAGER_ERROR_APP_NOT_PATH_OWNER;
                 }
             }
         }
-        if (ownerAppId == targetAppId) {
+
+        if (ownerAppName == targetAppName) {
             LogDebug("Owner application is the same as target application");
             return SECURITY_MANAGER_SUCCESS;
         }
 
-        if (ownerPkgId == targetPkgId) {
+        if (ownerPkgName == targetPkgName) {
             LogDebug("Owner and target belong to the same package");
             return SECURITY_MANAGER_SUCCESS;
         }
 
         std::vector<std::string> pkgContents;
-        PrivilegeDb::getInstance().GetAppIdsForPkgId(ownerPkgId, pkgContents);
+        PrivilegeDb::getInstance().GetPkgApps(ownerPkgName, pkgContents);
         ScopedTransaction trans;
         for (const auto &path : paths) {
-            int ret = dropOnePrivateSharing(ownerAppId, ownerPkgId, pkgContents, targetAppId, path);
+            int ret = dropOnePrivateSharing(ownerAppName, ownerPkgName, pkgContents, targetAppName, path);
             if (ret != SECURITY_MANAGER_SUCCESS) {
                 return ret;
             }
@@ -1156,6 +1165,7 @@ int ServiceImpl::dropPrivatePathSharing(
         LogError("Unknown exception thrown");
         errorRet = SECURITY_MANAGER_ERROR_UNKNOWN;
     }
+
     return errorRet;
 }
 
