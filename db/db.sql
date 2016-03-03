@@ -52,13 +52,11 @@ UNIQUE (path)
 );
 
 CREATE TABLE IF NOT EXISTS app_private_sharing (
-owner_app_id INTEGER NOT NULL,
-target_app_id INTEGER NOT NULL,
+owner_app_name TEXT NOT NULL,
+target_app_name TEXT NOT NULL,
 path_id INTEGER NOT NULL,
 counter INTEGER NOT NULL,
-PRIMARY KEY (owner_app_id, target_app_id, path_id)
-FOREIGN KEY (owner_app_id) REFERENCES app (app_id)
-FOREIGN KEY (target_app_id) REFERENCES app (app_id)
+PRIMARY KEY (owner_app_name, target_app_name, path_id)
 FOREIGN KEY (path_id) REFERENCES shared_path (path_id)
 );
 
@@ -148,14 +146,12 @@ END;
 DROP VIEW IF EXISTS app_private_sharing_view;
 CREATE VIEW app_private_sharing_view AS
 SELECT
-    app1.name AS owner_app_name,
-    app2.name AS target_app_name,
+    owner_app_name,
+    target_app_name,
     path,
     path_label,
     counter
 FROM app_private_sharing
-LEFT JOIN app AS app1 ON app1.app_id = owner_app_id
-LEFT JOIN app AS app2 ON app2.app_id = target_app_id
 LEFT JOIN shared_path USING (path_id);
 
 DROP TRIGGER IF EXISTS app_private_sharing_view_insert_trigger;
@@ -164,12 +160,10 @@ INSTEAD OF INSERT ON app_private_sharing_view
 BEGIN
     INSERT OR IGNORE INTO shared_path(path, path_label) VALUES (NEW.path, NEW.path_label);
     INSERT OR REPLACE INTO app_private_sharing VALUES (
-            (SELECT app_id FROM app WHERE NEW.owner_app_name = name),
-            (SELECT app_id FROM app WHERE NEW.target_app_name = name),
+            NEW.owner_app_name, NEW.target_app_name,
             (SELECT path_id FROM shared_path WHERE NEW.path = path),
             COALESCE((SELECT counter FROM app_private_sharing
-                      WHERE target_app_id = (SELECT app_id FROM app
-                                             WHERE NEW.target_app_name = name)
+                      WHERE target_app_name = NEW.target_app_name
                       AND path_id = (SELECT path_id FROM shared_path WHERE NEW.path = path)),
                      0) + 1);
 END;
@@ -181,7 +175,7 @@ WHEN OLD.counter = 1
 BEGIN
     DELETE FROM app_private_sharing
     WHERE path_id = (SELECT path_id FROM shared_path WHERE path = OLD.path)
-    AND target_app_id = (SELECT app_id FROM app WHERE name = OLD.target_app_name);
+    AND app_private_sharing.target_app_name = OLD.target_app_name;
     DELETE FROM shared_path WHERE path_id NOT IN (SELECT path_id FROM app_private_sharing) AND path = OLD.path;
 END;
 
@@ -191,8 +185,8 @@ INSTEAD OF DELETE ON app_private_sharing_view
 WHEN OLD.counter > 1
 BEGIN
     UPDATE app_private_sharing SET counter = OLD.counter - 1
-    WHERE target_app_id = (SELECT app_id FROM app WHERE name = OLD.target_app_name)
-    AND path_id = (SELECT path_id FROM shared_path WHERE path = OLD.path);
+    WHERE path_id = (SELECT path_id FROM shared_path WHERE path = OLD.path)
+    AND app_private_sharing.target_app_name = OLD.target_app_name;
 END;
 
 DROP VIEW IF EXISTS privilege_group_view;
