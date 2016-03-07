@@ -257,6 +257,13 @@ private:
             const std::string &replace);
 
     smack_accesses *m_handle;
+
+    /**
+     * Revoke rules for which label of given \ref appName is a subject.
+     *
+     * @param[in] appName = application identifier
+     */
+    static void revokeAppSubject(const std::string &appName);
 };
 
 } // namespace SecurityManager

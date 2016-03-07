@@ -355,6 +355,13 @@ void SmackRules::updatePackageRules(
     smackRules.saveToFile(pkgPath, false);
 }
 
+
+void SmackRules::revokeAppSubject(const std::string &appName)
+{
+    if (smack_revoke_subject(SmackLabels::generateAppLabel(appName).c_str()))
+        ThrowMsg(SmackException::LibsmackError, "smack_revoke_subject");
+}
+
 void SmackRules::uninstallPackageRules(const std::string &pkgName)
 {
     uninstallRules(getPackageRulesFilePath(pkgName));
@@ -363,6 +370,7 @@ void SmackRules::uninstallPackageRules(const std::string &pkgName)
 void SmackRules::uninstallApplicationRules(const std::string &appName)
 {
     uninstallRules(getApplicationRulesFilePath(appName));
+    revokeAppSubject(appName);
 }
 
 void SmackRules::uninstallRules(const std::string &path)
