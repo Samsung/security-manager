@@ -44,10 +44,10 @@ namespace SecurityManager {
 const char *const SMACK_APP_LABEL_TEMPLATE     = "~APP~";
 const char *const SMACK_PKG_LABEL_TEMPLATE     = "~PKG~";
 const char *const SMACK_AUTHOR_LABEL_TEMPLATE  = "~AUTHOR~";
-const char *const APP_RULES_TEMPLATE_FILE_PATH = tzplatform_mkpath4(TZ_SYS_SHARE, "security-manager", "policy", "app-rules-template.smack");
-const char *const PKG_RULES_TEMPLATE_FILE_PATH = tzplatform_mkpath4(TZ_SYS_SHARE, "security-manager", "policy", "pkg-rules-template.smack");
+const char *const APP_RULES_TEMPLATE_FILE_PATH = tzplatform_mkpath4(TZ_SYS_RO_SHARE, "security-manager", "policy", "app-rules-template.smack");
+const char *const PKG_RULES_TEMPLATE_FILE_PATH = tzplatform_mkpath4(TZ_SYS_RO_SHARE, "security-manager", "policy", "pkg-rules-template.smack");
 const char *const AUTHOR_RULES_TEMPLATE_FILE_PATH =
-    tzplatform_mkpath4(TZ_SYS_SHARE, "security-manager", "policy", "author-rules-template.smack");
+    tzplatform_mkpath4(TZ_SYS_RO_SHARE, "security-manager", "policy", "author-rules-template.smack");
 const char *const SMACK_APP_IN_PACKAGE_PERMS   = "rwxat";
 const char *const SMACK_APP_CROSS_PKG_PERMS    = "rx";
 const char *const SMACK_APP_PATH_OWNER_PERMS = "rwxat";
