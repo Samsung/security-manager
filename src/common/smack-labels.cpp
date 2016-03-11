@@ -259,36 +259,35 @@ std::string generateSharedPrivateLabel(const std::string &pkgName, const std::st
     return label;
 }
 
+template<typename FuncType, typename... ArgsType>
+static std::string getSmackLabel(FuncType func, ArgsType... args)
+{
+    char *label;
+    ssize_t labelLen = func(args..., &label);
+    if (labelLen <= 0)
+        ThrowMsg(SmackException::Base, "Error while getting Smack label");
+    std::unique_ptr<char, decltype(free)*> labelPtr(label, free);
+    return std::string(labelPtr.get(), labelLen);
+}
+
 std::string getSmackLabelFromSocket(int socketFd)
 {
-    char *label = nullptr;
-    ssize_t labelSize = smack_new_label_from_socket(socketFd, &label);
-    std::unique_ptr<char, void(*)(void *)> labelPtr(label, free);
-
-    if (labelSize < 0) {
-        ThrowMsg(SmackException::Base,
-                "smack_new_label_from_socket error for socket: " << socketFd);
-    }
-
-    return std::string(labelPtr.get(), labelSize);
+    return getSmackLabel(&smack_new_label_from_socket, socketFd);
 }
 
 std::string getSmackLabelFromPath(const std::string &path)
 {
-    char *label = nullptr;
-    ssize_t labelSize = smack_new_label_from_path(path.c_str(), XATTR_NAME_SMACK, true, &label);
-    std::unique_ptr<char, void(*)(void *)> labelPtr(label, free);
+    return getSmackLabel(&smack_new_label_from_path, path.c_str(), XATTR_NAME_SMACK, true);
+}
 
-    if (labelSize < 0) {
-        ThrowMsg(SmackException::FileError,
-                "smack_new_label_from_path error for path: " << path);
-    }
-
-    return std::string(labelPtr.get(), labelSize);
+std::string getSmackLabelFromSelf(void)
+{
+    return getSmackLabel(&smack_new_label_from_self);
 }
 
 std::string getSmackLabelFromPid(pid_t pid)
 {
+    // FIXME: libsmack should provide such a function
     std::ifstream smackFileStream("/proc/" + std::to_string(pid) + "/attr/current");
     if (!smackFileStream.is_open())
         ThrowMsg(SmackException::FileError,
@@ -303,17 +302,6 @@ std::string getSmackLabelFromPid(pid_t pid)
         ThrowMsg(SmackException::InvalidLabel, "Error while fetching Smack label for process " << pid);
 
     return result;
-}
-
-std::string getSmackLabelFromSelf(void)
-{
-    char *label = nullptr;
-    ssize_t labelSize = smack_new_label_from_self(&label);
-    if (labelSize <= 0)
-        ThrowMsg(SmackException::InvalidLabel, "Error while fetching Smack label for current process");
-
-    std::unique_ptr<char, decltype(free)*> labelPtr(label, free);
-    return std::string(labelPtr.get(), labelSize);
 }
 
 std::string generateAuthorLabel(const int authorId)
