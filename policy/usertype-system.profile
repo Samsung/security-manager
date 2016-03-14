@@ -39,6 +39,7 @@
 *	http://tizen.org/privilege/keymanager
 *	http://tizen.org/privilege/led
 *	http://tizen.org/privilege/location
+*	http://tizen.org/privilege/location.coarse
 *	http://tizen.org/privilege/location.enable
 *	http://tizen.org/privilege/mapservice
 *	http://tizen.org/privilege/mediacontroller.client
