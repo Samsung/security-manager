@@ -4,7 +4,7 @@ PRAGMA auto_vacuum = NONE;
 
 BEGIN EXCLUSIVE TRANSACTION;
 
-PRAGMA user_version = 0;
+PRAGMA user_version = 1;
 
 CREATE TABLE IF NOT EXISTS pkg (
 pkg_id INTEGER PRIMARY KEY,
