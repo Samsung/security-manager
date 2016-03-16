@@ -34,6 +34,7 @@
 
 #include <dpl/log/log.h>
 #include <tzplatform_config.h>
+#include <dpl/errno_string.h>
 
 #include <config.h>
 #include "protocols.h"
@@ -270,7 +271,7 @@ bool ServiceImpl::installRequestAuthCheck(const app_inst_req &req, uid_t uid, st
             realpath(path.first.c_str(), NULL), free);
         if (!real_path.get()) {
             LogError("realpath failed with '" << path.first.c_str()
-                    << "' as parameter: " << strerror(errno));
+                    << "' as parameter: " << GetErrnoString(errno));
             return false;
         }
         LogDebug("Requested path is '" << path.first.c_str()

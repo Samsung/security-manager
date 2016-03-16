@@ -35,6 +35,7 @@
 
 #include <dpl/log/log.h>
 #include <tzplatform_config.h>
+#include <dpl/errno_string.h>
 
 #include "smack-labels.h"
 #include "smack-rules.h"
@@ -114,7 +115,7 @@ void SmackRules::loadFromFile(const std::string &path)
 
     if (close(fd) == -1) {
         // don't change the return code, the descriptor should be closed despite the error.
-        LogWarning("Error while closing the file: " << path << ", error: " << strerror(errno));
+        LogWarning("Error while closing the file: " << path << ", error: " << GetErrnoString(errno));
     }
 }
 
@@ -137,13 +138,13 @@ void SmackRules::saveToFile(const std::string &path, bool truncFile) const
 
     if (close(fd) == -1) {
         if (errno == EIO) {
-            LogError("I/O Error occured while closing the file: " << path << ", error: " << strerror(errno));
+            LogError("I/O Error occured while closing the file: " << path << ", error: " << GetErrnoString(errno));
             unlink(path.c_str());
-            ThrowMsg(SmackException::FileError, "I/O Error occured while closing the file: " << path << ", error: " << strerror(errno));
+            ThrowMsg(SmackException::FileError, "I/O Error occured while closing the file: " << path << ", error: " << GetErrnoString(errno));
         } else {
             // non critical error
             // don't change the return code, the descriptor should be closed despite the error.
-            LogWarning("Error while closing the file: " << path << ", error: " << strerror(errno));
+            LogWarning("Error while closing the file: " << path << ", error: " << GetErrnoString(errno));
         }
     }
 }

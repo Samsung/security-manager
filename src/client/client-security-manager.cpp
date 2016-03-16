@@ -50,6 +50,7 @@
 
 #include <security-manager.h>
 #include <client-offline.h>
+#include <dpl/errno_string.h>
 
 static const char *EMPTY = "";
 
@@ -332,7 +333,7 @@ static bool setup_smack(const char *label)
         opendir("/proc/self/fd"), closedir);
     if (!dir.get()) {
         LogError("Unable to read list of open file descriptors: " <<
-            strerror(errno));
+            GetErrnoString(errno));
         return SECURITY_MANAGER_ERROR_UNKNOWN;
     }
 
@@ -344,7 +345,7 @@ static bool setup_smack(const char *label)
                 break;
 
             LogError("Unable to read list of open file descriptors: " <<
-                strerror(errno));
+                GetErrnoString(errno));
             return SECURITY_MANAGER_ERROR_UNKNOWN;
         }
 
@@ -357,21 +358,21 @@ static bool setup_smack(const char *label)
         int ret = fstat(fd, &statBuf);
         if (ret != 0) {
             LogWarning("fstat failed on file descriptor " << fd << ": " <<
-                strerror(errno));
+                GetErrnoString(errno));
             continue;
         }
         if (S_ISSOCK(statBuf.st_mode)) {
             ret = fsetxattr(fd, XATTR_NAME_SMACKIPIN, label, labelSize, 0);
             if (ret != 0) {
                 LogError("Setting Smack label failed on file descriptor " <<
-                    fd << ": " << strerror(errno));
+                    fd << ": " << GetErrnoString(errno));
                 return SECURITY_MANAGER_ERROR_UNKNOWN;
             }
 
             ret = fsetxattr(fd, XATTR_NAME_SMACKIPOUT, label, labelSize, 0);
             if (ret != 0) {
                 LogError("Setting Smack label failed on file descriptor " <<
-                    fd << ": " << strerror(errno));
+                    fd << ": " << GetErrnoString(errno));
                 return SECURITY_MANAGER_ERROR_UNKNOWN;
             }
         }
@@ -453,7 +454,7 @@ int security_manager_set_process_groups_from_appid(const char *app_name)
         ret = getgroups(0, nullptr);
         if (ret == -1) {
             LogError("Unable to get list of current supplementary groups: " <<
-                strerror(errno));
+                GetErrnoString(errno));
             return SECURITY_MANAGER_ERROR_UNKNOWN;
         }
         oldGroupsCnt = ret;
@@ -469,7 +470,7 @@ int security_manager_set_process_groups_from_appid(const char *app_name)
         ret = getgroups(oldGroupsCnt, groups.get());
         if (ret == -1) {
             LogError("Unable to get list of current supplementary groups: " <<
-                strerror(errno));
+                GetErrnoString(errno));
             return SECURITY_MANAGER_ERROR_UNKNOWN;
         }
 
@@ -485,7 +486,7 @@ int security_manager_set_process_groups_from_appid(const char *app_name)
         ret = setgroups(oldGroupsCnt + newGroupsCnt, groups.get());
         if (ret == -1) {
             LogError("Unable to get list of current supplementary groups: " <<
-                strerror(errno));
+                GetErrnoString(errno));
             return SECURITY_MANAGER_ERROR_UNKNOWN;
         }
 

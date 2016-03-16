@@ -30,6 +30,7 @@
 #include <sys/stat.h>
 #include <privilege_db.h>
 #include <smack-labels.h>
+#include <dpl/errno_string.h>
 
 namespace {
 const std::string tmp_flag = "/tmp/sm-cleanup-tmp-flag";
@@ -46,7 +47,7 @@ bool createFile(const std::string &path)
     mode_t mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
     fd = TEMP_FAILURE_RETRY(creat(path.c_str(), mode));
     if (fd == -1) {
-        std::cerr << "Creating file " << path << " failed with " << strerror(errno);
+        std::cerr << "Creating file " << path << " failed with " << SecurityManager::GetErrnoString(errno);
         return false;
     }
     close(fd);

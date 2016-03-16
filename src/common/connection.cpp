@@ -36,6 +36,7 @@
 
 #include <dpl/log/log.h>
 #include <dpl/serialization.h>
+#include <dpl/errno_string.h>
 
 #include <message-buffer.h>
 
@@ -60,7 +61,7 @@ int waitForSocket(int sock, int event, int timeout) {
         LogDebug("Poll timeout");
     } else if (-1 == retval) {
         int err = errno;
-        LogError("Error in poll: " << strerror(err));
+        LogError("Error in poll: " << GetErrnoString(err));
     }
     return retval;
 }
@@ -86,7 +87,7 @@ public:
         m_sock = socket(AF_UNIX, SOCK_STREAM, 0);
         if (m_sock < 0) {
             int err = errno;
-            LogError("Error creating socket: " << strerror(err));
+            LogError("Error creating socket: " << GetErrnoString(err));
             return SECURITY_MANAGER_ERROR_SOCKET;
         }
 
@@ -94,7 +95,7 @@ public:
             fcntl(m_sock, F_SETFL, flags | O_NONBLOCK) < 0)
         {
             int err = errno;
-            LogError("Error in fcntl: " << strerror(err));
+            LogError("Error in fcntl: " << GetErrnoString(err));
             return SECURITY_MANAGER_ERROR_SOCKET;
         }
 
@@ -123,7 +124,7 @@ public:
 
             if (-1 == retval) {
                 int err = errno;
-                LogError("Error in getsockopt: " << strerror(err));
+                LogError("Error in getsockopt: " << GetErrnoString(err));
                 return SECURITY_MANAGER_ERROR_SOCKET;
             }
 
@@ -133,7 +134,7 @@ public:
             }
 
             if (error != 0) {
-                LogError("Error in connect: " << strerror(error));
+                LogError("Error in connect: " << GetErrnoString(error));
                 return SECURITY_MANAGER_ERROR_SOCKET;
             }
 
@@ -142,7 +143,7 @@ public:
 
         if (-1 == retval) {
             int err = errno;
-            LogError("Error connecting socket: " << strerror(err));
+            LogError("Error connecting socket: " << GetErrnoString(err));
             if (err == EACCES)
                 return SECURITY_MANAGER_ERROR_ACCESS_DENIED;
             if (err == ENOTSOCK)
@@ -184,7 +185,7 @@ int sendToServer(char const * const interface, const RawBuffer &send, MessageBuf
         ssize_t temp = TEMP_FAILURE_RETRY(write(sock.Get(), &send[done], send.size() - done));
         if (-1 == temp) {
             int err = errno;
-            LogError("Error in write: " << strerror(err));
+            LogError("Error in write: " << GetErrnoString(err));
             return SECURITY_MANAGER_ERROR_SOCKET;
         }
         done += temp;
@@ -198,7 +199,7 @@ int sendToServer(char const * const interface, const RawBuffer &send, MessageBuf
         ssize_t temp = TEMP_FAILURE_RETRY(read(sock.Get(), buffer, 2048));
         if (-1 == temp) {
             int err = errno;
-            LogError("Error in read: " << strerror(err));
+            LogError("Error in read: " << GetErrnoString(err));
             return SECURITY_MANAGER_ERROR_SOCKET;
         }
 
@@ -231,7 +232,7 @@ int sendToServerAncData(char const * const interface, const RawBuffer &send, str
         ssize_t temp = TEMP_FAILURE_RETRY(write(sock.Get(), &send[done], send.size() - done));
         if (-1 == temp) {
             int err = errno;
-            LogError("Error in write: " << strerror(err));
+            LogError("Error in write: " << GetErrnoString(err));
             return SECURITY_MANAGER_ERROR_SOCKET;
         }
         done += temp;
@@ -246,7 +247,7 @@ int sendToServerAncData(char const * const interface, const RawBuffer &send, str
 
     if (temp < 0) {
         int err = errno;
-        LogError("Error in recvmsg(): " << strerror(err) << " errno: " << err);
+        LogError("Error in recvmsg(): " << GetErrnoString(err) << " errno: " << err);
         return SECURITY_MANAGER_ERROR_SOCKET;
     }
 

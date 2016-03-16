@@ -26,6 +26,7 @@
 #include "cynara.h"
 
 #include <dpl/log/log.h>
+#include <dpl/errno_string.h>
 
 namespace SecurityManager {
 
@@ -532,7 +533,7 @@ Cynara::Cynara()
 
     ret = eventfd(0, 0);
     if (ret == -1) {
-        LogError("Error while creating eventfd: " << strerror(errno));
+        LogError("Error while creating eventfd: " << GetErrnoString(errno));
         ThrowMsg(CynaraException::UnknownError, "Error while creating eventfd");
     }
 
@@ -573,7 +574,7 @@ void Cynara::threadNotifyPut()
 {
     int ret = eventfd_write(pollFds[0].fd, 1);
     if (ret == -1)
-        LogError("Unexpected error while writing to eventfd: " << strerror(errno));
+        LogError("Unexpected error while writing to eventfd: " << GetErrnoString(errno));
 }
 
 void Cynara::threadNotifyGet()
@@ -581,7 +582,7 @@ void Cynara::threadNotifyGet()
     eventfd_t value;
     int ret = eventfd_read(pollFds[0].fd, &value);
     if (ret == -1)
-        LogError("Unexpected error while reading from eventfd: " << strerror(errno));
+        LogError("Unexpected error while reading from eventfd: " << GetErrnoString(errno));
 }
 
 void Cynara::statusCallback(int oldFd, int newFd, cynara_async_status status,
@@ -652,7 +653,7 @@ void Cynara::run()
         int ret = poll(pollFds, 2, -1);
         if (ret == -1) {
             if (errno != EINTR)
-                LogError("Unexpected error returned by poll: " << strerror(errno));
+                LogError("Unexpected error returned by poll: " << GetErrnoString(errno));
             continue;
         }
 

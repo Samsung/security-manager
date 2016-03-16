@@ -39,6 +39,7 @@
 #include <algorithm>
 
 #include <dpl/log/log.h>
+#include <dpl/errno_string.h>
 
 #include "security-manager.h"
 #include "smack-labels.h"
@@ -111,8 +112,8 @@ static void dirSetSmack(const std::string &path, const std::string &label,
 
     /* If last call to fts_read() set errno, we need to return error. */
     if ((errno != 0) && (ftsent == NULL)) {
-        LogError("Last errno from fts_read: " << strerror(errno));
-        ThrowMsg(SmackException::FileError, "Last errno from fts_read: " << strerror(errno));
+        LogError("Last errno from fts_read: " << GetErrnoString(errno));
+        ThrowMsg(SmackException::FileError, "Last errno from fts_read: " << GetErrnoString(errno));
     }
 }
 
