@@ -66,7 +66,7 @@ enum app_install_path_type {
     SECURITY_MANAGER_ENUM_END
 };
 
-enum app_install_type : int {
+enum app_install_type {
     SM_APP_INSTALL_NONE = 0,
     SM_APP_INSTALL_LOCAL,
     SM_APP_INSTALL_GLOBAL,
