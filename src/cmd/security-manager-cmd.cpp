@@ -55,12 +55,6 @@ static std::map <std::string, enum security_manager_user_type> user_type_map = {
     {"normal", SM_USER_TYPE_NORMAL}
 };
 
-static std::map <std::string, enum app_install_type> install_type_map = {
-    {"local", SM_APP_INSTALL_LOCAL},
-    {"global", SM_APP_INSTALL_GLOBAL},
-    {"preloaded", SM_APP_INSTALL_PRELOADED}
-};
-
 static po::options_description getGenericOptions()
 {
     po::options_description opts("Generic options");
@@ -101,8 +95,6 @@ static po::options_description getInstallOptions()
           "user identifier number (required)")
          ("author-id,c", po::value<std::string>(),
           "unique author's identifier (required for trusted_rw paths)")
-         ("install-type", po::value<std::string>(),
-          "type of installation (local, global, preloaded")
          ;
     return opts;
 }
@@ -244,10 +236,9 @@ static void parseInstallOptions(int argc, char *argv[],
     }
     if (vm.count("uid"))
         req.uid = vm["uid"].as<uid_t>();
-    if (vm.count("author-id"))
+    if (vm.count("author-id")) {
         req.authorName = vm["author-id"].as<std::string>();
-    if (vm.count("install-type"))
-        req.installationType = install_type_map.at(vm["install-type"].as<std::string>());
+    }
 
 }
 
