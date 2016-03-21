@@ -91,6 +91,12 @@ int security_manager_app_inst_req_new(app_inst_req **pp_req)
     }
     (*pp_req)->uid = geteuid();
 
+    uid_t globalUid = tzplatform_getuid(TZ_SYS_GLOBALAPP_USER);
+    if ((*pp_req)->uid == 0 || (*pp_req)->uid == globalUid)
+        (*pp_req)->installationType = static_cast<int>(SM_APP_INSTALL_GLOBAL);
+    else
+        (*pp_req)->installationType = static_cast<int>(SM_APP_INSTALL_LOCAL);
+
     return SECURITY_MANAGER_SUCCESS;
 }
 
@@ -178,6 +184,17 @@ int security_manager_app_inst_req_add_path(app_inst_req *p_req, const char *path
 }
 
 SECURITY_MANAGER_API
+int security_manager_app_inst_req_set_install_type(app_inst_req *p_req, const enum app_install_type type)
+{
+    if (!p_req || (type <= SM_APP_INSTALL_NONE) || (type >= SM_APP_INSTALL_END))
+        return SECURITY_MANAGER_ERROR_INPUT_PARAM;
+
+    p_req->installationType = static_cast<int>(type);
+
+    return SECURITY_MANAGER_SUCCESS;
+}
+
+SECURITY_MANAGER_API
 int security_manager_app_install(const app_inst_req *p_req)
 {
     using namespace SecurityManager;
@@ -205,7 +222,8 @@ int security_manager_app_install(const app_inst_req *p_req)
                                      p_req->appPaths,
                                      p_req->uid,
                                      p_req->tizenVersion,
-                                     p_req->authorName);
+                                     p_req->authorName,
+                                     p_req->installationType);
 
             //send buffer to server
             retval = sendToServer(SERVICE_SOCKET, send.Pop(), recv);

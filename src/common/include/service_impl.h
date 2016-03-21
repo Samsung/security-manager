@@ -41,7 +41,7 @@ private:
 
     static bool isSubDir(const char *parent, const char *subdir);
 
-    static bool getUserAppDir(const uid_t &uid, std::string &userAppDir);
+    static bool getUserAppDir(const uid_t &uid, const app_install_type &installType, std::string &userAppDir);
 
     static bool installRequestAuthCheck(const app_inst_req &req, uid_t uid, std::string &appPath);
 
