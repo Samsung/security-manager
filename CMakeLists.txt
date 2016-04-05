@@ -26,6 +26,15 @@ PROJECT("security-manager")
 
 INCLUDE(FindPkgConfig)
 
+######################### let's setup directories #############################
+
+SET(LOCAL_STATE_DIR
+    "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LOCALSTATEDIR}"
+    CACHE PATH
+    "Modifiable single-machine data directory")
+
+ADD_DEFINITIONS("-DLOCAL_STATE_DIR=\"${LOCAL_STATE_DIR}\"")
+
 ############################# compiler flags ##################################
 
 SET(CMAKE_C_FLAGS_PROFILING    "-g -O0 -pg -Wp,-U_FORTIFY_SOURCE")
@@ -63,3 +72,4 @@ ADD_SUBDIRECTORY(pc)
 ADD_SUBDIRECTORY(systemd)
 ADD_SUBDIRECTORY(db)
 ADD_SUBDIRECTORY(policy)
+ADD_SUBDIRECTORY(migration)

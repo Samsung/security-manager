@@ -1,0 +1,13 @@
+[Unit]
+Description=SMACK merged rules loading
+After=local-fs.target
+Before=basic.target
+DefaultDependencies=no
+
+[Service]
+Type=oneshot
+ExecStart=/bin/dd if=@LOCAL_STATE_DIR@/security-manager/rules-merged/rules.merged of=/sys/fs/smackfs/load2 bs=20M
+
+[Install]
+WantedBy=basic.target
+

@@ -1,0 +1,18 @@
+#!/bin/bash
+
+SRC_PATH=/etc/smack/accesses.d
+DSC_PATH=@LOCAL_STATE_DIR@/security-manager/rules
+MRG_PATH=@LOCAL_STATE_DIR@/security-manager/rules-merged/rules.merged
+
+if [ -e $MRG_PATH ]; then
+    echo "No migration needed. File ${MRG_PATH} already exists."
+    exit 0
+fi
+
+echo "Running migration process"
+echo "Moving files from ${SRC_PATH} to ${DSC_PATH}"
+mv ${SRC_PATH}/app_* ${SRC_PATH}/pkg_* ${SRC_PATH}/author_* ${DSC_PATH}
+echo "Merging files from ${DSC_PATH} to ${MRG_PATH}"
+cat ${DSC_PATH}/* > ${MRG_PATH}
+echo "Migration process was finished"
+

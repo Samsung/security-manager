@@ -411,6 +411,7 @@ int ServiceImpl::appInstall(const Credentials &creds, app_inst_req &&req)
         LogDebug("Adding Smack rules for new appName: " << req.appName << " with pkgName: "
                 << req.pkgName << ". Applications in package: " << pkgContents.size());
         SmackRules::installApplicationRules(req.appName, req.pkgName, authorId, pkgContents, allTizen2XApps, allTizen2XPackages);
+        SmackRules::mergeRules();
     } catch (const SmackException::InvalidParam &e) {
         LogError("Invalid paramater during labeling: " << e.GetMessage());
         return SECURITY_MANAGER_ERROR_INPUT_PARAM;
@@ -521,6 +522,8 @@ int ServiceImpl::appUninstall(const Credentials &creds, app_inst_req &&req,
             LogDebug("Removing Smack rules for authorId " << authorId);
             SmackRules::uninstallAuthorRules(authorId);
         }
+
+        SmackRules::mergeRules();
     } catch (const SmackException::Base &e) {
         LogError("Error while removing Smack rules for application: " << e.DumpToString());
         return SECURITY_MANAGER_ERROR_SETTING_FILE_LABEL_FAILED;

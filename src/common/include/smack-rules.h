@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2014 Samsung Electronics Co., Ltd All Rights Reserved
+ *  Copyright (c) 2014-2016 Samsung Electronics Co., Ltd All Rights Reserved
  *
  *  Contact: Rafal Krypa <r.krypa@samsung.com>
  *
@@ -62,7 +62,7 @@ public:
 
     void apply() const;
     void clear() const;
-    void saveToFile(const std::string &path, bool truncFile = true) const;
+    void saveToFile(const std::string &path) const;
 
     /**
      * Create cross dependencies for all applications in a package
@@ -195,6 +195,13 @@ public:
                                         bool isTargetSharingNoMore);
 
     static void updatePackageRules(const std::string &pkgName, const std::vector<std::string> &pkgContents);
+
+    /**
+     * This function will read all rules created by security-manager and
+     * save them in one file. This file will be used during next system
+     * boot.
+     */
+    static void mergeRules();
 
 private:
     static void useTemplate(
