@@ -110,7 +110,7 @@ private:
         { StmtType::EPkgNameExists, "SELECT count(*) FROM pkg WHERE name=?" },
         { StmtType::EAppNameExists, "SELECT count(*) FROM app WHERE name=?" },
         { StmtType::EGetAppPkgName, "SELECT pkg_name FROM app_pkg_view WHERE app_name = ?" },
-        { StmtType::EGetAppVersion, "SELECT version FROM app_pkg_view WHERE app_name = ?" },
+        { StmtType::EGetAppVersion, "SELECT version FROM app WHERE name = ?" },
         { StmtType::EGetPathSharedCount, "SELECT COUNT(*) FROM app_private_sharing_view WHERE path = ?"},
         { StmtType::EGetTargetPathSharedCount, "SELECT COUNT(*) FROM app_private_sharing_view WHERE target_app_name = ? AND path = ?"},
         { StmtType::EGetOwnerTargetSharedCount, "SELECT COUNT(*) FROM app_private_sharing_view WHERE owner_app_name = ? AND target_app_name = ?"},
@@ -125,7 +125,7 @@ private:
         { StmtType::EGetAllTizen2XPackages,  "SELECT DISTINCT pkg_name FROM app_pkg_view WHERE version LIKE '2.%%' AND app_name <> ?" },
         { StmtType::EGetAppsInPkg, " SELECT app_name FROM app_pkg_view WHERE pkg_name = ?" },
         { StmtType::EGetGroups, "SELECT DISTINCT group_name FROM privilege_group_view" },
-        { StmtType::EGetAppAuthorId, "SELECT author_id FROM app_pkg_view WHERE app_name = ? AND author_id IS NOT NULL"},
+        { StmtType::EGetAppAuthorId, "SELECT author_id FROM app WHERE name = ? AND author_id IS NOT NULL"},
         { StmtType::EAuthorIdExists, "SELECT count(*) FROM author where author_id=?"},
     };
 
