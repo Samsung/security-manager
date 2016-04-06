@@ -100,11 +100,11 @@ private:
 
     SecurityManager::DB::SqlConnection *mSqlConnection;
     const std::map<StmtType, const char * const > Queries = {
-        { StmtType::EAddApplication, "INSERT INTO app_pkg_view (app_name, pkg_name, uid, version, author_name) VALUES (?, ?, ?, ?, ?)" },
-        { StmtType::ERemoveApplication, "DELETE FROM app_pkg_view WHERE app_name=? AND uid=?" },
+        { StmtType::EAddApplication, "INSERT INTO user_app_pkg_view (app_name, pkg_name, uid, version, author_name) VALUES (?, ?, ?, ?, ?)" },
+        { StmtType::ERemoveApplication, "DELETE FROM user_app_pkg_view WHERE app_name=? AND uid=?" },
         { StmtType::EPkgNameExists, "SELECT count(*) FROM pkg WHERE name=?" },
         { StmtType::EAppNameExists, "SELECT count(*) FROM app WHERE name=?" },
-        { StmtType::EGetAppPkgName, "SELECT pkg_name FROM app_pkg_view WHERE app_name = ?" },
+        { StmtType::EGetAppPkgName, "SELECT pkg_name FROM user_app_pkg_view WHERE app_name = ?" },
         { StmtType::EGetAppVersion, "SELECT version FROM app WHERE name = ?" },
         { StmtType::EGetPathSharedCount, "SELECT COUNT(*) FROM app_private_sharing_view WHERE path = ?"},
         { StmtType::EGetTargetPathSharedCount, "SELECT COUNT(*) FROM app_private_sharing_view WHERE target_app_name = ? AND path = ?"},
@@ -118,9 +118,9 @@ private:
         { StmtType::EClearSharing, "DELETE FROM app_private_sharing;"},
         { StmtType::EClearPrivatePaths, "DELETE FROM shared_path;"},
         { StmtType::EGetPrivilegeGroups, " SELECT group_name FROM privilege_group WHERE privilege_name = ?" },
-        { StmtType::EGetUserApps, "SELECT name FROM app WHERE uid=?" },
-        { StmtType::EGetTizen2XPackages,  "SELECT DISTINCT pkg_name FROM app_pkg_view WHERE version LIKE '2.%%'" },
-        { StmtType::EGetAppsInPkg, " SELECT app_name FROM app_pkg_view WHERE pkg_name = ?" },
+        { StmtType::EGetUserApps, "SELECT app_name FROM user_app_pkg_view WHERE uid=?" },
+        { StmtType::EGetTizen2XPackages,  "SELECT DISTINCT pkg_name FROM user_app_pkg_view WHERE version LIKE '2.%%'" },
+        { StmtType::EGetAppsInPkg, " SELECT app_name FROM user_app_pkg_view WHERE pkg_name = ?" },
         { StmtType::EGetGroups, "SELECT DISTINCT group_name FROM privilege_group" },
         { StmtType::EGetPkgAuthorId, "SELECT author_id FROM pkg WHERE name = ? AND author_id IS NOT NULL"},
         { StmtType::EAuthorIdExists, "SELECT count(*) FROM author where author_id=?"},
