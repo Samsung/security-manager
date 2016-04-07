@@ -30,12 +30,6 @@ name VARCHAR NOT NULL,
 UNIQUE (name)
 );
 
-CREATE TABLE IF NOT EXISTS version (
-version_id INTEGER PRIMARY KEY,
-name VARCHAR NOT NULL,
-UNIQUE (name)
-);
-
 CREATE TABLE IF NOT EXISTS app_privilege (
 app_id INTEGER NOT NULL,
 privilege_id INTEGER NOT NULL ,
