@@ -48,8 +48,8 @@
 
 namespace SecurityManager {
 
-static const std::string ADMIN_PRIVILEGE = "http://tizen.org/privilege/systemsettings.admin";
-static const std::string SELF_PRIVILEGE = "http://tizen.org/privilege/systemsettings";
+static const std::string ADMIN_PRIVILEGE = "http://tizen.org/privilege/internal/usermanagement";
+static const std::string SELF_PRIVILEGE = "http://tizen.org/privilege/notexist";
 
 namespace {
 

@@ -126,7 +126,7 @@ public:
     int userDelete(uid_t uidDeleted, uid_t uid);
 
     /**
-    * Update policy in Cynara - proper privilege: http://tizen.org/privilege/systemsettings.admin
+    * Update policy in Cynara - proper privilege: http://tizen.org/privilege/internal/usermanagement
     * is needed for this to succeed
     *
     * @param[in] policyEntries vector of policy chunks with instructions
