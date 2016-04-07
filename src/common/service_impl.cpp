@@ -140,6 +140,13 @@ bool isTizen2XVersion(const std::string &version)
     return false;
 }
 
+bool sharingExists(const std::string &targetAppName, const std::string &path)
+{
+    int targetPathCount;
+    PrivilegeDb::getInstance().GetTargetPathSharingCount(targetAppName, path, targetPathCount);
+    return targetPathCount != 0;
+}
+
 class ScopedTransaction {
 public:
     ScopedTransaction() : m_isCommited(false) {
@@ -1297,6 +1304,11 @@ int ServiceImpl::dropPrivatePathSharing(
         }
 
         for(const auto &path : paths) {
+            if (!sharingExists(targetAppName, path)) {
+                LogError("Sharing doesn't exist: owner=" << ownerAppName
+                         << ", target=" << targetAppName << ", path=" << path);
+                return SECURITY_MANAGER_ERROR_INPUT_PARAM;
+            }
             std::string pathLabel = SmackLabels::getSmackLabelFromPath(path);
             if (pathLabel != SmackLabels::generatePkgLabel(ownerPkgName)) {
                 std::string generatedPathLabel = SmackLabels::generateSharedPrivateLabel(ownerPkgName, path);
