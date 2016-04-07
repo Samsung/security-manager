@@ -208,7 +208,7 @@ bool ServiceImpl::isSubDir(const char *parent, const char *subdir)
     return (*subdir == '/' || *parent == *subdir);
 }
 
-bool ServiceImpl::getUserAppDir(const uid_t &uid, const app_install_type &installType, std::string &userAppDir)
+bool ServiceImpl::getUserAppDir(const uid_t &uid, std::string &userAppDir)
 {
     struct tzplatform_context *tz_ctx = nullptr;
 
@@ -221,15 +221,8 @@ bool ServiceImpl::getUserAppDir(const uid_t &uid, const app_install_type &instal
     if (tzplatform_context_set_user(tz_ctxPtr.get(), uid))
         return false;
 
-    enum tzplatform_variable id;
-
-    if (installType == SM_APP_INSTALL_LOCAL)
-        id = TZ_USER_APP;
-    else if (installType == SM_APP_INSTALL_GLOBAL)
-        id = TZ_SYS_RW_APP;
-    else
-        id = TZ_SYS_RO_APP;
-
+    enum tzplatform_variable id =
+            (uid == getGlobalUserId()) ? TZ_SYS_RW_APP : TZ_USER_APP;
     const char *appDir = tzplatform_context_getenv(tz_ctxPtr.get(), id);
     if (!appDir)
         return false;
@@ -249,14 +242,12 @@ bool ServiceImpl::installRequestAuthCheck(const app_inst_req &req, uid_t uid, st
     std::string userAppDir;
     std::stringstream correctPath;
 
-    if (static_cast<app_install_type>(req.installationType) == SM_APP_INSTALL_LOCAL)
-        LogDebug("Installation type: local");
-    else if (static_cast<app_install_type>(req.installationType) == SM_APP_INSTALL_GLOBAL)
-        LogDebug("Installation type: global");
+    if (uid != getGlobalUserId())
+        LogDebug("Installation type: single user");
     else
-        LogDebug("Installation type: preloaded");
+        LogDebug("Installation type: global installation");
 
-    if (!getUserAppDir(uid, static_cast<app_install_type>(req.installationType), userAppDir)) {
+    if (!getUserAppDir(uid, userAppDir)) {
         LogError("Failed getting app dir for user uid: " << uid);
         return false;
     }
