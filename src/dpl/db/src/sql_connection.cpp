@@ -369,6 +369,9 @@ bool SqlConnection::DataCommand::Step()
         LogPedantic("SQL step data command failed");
         LogPedantic("    Error: " << error);
 
+        if (ret == SQLITE_CONSTRAINT) {
+            ThrowMsg(Exception::ConstraintError, error);
+        }
         ThrowMsg(Exception::InternalError, error);
     }
 }

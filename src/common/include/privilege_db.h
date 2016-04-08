@@ -159,6 +159,7 @@ public:
         DECLARE_EXCEPTION_TYPE(SecurityManager::Exception, Base)
         DECLARE_EXCEPTION_TYPE(Base, IOError)
         DECLARE_EXCEPTION_TYPE(Base, InternalError)
+        DECLARE_EXCEPTION_TYPE(Base, ConstraintError)
     };
 
     ~PrivilegeDb(void);
@@ -191,6 +192,7 @@ public:
      *
      * @param appName - package identifier
      * @exception DB::SqlConnection::Exception::InternalError on internal error
+     * @exception DB::SqlConnection::Exception::ConstraintError on constraint violation
      *
      */
     bool AppNameExists(const std::string &appName);
@@ -200,6 +202,7 @@ public:
      *
      * @param pkgName - package identifier
      * @exception DB::SqlConnection::Exception::InternalError on internal error
+     * @exception DB::SqlConnection::Exception::ConstraintError on constraint violation
      * @return true if pkgName exists in the database
      *
      */
@@ -210,6 +213,7 @@ public:
      *
      * @param authorId numerical author identifier
      * @exception DB::SqlConnection::Exception::InternalError on internal error
+     * @exception DB::SqlConnection::Exception::ConstraintError on constraint violation
      * @return true if authorId exists in the database
      *
      */
@@ -221,6 +225,7 @@ public:
      * @param appName - application identifier
      * @param[out] pkgName - return application's package identifier
      * @exception DB::SqlConnection::Exception::InternalError on internal error
+     * @exception DB::SqlConnection::Exception::ConstraintError on constraint violation
      */
     void GetAppPkgName(const std::string &appName, std::string &pkgName);
 
@@ -230,6 +235,7 @@ public:
      * @param appName - application identifier
      * @param[out] tizenVer - return application's target Tizen version
      * @exception DB::SqlConnection::Exception::InternalError on internal error
+     * @exception DB::SqlConnection::Exception::ConstraintError on constraint violation
      */
     void GetAppVersion(const std::string &appName, std::string &tizenVer);
 
@@ -240,6 +246,7 @@ public:
      * @param uid - user identifier for whom privileges will be retrieved
      * @param[out] currentPrivileges - list of current privileges assigned to the package
      * @exception DB::SqlConnection::Exception::InternalError on internal error
+     * @exception DB::SqlConnection::Exception::ConstraintError on constraint violation
      */
     void GetPkgPrivileges(const std::string &pkgName, uid_t uid,
             std::vector<std::string> &currentPrivilege);
@@ -251,6 +258,7 @@ public:
      * @param uid - user identifier for whom privileges will be retrieved
      * @param[out] currentPrivileges - list of current privileges assigned to appName
      * @exception DB::SqlConnection::Exception::InternalError on internal error
+     * @exception DB::SqlConnection::Exception::ConstraintError on constraint violation
      */
     void GetAppPrivileges(const std::string &appName, uid_t uid,
         std::vector<std::string> &currentPrivileges);
@@ -264,6 +272,7 @@ public:
      * @param targetTizenVer - target tizen version for application
      * @param author - author identifier
      * @exception DB::SqlConnection::Exception::InternalError on internal error
+     * @exception DB::SqlConnection::Exception::ConstraintError on constraint violation
      */
     void AddApplication(
             const std::string &appName,
@@ -281,6 +290,7 @@ public:
      * @param[out] pkgNameIsNoMore - return info if pkgName is in the database
      * @param[out] authorNameIsNoMore - return info if authorName is in the database
      * @exception DB::SqlConnection::Exception::InternalError on internal error
+     * @exception DB::SqlConnection::Exception::ConstraintError on constraint violation
      */
     void RemoveApplication(
             const std::string &appName,
@@ -295,6 +305,7 @@ public:
      * @param appName - application identifier
      * @param uid - user identifier for whom privileges will be removed
      * @exception DB::SqlConnection::Exception::InternalError on internal error
+     * @exception DB::SqlConnection::Exception::ConstraintError on constraint violation
      */
     void RemoveAppPrivileges(const std::string &appName, uid_t uid);
 
@@ -306,6 +317,7 @@ public:
      * @param uid - user identifier for whom privileges will be updated
      * @param privileges - list of privileges to assign
      * @exception DB::SqlConnection::Exception::InternalError on internal error
+     * @exception DB::SqlConnection::Exception::ConstraintError on constraint violation
      */
     void UpdateAppPrivileges(const std::string &appName, uid_t uid,
             const std::vector<std::string> &privileges);
@@ -316,6 +328,7 @@ public:
      * @param path - path name
      * @param[out] count - count of sharing
      * @exception DB::SqlConnection::Exception::InternalError on internal error
+     * @exception DB::SqlConnection::Exception::ConstraintError on constraint violation
      */
     void GetPathSharingCount(const std::string &path, int &count);
 
@@ -326,6 +339,7 @@ public:
      * @param targetAppName - application identifier
      * @param[out] count - count of sharing
      * @exception DB::SqlConnection::Exception::InternalError on internal error
+     * @exception DB::SqlConnection::Exception::ConstraintError on constraint violation
      */
     void GetOwnerTargetSharingCount(const std::string &ownerAppName, const std::string &targetAppName,
                                     int &count);
@@ -337,6 +351,7 @@ public:
      * @param path - user identifier for whom privileges will be updated
      * @param[out] count - count of sharing
      * @exception DB::SqlConnection::Exception::InternalError on internal error
+     * @exception DB::SqlConnection::Exception::ConstraintError on constraint violation
      */
     void GetTargetPathSharingCount(const std::string &targetAppName,
                                    const std::string &path,
@@ -350,6 +365,7 @@ public:
      * @param path - path name
      * @param pathLabel - label of path
      * @exception DB::SqlConnection::Exception::InternalError on internal error
+     * @exception DB::SqlConnection::Exception::ConstraintError on constraint violation
      */
     void ApplyPrivateSharing(const std::string &ownerAppName, const std::string &targetAppName,
                              const std::string &path, const std::string &pathLabel);
@@ -361,6 +377,7 @@ public:
      * @param targetAppName - application identifier
      * @param path - path name
      * @exception DB::SqlConnection::Exception::InternalError on internal error
+     * @exception DB::SqlConnection::Exception::ConstraintError on constraint violation
      */
     void DropPrivateSharing(const std::string &ownerAppName, const std::string &targetAppName,
                             const std::string &path);
@@ -370,6 +387,7 @@ public:
      *
      * @param appPathMap - map containing vectors of paths shared by applications mapped by name
      * @exception DB::SqlConnection::Exception::InternalError on internal error
+     * @exception DB::SqlConnection::Exception::ConstraintError on constraint violation
      */
     void GetAllPrivateSharing(std::map<std::string, std::vector<std::string>> &appPathMap);
 
@@ -377,6 +395,7 @@ public:
      * Clear information about private sharing.
      *
      * @exception DB::SqlConnection::Exception::InternalError on internal error
+     * @exception DB::SqlConnection::Exception::ConstraintError on constraint violation
      */
     void ClearPrivateSharing();
 
@@ -386,6 +405,7 @@ public:
      * @param privilege - privilege identifier
      * @param[out] grp_names - list of group names assigned to the privilege
      * @exception DB::SqlConnection::Exception::InternalError on internal error
+     * @exception DB::SqlConnection::Exception::ConstraintError on constraint violation
      */
     void GetPrivilegeGroups(const std::string &privilege,
         std::vector<std::string> &grp_names);
@@ -398,6 +418,7 @@ public:
      *                    this parameter do not need to be empty, but
      *                    it is being overwritten during function call.
      * @exception DB::SqlConnection::Exception::InternalError on internal error
+     * @exception DB::SqlConnection::Exception::ConstraintError on constraint violation
      */
     void GetUserApps(uid_t uid, std::vector<std::string> &apps);
 
@@ -407,6 +428,7 @@ public:
      * @param pkgName - package identifier
      * @param[out] appNames - list of application identifiers for the package
      * @exception DB::SqlConnection::Exception::InternalError on internal error
+     * @exception DB::SqlConnection::Exception::ConstraintError on constraint violation
      */
     void GetPkgApps(const std::string &pkgName, std::vector<std::string> &appNames);
 
@@ -418,6 +440,7 @@ public:
      *                    this parameter do not need to be empty, but
      *                    it is being overwritten during function call.
      * @exception DB::SqlConnection::Exception::InternalError on internal error
+     * @exception DB::SqlConnection::Exception::ConstraintError on constraint violation
      */
     void GetTizen2XApps(const std::string &origApp, std::vector<std::string> &apps);
 
@@ -432,6 +455,7 @@ public:
      *                    this parameter do not need to be empty, but
      *                    it is being overwritten during function call.
      * @exception DB::SqlConnection::Exception::InternalError on internal error
+     * @exception DB::SqlConnection::Exception::ConstraintError on constraint violation
      */
     void GetTizen2XAppsAndPackages(const std::string& origApp,
          std::vector<std::string> &apps, std::vector<std::string> &packages);
@@ -442,6 +466,7 @@ public:
      * @param authorId[out] author id associated with the application, or -1 if no
      *                      author was assigned during installation
      * @exception DB::SqlConnection::Exception::InternalError on internal error
+     * @exception DB::SqlConnection::Exception::ConstraintError on constraint violation
      */
     void GetAppAuthorId(const std::string &appName, int &authorId);
 
@@ -450,6 +475,7 @@ public:
      *
      * @param[out] grp_names - list of group names
      * @exception DB::SqlConnection::Exception::InternalError on internal error
+     * @exception DB::SqlConnection::Exception::ConstraintError on constraint violation
      */
     void GetGroups(std::vector<std::string> &grp_names);
 };

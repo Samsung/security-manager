@@ -54,6 +54,7 @@ class SqlConnection
         DECLARE_EXCEPTION_TYPE(Base, ConnectionBroken)
         DECLARE_EXCEPTION_TYPE(Base, InternalError)
         DECLARE_EXCEPTION_TYPE(Base, InvalidColumn)
+        DECLARE_EXCEPTION_TYPE(Base, ConstraintError)
     };
 
     typedef int ColumnIndex;
@@ -241,6 +242,9 @@ class SqlConnection
         /**
          * Execute the prepared statement and/or move
          * to the next row of the result
+         *
+         * @throw Exception::ConstraintError in case of constraint violation
+         * @throw Exception::InternalError in case of other sqlite error
          *
          * @return True when there was a row returned
          */

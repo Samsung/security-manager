@@ -47,6 +47,10 @@ T try_catch(const std::function<T()> &func)
         LogError("Syntax error in command: " << e.DumpToString());
         ThrowMsg(PrivilegeDb::Exception::InternalError,
             "Syntax error in command: " << e.DumpToString());
+    } catch (DB::SqlConnection::Exception::ConstraintError &e) {
+        LogError("Constraints violated by command: " << e.DumpToString());
+        ThrowMsg(PrivilegeDb::Exception::ConstraintError,
+            "Constraints violated by command: " << e.DumpToString());
     } catch (DB::SqlConnection::Exception::InternalError &e) {
         LogError("Mysterious internal error in SqlConnection class" << e.DumpToString());
         ThrowMsg(PrivilegeDb::Exception::InternalError,

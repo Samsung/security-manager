@@ -348,6 +348,10 @@ int ServiceImpl::appInstall(const app_inst_req &req, uid_t uid)
     } catch (const PrivilegeDb::Exception::IOError &e) {
         LogError("Cannot access application database: " << e.DumpToString());
         return SECURITY_MANAGER_ERROR_SERVER_ERROR;
+    } catch (const PrivilegeDb::Exception::ConstraintError &e) {
+        PrivilegeDb::getInstance().RollbackTransaction();
+        LogError("Application conflicts with existing one: " << e.DumpToString());
+        return SECURITY_MANAGER_ERROR_INPUT_PARAM;
     } catch (const PrivilegeDb::Exception::InternalError &e) {
         PrivilegeDb::getInstance().RollbackTransaction();
         LogError("Error while saving application info to database: " << e.DumpToString());
@@ -446,7 +450,7 @@ int ServiceImpl::appUninstall(const std::string &appName, uid_t uid)
     } catch (const PrivilegeDb::Exception::IOError &e) {
         LogError("Cannot access application database: " << e.DumpToString());
         return SECURITY_MANAGER_ERROR_SERVER_ERROR;
-    } catch (const PrivilegeDb::Exception::InternalError &e) {
+    } catch (const PrivilegeDb::Exception::Base &e) {
         PrivilegeDb::getInstance().RollbackTransaction();
         LogError("Error while removing application info from database: " << e.DumpToString());
         return SECURITY_MANAGER_ERROR_SERVER_ERROR;
@@ -897,6 +901,9 @@ int ServiceImpl::getPolicy(const policy_entry &filter, uid_t uid, pid_t pid, con
             };
         };
 
+    } catch (const PrivilegeDb::Exception::Base &e) {
+        LogError("Error while getting application privileges from database: " << e.DumpToString());
+        return SECURITY_MANAGER_ERROR_SERVER_ERROR;
     } catch (const CynaraException::Base &e) {
         LogError("Error while listing Cynara rules: " << e.DumpToString());
         return SECURITY_MANAGER_ERROR_SERVER_ERROR;
@@ -1000,6 +1007,9 @@ int ServiceImpl::dropOnePrivateSharing(
         SmackRules::dropPrivateSharingRules(ownerPkgName, ownerPkgContents, targetAppName, pathLabel,
                 pathCount < 1, ownerTargetCount < 1);
         return SECURITY_MANAGER_SUCCESS;
+    } catch (const PrivilegeDb::Exception::Base &e) {
+        LogError("Error while dropping private sharing in database: " << e.DumpToString());
+        return SECURITY_MANAGER_ERROR_SERVER_ERROR;
     } catch (const SmackException::Base &e) {
         LogError("Error performing smack operation: " << e.GetMessage());
         errorRet = SECURITY_MANAGER_ERROR_SERVER_ERROR;
@@ -1083,6 +1093,9 @@ int ServiceImpl::applyPrivatePathSharing(
         }
         trans.commit();
         return SECURITY_MANAGER_SUCCESS;
+    } catch (const PrivilegeDb::Exception::Base &e) {
+        LogError("Error while applying private sharing in database: " << e.DumpToString());
+        return SECURITY_MANAGER_ERROR_SERVER_ERROR;
     } catch (const SmackException::Base &e) {
         LogError("Error performing smack operation: " << e.GetMessage());
         errorRet = SECURITY_MANAGER_ERROR_SERVER_ERROR;
@@ -1159,6 +1172,9 @@ int ServiceImpl::dropPrivatePathSharing(
         }
         trans.commit();
         return SECURITY_MANAGER_SUCCESS;
+    } catch (const PrivilegeDb::Exception::Base &e) {
+        LogError("Error while dropping private sharing in database: " << e.DumpToString());
+        return SECURITY_MANAGER_ERROR_SERVER_ERROR;
     } catch (const SmackException::Base &e) {
         LogError("Error performing smack operation: " << e.GetMessage());
         errorRet = SECURITY_MANAGER_ERROR_SERVER_ERROR;
