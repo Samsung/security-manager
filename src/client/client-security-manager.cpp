@@ -47,6 +47,7 @@
 #include <protocols.h>
 #include <service_impl.h>
 #include <connection.h>
+#include <credentials.h>
 
 #include <security-manager.h>
 #include <client-offline.h>
@@ -192,7 +193,8 @@ int security_manager_app_install(const app_inst_req *p_req)
         int retval;
         ClientOffline offlineMode;
         if (offlineMode.isOffline()) {
-            retval = SecurityManager::ServiceImpl().appInstall(*p_req, geteuid());
+            Credentials creds = SecurityManager::Credentials::getCredentialsFromSelf();
+            retval = SecurityManager::ServiceImpl().appInstall(creds, app_inst_req(*p_req));
         } else {
             MessageBuffer send, recv;
 
@@ -578,7 +580,8 @@ int security_manager_user_add(const user_req *p_req)
         int retval;
         ClientOffline offlineMode;
         if (offlineMode.isOffline()) {
-            retval = SecurityManager::ServiceImpl().userAdd(p_req->uid, p_req->utype, geteuid());
+            Credentials creds = SecurityManager::Credentials::getCredentialsFromSelf();
+            retval = SecurityManager::ServiceImpl().userAdd(creds, p_req->uid, p_req->utype);
         } else {
             MessageBuffer send, recv;
             //server is working

@@ -115,6 +115,10 @@ int security_manager_app_inst_req_set_author_id(app_inst_req *p_req, const char 
  * This function is used to install application based on
  * using filled up app_inst_req data structure
  *
+ * Required privileges:
+ * - http://tizen.org/privilege/notexist (local installation)
+ * - http://tizen.org/privilege/notexist (global installation)
+ *
  * \param[in] Pointer handling app_inst_req structure
  * \return API return code or error code: it would be
  * - SECURITY_MANAGER_SUCCESS on success,
@@ -127,6 +131,10 @@ int security_manager_app_install(const app_inst_req *p_req);
 /*
  * This function is used to uninstall application based on
  * using filled up app_inst_req data structure
+ *
+ * Required privileges:
+ * - http://tizen.org/privilege/notexist (private uninstallation)
+ * - http://tizen.org/privilege/notexist (global uninstallation)
  *
  * \param[in] Pointer handling app_inst_req structure
  * \return API return code or error code

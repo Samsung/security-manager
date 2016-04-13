@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2000 - 2015 Samsung Electronics Co., Ltd All Rights Reserved
+ *  Copyright (c) 2000 - 2016 Samsung Electronics Co., Ltd All Rights Reserved
  *
  *  Contact: Rafal Krypa <r.krypa@samsung.com>
  *
@@ -26,6 +26,7 @@
 #define _SECURITY_MANAGER_SERVICE_
 
 #include "base-service.h"
+#include "credentials.h"
 #include "service_impl.h"
 
 namespace SecurityManager {
@@ -62,18 +63,18 @@ private:
      *
      * @param  buffer Raw received data buffer
      * @param  send   Raw data buffer to be sent
-     * @param  uid    User's identifier for whom application will be installed
+     * @param  creds  credentials of the requesting process
      */
-    void processAppInstall(MessageBuffer &buffer, MessageBuffer &send, uid_t uid);
+    void processAppInstall(MessageBuffer &buffer, MessageBuffer &send, const Credentials &creds);
 
     /**
      * Process application uninstallation
      *
      * @param  buffer Raw received data buffer
      * @param  send   Raw data buffer to be sent
-     * @param  uid    User's identifier for whom application will be uninstalled
+     * @param  creds  credentials of the requesting process
      */
-    void processAppUninstall(MessageBuffer &buffer, MessageBuffer &send, uid_t uid);
+    void processAppUninstall(MessageBuffer &buffer, MessageBuffer &send, const Credentials &creds);
 
     /**
      * Process getting package identifier from an app identifier
@@ -88,25 +89,22 @@ private:
      *
      * @param  buffer Raw received data buffer
      * @param  send   Raw data buffer to be sent
-     * @param  uid    User's identifier for whom application will be launched
-     * @param  pid    Process id in which application will be launched
+     * @param  creds  credentials of the requesting process
      */
-    void processGetAppGroups(MessageBuffer &buffer, MessageBuffer &send, uid_t uid, pid_t pid);
+    void processGetAppGroups(MessageBuffer &buffer, MessageBuffer &send, const Credentials &creds);
 
-    void processUserAdd(MessageBuffer &buffer, MessageBuffer &send, uid_t uid);
+    void processUserAdd(MessageBuffer &buffer, MessageBuffer &send, const Credentials &creds);
 
-    void processUserDelete(MessageBuffer &buffer, MessageBuffer &send, uid_t uid);
+    void processUserDelete(MessageBuffer &buffer, MessageBuffer &send, const Credentials &creds);
 
     /**
      * Process policy update request
      *
      * @param  buffer Raw received data buffer
      * @param  send   Raw data buffer to be sent
-     * @param  uid    Identifier of the user who sent the request
-     * @param  pid    PID of the process which sent the request
-     * @param  smackLabel smack label of requesting app
+     * @param  creds  credentials of the requesting process
      */
-    void processPolicyUpdate(MessageBuffer &buffer, MessageBuffer &send, uid_t uid, pid_t pid, const std::string &smackLabel);
+    void processPolicyUpdate(MessageBuffer &buffer, MessageBuffer &send, const Credentials &creds);
 
     /**
      * List all privileges for specific user, placed in Cynara's PRIVACY_MANAGER
@@ -114,26 +112,24 @@ private:
      *
      * @param  buffer Raw received data buffer
      * @param  send   Raw data buffer to be sent
-     * @param  uid    Identifier of the user who sent the request
-     * @param  pid    PID of the process which sent the request
-     * @param  smackLabel smack label of requesting app
+     * @param  creds  credentials of the requesting process
      * @param  forAdmin determines internal type of request
      */
-    void processGetConfiguredPolicy(MessageBuffer &buffer, MessageBuffer &send, uid_t uid, pid_t pid, const std::string &smackLabel, bool forAdmin);
+    void processGetConfiguredPolicy(MessageBuffer &buffer, MessageBuffer &send, const Credentials &creds, bool forAdmin);
 
     /**
      * Get whole policy for specific user. Whole policy is a list of all apps,
      * and their permissions (based on what they've stated in their manifests).
-     * If uid is unprivileged, then only privileges for the caller uid will be
-     * listed. If uid is privileged, then apps for all the users will be listed.
+     *
+     * If calling user is unprivileged, then only privileges for the caller uid
+     * will be listed. If caller is privileged, then apps for all the users will
+     * be listed.
      *
      * @param  buffer Raw received data buffer
      * @param  send     Raw data buffer to be sent
-     * @param  uid      Identifier of the user who sent the request
-     * @param  pid      PID of the process which sent the request
-     * @param  smackLabel smack label of requesting app
+     * @param  creds  credentials of the requesting process
      */
-    void processGetPolicy(MessageBuffer &buffer, MessageBuffer &send, uid_t uid, pid_t pid, const std::string &smackLabel);
+    void processGetPolicy(MessageBuffer &buffer, MessageBuffer &send, const Credentials &creds);
 
     /**
      * Process getting policies descriptions as strings from Cynara
@@ -163,15 +159,18 @@ private:
      *
      * @param  recv   Raw received data buffer
      * @param  send   Raw data buffer to be sent
+     * @param  creds  credentials of the requesting process
      */
-    void processApplyPrivateSharing(MessageBuffer &recv, MessageBuffer &send);
+    void processApplyPrivateSharing(MessageBuffer &recv, MessageBuffer &send, const Credentials &creds);
+
     /**
      * Process drop private path sharing between applications.
      *
      * @param  recv   Raw received data buffer
      * @param  send   Raw data buffer to be sent
+     * @param  creds  credentials of the requesting process
      */
-    void processDropPrivateSharing(MessageBuffer &recv, MessageBuffer &send);
+    void processDropPrivateSharing(MessageBuffer &recv, MessageBuffer &send, const Credentials &creds);
 };
 
 } // namespace SecurityManager

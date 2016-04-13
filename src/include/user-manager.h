@@ -67,6 +67,9 @@ int security_manager_user_req_set_user_type(user_req *p_req, security_manager_us
  * This function succeeds only when is called by privileged user.
  * Otherwise it just returns SECURITY_MANAGER_ERROR_AUTHENTICATION_FAILED and does nothing.
  *
+ * Required privileges:
+ * - http://tizen.org/privilege/internal/usermanagement
+ *
  * It adds all required privileges to a newly created user.
  * User data are passed through  pointer 'p_req'.
  * @param p_req Structure containing user data filled before calling this
@@ -80,6 +83,9 @@ int security_manager_user_add(const user_req *p_req);
  * This function should be called to inform security-manager about removing a user.
  * This function succeeds only when is called by privileged user.
  * Otherwise it just returns SECURITY_MANAGER_ERROR_AUTHENTICATION_FAILED and does nothing.
+ *
+ * Required privileges:
+ * - http://tizen.org/privilege/internal/usermanagement
  *
  * It removes all privileges granted to a user that has been granted previously by
  * security_manager_user_add.

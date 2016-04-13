@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2014-2015 Samsung Electronics Co., Ltd All Rights Reserved
+ *  Copyright (c) 2014-2016 Samsung Electronics Co., Ltd All Rights Reserved
  *
  *  Contact: Rafal Krypa <r.krypa@samsung.com>
  *
@@ -146,6 +146,14 @@ std::string getSmackLabelFromPid(pid_t pid);
  * @return resulting Smack label
  */
 std::string getSmackLabelFromPath(const std::string &path);
+
+/**
+ * Returns smack label for current process
+ *
+ * @param[in] sock socket file descriptor
+ * @return resulting Smack label
+ */
+std::string getSmackLabelFromSelf(void);
 
 } // namespace SmackLabels
 } // namespace SecurityManager

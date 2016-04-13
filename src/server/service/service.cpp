@@ -64,18 +64,10 @@ bool Service::processOne(const ConnectionID &conn, MessageBuffer &buffer,
     MessageBuffer send;
     bool retval = false;
 
-    uid_t uid;
-    pid_t pid;
-    std::string smackLabel;
-
-    if (!getPeerID(conn.sock, uid, pid, smackLabel)) {
-        LogError("Closing socket because of error: unable to get peer's uid, pid or smack label");
-        m_serviceManager->Close(conn);
-        return false;
-    }
-
     if (IFACE == interfaceID) {
         Try {
+            Credentials creds = Credentials::getCredentialsFromSocket(conn.sock);
+
             // deserialize API call type
             int call_type_int;
             Deserialization::Deserialize(buffer, call_type_int);
@@ -88,35 +80,35 @@ bool Service::processOne(const ConnectionID &conn, MessageBuffer &buffer,
                     break;
                 case SecurityModuleCall::APP_INSTALL:
                     LogDebug("call_type: SecurityModuleCall::APP_INSTALL");
-                    processAppInstall(buffer, send, uid);
+                    processAppInstall(buffer, send, creds);
                     break;
                 case SecurityModuleCall::APP_UNINSTALL:
                     LogDebug("call_type: SecurityModuleCall::APP_UNINSTALL");
-                    processAppUninstall(buffer, send, uid);
+                    processAppUninstall(buffer, send, creds);
                     break;
                 case SecurityModuleCall::APP_GET_PKG_NAME:
                     processGetPkgName(buffer, send);
                     break;
                 case SecurityModuleCall::APP_GET_GROUPS:
-                    processGetAppGroups(buffer, send, uid, pid);
+                    processGetAppGroups(buffer, send, creds);
                     break;
                 case SecurityModuleCall::USER_ADD:
-                    processUserAdd(buffer, send, uid);
+                    processUserAdd(buffer, send, creds);
                     break;
                 case SecurityModuleCall::USER_DELETE:
-                    processUserDelete(buffer, send, uid);
+                    processUserDelete(buffer, send, creds);
                     break;
                 case SecurityModuleCall::POLICY_UPDATE:
-                    processPolicyUpdate(buffer, send, uid, pid, smackLabel);
+                    processPolicyUpdate(buffer, send, creds);
                     break;
                 case SecurityModuleCall::GET_CONF_POLICY_ADMIN:
-                    processGetConfiguredPolicy(buffer, send, uid, pid, smackLabel, true);
+                    processGetConfiguredPolicy(buffer, send, creds, true);
                     break;
                 case SecurityModuleCall::GET_CONF_POLICY_SELF:
-                    processGetConfiguredPolicy(buffer, send, uid, pid, smackLabel, false);
+                    processGetConfiguredPolicy(buffer, send, creds, false);
                     break;
                 case SecurityModuleCall::GET_POLICY:
-                    processGetPolicy(buffer, send, uid, pid, smackLabel);
+                    processGetPolicy(buffer, send, creds);
                     break;
                 case SecurityModuleCall::POLICY_GET_DESCRIPTIONS:
                     processPolicyGetDesc(send);
@@ -128,10 +120,10 @@ bool Service::processOne(const ConnectionID &conn, MessageBuffer &buffer,
                     processAppHasPrivilege(buffer, send);
                     break;
                 case SecurityModuleCall::APP_APPLY_PRIVATE_SHARING:
-                    processApplyPrivateSharing(buffer, send);
+                    processApplyPrivateSharing(buffer, send, creds);
                     break;
                 case SecurityModuleCall::APP_DROP_PRIVATE_SHARING:
-                    processDropPrivateSharing(buffer, send);
+                    processDropPrivateSharing(buffer, send, creds);
                     break;
                 default:
                     LogError("Invalid call: " << call_type_int);
@@ -164,7 +156,7 @@ bool Service::processOne(const ConnectionID &conn, MessageBuffer &buffer,
     return retval;
 }
 
-void Service::processAppInstall(MessageBuffer &buffer, MessageBuffer &send, uid_t uid)
+void Service::processAppInstall(MessageBuffer &buffer, MessageBuffer &send, const Credentials &creds)
 {
     app_inst_req req;
 
@@ -175,15 +167,16 @@ void Service::processAppInstall(MessageBuffer &buffer, MessageBuffer &send, uid_
     Deserialization::Deserialize(buffer, req.uid);
     Deserialization::Deserialize(buffer, req.tizenVersion);
     Deserialization::Deserialize(buffer, req.authorName);
-    Serialization::Serialize(send, serviceImpl.appInstall(req, uid));
+    Serialization::Serialize(send, serviceImpl.appInstall(creds, std::move(req)));
 }
 
-void Service::processAppUninstall(MessageBuffer &buffer, MessageBuffer &send, uid_t uid)
+void Service::processAppUninstall(MessageBuffer &buffer, MessageBuffer &send, const Credentials &creds)
 {
-    std::string appName;
+    app_inst_req req;
 
-    Deserialization::Deserialize(buffer, appName);
-    Serialization::Serialize(send, serviceImpl.appUninstall(appName, uid));
+    req.uid = creds.uid;
+    Deserialization::Deserialize(buffer, req.appName);
+    Serialization::Serialize(send, serviceImpl.appUninstall(creds, std::move(req)));
 }
 
 void Service::processGetPkgName(MessageBuffer &buffer, MessageBuffer &send)
@@ -199,14 +192,14 @@ void Service::processGetPkgName(MessageBuffer &buffer, MessageBuffer &send)
         Serialization::Serialize(send, pkgName);
 }
 
-void Service::processGetAppGroups(MessageBuffer &buffer, MessageBuffer &send, uid_t uid, pid_t pid)
+void Service::processGetAppGroups(MessageBuffer &buffer, MessageBuffer &send, const Credentials &creds)
 {
     std::string appName;
     std::unordered_set<gid_t> gids;
     int ret;
 
     Deserialization::Deserialize(buffer, appName);
-    ret = serviceImpl.getAppGroups(appName, uid, pid, gids);
+    ret = serviceImpl.getAppGroups(creds, appName, gids);
     Serialization::Serialize(send, ret);
     if (ret == SECURITY_MANAGER_SUCCESS) {
         Serialization::Serialize(send, static_cast<int>(gids.size()));
@@ -216,7 +209,7 @@ void Service::processGetAppGroups(MessageBuffer &buffer, MessageBuffer &send, ui
     }
 }
 
-void Service::processUserAdd(MessageBuffer &buffer, MessageBuffer &send, uid_t uid)
+void Service::processUserAdd(MessageBuffer &buffer, MessageBuffer &send, const Credentials &creds)
 {
     int ret;
     uid_t uidAdded;
@@ -225,40 +218,40 @@ void Service::processUserAdd(MessageBuffer &buffer, MessageBuffer &send, uid_t u
     Deserialization::Deserialize(buffer, uidAdded);
     Deserialization::Deserialize(buffer, userType);
 
-    ret = serviceImpl.userAdd(uidAdded, userType, uid);
+    ret = serviceImpl.userAdd(creds, uidAdded, userType);
     Serialization::Serialize(send, ret);
 }
 
-void Service::processUserDelete(MessageBuffer &buffer, MessageBuffer &send, uid_t uid)
+void Service::processUserDelete(MessageBuffer &buffer, MessageBuffer &send, const Credentials &creds)
 {
     int ret;
     uid_t uidRemoved;
 
     Deserialization::Deserialize(buffer, uidRemoved);
 
-    ret = serviceImpl.userDelete(uidRemoved, uid);
+    ret = serviceImpl.userDelete(creds, uidRemoved);
     Serialization::Serialize(send, ret);
 }
 
-void Service::processPolicyUpdate(MessageBuffer &buffer, MessageBuffer &send, uid_t uid, pid_t pid, const std::string &smackLabel)
+void Service::processPolicyUpdate(MessageBuffer &buffer, MessageBuffer &send, const Credentials &creds)
 {
     int ret;
     std::vector<policy_entry> policyEntries;
 
     Deserialization::Deserialize(buffer, policyEntries);
 
-    ret = serviceImpl.policyUpdate(policyEntries, uid, pid, smackLabel);
+    ret = serviceImpl.policyUpdate(creds, policyEntries);
     Serialization::Serialize(send, ret);
 }
 
-void Service::processGetConfiguredPolicy(MessageBuffer &buffer, MessageBuffer &send, uid_t uid, pid_t pid, const std::string &smackLabel, bool forAdmin)
+void Service::processGetConfiguredPolicy(MessageBuffer &buffer, MessageBuffer &send, const Credentials &creds, bool forAdmin)
 {
     int ret;
     policy_entry filter;
     Deserialization::Deserialize(buffer, filter);
     std::vector<policy_entry> policyEntries;
 
-    ret = serviceImpl.getConfiguredPolicy(forAdmin, filter, uid, pid, smackLabel, policyEntries);
+    ret = serviceImpl.getConfiguredPolicy(creds, forAdmin, filter, policyEntries);
 
     Serialization::Serialize(send, ret);
     Serialization::Serialize(send, static_cast<int>(policyEntries.size()));
@@ -267,14 +260,14 @@ void Service::processGetConfiguredPolicy(MessageBuffer &buffer, MessageBuffer &s
     };
 }
 
-void Service::processGetPolicy(MessageBuffer &buffer, MessageBuffer &send, uid_t uid, pid_t pid, const std::string &smackLabel)
+void Service::processGetPolicy(MessageBuffer &buffer, MessageBuffer &send, const Credentials &creds)
 {
     int ret;
     policy_entry filter;
     Deserialization::Deserialize(buffer, filter);
     std::vector<policy_entry> policyEntries;
 
-    ret = serviceImpl.getPolicy(filter, uid, pid, smackLabel, policyEntries);
+    ret = serviceImpl.getPolicy(creds, filter, policyEntries);
 
     Serialization::Serialize(send, ret);
     Serialization::Serialize(send, static_cast<int>(policyEntries.size()));
@@ -329,25 +322,25 @@ void Service::processAppHasPrivilege(MessageBuffer &recv, MessageBuffer &send)
         Serialization::Serialize(send, static_cast<int>(result));
 }
 
-void Service::processApplyPrivateSharing(MessageBuffer &recv, MessageBuffer &send)
+void Service::processApplyPrivateSharing(MessageBuffer &recv, MessageBuffer &send, const Credentials &creds)
 {
     std::string ownerAppName, targetAppName;
     std::vector<std::string> paths;
     Deserialization::Deserialize(recv, ownerAppName);
     Deserialization::Deserialize(recv, targetAppName);
     Deserialization::Deserialize(recv, paths);
-    int ret = serviceImpl.applyPrivatePathSharing(ownerAppName, targetAppName, paths);
+    int ret = serviceImpl.applyPrivatePathSharing(creds, ownerAppName, targetAppName, paths);
     Serialization::Serialize(send, ret);
 }
 
-void Service::processDropPrivateSharing(MessageBuffer &recv, MessageBuffer &send)
+void Service::processDropPrivateSharing(MessageBuffer &recv, MessageBuffer &send, const Credentials &creds)
 {
     std::string ownerAppName, targetAppName;
     std::vector<std::string> paths;
     Deserialization::Deserialize(recv, ownerAppName);
     Deserialization::Deserialize(recv, targetAppName);
     Deserialization::Deserialize(recv, paths);
-    int ret = serviceImpl.dropPrivatePathSharing(ownerAppName, targetAppName, paths);
+    int ret = serviceImpl.dropPrivatePathSharing(creds, ownerAppName, targetAppName, paths);
     Serialization::Serialize(send, ret);
 }
 } // namespace SecurityManager

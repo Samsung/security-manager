@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2014-2015 Samsung Electronics Co., Ltd All Rights Reserved
+ *  Copyright (c) 2014-2016 Samsung Electronics Co., Ltd All Rights Reserved
  *
  *  Contact: Rafal Krypa <r.krypa@samsung.com>
  *
@@ -29,6 +29,7 @@
 
 #include <unordered_set>
 
+#include "credentials.h"
 #include "security-manager.h"
 
 namespace SecurityManager {
@@ -37,13 +38,15 @@ class ServiceImpl {
 private:
     static uid_t getGlobalUserId(void);
 
-    static void checkGlobalUser(uid_t &uid, std::string &cynaraUserStr);
-
     static bool isSubDir(const char *parent, const char *subdir);
 
     static bool getUserAppDir(const uid_t &uid, std::string &userAppDir);
 
-    static bool installRequestAuthCheck(const app_inst_req &req, uid_t uid, std::string &appPath);
+    static void installRequestMangle(app_inst_req &req, std::string &cynaraUserStr);
+
+    static bool installRequestAuthCheck(const Credentials &creds, const app_inst_req &req);
+
+    static bool installRequestPathsCheck(const app_inst_req &req, std::string &appPath);
 
     static bool getZoneId(std::string &zoneId);
 
@@ -60,22 +63,23 @@ public:
     /**
     * Process application installation request.
     *
+    * @param[in] creds credentials of the requesting process
     * @param[in] req installation request
-    * @param[in] uid id of the requesting user
     *
     * @return API return code, as defined in protocols.h
     */
-    int appInstall(const app_inst_req &req, uid_t uid);
+    int appInstall(const Credentials &creds, app_inst_req &&req);
 
     /**
     * Process application uninstallation request.
     *
-    * @param[in] appName application identifier
-    * @param[in] uid id of the requesting user
+    * @param[in] creds credentials of the requesting process
+    * @param[in] req uninstallation request
+    * @param[in] authenticated whether the caller has been already checked against Cynara policy
     *
     * @return API return code, as defined in protocols.h
     */
-    int appUninstall(const std::string &appName, uid_t uid);
+    int appUninstall(const Credentials &creds, app_inst_req &&req, bool authenticated = false);
 
     /**
     * Process package id query.
@@ -95,49 +99,46 @@ public:
     * queried.
     * Returns set of group ids that are permitted.
     *
+    * @param[in]  creds credentials of the requesting process
     * @param[in]  appName application identifier
-    * @param[in]  uid id of the requesting user
-    * @param[in]  pid id of the requesting process (to construct Cynara session id)
     * @param[out] gids returned set of allowed group ids
     *
     * @return API return code, as defined in protocols.h
     */
-    int getAppGroups(const std::string &appName, uid_t uid, pid_t pid, std::unordered_set<gid_t> &gids);
+    int getAppGroups(const Credentials &creds, const std::string &appName, std::unordered_set<gid_t> &gids);
 
     /**
     * Process user adding request.
     *
+    * @param[in] creds credentials of the requesting process
     * @param[in] uidAdded uid of newly created user
     * @param[in] userType type of newly created user
-    * @param[in] uid uid of requesting user
     *
     * @return API return code, as defined in protocols.h
     */
-    int userAdd(uid_t uidAdded, int userType, uid_t uid);
+    int userAdd(const Credentials &creds, uid_t uidAdded, int userType);
 
     /**
     * Process user deletion request.
     *
+    * @param[in] creds credentials of the requesting process
     * @param[in] uidDeleted uid of removed user
-    * @param[in] uid uid of requesting user
     *
     * @return API return code, as defined in protocols.h
     */
-    int userDelete(uid_t uidDeleted, uid_t uid);
+    int userDelete(const Credentials &creds, uid_t uidDeleted);
 
     /**
     * Update policy in Cynara - proper privilege: http://tizen.org/privilege/internal/usermanagement
     * is needed for this to succeed
     *
+    * @param[in] creds credentials of the requesting process
     * @param[in] policyEntries vector of policy chunks with instructions
-    * @param[in] uid identifier of requesting user
-    * @param[in] pid PID of requesting process
-    * @param[in] smackLabel smack label of requesting app
     *
     * @return API return code, as defined in protocols.h
     */
+    int policyUpdate(const Credentials &creds, const std::vector<policy_entry> &policyEntries);
 
-    int policyUpdate(const std::vector<policy_entry> &policyEntries, uid_t uid, pid_t pid, const std::string &smackLabel);
     /**
     * Fetch all configured privileges from user configurable bucket.
     * Depending on forAdmin value: personal user policies or admin enforced
@@ -145,26 +146,22 @@ public:
     *
     * @param[in] forAdmin determines if user is asking as ADMIN or not
     * @param[in] filter filter for limiting the query
-    * @param[in] uid identifier of queried user
-    * @param[in] pid PID of requesting process
     * @param[out] policyEntries vector of policy entries with result
     *
     * @return API return code, as defined in protocols.h
     */
-    int getConfiguredPolicy(bool forAdmin, const policy_entry &filter, uid_t uid, pid_t pid, const std::string &smackLabel, std::vector<policy_entry> &policyEntries);
+    int getConfiguredPolicy(const Credentials &creds, bool forAdmin, const policy_entry &filter, std::vector<policy_entry> &policyEntries);
 
     /**
     * Fetch all privileges for all apps installed for specific user.
     *
-    * @param[in] forAdmin determines if user is asking as ADMIN or not
+    * @param[in] creds credentials of the requesting process
     * @param[in] filter filter for limiting the query
-    * @param[in] uid identifier of queried user
-    * @param[in] pid PID of requesting process
     * @param[out] policyEntries vector of policy entries with result
     *
     * @return API return code, as defined in protocols.h
     */
-    int getPolicy(const policy_entry &filter, uid_t uid, pid_t pid, const std::string &smackLabel, std::vector<policy_entry> &policyEntries);
+    int getPolicy(const Credentials &creds, const policy_entry &filter, std::vector<policy_entry> &policyEntries);
 
     /**
     * Process getting policy descriptions list.
@@ -199,25 +196,29 @@ public:
     /**
      * Process applying private path sharing between applications.
      *
+     * @param[in] creds credentials of the requesting process
      * @param[in] ownerAppName application owning paths
      * @param[in] targetAppName application which paths will be shared with
      * @param[in] paths vector of paths to be shared
      *
      * @return API return code, as defined in protocols.h
      */
-    int applyPrivatePathSharing(const std::string &ownerAppName,
+    int applyPrivatePathSharing(const Credentials &creds,
+                                const std::string &ownerAppName,
                                 const std::string &targetAppName,
                                 const std::vector<std::string> &paths);
 
     /**
      * Process droping private path sharing between applications.
      *
+     * @param[in] creds credentials of the requesting process
      * @param[in] ownerAppName application owning paths
      * @param[in] targetAppName application which paths won't be anymore shared with
      * @param[in] paths vector of paths to be stopped being shared
      * @return API return code, as defined in protocols.h
      */
-    int dropPrivatePathSharing(const std::string &ownerAppName,
+    int dropPrivatePathSharing(const Credentials &creds,
+                               const std::string &ownerAppName,
                                const std::string &targetAppName,
                                const std::vector<std::string> &paths);
 };

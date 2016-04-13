@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015 Samsung Electronics Co., Ltd All Rights Reserved
+ *  Copyright (c) 2015-2016 Samsung Electronics Co., Ltd All Rights Reserved
  *
  *  Contact: Rafal Krypa <r.krypa@samsung.com>
  *
@@ -32,6 +32,14 @@ namespace SecurityManager {
 namespace Config {
 
 extern const std::string PRIVILEGE_VERSION;
+
+/* Privileges required from users of our API */
+extern const std::string PRIVILEGE_APPINST_USER;
+extern const std::string PRIVILEGE_APPINST_ADMIN;
+extern const std::string PRIVILEGE_USER_ADMIN;
+extern const std::string PRIVILEGE_POLICY_USER;
+extern const std::string PRIVILEGE_POLICY_ADMIN;
+extern const std::string PRIVILEGE_APPSHARING_ADMIN;
 
 };
 

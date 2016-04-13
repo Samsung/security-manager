@@ -44,6 +44,7 @@ SET(COMMON_SOURCES
     ${DPL_PATH}/db/src/sql_connection.cpp
     ${COMMON_PATH}/config.cpp
     ${COMMON_PATH}/connection.cpp
+    ${COMMON_PATH}/credentials.cpp
     ${COMMON_PATH}/cynara.cpp
     ${COMMON_PATH}/file-lock.cpp
     ${COMMON_PATH}/protocols.cpp

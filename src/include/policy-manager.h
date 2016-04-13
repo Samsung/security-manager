@@ -136,8 +136,6 @@ int security_manager_policy_entry_set_level(policy_entry *p_entry, const char *p
  * in p_entry structure.
  *
  * This function is intended to be used by admin to change level of privilege.
- * If it is used by user that has no http://tizen.org/privilege/internal/usermanagement
- * privilege, then security_manager_policy_update_send will return error code.
  *
  * \param[in] p_entry Pointer handling policy_entry structure
  * \param[in] policy_level Policy level to be set. This may be one of strings
@@ -249,6 +247,10 @@ const char *security_manager_policy_entry_get_max_level(policy_entry *p_entry);
  *        3. For user's personal policy: wildcards usage in application or privilege field of policy_entry
  *           is not allowed
  *
+ * Required privileges:
+ * - http://tizen.org/privilege/notexist (for setting own policy)
+ * - http://tizen.org/privilege/internal/usermanagement (for setting policy for other or all)
+ *
  * \param[in] p_req Pointer handling allocated policy_update_req structure
  * \return API return code or error code
  *
@@ -339,12 +341,11 @@ int security_manager_policy_update_send(policy_update_req *p_req);
  * \brief Function fetches all privileges enforced by admin user.
  *        The result is stored in the policy_entry structures array.
  *
- * \note It should be called by user with http://tizen.org/privilege/internal/usermanagement privilege.
- *       Normal users may list their personal policy entries using
- *       security_manager_get_configured_policy_for_self() API function.
- *
  * \attention Developer is responsible for calling security_manager_policy_entries_free()
  *            for freeing allocated resources.
+ *
+ * Required privileges:
+ * - http://tizen.org/privilege/internal/usermanagement
  *
  * \param[in]  p_filter        Pointer to filter struct
  * \param[out] ppp_privs_policy Pointer handling allocated policy_entry structures array
@@ -363,6 +364,9 @@ int security_manager_get_configured_policy_for_admin(
  *
  * \attention Developer is responsible for calling security_manager_policy_entries_free()
  *            for freeing allocated resources.
+
+ * Required privileges:
+ * - http://tizen.org/privilege/notexist
  *
  * \param[in]  p_filter        Pointer to filter struct
  * \param[out] ppp_privs_policy Pointer handling allocated policy_entry structures array
@@ -378,12 +382,12 @@ int security_manager_get_configured_policy_for_self(
  * \brief Function gets the whole policy for all users, their applications and privileges
  *        based on the provided filter. The result is stored in the policy_entry array.
  *
- * \note If this call is performed by user with http://tizen.org/privilege/internal/usermanagement
- *       privilege, then it's possible to list policies for all users.
- *       Normal users may only list privileges for their own UID.
- *
  * \attention Developer is responsible for calling security_manager_policy_entries_free()
  *            for freeing allocated resources.
+ *
+ * Required privileges:
+ * - http://tizen.org/privilege/notexist (for fetching own policy)
+ * - http://tizen.org/privilege/internal/usermanagement (for fetching policy for other or all)
  *
  * \param[in]  p_filter        Pointer to filter struct
  * \param[out] ppp_privs_policy Pointer handling allocated policy_entry structures array

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2000 - 2014 Samsung Electronics Co., Ltd All Rights Reserved
+ *  Copyright (c) 2000 - 2016 Samsung Electronics Co., Ltd All Rights Reserved
  *
  *  Contact: Rafal Krypa <r.krypa@samsung.com>
  *
@@ -62,18 +62,6 @@ protected:
     ServiceImpl serviceImpl;
 
     ConnectionInfoMap m_connectionInfoMap;
-
-    /**
-     * Retrieves ID (UID and PID) of peer connected to socket
-     *
-     * @param[in]  sock Socket file descriptor
-     * @param[out] uid PID of connected peer.
-     * @param[out] pid PID of connected peer.
-     * @param[out] smackLabel Smack label of connected peer.
-     *
-     * @return True if peer ID was successfully retrieved, false otherwise.
-     */
-    bool getPeerID(int sock, uid_t &uid, pid_t &pid, std::string &smackLabel);
 
     /**
      * Handle request from a client

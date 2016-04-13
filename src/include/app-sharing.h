@@ -85,6 +85,9 @@ int security_manager_private_sharing_req_add_paths(private_sharing_req *p_req,
  * This function is used to apply private sharing based on given private_sharing_req.
  * One path can be shared with multiple applications at the same time.
  *
+ * Required privileges:
+ * - http://tizen.org/privilege/notexist
+ *
  * \param[in] Pointer handling private_sharing_req structure
  * \return API return code or error code: it would be
  * - SECURITY_MANAGER_SUCCESS on success,
@@ -95,6 +98,9 @@ int security_manager_private_sharing_apply(const private_sharing_req *p_req);
 
 /*
  * This function is used to drop private sharing based on given private_sharing_req.
+ *
+ * Required privileges:
+ * - http://tizen.org/privilege/notexist
  *
  * \param[in] Pointer handling private_sharing_req structure
  * \return API return code or error code: it would be

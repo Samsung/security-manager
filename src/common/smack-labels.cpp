@@ -300,9 +300,20 @@ std::string getSmackLabelFromPid(pid_t pid)
                 "/attr/current file read error for pid: " << pid);
 
     if (smack_label_length(result.c_str()) <= 0)
-        ThrowMsg(SmackException::InvalidLabel, "Invalid Smack label for process " << pid);
+        ThrowMsg(SmackException::InvalidLabel, "Error while fetching Smack label for process " << pid);
 
     return result;
+}
+
+std::string getSmackLabelFromSelf(void)
+{
+    char *label = nullptr;
+    ssize_t labelSize = smack_new_label_from_self(&label);
+    if (labelSize <= 0)
+        ThrowMsg(SmackException::InvalidLabel, "Error while fetching Smack label for current process");
+
+    std::unique_ptr<char, decltype(free)*> labelPtr(label, free);
+    return std::string(labelPtr.get(), labelSize);
 }
 
 std::string generateAuthorLabel(const int authorId)
