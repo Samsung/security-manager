@@ -212,24 +212,32 @@ bool ServiceImpl::getUserAppDir(const uid_t &uid, std::string &userAppDir)
 {
     struct tzplatform_context *tz_ctx = nullptr;
 
-    if (tzplatform_context_create(&tz_ctx))
-            return false;
+    if (tzplatform_context_create(&tz_ctx)) {
+        LogError("Error in tzplatform_context_create()");
+        return false;
+    }
 
     std::unique_ptr<struct tzplatform_context, decltype(tzplatform_context_destroy)*> tz_ctxPtr(
         tz_ctx, &tzplatform_context_destroy);
 
-    if (tzplatform_context_set_user(tz_ctxPtr.get(), uid))
+    if (tzplatform_context_set_user(tz_ctxPtr.get(), uid)) {
+        LogError("Error in tzplatform_context_set_user()");
         return false;
+    }
 
     enum tzplatform_variable id =
             (uid == getGlobalUserId()) ? TZ_SYS_RW_APP : TZ_USER_APP;
     const char *appDir = tzplatform_context_getenv(tz_ctxPtr.get(), id);
-    if (!appDir)
+    if (!appDir) {
+        LogError("Error in tzplatform_context_getenv()");
         return false;
+    }
 
     std::unique_ptr<char, decltype(free)*> real_pathPtr(realpath(appDir, NULL), free);
-    if (!real_pathPtr.get())
+    if (!real_pathPtr.get()) {
+        LogError("Error in realpath(): " << GetErrnoString(errno) << " for: " << appDir);
         return false;
+    }
 
     userAppDir.assign(real_pathPtr.get());
 
