@@ -189,7 +189,7 @@ bool ServiceImpl::isSubDir(const char *parent, const char *subdir)
     return (*subdir == '/' || *parent == *subdir);
 }
 
-bool ServiceImpl::getUserAppDir(const uid_t &uid, std::string &userAppDir)
+bool ServiceImpl::getUserAppDir(const uid_t &uid, const app_install_type &installType, std::string &userAppDir)
 {
     struct tzplatform_context *tz_ctx = nullptr;
 
@@ -206,8 +206,22 @@ bool ServiceImpl::getUserAppDir(const uid_t &uid, std::string &userAppDir)
         return false;
     }
 
-    enum tzplatform_variable id =
-            (uid == getGlobalUserId()) ? TZ_SYS_RW_APP : TZ_USER_APP;
+    enum tzplatform_variable id;
+
+    switch (installType) {
+    case SM_APP_INSTALL_LOCAL:
+        id = TZ_USER_APP;
+        break;
+    case SM_APP_INSTALL_GLOBAL:
+        id = TZ_SYS_RW_APP;
+        break;
+    case SM_APP_INSTALL_PRELOADED:
+        id = TZ_SYS_RO_APP;
+        break;
+    default:
+        return false;
+    }
+
     const char *appDir = tzplatform_context_getenv(tz_ctxPtr.get(), id);
     if (!appDir) {
         LogError("Error in tzplatform_context_getenv()");
@@ -232,18 +246,27 @@ void ServiceImpl::installRequestMangle(app_inst_req &req, std::string &cynaraUse
     if (req.uid == 0)
         req.uid = globalUid;
 
-    if (req.uid == globalUid) {
+    if (req.installationType == SM_APP_INSTALL_NONE)
+        req.installationType = (req.uid == globalUid) ?
+                SM_APP_INSTALL_GLOBAL : SM_APP_INSTALL_LOCAL;
+
+
+    if (req.installationType == SM_APP_INSTALL_GLOBAL) {
         LogDebug("Installation type: global installation");
         cynaraUserStr = CYNARA_ADMIN_WILDCARD;
-    } else {
+    } else if (req.installationType == SM_APP_INSTALL_LOCAL) {
         LogDebug("Installation type: local installation");
         cynaraUserStr = std::to_string(static_cast<unsigned int>(req.uid));
-    }
+    } else if (req.installationType == SM_APP_INSTALL_PRELOADED) {
+        LogDebug("Installation type: preloaded installation");
+        cynaraUserStr = std::to_string(static_cast<unsigned int>(req.uid));
+    } else
+        LogError("Installation type: unknown");
 }
 
 bool ServiceImpl::installRequestAuthCheck(const Credentials &creds, const app_inst_req &req)
 {
-    if (req.uid == getGlobalUserId() || req.uid != creds.uid) {
+    if (req.installationType != SM_APP_INSTALL_LOCAL || req.uid != creds.uid) {
         if (!Cynara::getInstance().check(creds.label, Config::PRIVILEGE_APPINST_ADMIN,
             std::to_string(creds.uid), std::to_string(creds.pid))) {
             LogError("Caller is not permitted to install applications globally");
@@ -262,7 +285,7 @@ bool ServiceImpl::installRequestAuthCheck(const Credentials &creds, const app_in
 
 bool ServiceImpl::installRequestPathsCheck(const app_inst_req &req, std::string &appPath)
 {
-    if (!getUserAppDir(req.uid, appPath)) {
+    if (!getUserAppDir(req.uid, static_cast<app_install_type>(req.installationType), appPath)) {
         LogError("Failed getting app dir for user uid: " << req.uid);
         return false;
     }

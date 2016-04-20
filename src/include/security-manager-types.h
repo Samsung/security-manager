@@ -66,6 +66,15 @@ enum app_install_path_type {
     SECURITY_MANAGER_ENUM_END
 };
 
+enum app_install_type {
+    SM_APP_INSTALL_NONE = 0,
+    SM_APP_INSTALL_LOCAL,
+    SM_APP_INSTALL_GLOBAL,
+    SM_APP_INSTALL_PRELOADED,
+    SM_APP_INSTALL_END
+};
+typedef enum app_install_type app_install_type;
+
 /**
  * This enum has values equivalent to gumd user type.
  * The gum-utils help states that
