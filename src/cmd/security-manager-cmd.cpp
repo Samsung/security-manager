@@ -192,7 +192,7 @@ static bool loadPaths(const std::vector<std::string> &paths,
         LogDebug("Wrong paths size: " << paths.size());
         return false;
     }
-    req.appPaths.clear();
+    req.pkgPaths.clear();
     for (std::vector<std::string>::size_type i = 1; i < paths.size(); i += 2) {
         app_install_path_type pathType;
         LogDebug("path: " << paths[i - 1]);
@@ -201,13 +201,13 @@ static bool loadPaths(const std::vector<std::string> &paths,
         } catch (const std::out_of_range &e) {
             std::cout << "Invalid path type found." << std::endl;
             LogError("Invalid path type found.");
-            req.appPaths.clear();
+            req.pkgPaths.clear();
             return false;
         }
         LogDebug("path type: " << pathType << " (" << paths[i] << ")");
-        req.appPaths.push_back(std::make_pair(paths[i - 1], pathType));
+        req.pkgPaths.push_back(std::make_pair(paths[i - 1], pathType));
     }
-    return (!req.appPaths.empty());
+    return (!req.pkgPaths.empty());
 }
 
 static void parseInstallOptions(int argc, char *argv[],

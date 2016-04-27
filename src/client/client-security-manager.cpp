@@ -173,7 +173,7 @@ int security_manager_app_inst_req_add_path(app_inst_req *p_req, const char *path
     if (!p_req || !path || (path_type < 0) || (path_type >= SECURITY_MANAGER_ENUM_END))
         return SECURITY_MANAGER_ERROR_INPUT_PARAM;
 
-    p_req->appPaths.push_back(std::make_pair(path, path_type));
+    p_req->pkgPaths.push_back(std::make_pair(path, path_type));
 
     return SECURITY_MANAGER_SUCCESS;
 }
@@ -215,7 +215,7 @@ int security_manager_app_install(const app_inst_req *p_req)
                                      p_req->appName,
                                      p_req->pkgName,
                                      p_req->privileges,
-                                     p_req->appPaths,
+                                     p_req->pkgPaths,
                                      p_req->uid,
                                      p_req->tizenVersion,
                                      p_req->authorName,

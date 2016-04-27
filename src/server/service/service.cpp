@@ -163,7 +163,7 @@ void Service::processAppInstall(MessageBuffer &buffer, MessageBuffer &send, cons
     Deserialization::Deserialize(buffer, req.appName);
     Deserialization::Deserialize(buffer, req.pkgName);
     Deserialization::Deserialize(buffer, req.privileges);
-    Deserialization::Deserialize(buffer, req.appPaths);
+    Deserialization::Deserialize(buffer, req.pkgPaths);
     Deserialization::Deserialize(buffer, req.uid);
     Deserialization::Deserialize(buffer, req.tizenVersion);
     Deserialization::Deserialize(buffer, req.authorName);

@@ -115,6 +115,11 @@ typedef struct policy_entry policy_entry;
 struct private_sharing_req;
 typedef struct private_sharing_req private_sharing_req;
 
+/*! brief data structure responsible for handling informations required to register
+ * a set of paths for given package. */
+struct path_req;
+typedef struct path_req path_req;
+
 /*! \brief wildcard to be used in requests to match all possible values of given field.
  *         Use it, for example when it is desired to list or apply policy change for all
  *         users or all apps for selected user.

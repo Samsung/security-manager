@@ -32,11 +32,13 @@
 #include <dpl/serialization.h>
 #include <security-manager-types.h>
 
+typedef std::vector<std::pair<std::string, int>> pkg_paths;
+
 struct app_inst_req {
     std::string appName;
     std::string pkgName;
     std::vector<std::string> privileges;
-    std::vector<std::pair<std::string, int>> appPaths;
+    pkg_paths pkgPaths;
     uid_t uid;
     std::string tizenVersion;
     std::string authorName;
@@ -52,6 +54,13 @@ struct private_sharing_req {
     std::string ownerAppName;
     std::string targetAppName;
     std::vector<std::string> paths;
+};
+
+struct path_req {
+    std::string pkgName;
+    uid_t uid;
+    pkg_paths pkgPaths;
+    int installationType = SM_APP_INSTALL_NONE;
 };
 
 namespace SecurityManager {

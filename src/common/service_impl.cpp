@@ -298,7 +298,7 @@ bool ServiceImpl::installRequestPathsCheck(const app_inst_req &req, std::string 
     correctPath.append("/").append(req.pkgName);
     LogDebug("correctPath: " << correctPath);
 
-    for (const auto &path : req.appPaths) {
+    for (const auto &path : req.pkgPaths) {
         std::unique_ptr<char, std::function<void(void*)>> real_path(
             realpath(path.first.c_str(), NULL), free);
         if (!real_path.get()) {
@@ -402,11 +402,11 @@ int ServiceImpl::appInstall(const Credentials &creds, app_inst_req &&req)
     }
 
     try {
-        if (!req.appPaths.empty())
+        if (!req.pkgPaths.empty())
             SmackLabels::setupAppBasePath(req.pkgName, appPath);
 
         // register paths
-        for (const auto &appPath : req.appPaths) {
+        for (const auto &appPath : req.pkgPaths) {
             const std::string &path = appPath.first;
             app_install_path_type pathType = static_cast<app_install_path_type>(appPath.second);
             SmackLabels::setupPath(req.pkgName, path, pathType, authorId);
