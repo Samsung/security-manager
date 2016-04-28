@@ -4,12 +4,14 @@ PRAGMA auto_vacuum = NONE;
 
 BEGIN EXCLUSIVE TRANSACTION;
 
-PRAGMA user_version = 2;
+PRAGMA user_version = 3;
 
 CREATE TABLE IF NOT EXISTS pkg (
 pkg_id INTEGER PRIMARY KEY,
 name VARCHAR NOT NULL,
+author_id INTEGER,
 UNIQUE (name)
+FOREIGN KEY (author_id) REFERENCES autor (author_id)
 );
 
 CREATE TABLE IF NOT EXISTS app (
@@ -18,10 +20,8 @@ pkg_id INTEGER NOT NULL,
 uid INTEGER NOT NULL,
 name VARCHAR NOT NULL,
 version VARCHAR NOT NULL,
-author_id INTEGER,
 UNIQUE (name, uid),
 FOREIGN KEY (pkg_id) REFERENCES pkg (pkg_id)
-FOREIGN KEY (author_id) REFERENCES author (author_id)
 );
 
 CREATE TABLE IF NOT EXISTS privilege (
@@ -91,7 +91,7 @@ SELECT
     app.uid,
     pkg.name as pkg_name,
     app.version as version,
-    app.author_id,
+    pkg.author_id,
     author.name as author_name
 FROM app
 LEFT JOIN pkg USING (pkg_id)
@@ -118,14 +118,24 @@ DROP TRIGGER IF EXISTS app_pkg_view_insert_trigger;
 CREATE TRIGGER app_pkg_view_insert_trigger
 INSTEAD OF INSERT ON app_pkg_view
 BEGIN
+    SELECT RAISE(ABORT, 'Another application from this package is already installed with different author')
+        WHERE EXISTS (SELECT 1 FROM app_pkg_view
+                      WHERE pkg_name=NEW.pkg_name
+                      AND author_name IS NOT NULL
+                      AND NEW.author_name IS NOT NULL
+                      AND author_name!=NEW.author_name);
+
     INSERT OR IGNORE INTO author(name) VALUES (NEW.author_name);
-    INSERT OR IGNORE INTO pkg(name) VALUES (NEW.pkg_name);
-    INSERT OR IGNORE INTO app(pkg_id, name, uid, version, author_id) VALUES (
+    INSERT OR IGNORE INTO pkg(name, author_id) VALUES (
+        NEW.pkg_name,
+        (SELECT author_id FROM author WHERE name=NEW.author_name));
+    -- If pkg have already existed with empty author do update it
+    UPDATE pkg SET author_id=(SELECT author_id FROM author WHERE name=NEW.author_name) WHERE name=NEW.pkg_name AND author_id IS NULL;
+    INSERT OR IGNORE INTO app(pkg_id, name, uid, version) VALUES (
         (SELECT pkg_id FROM pkg WHERE name=NEW.pkg_name),
         NEW.app_name,
         NEW.uid,
-        NEW.version,
-        (SELECT author_id FROM author WHERE name=NEW.author_name));
+        NEW.version);
 END;
 
 DROP TRIGGER IF EXISTS app_pkg_view_delete_trigger;
@@ -134,7 +144,7 @@ INSTEAD OF DELETE ON app_pkg_view
 BEGIN
     DELETE FROM app WHERE app_id=OLD.app_id AND uid=OLD.uid;
     DELETE FROM pkg WHERE pkg_id NOT IN (SELECT DISTINCT pkg_id from app);
-    DELETE FROM author WHERE author_id NOT IN (SELECT author_id FROM app WHERE author_id IS NOT NULL);
+    DELETE FROM author WHERE author_id NOT IN (SELECT DISTINCT author_id FROM pkg WHERE author_id IS NOT NULL);
 END;
 
 DROP VIEW IF EXISTS app_private_sharing_view;

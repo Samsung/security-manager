@@ -125,7 +125,7 @@ private:
         { StmtType::EGetAllTizen2XPackages,  "SELECT DISTINCT pkg_name FROM app_pkg_view WHERE version LIKE '2.%%' AND app_name <> ?" },
         { StmtType::EGetAppsInPkg, " SELECT app_name FROM app_pkg_view WHERE pkg_name = ?" },
         { StmtType::EGetGroups, "SELECT DISTINCT group_name FROM privilege_group_view" },
-        { StmtType::EGetAppAuthorId, "SELECT author_id FROM app WHERE name = ? AND author_id IS NOT NULL"},
+        { StmtType::EGetAppAuthorId, "SELECT author_id FROM app_pkg_view WHERE app_name = ? AND author_id IS NOT NULL"},
         { StmtType::EAuthorIdExists, "SELECT count(*) FROM author where author_id=?"},
     };
 
