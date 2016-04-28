@@ -26,6 +26,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <dirent.h>
+#include <fcntl.h>
 
 #include <vector>
 #include <memory>
@@ -46,7 +47,7 @@ FileNameVector getFilesFromDirectory(const std::string &path)
     FileNameVector result;
     dirent tmp, *ptr;
     int err;
-    std::unique_ptr<DIR, std::function<void(DIR*)>> dir(opendir(path.c_str()), closedir);
+    std::unique_ptr<DIR, decltype(closedir)*> dir(opendir(path.c_str()), closedir);
 
     if (!dir.get()) {
         err = errno;
@@ -63,10 +64,8 @@ FileNameVector getFilesFromDirectory(const std::string &path)
             break;
 
         struct stat finfo;
-        std::string filepath = path + "/" + ptr->d_name;
-        if (0 > stat(filepath.c_str(), &finfo)) {
-            ThrowMsg(FS::Exception::FileError, "Error reading: " << filepath);
-            continue;
+        if (0 > fstatat(dirfd(dir.get()), ptr->d_name, &finfo, AT_SYMLINK_NOFOLLOW)) {
+            ThrowMsg(FS::Exception::FileError, "Error reading: " << ptr->d_name);
         }
 
         if (S_ISREG(finfo.st_mode)) {
