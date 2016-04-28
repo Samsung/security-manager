@@ -82,14 +82,21 @@ int security_manager_app_inst_req_add_privilege(app_inst_req *p_req, const char 
 
 /**
  * This function is used to add application path to app_inst_req structure,
- * it can be called multiple times
+ * it can be called multiple times.
+ *
+ * \deprecated This function is deprecated. Use
+ *             security_manager_path_req_add_path() instead.
  *
  * \param[in] p_req      Pointer handling app_inst_req structure
  * \param[in] path       Application path
  * \param[in] path_type  Application path type
  * \return API return code or error code
  */
-int security_manager_app_inst_req_add_path(app_inst_req *p_req, const char *path, const int path_type);
+int security_manager_app_inst_req_add_path(
+        app_inst_req *p_req,
+        const char *path,
+        const int path_type) __attribute__((deprecated(
+                "Use security_manager_path_req_add_path() instead")));
 
 /**
  * This function is used to set up user identifier in app_inst_req structure.
