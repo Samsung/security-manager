@@ -324,6 +324,21 @@ void CynaraAdmin::UpdateAppPolicy(
     SetPolicies(policies);
 }
 
+void CynaraAdmin::GetAppPolicy(const std::string &label, const std::string &user,
+        std::vector<std::string> &privileges)
+{
+    std::vector<CynaraAdminPolicy> policies;
+    CynaraAdmin::getInstance().ListPolicies(
+        CynaraAdmin::Buckets.at(Bucket::MANIFESTS),
+        label, user, CYNARA_ADMIN_ANY, policies);
+
+    for (auto &policy : policies) {
+        std::string privilege = policy.privilege;
+        if (privilege.compare(CYNARA_ADMIN_WILDCARD))
+            privileges.push_back(std::move(privilege));
+    }
+}
+
 void CynaraAdmin::UserInit(uid_t uid, security_manager_user_type userType)
 {
     Bucket bucket;

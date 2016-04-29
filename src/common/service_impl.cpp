@@ -560,57 +560,47 @@ int ServiceImpl::getPkgName(const std::string &appName, std::string &pkgName)
     return SECURITY_MANAGER_SUCCESS;
 }
 
+template <typename T>
+static void vectorRemoveDuplicates(std::vector<T> &vec)
+{
+    std::sort(vec.begin(), vec.end());
+    vec.erase(std::unique(vec.begin(), vec.end()), vec.end());
+}
+
 int ServiceImpl::getAppGroups(const Credentials &creds, const std::string &appName,
-    std::unordered_set<gid_t> &gids)
+    std::vector<std::string> &groups)
 {
     try {
-        std::string pkgName;
-        std::string smackLabel;
-        std::string uidStr = std::to_string(creds.uid);
-        std::string pidStr = std::to_string(creds.pid);
-
         LogDebug("appName: " << appName);
-
-        PrivilegeDb::getInstance().GetAppPkgName(appName, pkgName);
-        if (pkgName.empty()) {
-            LogWarning("Application " << appName << " not found in database");
-            return SECURITY_MANAGER_ERROR_NO_SUCH_OBJECT;
-        }
-        LogDebug("pkgName: " << pkgName);
-
-        smackLabel = SmackLabels::generateAppLabel(appName);
+        std::string smackLabel = SmackLabels::generateAppLabel(appName);
         LogDebug("smack label: " << smackLabel);
 
         std::vector<std::string> privileges;
-        PrivilegeDb::getInstance().GetPkgPrivileges(pkgName, creds.uid, privileges);
-        /*there is also a need of checking, if privilege is granted to all users*/
-        size_t tmp = privileges.size();
-        PrivilegeDb::getInstance().GetPkgPrivileges(pkgName, getGlobalUserId(), privileges);
-        /*privileges needs to be sorted and with no duplications - for cynara sake*/
-        std::inplace_merge(privileges.begin(), privileges.begin() + tmp, privileges.end());
-        privileges.erase(unique(privileges.begin(), privileges.end()), privileges.end());
 
+        std::string uidStr = std::to_string(creds.uid);
+        CynaraAdmin::getInstance().GetAppPolicy(smackLabel, uidStr, privileges);
+        CynaraAdmin::getInstance().GetAppPolicy(smackLabel, CYNARA_ADMIN_WILDCARD, privileges);
+
+        vectorRemoveDuplicates(privileges);
+
+        std::string pidStr = std::to_string(creds.pid);
         for (const auto &privilege : privileges) {
-            std::vector<std::string> gidsTmp;
-            PrivilegeDb::getInstance().GetPrivilegeGroups(privilege, gidsTmp);
-            if (!gidsTmp.empty()) {
+            std::vector<std::string> privGroups;
+            PrivilegeDb::getInstance().GetPrivilegeGroups(privilege, privGroups);
+            if (!privGroups.empty()) {
                 LogDebug("Considering privilege " << privilege << " with " <<
-                    gidsTmp.size() << " groups assigned");
-                // TODO: create method in Cynara class for fetching all privileges of an application
+                    privGroups.size() << " groups assigned");
+
                 if (Cynara::getInstance().check(smackLabel, privilege, uidStr, pidStr)) {
-                    for_each(gidsTmp.begin(), gidsTmp.end(), [&] (std::string group) {
-                        struct group *grp = getgrnam(group.c_str());
-                        if (grp == NULL) {
-                                LogError("No such group: " << group.c_str());
-                                return;
-                        }
-                        gids.insert(grp->gr_gid);
-                    });
+                    groups.insert(groups.end(),
+                        std::make_move_iterator(privGroups.begin()),
+                        std::make_move_iterator(privGroups.end()));
                     LogDebug("Cynara allowed, adding groups");
                 } else
                     LogDebug("Cynara denied, not adding groups");
             }
         }
+        vectorRemoveDuplicates(groups);
     } catch (const PrivilegeDb::Exception::Base &e) {
         LogError("Database error: " << e.DumpToString());
         return SECURITY_MANAGER_ERROR_SERVER_ERROR;

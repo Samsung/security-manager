@@ -196,18 +196,14 @@ void Service::processGetPkgName(MessageBuffer &buffer, MessageBuffer &send)
 void Service::processGetAppGroups(MessageBuffer &buffer, MessageBuffer &send, const Credentials &creds)
 {
     std::string appName;
-    std::unordered_set<gid_t> gids;
+    std::vector<std::string> groups;
     int ret;
 
     Deserialization::Deserialize(buffer, appName);
-    ret = serviceImpl.getAppGroups(creds, appName, gids);
+    ret = serviceImpl.getAppGroups(creds, appName, groups);
     Serialization::Serialize(send, ret);
-    if (ret == SECURITY_MANAGER_SUCCESS) {
-        Serialization::Serialize(send, static_cast<int>(gids.size()));
-        for (const auto &gid : gids) {
-            Serialization::Serialize(send, gid);
-        }
-    }
+    if (ret == SECURITY_MANAGER_SUCCESS)
+        Serialization::Serialize(send, groups);
 }
 
 void Service::processUserAdd(MessageBuffer &buffer, MessageBuffer &send, const Credentials &creds)

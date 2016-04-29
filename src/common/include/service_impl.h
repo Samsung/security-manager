@@ -27,7 +27,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 
-#include <unordered_set>
+#include <vector>
 
 #include "credentials.h"
 #include "security-manager.h"
@@ -102,11 +102,12 @@ public:
     *
     * @param[in]  creds credentials of the requesting process
     * @param[in]  appName application identifier
-    * @param[out] gids returned set of allowed group ids
+    * @param[out] groups returned vector of allowed groups
     *
     * @return API return code, as defined in protocols.h
     */
-    int getAppGroups(const Credentials &creds, const std::string &appName, std::unordered_set<gid_t> &gids);
+    int getAppGroups(const Credentials &creds, const std::string &appName,
+        std::vector<std::string> &groups);
 
     /**
     * Process user adding request.

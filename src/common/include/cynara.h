@@ -132,6 +132,17 @@ public:
         const std::vector<std::string> &privileges);
 
     /**
+     * Fetch Cynara policies for the application and the user.
+     * Caller must have permission to access Cynara administrative socket.
+     *
+     * @param[in] label application Smack label
+     * @param[in] user user identifier
+     * @param[out] privileges currently enabled privileges
+     */
+    void GetAppPolicy(const std::string &label, const std::string &user,
+        std::vector<std::string> &privileges);
+
+    /**
      * Depending on user type, create link between MAIN bucket and appropriate
      * USER_TYPE_* bucket for newly added user uid to apply permissions for that
      * user type.
