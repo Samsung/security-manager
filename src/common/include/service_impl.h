@@ -36,6 +36,8 @@ namespace SecurityManager {
 
 class ServiceImpl {
 private:
+    static bool authenticate(const Credentials &creds, const std::string &privilege);
+
     static uid_t getGlobalUserId(void);
 
     static bool isSubDir(const char *parent, const char *subdir);
@@ -75,11 +77,10 @@ public:
     *
     * @param[in] creds credentials of the requesting process
     * @param[in] req uninstallation request
-    * @param[in] authenticated whether the caller has been already checked against Cynara policy
     *
     * @return API return code, as defined in protocols.h
     */
-    int appUninstall(const Credentials &creds, app_inst_req &&req, bool authenticated = false);
+    int appUninstall(const Credentials &creds, app_inst_req &&req);
 
     /**
     * Process package id query.

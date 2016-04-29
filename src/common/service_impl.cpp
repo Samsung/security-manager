@@ -174,6 +174,14 @@ ServiceImpl::~ServiceImpl()
 {
 }
 
+bool ServiceImpl::authenticate(const Credentials &creds, const std::string &privilege)
+{
+    if (creds.authenticated)
+        return true;
+    return Cynara::getInstance().check(creds.label, privilege,
+        std::to_string(creds.uid), std::to_string(creds.pid));
+}
+
 uid_t ServiceImpl::getGlobalUserId(void)
 {
     static uid_t globaluid = tzplatform_getuid(TZ_SYS_GLOBALAPP_USER);
@@ -266,16 +274,14 @@ void ServiceImpl::installRequestMangle(app_inst_req &req, std::string &cynaraUse
 
 bool ServiceImpl::installRequestAuthCheck(const Credentials &creds, const app_inst_req &req)
 {
-    if (req.installationType != SM_APP_INSTALL_LOCAL || req.uid != creds.uid) {
-        if (!Cynara::getInstance().check(creds.label, Config::PRIVILEGE_APPINST_ADMIN,
-            std::to_string(creds.uid), std::to_string(creds.pid))) {
-            LogError("Caller is not permitted to install applications globally");
+    if (req.installationType == SM_APP_INSTALL_LOCAL && req.uid == creds.uid) {
+        if (!authenticate(creds, Config::PRIVILEGE_APPINST_USER)) {
+            LogError("Caller is not permitted to install applications locally");
             return false;
         }
     } else {
-        if (!Cynara::getInstance().check(creds.label, Config::PRIVILEGE_APPINST_USER,
-            std::to_string(creds.uid), std::to_string(creds.pid))) {
-            LogError("Caller is not permitted to install applications");
+        if (!authenticate(creds, Config::PRIVILEGE_APPINST_ADMIN)) {
+            LogError("Caller is not permitted to install applications globally");
             return false;
         }
     }
@@ -429,8 +435,7 @@ int ServiceImpl::appInstall(const Credentials &creds, app_inst_req &&req)
     return SECURITY_MANAGER_SUCCESS;
 }
 
-int ServiceImpl::appUninstall(const Credentials &creds, app_inst_req &&req,
-    bool authenticated)
+int ServiceImpl::appUninstall(const Credentials &creds, app_inst_req &&req)
 {
     std::string tizenVersion;
     std::string smackLabel;
@@ -446,7 +451,7 @@ int ServiceImpl::appUninstall(const Credentials &creds, app_inst_req &&req,
 
     LogDebug("Uninstall parameters: appName=" << req.appName << ", uid=" << req.uid);
 
-    if (!authenticated && !installRequestAuthCheck(creds, req)) {
+    if (!installRequestAuthCheck(creds, req)) {
         LogError("Request from uid=" << creds.uid << ", Smack=" << creds.label <<
             " for app uninstallation denied");
         return SECURITY_MANAGER_ERROR_AUTHENTICATION_FAILED;
@@ -625,9 +630,7 @@ int ServiceImpl::getAppGroups(const Credentials &creds, const std::string &appNa
 
 int ServiceImpl::userAdd(const Credentials &creds, uid_t uidAdded, int userType)
 {
-    if (!Cynara::getInstance().check(creds.label, Config::PRIVILEGE_USER_ADMIN,
-        std::to_string(creds.uid), std::to_string(creds.pid))) {
-
+    if (!authenticate(creds, Config::PRIVILEGE_USER_ADMIN)) {
         LogError("Caller is not permitted to manage users");
         return SECURITY_MANAGER_ERROR_AUTHENTICATION_FAILED;
     }
@@ -644,9 +647,7 @@ int ServiceImpl::userDelete(const Credentials &creds, uid_t uidDeleted)
 {
     int ret = SECURITY_MANAGER_SUCCESS;
 
-    if (!Cynara::getInstance().check(creds.label, Config::PRIVILEGE_USER_ADMIN,
-        std::to_string(creds.uid), std::to_string(creds.pid))) {
-
+    if (!authenticate(creds, Config::PRIVILEGE_USER_ADMIN)) {
         LogError("Caller is not permitted to manage users");
         return SECURITY_MANAGER_ERROR_AUTHENTICATION_FAILED;
     }
@@ -660,11 +661,14 @@ int ServiceImpl::userDelete(const Credentials &creds, uid_t uidDeleted)
         return SECURITY_MANAGER_ERROR_SERVER_ERROR;
     }
 
+    // Don't check whether the caller may uninstall apps of the removed user
+    Credentials credsTmp(creds);
+    credsTmp.authenticated = true;
     for (const auto &app : userApps) {
         app_inst_req req;
         req.uid = uidDeleted;
         req.appName = app;
-        if (appUninstall(creds, std::move(req), true) != SECURITY_MANAGER_SUCCESS) {
+        if (appUninstall(credsTmp, std::move(req)) != SECURITY_MANAGER_SUCCESS) {
         /*if uninstallation of this app fails, just go on trying to uninstall another ones.
         we do not have anything special to do about that matter - user will be deleted anyway.*/
             ret = SECURITY_MANAGER_ERROR_SERVER_ERROR;
@@ -709,14 +713,12 @@ int ServiceImpl::policyUpdate(const Credentials &creds, const std::vector<policy
         };
 
         // Check privileges
-        if (permUserRequired && !Cynara::getInstance().check(creds.label,
-                Config::PRIVILEGE_POLICY_USER, uidStr, pidStr)) {
+        if (permUserRequired && !authenticate(creds, Config::PRIVILEGE_POLICY_USER)) {
             LogError("Not enough privilege to enforce user policy");
             return SECURITY_MANAGER_ERROR_ACCESS_DENIED;
         }
 
-        if (permAdminRequired && !Cynara::getInstance().check(creds.label,
-                Config::PRIVILEGE_POLICY_ADMIN, uidStr, pidStr)) {
+        if (permAdminRequired && !authenticate(creds, Config::PRIVILEGE_POLICY_ADMIN)) {
             LogError("Not enough privilege to enforce admin policy");
             return SECURITY_MANAGER_ERROR_ACCESS_DENIED;
         }
@@ -759,7 +761,7 @@ int ServiceImpl::getConfiguredPolicy(const Credentials &creds, bool forAdmin,
         LogDebug("App: " << filter.appName << ", Label: " << appLabel);
 
         if (forAdmin) {
-            if (!Cynara::getInstance().check(creds.label, Config::PRIVILEGE_POLICY_ADMIN, uidStr, pidStr)) {
+            if (!authenticate(creds, Config::PRIVILEGE_POLICY_ADMIN)) {
                 LogError("Not enough privilege to access admin enforced policies");
                 return SECURITY_MANAGER_ERROR_ACCESS_DENIED;
             }
@@ -774,13 +776,13 @@ int ServiceImpl::getConfiguredPolicy(const Credentials &creds, bool forAdmin,
                 );
             LogDebug("ADMIN - number of policies matched: " << listOfPolicies.size());
         } else {
-            if (!Cynara::getInstance().check(creds.label, Config::PRIVILEGE_POLICY_USER, uidStr, pidStr)) {
+            if (!authenticate(creds, Config::PRIVILEGE_POLICY_USER)) {
                 LogError("Not enough privilege to access user enforced policies");
                 return SECURITY_MANAGER_ERROR_ACCESS_DENIED;
             }
 
             if (uidStr.compare(user)) {
-                if (!Cynara::getInstance().check(creds.label, Config::PRIVILEGE_POLICY_ADMIN, uidStr, pidStr)) {
+                if (!authenticate(creds, Config::PRIVILEGE_POLICY_ADMIN)) {
                     LogWarning("Not enough privilege to access other user's personal policies. Limiting query to personal privileges.");
                     user = uidStr;
                 };
@@ -852,7 +854,7 @@ int ServiceImpl::getPolicy(const Credentials &creds, const policy_entry &filter,
         std::string uidStr = std::to_string(creds.uid);
         std::string pidStr = std::to_string(creds.pid);
 
-        if (!Cynara::getInstance().check(creds.label, Config::PRIVILEGE_POLICY_USER, uidStr, pidStr)) {
+        if (!authenticate(creds, Config::PRIVILEGE_POLICY_USER)) {
             LogWarning("Not enough permission to call: " << __FUNCTION__);
             return SECURITY_MANAGER_ERROR_ACCESS_DENIED;
         };
@@ -866,7 +868,7 @@ int ServiceImpl::getPolicy(const Credentials &creds, const policy_entry &filter,
 
         std::vector<uid_t> listOfUsers;
 
-        if (Cynara::getInstance().check(creds.label, Config::PRIVILEGE_POLICY_ADMIN, uidStr, pidStr)) {
+        if (authenticate(creds, Config::PRIVILEGE_POLICY_ADMIN)) {
             LogDebug("User is privileged");
             if (filter.user.compare(SECURITY_MANAGER_ANY)) {
                 LogDebug("Limitting Cynara query to user: " << filter.user);
@@ -1088,8 +1090,7 @@ int ServiceImpl::applyPrivatePathSharing(
     std::vector<std::string> pkgContents;
 
     try {
-        if (!Cynara::getInstance().check(creds.label, Config::PRIVILEGE_APPSHARING_ADMIN,
-            std::to_string(creds.uid), std::to_string(creds.pid))) {
+        if (!authenticate(creds, Config::PRIVILEGE_APPSHARING_ADMIN)) {
             LogError("Caller is not permitted to manage file sharing");
             return SECURITY_MANAGER_ERROR_ACCESS_DENIED;
         }
@@ -1182,8 +1183,7 @@ int ServiceImpl::dropPrivatePathSharing(
 {
     int errorRet;
     try {
-        if (!Cynara::getInstance().check(creds.label, Config::PRIVILEGE_APPSHARING_ADMIN,
-            std::to_string(creds.uid), std::to_string(creds.pid))) {
+        if (!authenticate(creds, Config::PRIVILEGE_APPSHARING_ADMIN)) {
             LogError("Caller is not permitted to manage file sharing");
             return SECURITY_MANAGER_ERROR_ACCESS_DENIED;
         }

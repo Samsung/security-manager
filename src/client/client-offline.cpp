@@ -81,4 +81,12 @@ bool ClientOffline::isOffline(void)
     return offlineMode;
 }
 
+Credentials ClientOffline::getCredentials()
+{
+    Credentials creds = Credentials::getCredentialsFromSelf();
+    if (isOffline())
+        creds.authenticated = true;
+    return creds;
+}
+
 } // namespace SecurityManager

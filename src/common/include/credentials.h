@@ -35,6 +35,7 @@ public:
     uid_t uid;    /* user ID of the sending process */
     gid_t gid;    /* group ID of the sending process */
     std::string label; /* security context of the sending process */
+    bool authenticated = false;   /* Indicate that the caller has already been authenticated for access */
 
     Credentials() = delete;
     static Credentials getCredentialsFromSelf(void);
