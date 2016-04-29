@@ -41,6 +41,9 @@ extern const std::string PRIVILEGE_POLICY_USER;
 extern const std::string PRIVILEGE_POLICY_ADMIN;
 extern const std::string PRIVILEGE_APPSHARING_ADMIN;
 
+/* Files used in permitted label managment*/
+extern const std::string APPS_NAME_FILE;
+
 };
 
 } /* namespace SecurityManager */

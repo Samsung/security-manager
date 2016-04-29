@@ -51,6 +51,7 @@ SET(COMMON_SOURCES
     ${COMMON_PATH}/credentials.cpp
     ${COMMON_PATH}/cynara.cpp
     ${COMMON_PATH}/file-lock.cpp
+    ${COMMON_PATH}/permissible-set.cpp
     ${COMMON_PATH}/protocols.cpp
     ${COMMON_PATH}/message-buffer.cpp
     ${COMMON_PATH}/privilege_db.cpp

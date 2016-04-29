@@ -47,6 +47,10 @@ enum lib_retcode {
     SECURITY_MANAGER_ERROR_NO_SUCH_SERVICE,
     SECURITY_MANAGER_ERROR_SERVER_ERROR,
     SECURITY_MANAGER_ERROR_SETTING_FILE_LABEL_FAILED,
+    SECURITY_MANAGER_ERROR_WATCH_ADD_TO_FILE_FAILED,
+    SECURITY_MANAGER_ERROR_FILE_OPEN_FAILED,
+    SECURITY_MANAGER_ERROR_SET_RELABEL_SELF_FAILED,
+    SECURITY_MANAGER_ERROR_NOT_INITIALIZED,
 };
 
 /*! \brief accesses types for application installation paths*/
@@ -119,6 +123,11 @@ typedef struct private_sharing_req private_sharing_req;
  * a set of paths for given package. */
 struct path_req;
 typedef struct path_req path_req;
+
+/*! \brief data structure responsible for handling information on
+ * changes in labels required by applications*/
+struct app_labels_monitor;
+typedef struct app_labels_monitor app_labels_monitor;
 
 /*! \brief wildcard to be used in requests to match all possible values of given field.
  *         Use it, for example when it is desired to list or apply policy change for all

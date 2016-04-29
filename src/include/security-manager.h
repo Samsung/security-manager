@@ -32,6 +32,7 @@
 #include "app-manager.h"
 #include "app-runtime.h"
 #include "app-sharing.h"
+#include "label-monitor.h"
 #include "user-manager.h"
 #include "policy-manager.h"
 
