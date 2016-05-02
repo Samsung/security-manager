@@ -171,6 +171,15 @@ private:
      * @param  creds  credentials of the requesting process
      */
     void processDropPrivateSharing(MessageBuffer &recv, MessageBuffer &send, const Credentials &creds);
+
+    /**
+     * Process package paths registration request
+     *
+     * @param  recv   Raw received data buffer
+     * @param  send   Raw data buffer to be sent
+     * @param  creds  credentials of the requesting process
+     */
+    void processPathsRegister(MessageBuffer &recv, MessageBuffer &send, const Credentials &creds);
 };
 
 } // namespace SecurityManager

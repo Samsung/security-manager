@@ -1304,3 +1304,123 @@ int security_manager_private_sharing_drop(const private_sharing_req *p_req)
     });
 }
 
+/***************************PATHS***************************************/
+
+SECURITY_MANAGER_API
+int security_manager_path_req_new(path_req **pp_req)
+{
+    if (!pp_req)
+        return SECURITY_MANAGER_ERROR_INPUT_PARAM;
+
+    try {
+        *pp_req = new path_req;
+    } catch (const std::bad_alloc&) {
+        return SECURITY_MANAGER_ERROR_MEMORY;
+    }
+    (*pp_req)->uid = geteuid();
+
+    return SECURITY_MANAGER_SUCCESS;
+}
+
+SECURITY_MANAGER_API
+void security_manager_path_req_free(path_req *p_req)
+{
+    delete p_req;
+}
+
+SECURITY_MANAGER_API
+int security_manager_path_req_set_pkg_id(path_req *p_req, const char *pkg_id)
+{
+    if (!p_req || !pkg_id)
+        return SECURITY_MANAGER_ERROR_INPUT_PARAM;
+
+    try {
+        p_req->pkgName.assign(pkg_id);
+    } catch (const std::bad_alloc&) {
+        return SECURITY_MANAGER_ERROR_MEMORY;
+    } catch (const std::length_error&) {
+        return SECURITY_MANAGER_ERROR_INPUT_PARAM;
+    }
+    return SECURITY_MANAGER_SUCCESS;
+}
+
+SECURITY_MANAGER_API
+int security_manager_path_req_set_install_type(path_req *p_req, const enum app_install_type type)
+{
+    if (!p_req || (type <= SM_APP_INSTALL_NONE) || (type >= SM_APP_INSTALL_END))
+        return SECURITY_MANAGER_ERROR_INPUT_PARAM;
+
+    p_req->installationType = static_cast<int>(type);
+
+    return SECURITY_MANAGER_SUCCESS;
+}
+
+SECURITY_MANAGER_API
+int security_manager_path_req_add_path(path_req *p_req, const char *path, const int path_type)
+{
+    if (!p_req || !path || (path_type < 0) || (path_type >= SECURITY_MANAGER_ENUM_END))
+        return SECURITY_MANAGER_ERROR_INPUT_PARAM;
+
+    try {
+        p_req->pkgPaths.push_back(std::make_pair(path, path_type));
+    } catch (const std::bad_alloc&) {
+        return SECURITY_MANAGER_ERROR_MEMORY;
+    } catch (const std::length_error&) {
+        return SECURITY_MANAGER_ERROR_INPUT_PARAM;
+    }
+
+    return SECURITY_MANAGER_SUCCESS;
+}
+
+SECURITY_MANAGER_API
+int security_manager_path_req_set_uid(path_req *p_req, const uid_t uid)
+{
+    if (!p_req)
+        return SECURITY_MANAGER_ERROR_INPUT_PARAM;
+
+    p_req->uid = uid;
+
+    return SECURITY_MANAGER_SUCCESS;
+}
+
+SECURITY_MANAGER_API
+int security_manager_paths_register(const path_req *p_req)
+{
+    using namespace SecurityManager;
+
+    return try_catch([&]() -> int {
+        //checking parameters
+        if (!p_req)
+            return SECURITY_MANAGER_ERROR_INPUT_PARAM;
+        if (p_req->pkgName.empty())
+            return SECURITY_MANAGER_ERROR_REQ_NOT_COMPLETE;
+
+        int retval;
+        ClientOffline offlineMode;
+        if (offlineMode.isOffline()) {
+            Credentials creds = offlineMode.getCredentials();
+            retval = SecurityManager::ServiceImpl().pathsRegister(creds, *p_req);
+        } else {
+            MessageBuffer send, recv;
+
+            //put data into buffer
+            Serialization::Serialize(send,
+                                     (int)SecurityModuleCall::PATHS_REGISTER,
+                                     p_req->pkgName,
+                                     p_req->uid,
+                                     p_req->pkgPaths,
+                                     p_req->installationType);
+
+            //send buffer to server
+            retval = sendToServer(SERVICE_SOCKET, send.Pop(), recv);
+            if (retval != SECURITY_MANAGER_SUCCESS) {
+                LogError("Error in sendToServer. Error code: " << retval);
+                return retval;
+            }
+
+            //receive response from server
+            Deserialization::Deserialize(recv, retval);
+        }
+        return retval;
+    });
+}
