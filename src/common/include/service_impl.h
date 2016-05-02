@@ -43,13 +43,26 @@ private:
 
     static bool isSubDir(const char *parent, const char *subdir);
 
-    static bool getUserPkgDir(const uid_t &uid, const app_install_type &installType, std::string &userAppDir);
+    static bool getUserPkgDir(const uid_t &uid,
+                              const std::string &pkgName,
+                              app_install_type installType,
+                              std::string &userPkgDir);
+
+    static void setRequestDefaultValues(uid_t& uid, int& installationType);
 
     static void installRequestMangle(app_inst_req &req, std::string &cynaraUserStr);
 
-    static bool installRequestAuthCheck(const Credentials &creds, const app_inst_req &req);
+    static bool authCheck(const Credentials &creds,
+                                        const uid_t &uid,
+                                        int installationType);
 
-    static bool installRequestPathsCheck(const app_inst_req &req, std::string &appPath);
+    static bool pathsCheck(const pkg_paths &requestedPaths,
+                           const std::string pkgPath);
+
+    static int labelPaths(const pkg_paths &paths,
+                             const std::string &pkgName,
+                             app_install_type installationType,
+                             const uid_t &uid);
 
     static bool getZoneId(std::string &zoneId);
 
@@ -233,7 +246,7 @@ public:
      *
      * @return API return code, as defined in protocols.h
      */
-    int pathsRegister(const Credentials &creds, const path_req &p_req);
+    int pathsRegister(const Credentials &creds, path_req p_req);
 };
 
 } /* namespace SecurityManager */

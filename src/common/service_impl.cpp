@@ -197,7 +197,10 @@ bool ServiceImpl::isSubDir(const char *parent, const char *subdir)
     return (*subdir == '/' || *parent == *subdir);
 }
 
-bool ServiceImpl::getUserPkgDir(const uid_t &uid, const app_install_type &installType, std::string &userAppDir)
+bool ServiceImpl::getUserPkgDir(const uid_t &uid,
+                                const std::string &pkgName,
+                                app_install_type installType,
+                                std::string &userPkgDir)
 {
     struct tzplatform_context *tz_ctx = nullptr;
 
@@ -227,37 +230,43 @@ bool ServiceImpl::getUserPkgDir(const uid_t &uid, const app_install_type &instal
         id = TZ_SYS_RO_APP;
         break;
     default:
+        LogError("Unsupported installation type: " << installType);
         return false;
     }
 
-    const char *appDir = tzplatform_context_getenv(tz_ctxPtr.get(), id);
-    if (!appDir) {
+    const char *pkgDir = tzplatform_context_getenv(tz_ctxPtr.get(), id);
+    if (!pkgDir) {
         LogError("Error in tzplatform_context_getenv()");
         return false;
     }
 
-    std::unique_ptr<char, decltype(free)*> real_pathPtr(realpath(appDir, NULL), free);
+    std::unique_ptr<char, decltype(free)*> real_pathPtr(realpath(pkgDir, NULL), free);
     if (!real_pathPtr.get()) {
-        LogError("Error in realpath(): " << GetErrnoString(errno) << " for: " << appDir);
+        LogError("Error in realpath(): " << GetErrnoString(errno) << " for: " << pkgDir);
         return false;
     }
 
-    userAppDir.assign(real_pathPtr.get());
+    userPkgDir.assign(real_pathPtr.get());
+    userPkgDir.append("/").append(pkgName);
 
     return true;
 }
 
-void ServiceImpl::installRequestMangle(app_inst_req &req, std::string &cynaraUserStr)
+void ServiceImpl::setRequestDefaultValues(uid_t& uid, int& installationType)
 {
     uid_t globalUid = getGlobalUserId();
 
-    if (req.uid == 0)
-        req.uid = globalUid;
+    if (uid == 0)
+        uid = globalUid;
 
-    if (req.installationType == SM_APP_INSTALL_NONE)
-        req.installationType = (req.uid == globalUid) ?
-                SM_APP_INSTALL_GLOBAL : SM_APP_INSTALL_LOCAL;
+    if (installationType == SM_APP_INSTALL_NONE)
+        installationType = (uid == globalUid) ? SM_APP_INSTALL_GLOBAL :
+                                                SM_APP_INSTALL_LOCAL;
+}
 
+void ServiceImpl::installRequestMangle(app_inst_req &req, std::string &cynaraUserStr)
+{
+    setRequestDefaultValues(req.uid, req.installationType);
 
     if (req.installationType == SM_APP_INSTALL_GLOBAL
         || req.installationType == SM_APP_INSTALL_PRELOADED) {
@@ -270,16 +279,18 @@ void ServiceImpl::installRequestMangle(app_inst_req &req, std::string &cynaraUse
         LogError("Installation type: unknown");
 }
 
-bool ServiceImpl::installRequestAuthCheck(const Credentials &creds, const app_inst_req &req)
+bool ServiceImpl::authCheck(const Credentials &creds,
+                            const uid_t& uid,
+                            int installationType)
 {
-    if (req.installationType == SM_APP_INSTALL_LOCAL && req.uid == creds.uid) {
+    if (installationType == SM_APP_INSTALL_LOCAL && uid == creds.uid) {
         if (!authenticate(creds, Config::PRIVILEGE_APPINST_USER)) {
-            LogError("Caller is not permitted to install applications locally");
+            LogError("Caller is not permitted to manage local applications");
             return false;
         }
     } else {
         if (!authenticate(creds, Config::PRIVILEGE_APPINST_ADMIN)) {
-            LogError("Caller is not permitted to install applications globally");
+            LogError("Caller is not permitted to manage global applications");
             return false;
         }
     }
@@ -287,18 +298,11 @@ bool ServiceImpl::installRequestAuthCheck(const Credentials &creds, const app_in
     return true;
 }
 
-bool ServiceImpl::installRequestPathsCheck(const app_inst_req &req, std::string &pkgPath)
+bool ServiceImpl::pathsCheck(const pkg_paths &requestedPaths,
+                             const std::string pkgPath)
+
 {
-    if (!getUserPkgDir(req.uid, static_cast<app_install_type>(req.installationType), pkgPath)) {
-        LogError("Failed getting pkg dir for user uid: " << req.uid);
-        return false;
-    }
-
-    std::string correctPath{pkgPath};
-    correctPath.append("/").append(req.pkgName);
-    LogDebug("correctPath: " << correctPath);
-
-    for (const auto &path : req.pkgPaths) {
+    for (const auto &path : requestedPaths) {
         std::unique_ptr<char, std::function<void(void*)>> real_path(
             realpath(path.first.c_str(), NULL), free);
         if (!real_path.get()) {
@@ -308,12 +312,63 @@ bool ServiceImpl::installRequestPathsCheck(const app_inst_req &req, std::string 
         }
         LogDebug("Requested path is '" << path.first.c_str()
                 << "'. User's pkg dir is '" << pkgPath << "'");
-        if (!isSubDir(correctPath.c_str(), real_path.get())) {
-            LogWarning("Installation is outside correct path: " << correctPath << "," << real_path.get());
+        if (!isSubDir(pkgPath.c_str(), real_path.get())) {
+            LogWarning("Installation is outside correct path: " << pkgPath << "," << real_path.get());
             return false;
         }
     }
     return true;
+}
+
+int ServiceImpl::labelPaths(const pkg_paths &paths,
+                            const std::string &pkgName,
+                            app_install_type installationType,
+                            const uid_t &uid)
+{
+    try {
+        std::string pkgBasePath;
+        int authorId;
+
+        if (!PrivilegeDb::getInstance().PkgNameExists(pkgName)) {
+            LogError("No such package: " << pkgName);
+            return SECURITY_MANAGER_ERROR_INPUT_PARAM;
+        }
+
+        PrivilegeDb::getInstance().GetPkgAuthorId(pkgName, authorId);
+
+        if (!getUserPkgDir(uid, pkgName, installationType, pkgBasePath))
+            return SECURITY_MANAGER_ERROR_SERVER_ERROR;
+
+        // check if paths are inside
+        if (!pathsCheck(paths, pkgBasePath))
+            return SECURITY_MANAGER_ERROR_AUTHENTICATION_FAILED;
+
+        if (!paths.empty())
+            SmackLabels::setupPkgBasePath(pkgBasePath);
+
+        // register paths
+        for (const auto &pkgPath : paths) {
+            const std::string &path = pkgPath.first;
+            app_install_path_type pathType = static_cast<app_install_path_type>(pkgPath.second);
+            SmackLabels::setupPath(pkgName, path, pathType, authorId);
+        }
+        return SECURITY_MANAGER_SUCCESS;
+    } catch (const PrivilegeDb::Exception::Base &e) {
+        LogError("Database error: " << e.DumpToString());
+        return SECURITY_MANAGER_ERROR_SERVER_ERROR;
+    } catch (const SmackException::InvalidParam &e) {
+        LogError("Invalid parameter during labeling: " << e.DumpToString());
+        return SECURITY_MANAGER_ERROR_INPUT_PARAM;
+    } catch (const SmackException::InvalidPathType &e) {
+        LogError("Invalid path type: " << e.DumpToString());
+        return SECURITY_MANAGER_ERROR_INPUT_PARAM;
+    } catch (const SmackException::Base &e) {
+        LogError("Error while generating Smack labels: " << e.DumpToString());
+        return SECURITY_MANAGER_ERROR_SETTING_FILE_LABEL_FAILED;
+    } catch (const std::bad_alloc &e) {
+        LogError("Memory allocation failed: " << e.what());
+        return SECURITY_MANAGER_ERROR_MEMORY;
+    }
 }
 
 int ServiceImpl::appInstall(const Credentials &creds, app_inst_req &&req)
@@ -328,30 +383,23 @@ int ServiceImpl::appInstall(const Credentials &creds, app_inst_req &&req)
     std::vector<std::string> allTizen2XApps, allTizen2XPackages;
     int authorId;
 
-    installRequestMangle(req, cynaraUserStr);
-
-    LogDebug("Install parameters: appName: " << req.appName << ", pkgName: " << req.pkgName
-             << ", uid: " << req.uid << ", target Tizen API ver: "
-             << (req.tizenVersion.empty() ? "unknown" : req.tizenVersion));
-
-    if (!installRequestAuthCheck(creds, req)) {
-        LogError("Request from uid=" << creds.uid << ", Smack=" << creds.label <<
-            " for app installation denied");
-        return SECURITY_MANAGER_ERROR_AUTHENTICATION_FAILED;
-    }
-
-    if (!installRequestPathsCheck(req, pkgBasePath)) {
-        LogError("Installation request with paths outside expected application path");
-        return SECURITY_MANAGER_ERROR_AUTHENTICATION_FAILED;
-    }
-
     try {
-        appLabel = SmackLabels::generateAppLabel(req.appName);
+        installRequestMangle(req, cynaraUserStr);
 
-        /* NOTE: we don't use pkgLabel here, but generate it for pkgName validation */
+        LogDebug("Install parameters: appName: " << req.appName << ", pkgName: " << req.pkgName
+                 << ", uid: " << req.uid << ", target Tizen API ver: "
+                 << (req.tizenVersion.empty() ? "unknown" : req.tizenVersion));
+
+        if (!authCheck(creds, req.uid, req.installationType)) {
+            LogError("Request from uid=" << creds.uid << ", Smack=" << creds.label <<
+                " for app installation denied");
+            return SECURITY_MANAGER_ERROR_AUTHENTICATION_FAILED;
+        }
+
+        appLabel = SmackLabels::generateAppLabel(req.appName);
         pkgLabel = SmackLabels::generatePkgLabel(req.pkgName);
-        LogDebug("Generated install parameters: "
-                 << "app label: " << appLabel << ", pkg label: " << pkgLabel);
+        LogDebug("Generated install parameters: app label: " << appLabel <<
+                 ", pkg label: " << pkgLabel);
 
         PrivilegeDb::getInstance().BeginTransaction();
         std::string pkg;
@@ -366,7 +414,7 @@ int ServiceImpl::appInstall(const Credentials &creds, app_inst_req &&req)
         PrivilegeDb::getInstance().UpdateAppPrivileges(req.appName, req.uid, req.privileges);
         /* Get all application ids in the package to generate rules withing the package */
         PrivilegeDb::getInstance().GetPkgApps(req.pkgName, pkgContents);
-        PrivilegeDb::getInstance().GetAuthorIdByName(req.authorName, authorId);
+        PrivilegeDb::getInstance().GetPkgAuthorId(req.pkgName, authorId);
         CynaraAdmin::getInstance().UpdateAppPolicy(appLabel, cynaraUserStr, req.privileges);
 
         // if app is targetted to Tizen 2.X, give other 2.X apps RO rules to it's shared dir
@@ -401,17 +449,14 @@ int ServiceImpl::appInstall(const Credentials &creds, app_inst_req &&req)
         return SECURITY_MANAGER_ERROR_MEMORY;
     }
 
+    int ret = labelPaths(req.pkgPaths,
+                         req.pkgName,
+                         static_cast<app_install_type>(req.installationType),
+                         req.uid);
+    if (ret != SECURITY_MANAGER_SUCCESS)
+        return ret;
+
     try {
-        if (!req.pkgPaths.empty())
-            SmackLabels::setupPkgBasePath(req.pkgName, pkgBasePath);
-
-        // register paths
-        for (const auto &pkgPath : req.pkgPaths) {
-            const std::string &path = pkgPath.first;
-            app_install_path_type pathType = static_cast<app_install_path_type>(pkgPath.second);
-            SmackLabels::setupPath(req.pkgName, path, pathType, authorId);
-        }
-
         LogDebug("Adding Smack rules for new appName: " << req.appName << " with pkgName: "
                 << req.pkgName << ". Applications in package: " << pkgContents.size());
         SmackRules::installApplicationRules(req.appName, req.pkgName, authorId, pkgContents, allTizen2XApps, allTizen2XPackages);
@@ -449,7 +494,7 @@ int ServiceImpl::appUninstall(const Credentials &creds, app_inst_req &&req)
 
     LogDebug("Uninstall parameters: appName=" << req.appName << ", uid=" << req.uid);
 
-    if (!installRequestAuthCheck(creds, req)) {
+    if (!authCheck(creds, req.uid, req.installationType)) {
         LogError("Request from uid=" << creds.uid << ", Smack=" << creds.label <<
             " for app uninstallation denied");
         return SECURITY_MANAGER_ERROR_AUTHENTICATION_FAILED;
@@ -1243,10 +1288,34 @@ int ServiceImpl::dropPrivatePathSharing(
     return errorRet;
 }
 
-int ServiceImpl::pathsRegister(const Credentials &/*creds*/, const path_req &/*req*/)
+int ServiceImpl::pathsRegister(const Credentials &creds, path_req req)
 {
-    // TODO
-    return SECURITY_MANAGER_ERROR_UNKNOWN;
+    LogDebug("Paths registration parameters: pkgName: " << req.pkgName <<
+             ", uid: " << req.uid);
+
+    if (req.pkgPaths.empty())
+        return SECURITY_MANAGER_SUCCESS;
+
+    setRequestDefaultValues(req.uid, req.installationType);
+
+    try {
+        if (!authCheck(creds, req.uid, req.installationType)) {
+            LogError("Request from uid=" << creds.uid << ", Smack=" << creds.label <<
+                " for path registration denied");
+            return SECURITY_MANAGER_ERROR_AUTHENTICATION_FAILED;
+        }
+    } catch (const CynaraException::Base &e) {
+        LogError("Error while querying Cynara for permissions: " << e.DumpToString());
+        return SECURITY_MANAGER_ERROR_SERVER_ERROR;
+    } catch (const std::bad_alloc &e) {
+        LogError("Memory allocation failed: " << e.what());
+        return SECURITY_MANAGER_ERROR_MEMORY;
+    }
+
+    return labelPaths(req.pkgPaths,
+                      req.pkgName,
+                      static_cast<app_install_type>(req.installationType),
+                      req.uid);
 }
 
 } /* namespace SecurityManager */

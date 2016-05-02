@@ -351,7 +351,7 @@ void Service::processPathsRegister(MessageBuffer &recv, MessageBuffer &send, con
     Deserialization::Deserialize(recv, req.uid);
     Deserialization::Deserialize(recv, req.pkgPaths);
     Deserialization::Deserialize(recv, req.installationType);
-    int ret = serviceImpl.pathsRegister(creds, req);
+    int ret = serviceImpl.pathsRegister(creds, std::move(req));
     Serialization::Serialize(send, ret);
 }
 } // namespace SecurityManager

@@ -51,10 +51,9 @@ void setupPath(
 /**
  * Sets Smack labels on a <ROOT_APP>/<pkg_id> non-recursively
  *
- * @param pkgName[in] package identifier
- * @param basePath[in] <ROOT_APP> path
+ * @param basePath[in] <ROOT_APP>/<pkg_id> path
  */
-void setupPkgBasePath(const std::string &pkgName, const std::string &basePath);
+void setupPkgBasePath(const std::string &basePath);
 
 /**
  * Changes Smack label on path to enable private sharing
