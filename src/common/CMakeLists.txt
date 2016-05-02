@@ -9,6 +9,7 @@ PKG_CHECK_MODULES(COMMON_DEP
     cynara-admin
     cynara-client-async
     libtzplatform-config
+#    dlog
     )
 
 FIND_PACKAGE(Boost REQUIRED)
@@ -28,6 +29,7 @@ INCLUDE_DIRECTORIES(
 
 SET(COMMON_SOURCES
     ${DPL_PATH}/log/src/abstract_log_provider.cpp
+#    ${DPL_PATH}/log/src/dlog_log_provider.cpp
     ${DPL_PATH}/log/src/sd_journal_provider.cpp
     ${DPL_PATH}/log/src/log.cpp
     ${DPL_PATH}/log/src/old_style_log_provider.cpp

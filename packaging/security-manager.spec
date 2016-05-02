@@ -13,6 +13,7 @@ Requires(post): sqlite3
 Requires(post): smack
 BuildRequires: cmake
 BuildRequires: zip
+# BuildRequires: pkgconfig(dlog)
 BuildRequires: libattr-devel
 BuildRequires: pkgconfig(libsmack)
 BuildRequires: pkgconfig(libcap)
