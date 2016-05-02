@@ -176,7 +176,7 @@ void setupPath(
     return labelDir(path, label, label_transmute, label_executables);
 }
 
-void setupAppBasePath(const std::string &pkgName, const std::string &basePath)
+void setupPkgBasePath(const std::string &pkgName, const std::string &basePath)
 {
     std::string pkgPath = basePath + "/" + pkgName;
     pathSetSmack(pkgPath.c_str(), LABEL_FOR_APP_PUBLIC_RO_PATH, XATTR_NAME_SMACK);

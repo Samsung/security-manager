@@ -228,7 +228,7 @@ void PrivilegeDb::RemoveApplication(
         GetAppPkgName(appName, pkgName);
 
         int authorId;
-        GetAppAuthorId(appName, authorId);
+        GetPkgAuthorId(pkgName, authorId);
 
         auto command = getStatement(StmtType::ERemoveApplication);
         command->BindString(1, appName);
@@ -493,18 +493,34 @@ void PrivilegeDb::GetPkgApps(const std::string &pkgName,
     });
 }
 
-void PrivilegeDb::GetAppAuthorId(const std::string &appName, int &authorId)
+void PrivilegeDb::GetPkgAuthorId(const std::string &pkgName, int &authorId)
 {
     try_catch<void>([&] {
-        auto command = getStatement(StmtType::EGetAppAuthorId);
+        auto command = getStatement(StmtType::EGetPkgAuthorId);
 
-        command->BindString(1, appName);
+        command->BindString(1, pkgName);
         if (command->Step()) {
             authorId = command->GetColumnInteger(0);
-            LogDebug("Got authorid: " << authorId << " for appName " << appName);
+            LogDebug("Got authorid: " << authorId << " for pkgName " << pkgName);
         } else {
             authorId = -1;
-            LogDebug("No authorid found for appName " << appName);
+            LogDebug("No authorid found for pkgName " << pkgName);
+        }
+    });
+}
+
+void PrivilegeDb::GetAuthorIdByName(const std::string &authorName, int &authorId)
+{
+    try_catch<void>([&] {
+        auto command = getStatement(StmtType::EGetAuthorIdByName);
+
+        command->BindString(1, authorName);
+        if (command->Step()) {
+            authorId = command->GetColumnInteger(0);
+            LogDebug("Got authorid: " << authorId << " for authorName " << authorName);
+        } else {
+            authorId = -1;
+            LogDebug("No authorid found for authorName " << authorName);
         }
     });
 }

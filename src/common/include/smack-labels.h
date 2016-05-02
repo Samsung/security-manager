@@ -54,7 +54,7 @@ void setupPath(
  * @param pkgName[in] package identifier
  * @param basePath[in] <ROOT_APP> path
  */
-void setupAppBasePath(const std::string &pkgName, const std::string &basePath);
+void setupPkgBasePath(const std::string &pkgName, const std::string &basePath);
 
 /**
  * Changes Smack label on path to enable private sharing

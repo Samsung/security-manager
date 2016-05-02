@@ -197,7 +197,7 @@ bool ServiceImpl::isSubDir(const char *parent, const char *subdir)
     return (*subdir == '/' || *parent == *subdir);
 }
 
-bool ServiceImpl::getUserAppDir(const uid_t &uid, const app_install_type &installType, std::string &userAppDir)
+bool ServiceImpl::getUserPkgDir(const uid_t &uid, const app_install_type &installType, std::string &userAppDir)
 {
     struct tzplatform_context *tz_ctx = nullptr;
 
@@ -287,14 +287,14 @@ bool ServiceImpl::installRequestAuthCheck(const Credentials &creds, const app_in
     return true;
 }
 
-bool ServiceImpl::installRequestPathsCheck(const app_inst_req &req, std::string &appPath)
+bool ServiceImpl::installRequestPathsCheck(const app_inst_req &req, std::string &pkgPath)
 {
-    if (!getUserAppDir(req.uid, static_cast<app_install_type>(req.installationType), appPath)) {
-        LogError("Failed getting app dir for user uid: " << req.uid);
+    if (!getUserPkgDir(req.uid, static_cast<app_install_type>(req.installationType), pkgPath)) {
+        LogError("Failed getting pkg dir for user uid: " << req.uid);
         return false;
     }
 
-    std::string correctPath{appPath};
+    std::string correctPath{pkgPath};
     correctPath.append("/").append(req.pkgName);
     LogDebug("correctPath: " << correctPath);
 
@@ -307,7 +307,7 @@ bool ServiceImpl::installRequestPathsCheck(const app_inst_req &req, std::string 
             return false;
         }
         LogDebug("Requested path is '" << path.first.c_str()
-                << "'. User's APPS_DIR is '" << appPath << "'");
+                << "'. User's pkg dir is '" << pkgPath << "'");
         if (!isSubDir(correctPath.c_str(), real_path.get())) {
             LogWarning("Installation is outside correct path: " << correctPath << "," << real_path.get());
             return false;
@@ -322,7 +322,7 @@ int ServiceImpl::appInstall(const Credentials &creds, app_inst_req &&req)
     std::vector<std::string> removedPermissions;
     std::vector<std::string> pkgContents;
     std::string cynaraUserStr;
-    std::string appPath;
+    std::string pkgBasePath;
     std::string appLabel;
     std::string pkgLabel;
     std::vector<std::string> allTizen2XApps, allTizen2XPackages;
@@ -340,7 +340,7 @@ int ServiceImpl::appInstall(const Credentials &creds, app_inst_req &&req)
         return SECURITY_MANAGER_ERROR_AUTHENTICATION_FAILED;
     }
 
-    if (!installRequestPathsCheck(req, appPath)) {
+    if (!installRequestPathsCheck(req, pkgBasePath)) {
         LogError("Installation request with paths outside expected application path");
         return SECURITY_MANAGER_ERROR_AUTHENTICATION_FAILED;
     }
@@ -366,7 +366,7 @@ int ServiceImpl::appInstall(const Credentials &creds, app_inst_req &&req)
         PrivilegeDb::getInstance().UpdateAppPrivileges(req.appName, req.uid, req.privileges);
         /* Get all application ids in the package to generate rules withing the package */
         PrivilegeDb::getInstance().GetPkgApps(req.pkgName, pkgContents);
-        PrivilegeDb::getInstance().GetAppAuthorId(req.appName, authorId);
+        PrivilegeDb::getInstance().GetAuthorIdByName(req.authorName, authorId);
         CynaraAdmin::getInstance().UpdateAppPolicy(appLabel, cynaraUserStr, req.privileges);
 
         // if app is targetted to Tizen 2.X, give other 2.X apps RO rules to it's shared dir
@@ -403,12 +403,12 @@ int ServiceImpl::appInstall(const Credentials &creds, app_inst_req &&req)
 
     try {
         if (!req.pkgPaths.empty())
-            SmackLabels::setupAppBasePath(req.pkgName, appPath);
+            SmackLabels::setupPkgBasePath(req.pkgName, pkgBasePath);
 
         // register paths
-        for (const auto &appPath : req.pkgPaths) {
-            const std::string &path = appPath.first;
-            app_install_path_type pathType = static_cast<app_install_path_type>(appPath.second);
+        for (const auto &pkgPath : req.pkgPaths) {
+            const std::string &path = pkgPath.first;
+            app_install_path_type pathType = static_cast<app_install_path_type>(pkgPath.second);
             SmackLabels::setupPath(req.pkgName, path, pathType, authorId);
         }
 
@@ -474,7 +474,7 @@ int ServiceImpl::appUninstall(const Credentials &creds, app_inst_req &&req)
         /* Before we remove the app from the database, let's fetch all apps in the package
             that this app belongs to, this will allow us to remove all rules withing the
             package that the app appears in */
-        PrivilegeDb::getInstance().GetAppAuthorId(req.appName, authorId);
+        PrivilegeDb::getInstance().GetPkgAuthorId(req.pkgName, authorId);
         PrivilegeDb::getInstance().GetPkgApps(req.pkgName, pkgContents);
         PrivilegeDb::getInstance().UpdateAppPrivileges(req.appName, req.uid, std::vector<std::string>());
         PrivilegeDb::getInstance().RemoveApplication(req.appName, req.uid, removeApp, removePkg, removeAuthor);

@@ -42,7 +42,7 @@ private:
 
     static bool isSubDir(const char *parent, const char *subdir);
 
-    static bool getUserAppDir(const uid_t &uid, const app_install_type &installType, std::string &userAppDir);
+    static bool getUserPkgDir(const uid_t &uid, const app_install_type &installType, std::string &userAppDir);
 
     static void installRequestMangle(app_inst_req &req, std::string &cynaraUserStr);
 
