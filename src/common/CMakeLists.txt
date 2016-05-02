@@ -9,13 +9,17 @@ PKG_CHECK_MODULES(COMMON_DEP
     cynara-admin
     cynara-client-async
     libtzplatform-config
-#    dlog
     )
+
+IF(DPL_WITH_DLOG)
+    PKG_CHECK_MODULES(DLOG_DEP REQUIRED dlog)
+ENDIF(DPL_WITH_DLOG)
 
 FIND_PACKAGE(Boost REQUIRED)
 
 INCLUDE_DIRECTORIES(SYSTEM
     ${COMMON_DEP_INCLUDE_DIRS}
+    ${DLOG_DEP_INCLUDE_DIRS}
     )
 
 INCLUDE_DIRECTORIES(
@@ -29,8 +33,6 @@ INCLUDE_DIRECTORIES(
 
 SET(COMMON_SOURCES
     ${DPL_PATH}/log/src/abstract_log_provider.cpp
-#    ${DPL_PATH}/log/src/dlog_log_provider.cpp
-    ${DPL_PATH}/log/src/sd_journal_provider.cpp
     ${DPL_PATH}/log/src/log.cpp
     ${DPL_PATH}/log/src/old_style_log_provider.cpp
     ${DPL_PATH}/core/src/assert.cpp
@@ -59,6 +61,18 @@ SET(COMMON_SOURCES
     ${COMMON_PATH}/filesystem.cpp
     )
 
+IF(DPL_WITH_DLOG)
+    SET(COMMON_SOURCES
+        ${COMMON_SOURCES}
+        ${DPL_PATH}/log/src/dlog_log_provider.cpp)
+ENDIF(DPL_WITH_DLOG)
+
+IF(DPL_WITH_SYSTEMD_JOURNAL)
+    SET(COMMON_SOURCES
+        ${COMMON_SOURCES}
+        ${DPL_PATH}/log/src/sd_journal_provider.cpp)
+ENDIF(DPL_WITH_SYSTEMD_JOURNAL)
+
 ADD_LIBRARY(${TARGET_COMMON} SHARED ${COMMON_SOURCES})
 
 SET_TARGET_PROPERTIES(${TARGET_COMMON}
@@ -70,6 +84,7 @@ SET_TARGET_PROPERTIES(${TARGET_COMMON}
 
 TARGET_LINK_LIBRARIES(${TARGET_COMMON}
     ${COMMON_DEP_LIBRARIES}
+    ${DLOG_DEP_LIBRARIES}
     -lcrypt
     )
 
