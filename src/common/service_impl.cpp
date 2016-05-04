@@ -562,6 +562,7 @@ int ServiceImpl::appUninstall(const Credentials &creds, app_inst_req &&req)
             SmackRules::uninstallPackageRules(req.pkgName);
             if (!removePkg) {
                 LogDebug("Recreating Smack rules for pkgName " << req.pkgName);
+                pkgContents.erase(std::remove(pkgContents.begin(), pkgContents.end(),req.appName), pkgContents.end());
                 SmackRules::updatePackageRules(req.pkgName, pkgContents, allTizen2XApps);
             }
         }
