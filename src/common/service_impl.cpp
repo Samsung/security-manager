@@ -259,14 +259,12 @@ void ServiceImpl::installRequestMangle(app_inst_req &req, std::string &cynaraUse
                 SM_APP_INSTALL_GLOBAL : SM_APP_INSTALL_LOCAL;
 
 
-    if (req.installationType == SM_APP_INSTALL_GLOBAL) {
+    if (req.installationType == SM_APP_INSTALL_GLOBAL
+        || req.installationType == SM_APP_INSTALL_PRELOADED) {
         LogDebug("Installation type: global installation");
         cynaraUserStr = CYNARA_ADMIN_WILDCARD;
     } else if (req.installationType == SM_APP_INSTALL_LOCAL) {
         LogDebug("Installation type: local installation");
-        cynaraUserStr = std::to_string(static_cast<unsigned int>(req.uid));
-    } else if (req.installationType == SM_APP_INSTALL_PRELOADED) {
-        LogDebug("Installation type: preloaded installation");
         cynaraUserStr = std::to_string(static_cast<unsigned int>(req.uid));
     } else
         LogError("Installation type: unknown");
