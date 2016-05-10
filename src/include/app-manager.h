@@ -130,6 +130,7 @@ int security_manager_app_inst_req_set_install_type(app_inst_req *p_req, const en
  * Required privileges:
  * - http://tizen.org/privilege/notexist (local installation)
  * - http://tizen.org/privilege/notexist (global installation)
+ * - http://tizen.org/privilege/internal/usermanagement (local installation for other users)
  *
  * \param[in] Pointer handling app_inst_req structure
  * \return API return code or error code: it would be
@@ -145,8 +146,9 @@ int security_manager_app_install(const app_inst_req *p_req);
  * using filled up app_inst_req data structure
  *
  * Required privileges:
- * - http://tizen.org/privilege/notexist (private uninstallation)
+ * - http://tizen.org/privilege/notexist (local uninstallation)
  * - http://tizen.org/privilege/notexist (global uninstallation)
+ * - http://tizen.org/privilege/internal/usermanagement (local uninstallation for other users)
  *
  * \param[in] Pointer handling app_inst_req structure
  * \return API return code or error code
@@ -216,8 +218,9 @@ int security_manager_path_req_set_uid(path_req *p_req, const uid_t uid);
  * filled up path_req data structure.
  *
  * Required privileges:
- * - http://tizen.org/privilege/notexist (if uid is not set or set to current user's uid)
- * - http://tizen.org/privilege/notexist (if uid is set to some other user's uid)
+ * - http://tizen.org/privilege/notexist (local installation)
+ * - http://tizen.org/privilege/notexist (global installation)
+ * - http://tizen.org/privilege/internal/usermanagement (local installation for other users)
  *
  * \param[in] p_req     Pointer handling path_req structure
  *

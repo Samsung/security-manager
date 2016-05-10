@@ -283,9 +283,13 @@ bool ServiceImpl::authCheck(const Credentials &creds,
                             const uid_t& uid,
                             int installationType)
 {
-    if (installationType == SM_APP_INSTALL_LOCAL && uid == creds.uid) {
+    if (installationType == SM_APP_INSTALL_LOCAL) {
         if (!authenticate(creds, Config::PRIVILEGE_APPINST_USER)) {
             LogError("Caller is not permitted to manage local applications");
+            return false;
+        }
+        if (uid != creds.uid && !authenticate(creds, Config::PRIVILEGE_USER_ADMIN)) {
+            LogError("Caller is not permitted to manage applications for other users");
             return false;
         }
     } else {
