@@ -99,6 +99,8 @@ static po::options_description getInstallOptions()
           "privilege for the application (may occur more than once)")
          ("uid,u", po::value<uid_t>()->required(),
           "user identifier number (required)")
+         ("tizen,t", po::value<std::string>(),
+          "target tizen version (e.g. 2.4, 3.0)")
          ("author-id,c", po::value<std::string>(),
           "unique author's identifier (required for trusted_rw paths)")
          ("install-type", po::value<std::string>(),
@@ -244,6 +246,8 @@ static void parseInstallOptions(int argc, char *argv[],
     }
     if (vm.count("uid"))
         req.uid = vm["uid"].as<uid_t>();
+    if (vm.count("tizen"))
+        req.tizenVersion = vm["tizen"].as<std::string>();
     if (vm.count("author-id"))
         req.authorName = vm["author-id"].as<std::string>();
     if (vm.count("install-type"))
