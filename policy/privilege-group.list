@@ -12,3 +12,4 @@ http://tizen.org/privilege/message.read priv_message_read
 http://tizen.org/privilege/mapservice priv_mapservice
 http://tizen.org/privilege/internet priv_internet
 http://tizen.org/privilege/network.get priv_network_get
+http://tizen.org/privilege/tethering.admin priv_tethering_admin
