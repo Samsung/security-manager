@@ -448,31 +448,16 @@ void PrivilegeDb::GetTizen2XApps(const std::string& origApp, std::vector<std::st
      });
 }
 
-void PrivilegeDb::GetTizen2XAppsAndPackages(const std::string& origApp,
-    std::vector<std::string> &apps, std::vector<std::string> &packages)
+void PrivilegeDb::GetTizen2XPackages(std::vector<std::string> &packages)
 {
     try_catch<void>([&] {
-        {
-            auto command = getStatement(StmtType::EGetAllTizen2XApps);
-            command->BindString(1, origApp);
-            apps.clear();
-            while (command->Step()) {
-                const std::string & tizen2XApp = command->GetColumnString(0);
-                LogDebug("Found " << tizen2XApp << " Tizen 2.X apps installed");
-                apps.push_back(tizen2XApp);
-            };
-        }
-        // grouping the packages below (can not use the statement above)
-        {
-            auto command = getStatement(StmtType::EGetAllTizen2XPackages);
-            command->BindString(1, origApp);
-            packages.clear();
-            while (command->Step()) {
-                const std::string & tizen2XPkg = command->GetColumnString(0);
-                LogDebug("Found " << tizen2XPkg << " Tizen 2.X packages installed");
-                packages.push_back(tizen2XPkg);
-            };
-        }
+        auto command = getStatement(StmtType::EGetAllTizen2XPackages);
+        packages.clear();
+        while (command->Step()) {
+            const std::string & tizen2XPkg = command->GetColumnString(0);
+            LogDebug("Found " << tizen2XPkg << " Tizen 2.X packages installed");
+            packages.push_back(tizen2XPkg);
+        };
      });
 }
 

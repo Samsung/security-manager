@@ -123,7 +123,7 @@ private:
         { StmtType::EGetPrivilegeGroups, " SELECT group_name FROM privilege_group_view WHERE privilege_name = ?" },
         { StmtType::EGetUserApps, "SELECT name FROM app WHERE uid=?" },
         { StmtType::EGetAllTizen2XApps,  "SELECT name FROM app WHERE version LIKE '2.%%' AND name <> ?" },
-        { StmtType::EGetAllTizen2XPackages,  "SELECT DISTINCT pkg_name FROM app_pkg_view WHERE version LIKE '2.%%' AND app_name <> ?" },
+        { StmtType::EGetAllTizen2XPackages,  "SELECT DISTINCT pkg_name FROM app_pkg_view WHERE version LIKE '2.%%'" },
         { StmtType::EGetAppsInPkg, " SELECT app_name FROM app_pkg_view WHERE pkg_name = ?" },
         { StmtType::EGetGroups, "SELECT DISTINCT group_name FROM privilege_group_view" },
         { StmtType::EGetPkgAuthorId, "SELECT author_id FROM pkg WHERE name = ? AND author_id IS NOT NULL"},
@@ -447,20 +447,15 @@ public:
     void GetTizen2XApps(const std::string &origApp, std::vector<std::string> &apps);
 
     /**
-     * Retrieve list of all apps and packages excluding one specified (typically action originator)
+     * Retrieve list of all Tizen 2.X packages
      *
-     * @param origApp - do not include specific application name in the list
-     * @param[out] apps - vector of app identifiers describing installed 2.x apps,
-     *                    this parameter do not need to be empty, but
-     *                    it is being overwritten during function call.
      * @param[out] packages - vector of package identifiers describing installed 2.x packages,
      *                    this parameter do not need to be empty, but
      *                    it is being overwritten during function call.
      * @exception DB::SqlConnection::Exception::InternalError on internal error
      * @exception DB::SqlConnection::Exception::ConstraintError on constraint violation
      */
-    void GetTizen2XAppsAndPackages(const std::string& origApp,
-         std::vector<std::string> &apps, std::vector<std::string> &packages);
+    void GetTizen2XPackages(std::vector<std::string> &packages);
 
     /* Retrive an id of an author from database
      *

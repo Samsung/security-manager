@@ -422,8 +422,10 @@ int ServiceImpl::appInstall(const Credentials &creds, app_inst_req &&req)
         CynaraAdmin::getInstance().UpdateAppPolicy(appLabel, cynaraUserStr, req.privileges);
 
         // if app is targetted to Tizen 2.X, give other 2.X apps RO rules to it's shared dir
-        if(isTizen2XVersion(req.tizenVersion))
-            PrivilegeDb::getInstance().GetTizen2XAppsAndPackages(req.appName, allTizen2XApps, allTizen2XPackages);
+        if(isTizen2XVersion(req.tizenVersion)) {
+            PrivilegeDb::getInstance().GetTizen2XApps(req.appName, allTizen2XApps);
+            PrivilegeDb::getInstance().GetTizen2XPackages(allTizen2XPackages);
+        }
 
         // WTF? Why this commit is here? Shouldn't it be at the end of this function?
         PrivilegeDb::getInstance().CommitTransaction();
