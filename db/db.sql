@@ -11,7 +11,7 @@ pkg_id INTEGER PRIMARY KEY,
 name VARCHAR NOT NULL,
 author_id INTEGER,
 UNIQUE (name)
-FOREIGN KEY (author_id) REFERENCES autor (author_id)
+FOREIGN KEY (author_id) REFERENCES author (author_id)
 );
 
 CREATE TABLE IF NOT EXISTS app (
