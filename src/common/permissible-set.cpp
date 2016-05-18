@@ -29,6 +29,7 @@
 
 #include <cstdio>
 #include <cstring>
+#include <fstream>
 #include <memory>
 #include <pwd.h>
 #include <string>
@@ -40,6 +41,7 @@
 #include <config.h>
 #include <dpl/errno_string.h>
 #include <dpl/exception.h>
+#include <dpl/fstream_accessors.h>
 #include <dpl/log/log.h>
 #include <permissible-set.h>
 #include <privilege_db.h>
@@ -48,25 +50,29 @@
 
 #include "tzplatform-config.h"
 
-typedef std::unique_ptr<FILE, int (*)(FILE *)> filePtr;
-
 namespace SecurityManager {
 namespace PermissibleSet {
 
-static filePtr openAndLockNameFile(const std::string &nameFile, const char* mode)
+template <typename T>
+static inline int getFd(T &fstream)
 {
-    filePtr file(fopen(nameFile.c_str(), mode), fclose);
-    if (!file) {
+    return DPL::FstreamAccessors<T>::GetFd(fstream);
+}
+
+template <typename T>
+static void openAndLockNameFile(const std::string &nameFile, T &fstream)
+{
+    fstream.open(nameFile);
+    if (!fstream.is_open()) {
         LogError("Unable to open file" << nameFile << ": " << GetErrnoString(errno));
         ThrowMsg(PermissibleSetException::FileOpenError, "Unable to open file ");
     }
 
-    int ret = TEMP_FAILURE_RETRY(flock(fileno(file.get()), LOCK_EX));
+    int ret = TEMP_FAILURE_RETRY(flock(getFd(fstream), LOCK_EX));
     if (ret == -1) {
         LogError("Unable to lock file " << nameFile << ": " << GetErrnoString(errno));
         ThrowMsg(PermissibleSetException::FileLockError, "Unable to lock file");
     }
-    return file;
 }
 
 std::string getPerrmissibleFileLocation(uid_t uid, int installationType)
@@ -99,51 +105,43 @@ static void markPermissibleFileValid(int fd, const std::string &nameFile, bool v
 void updatePermissibleFile(uid_t uid, int installationType)
 {
     std::string nameFile = getPerrmissibleFileLocation(uid, installationType);
-    filePtr file = openAndLockNameFile(nameFile, "w");
-    markPermissibleFileValid(fileno(file.get()), nameFile, false);
+    std::ofstream fstream;
+    openAndLockNameFile(nameFile, fstream);
+    markPermissibleFileValid(getFd(fstream), nameFile, false);
     std::vector<std::string> appNames;
     PrivilegeDb::getInstance().GetUserApps(uid, appNames);
     for (auto &name : appNames) {
-        if (fprintf(file.get(), "%s\n", name.c_str()) < 0) {
-            LogError("Unable to fprintf() to file " << nameFile << ": " << GetErrnoString(errno));
+        fstream << name << '\n';
+        if (fstream.bad()) {
+            LogError("Unable to write to file " << nameFile << ": " << GetErrnoString(errno));
             ThrowMsg(PermissibleSetException::PermissibleSetException::FileWriteError,
-                    "Unable to fprintf() to file");
+                    "Unable to write to file");
         }
     }
-    if (fflush(file.get()) != 0) {
+    if (fstream.flush().fail()) {
         LogError("Error at fflush " << nameFile << ": " << GetErrnoString(errno));
         ThrowMsg(PermissibleSetException::FileWriteError, "Error at fflush");
     }
-    if (fsync(fileno(file.get())) == -1) {
+    if (fsync(getFd(fstream)) == -1) {
         LogError("Error at fsync " << nameFile << ": " << GetErrnoString(errno));
         ThrowMsg(PermissibleSetException::FileWriteError, "Error at fsync");
     }
-    markPermissibleFileValid(fileno(file.get()), nameFile, true);
+    markPermissibleFileValid(getFd(fstream), nameFile, true);
 }
 
 void readNamesFromPermissibleFile(const std::string &nameFile, std::vector<std::string> &names)
 {
-    filePtr file = openAndLockNameFile(nameFile, "r");
-    int ret;
-    do {
-        char *buf = nullptr;
-        std::size_t bufSize = 0;
-        switch (ret = getline(&buf, &bufSize, file.get())) {
-        case 0:
-            continue;
-        case -1:
-            if (feof(file.get()))
-                break;
-            LogError("Failure while reading file " << nameFile << ": " << GetErrnoString(errno));
-            ThrowMsg(PermissibleSetException::FileReadError, "Failure while reading file");
-        default:
-            std::unique_ptr<char, decltype(free)*> buf_up(buf, free);
-            if (buf[ret - 1] == '\n')
-                buf[ret - 1] = '\0';
-            names.push_back(buf);
-            buf_up.release();
-        }
-    } while (ret != -1);
+    std::ifstream fstream;
+    openAndLockNameFile(nameFile, fstream);
+
+    std::string line;
+    while (std::getline(fstream, line))
+        names.push_back(line);
+
+    if (fstream.bad()) {
+        LogError("Failure while reading file " << nameFile << ": " << GetErrnoString(errno));
+        ThrowMsg(PermissibleSetException::FileReadError, "Failure while reading file");
+    }
 }
 
 } // PermissibleSet
