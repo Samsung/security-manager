@@ -64,6 +64,7 @@ enum class StmtType {
     EGetAllSharedPaths,
     EGetSharingForOwner,
     EGetSharingForTarget,
+    ESquashSharing,
     EClearSharing,
     EClearPrivatePaths,
     EGetPrivilegeGroups,
@@ -121,6 +122,7 @@ private:
         { StmtType::EGetAllSharedPaths, "SELECT owner_app_name, path FROM app_private_sharing_view ORDER BY owner_app_name"},
         { StmtType::EGetSharingForOwner, "SELECT target_app_name, path FROM app_private_sharing_view WHERE owner_app_name = ?"},
         { StmtType::EGetSharingForTarget, "SELECT owner_app_name, path FROM app_private_sharing_view WHERE target_app_name = ?"},
+        { StmtType::ESquashSharing, "UPDATE app_private_sharing_view SET counter = 1 WHERE target_app_name = ? AND path = ?"},
         { StmtType::EClearSharing, "DELETE FROM app_private_sharing;"},
         { StmtType::EClearPrivatePaths, "DELETE FROM shared_path;"},
         { StmtType::EGetPrivilegeGroups, " SELECT group_name FROM privilege_group_view WHERE privilege_name = ?" },
@@ -415,6 +417,17 @@ public:
      */
     void GetPrivateSharingForTarget(const std::string &targetAppName,
                                     std::map<std::string, std::vector<std::string>> &targetSharing);
+
+    /**
+     * Change sharing counter to 1.
+     *
+     * @param targetAppName - target application name
+     * @param path - path name
+     *
+     * @exception DB::SqlConnection::Exception::InternalError on internal error
+     */
+    void SquashSharing(const std::string &targetAppName, const std::string &path);
+
     /**
      * Clear information about private sharing.
      *

@@ -4,7 +4,7 @@ PRAGMA auto_vacuum = NONE;
 
 BEGIN EXCLUSIVE TRANSACTION;
 
-PRAGMA user_version = 3;
+PRAGMA user_version = 4;
 
 CREATE TABLE IF NOT EXISTS pkg (
 pkg_id INTEGER PRIMARY KEY,
@@ -170,6 +170,16 @@ BEGIN
                       WHERE target_app_name = NEW.target_app_name
                       AND path_id = (SELECT path_id FROM shared_path WHERE NEW.path = path)),
                      0) + 1);
+END;
+
+DROP TRIGGER IF EXISTS app_private_sharing_view_update_trigger;
+CREATE TRIGGER app_private_sharing_view_update_trigger
+INSTEAD OF UPDATE OF counter ON app_private_sharing_view
+BEGIN
+    UPDATE app_private_sharing
+    SET counter = NEW.counter
+    WHERE   target_app_name = OLD.target_app_name
+    AND     path_id = (SELECT path_id FROM shared_path WHERE path = OLD.path);
 END;
 
 DROP TRIGGER IF EXISTS app_private_sharing_view_remove_delete_trigger;

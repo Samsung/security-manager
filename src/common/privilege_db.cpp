@@ -354,6 +354,16 @@ void PrivilegeDb::GetPrivateSharingForTarget(const std::string &targetAppName,
     });
 }
 
+void PrivilegeDb::SquashSharing(const std::string &targetAppName, const std::string &path) {
+    try_catch<void>([&] {
+        auto command = getStatement(StmtType::ESquashSharing);
+        command->BindString(1, targetAppName);
+        command->BindString(2, path);
+
+        command->Step();
+    });
+}
+
 void PrivilegeDb::ClearPrivateSharing() {
     try_catch<void>([&] {
         {
