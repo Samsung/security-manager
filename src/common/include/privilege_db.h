@@ -66,8 +66,7 @@ enum class StmtType {
     EClearPrivatePaths,
     EGetPrivilegeGroups,
     EGetUserApps,
-    EGetAllTizen2XApps,
-    EGetAllTizen2XPackages,
+    EGetTizen2XPackages,
     EGetAppsInPkg,
     EGetGroups,
     EGetPkgAuthorId,
@@ -122,8 +121,7 @@ private:
         { StmtType::EClearPrivatePaths, "DELETE FROM shared_path;"},
         { StmtType::EGetPrivilegeGroups, " SELECT group_name FROM privilege_group_view WHERE privilege_name = ?" },
         { StmtType::EGetUserApps, "SELECT name FROM app WHERE uid=?" },
-        { StmtType::EGetAllTizen2XApps,  "SELECT name FROM app WHERE version LIKE '2.%%' AND name <> ?" },
-        { StmtType::EGetAllTizen2XPackages,  "SELECT DISTINCT pkg_name FROM app_pkg_view WHERE version LIKE '2.%%'" },
+        { StmtType::EGetTizen2XPackages,  "SELECT DISTINCT pkg_name FROM app_pkg_view WHERE version LIKE '2.%%'" },
         { StmtType::EGetAppsInPkg, " SELECT app_name FROM app_pkg_view WHERE pkg_name = ?" },
         { StmtType::EGetGroups, "SELECT DISTINCT group_name FROM privilege_group_view" },
         { StmtType::EGetPkgAuthorId, "SELECT author_id FROM pkg WHERE name = ? AND author_id IS NOT NULL"},
@@ -433,18 +431,6 @@ public:
      * @exception DB::SqlConnection::Exception::ConstraintError on constraint violation
      */
     void GetPkgApps(const std::string &pkgName, std::vector<std::string> &appNames);
-
-    /**
-     * Retrieve list of all apps excluding one specified (typically action originator)
-     *
-     * @param origApp - do not include specific application name in the list
-     * @param[out] apps - vector of application identifiers describing installed 2.x apps,
-     *                    this parameter do not need to be empty, but
-     *                    it is being overwritten during function call.
-     * @exception DB::SqlConnection::Exception::InternalError on internal error
-     * @exception DB::SqlConnection::Exception::ConstraintError on constraint violation
-     */
-    void GetTizen2XApps(const std::string &origApp, std::vector<std::string> &apps);
 
     /**
      * Retrieve list of all Tizen 2.X packages

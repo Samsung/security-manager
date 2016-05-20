@@ -31,6 +31,7 @@
 
 #include "credentials.h"
 #include "security-manager.h"
+#include "smack-rules.h"
 #include "protocols.h"
 
 namespace SecurityManager {
@@ -63,6 +64,8 @@ private:
                              const std::string &pkgName,
                              app_install_type installationType,
                              const uid_t &uid);
+
+    static void getTizen2XApps(SmackRules::PkgsApps &pkgsApps);
 
     static bool getZoneId(std::string &zoneId);
 

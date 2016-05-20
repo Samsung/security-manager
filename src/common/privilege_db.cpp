@@ -434,24 +434,10 @@ void PrivilegeDb::GetUserApps(uid_t uid, std::vector<std::string> &apps)
     });
 }
 
-void PrivilegeDb::GetTizen2XApps(const std::string& origApp, std::vector<std::string> &apps)
-{
-    try_catch<void>([&] {
-        auto command = getStatement(StmtType::EGetAllTizen2XApps);
-        command->BindString(1, origApp);
-        apps.clear();
-        while (command->Step()) {
-            const std::string & tizen2XApp = command->GetColumnString(0);
-            LogDebug("Found " << tizen2XApp << " Tizen 2.X apps installed");
-            apps.push_back(tizen2XApp);
-        };
-     });
-}
-
 void PrivilegeDb::GetTizen2XPackages(std::vector<std::string> &packages)
 {
     try_catch<void>([&] {
-        auto command = getStatement(StmtType::EGetAllTizen2XPackages);
+        auto command = getStatement(StmtType::EGetTizen2XPackages);
         packages.clear();
         while (command->Step()) {
             const std::string & tizen2XPkg = command->GetColumnString(0);

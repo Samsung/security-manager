@@ -55,6 +55,7 @@ const char *const AUTHOR_RULES_TEMPLATE_FILE_PATH =
 const char *const SMACK_RULES_PATH_MERGED      = LOCAL_STATE_DIR "/security-manager/rules-merged/rules.merged";
 const char *const SMACK_RULES_PATH_MERGED_T    = LOCAL_STATE_DIR "/security-manager/rules-merged/rules.merged.temp";
 const char *const SMACK_RULES_PATH             = LOCAL_STATE_DIR "/security-manager/rules";
+const char *const SMACK_RULES_SHARED_RO_PATH   = LOCAL_STATE_DIR "/security-manager/rules/2x_shared_ro";
 const char *const SMACK_APP_IN_PACKAGE_PERMS   = "rwxat";
 const char *const SMACK_APP_CROSS_PKG_PERMS    = "rx";
 const char *const SMACK_APP_PATH_OWNER_PERMS = "rwxat";
@@ -255,48 +256,49 @@ void SmackRules::generatePackageCrossDeps(const std::vector<std::string> &pkgCon
     }
 }
 
-void SmackRules::generateAppToOtherPackagesDeps(
-        const std::string appName,
-        const std::vector<std::string> &other2XPackages)
+void SmackRules::generateSharedRORules(PkgsApps &pkgsApps)
 {
-    // reverse: allow installed app to access others' contents
-    // for every 2.X package
-    for (const auto &object : other2XPackages) {
-        std::string otherObjectLabel = SmackLabels::generatePkgLabelOwnerRWothersRO(object);
+    LogDebug("Generating SharedRO rules");
 
-        SmackRules packageRules;
-        std::string accessPackageRulesPath = getPackageRulesFilePath(object);
-        packageRules.loadFromFile(accessPackageRulesPath);
-
-        std::string subjectLabel = SmackLabels::generateAppLabel(appName);
-        LogDebug("Addding cross app rule for newly installed subject " << subjectLabel << " to already installed 2.x package object: " << otherObjectLabel << " perms: " << SMACK_APP_CROSS_PKG_PERMS);
-        packageRules.add(subjectLabel, otherObjectLabel, SMACK_APP_CROSS_PKG_PERMS);
-        packageRules.saveToFile(accessPackageRulesPath);
-        if (smack_smackfs_path() != NULL)
-            packageRules.apply();
+    SmackRules rules;
+    for (size_t i = 0; i < pkgsApps.size(); ++i) {
+        for (const std::string &appName : pkgsApps[i].second) {
+            std::string appLabel = SmackLabels::generateAppLabel(appName);
+            for (size_t j = 0; j < pkgsApps.size(); ++j) {
+                if (j != i) { // Rules for SharedRO files from own pkg are generated elsewhere
+                    std::string &pkgName = pkgsApps[j].first;
+                    rules.add(appLabel,
+                        SmackLabels::generatePkgLabelOwnerRWothersRO(pkgName),
+                        SMACK_APP_CROSS_PKG_PERMS);
+                }
+            }
+        }
     }
+
+    if (smack_smackfs_path() != NULL)
+        rules.apply();
+
+    rules.saveToFile(SMACK_RULES_SHARED_RO_PATH);
 }
 
-/**
- * this below works in N^2 and should be replaced by an alternative mechanism
- */
-void SmackRules::generateAllowOther2XApplicationDeps(
-        const std::string pkgName,
-        const std::vector<std::string> &other2XApps)
+void SmackRules::revokeSharedRORules(PkgsApps &pkgsApps, const std::string &revokePkg)
 {
-    LogDebug("Generating cross-package rules");
+    LogDebug("Revoking SharedRO rules for target pkg " << revokePkg);
 
-    std::string objectLabel = SmackLabels::generatePkgLabelOwnerRWothersRO(pkgName);
-    std::string appsInPackagePerms = SMACK_APP_IN_PACKAGE_PERMS;
+    if (smack_smackfs_path() == NULL)
+        return;
 
-    // allow other app to access installed package contents
-    for (const auto &subject : other2XApps) {
-        std::string subjectLabel = SmackLabels::generateAppLabel(subject);
-
-        LogDebug("Addding cross 2.x app rule subject: " << subjectLabel << " to newly installed object: "
-            << objectLabel << " perms: " << SMACK_APP_CROSS_PKG_PERMS);
-        add(subjectLabel, objectLabel, SMACK_APP_CROSS_PKG_PERMS);
+    SmackRules rules;
+    for (size_t i = 0; i < pkgsApps.size(); ++i) {
+        for (const std::string &appName : pkgsApps[i].second) {
+            std::string appLabel = SmackLabels::generateAppLabel(appName);
+            rules.add(appLabel,
+                SmackLabels::generatePkgLabelOwnerRWothersRO(revokePkg),
+                SMACK_APP_CROSS_PKG_PERMS);
+        }
     }
+
+    rules.clear();
 }
 
 std::string SmackRules::getPackageRulesFilePath(const std::string &pkgName)
@@ -408,23 +410,19 @@ void SmackRules::installApplicationRules(
         const std::string &appName,
         const std::string &pkgName,
         const int authorId,
-        const std::vector<std::string> &pkgContents,
-        const std::vector<std::string> &appsGranted,
-        const std::vector<std::string> &accessPackages)
+        const std::vector<std::string> &pkgContents)
 {
     useTemplate(APP_RULES_TEMPLATE_FILE_PATH, getApplicationRulesFilePath(appName), appName, pkgName, authorId);
 
     if (authorId >= 0)
         useTemplate(AUTHOR_RULES_TEMPLATE_FILE_PATH, getAuthorRulesFilePath(authorId), appName, pkgName, authorId);
 
-    updatePackageRules(pkgName, pkgContents, appsGranted);
-    generateAppToOtherPackagesDeps(appName, accessPackages);
+    updatePackageRules(pkgName, pkgContents);
 }
 
 void SmackRules::updatePackageRules(
         const std::string &pkgName,
-        const std::vector<std::string> &pkgContents,
-        const std::vector<std::string> &appsGranted)
+        const std::vector<std::string> &pkgContents)
 {
     SmackRules smackRules;
     smackRules.addFromTemplateFile(
@@ -434,7 +432,6 @@ void SmackRules::updatePackageRules(
             -1);
 
     smackRules.generatePackageCrossDeps(pkgContents);
-    smackRules.generateAllowOther2XApplicationDeps(pkgName, appsGranted);
 
     if (smack_smackfs_path() != NULL)
         smackRules.apply();
