@@ -44,6 +44,7 @@ const std::string PRIVILEGE_POLICY_ADMIN     = "http://tizen.org/privilege/inter
 const std::string PRIVILEGE_APPSHARING_ADMIN = "http://tizen.org/privilege/notexist";
 
 const std::string APPS_NAME_FILE = "apps-names";
+const std::string SKEL_DIR = "/etc/skel";
 };
 
 } /* namespace SecurityManager */

@@ -189,13 +189,27 @@ uid_t ServiceImpl::getGlobalUserId(void)
     return globaluid;
 }
 
-bool ServiceImpl::isSubDir(const char *parent, const char *subdir)
+bool ServiceImpl::isSubDir(const std::string &parent, const std::string &subdir)
 {
-    while (*parent && *subdir)
-        if (*parent++ != *subdir++)
+    const char *str1 = parent.c_str();
+    const char *str2 = subdir.c_str();
+
+    while (*str1 && *str2)
+        if (*str1++ != *str2++)
             return false;
 
-    return (*subdir == '/' || *parent == *subdir);
+    return (*str2 == '/' || *str1 == *str2);
+}
+
+std::string ServiceImpl::realPath(const std::string &path)
+{
+    std::unique_ptr<char, decltype(free)*> real_pathPtr(realpath(path.c_str(), nullptr), free);
+    if (!real_pathPtr) {
+        LogError("Error in realpath(): " << GetErrnoString(errno) << " for: " << path);
+        return std::string();
+    }
+
+    return real_pathPtr.get();
 }
 
 bool ServiceImpl::getUserPkgDir(const uid_t &uid,
@@ -222,17 +236,24 @@ bool ServiceImpl::getUserPkgDir(const uid_t &uid,
         return false;
     }
 
-    std::string pkgDir = tpc.ctxGetEnv(id);
-    std::unique_ptr<char, decltype(free)*> real_pathPtr(realpath(pkgDir.c_str(), NULL), free);
-    if (!real_pathPtr.get()) {
-        LogError("Error in realpath(): " << GetErrnoString(errno) << " for: " << pkgDir);
+    userPkgDir = std::move(realPath(tpc.ctxGetEnv(id)));
+    if (userPkgDir.empty())
         return false;
-    }
 
-    userPkgDir.assign(real_pathPtr.get());
     userPkgDir.append("/").append(pkgName);
 
     return true;
+}
+
+void ServiceImpl::getSkelPkgDir(const std::string &pkgName,
+                                std::string &skelPkgDir)
+{
+    std::string app = TizenPlatformConfig::getEnv(TZ_USER_APP);
+    std::string home = TizenPlatformConfig::getEnv(TZ_USER_HOME);
+
+    skelPkgDir.assign(app);
+    skelPkgDir.replace(0, home.length(), Config::SKEL_DIR);
+    skelPkgDir.append("/").append(pkgName);
 }
 
 void ServiceImpl::setRequestDefaultValues(uid_t& uid, int& installationType)
@@ -286,21 +307,19 @@ bool ServiceImpl::authCheck(const Credentials &creds,
 }
 
 bool ServiceImpl::pathsCheck(const pkg_paths &requestedPaths,
-                             const std::string pkgPath)
-
+    const std::vector<std::string> &allowedDirs)
 {
+    LogDebug("Validating installation paths. Allowed directories: ");
+    for (const auto &dir : allowedDirs)
+        LogDebug("- " << dir);
+
     for (const auto &path : requestedPaths) {
-        std::unique_ptr<char, std::function<void(void*)>> real_path(
-            realpath(path.first.c_str(), NULL), free);
-        if (!real_path.get()) {
-            LogError("realpath failed with '" << path.first.c_str()
-                    << "' as parameter: " << GetErrnoString(errno));
-            return false;
-        }
-        LogDebug("Requested path is '" << path.first.c_str()
-                << "'. User's pkg dir is '" << pkgPath << "'");
-        if (!isSubDir(pkgPath.c_str(), real_path.get())) {
-            LogWarning("Installation is outside correct path: " << pkgPath << "," << real_path.get());
+        LogDebug("Requested path is '" << path.first.c_str() << "'");
+        bool allowed = std::any_of(allowedDirs.begin(), allowedDirs.end(),
+            std::bind(isSubDir, std::placeholders::_1, realPath(path.first)));
+
+        if (!allowed) {
+            LogWarning("Installation path " << path.first << " is outside allowed directories");
             return false;
         }
     }
@@ -327,7 +346,16 @@ int ServiceImpl::labelPaths(const pkg_paths &paths,
             return SECURITY_MANAGER_ERROR_SERVER_ERROR;
 
         // check if paths are inside
-        if (!pathsCheck(paths, pkgBasePath))
+        bool pathsOK;
+        if (installationType == SM_APP_INSTALL_LOCAL)
+            pathsOK = pathsCheck(paths, {pkgBasePath});
+        else {
+            std::string skelPkgBasePath;
+            getSkelPkgDir(pkgName, skelPkgBasePath);
+            pathsOK = pathsCheck(paths, {pkgBasePath, skelPkgBasePath});
+        }
+
+        if (!pathsOK)
             return SECURITY_MANAGER_ERROR_AUTHENTICATION_FAILED;
 
         if (!paths.empty())

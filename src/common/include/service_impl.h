@@ -42,13 +42,17 @@ private:
 
     static uid_t getGlobalUserId(void);
 
-    static bool isSubDir(const char *parent, const char *subdir);
+    static std::string realPath(const std::string &path);
+
+    static bool isSubDir(const std::string &parent, const std::string &subdir);
 
     static bool getUserPkgDir(const uid_t &uid,
                               const std::string &pkgName,
                               app_install_type installType,
                               std::string &userPkgDir);
 
+    static void getSkelPkgDir(const std::string &pkgName,
+                              std::string &skelPkgDir);
 
     static void setRequestDefaultValues(uid_t& uid, int& installationType);
 
@@ -59,7 +63,7 @@ private:
                                         int installationType);
 
     static bool pathsCheck(const pkg_paths &requestedPaths,
-                           const std::string pkgPath);
+                           const std::vector<std::string> &allowedDirs);
 
     static int labelPaths(const pkg_paths &paths,
                              const std::string &pkgName,

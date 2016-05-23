@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015-2016 Samsung Electronics Co., Ltd All Rights Reserved
+ *  Copyright (c) 2015 Samsung Electronics Co., Ltd All Rights Reserved
  *
  *  Contact: Rafal Krypa <r.krypa@samsung.com>
  *
@@ -16,37 +16,34 @@
  *  limitations under the License
  */
 /*
- * @file        config.h
+ * @file        stmt-wrapper.h
  * @author      Zofia Abramowska <z.abramowska@samsung.com>
  * @version     1.0
- * @brief       Definition of Configuration options
+ * @brief       Definition of Statement Wrapper class.
  */
 
-#ifndef SECURITY_MANAGER_CONFIG_
-#define SECURITY_MANAGER_CONFIG_
+#ifndef SECURITY_MANAGER_STMT_WRAPPER_
+#define SECURITY_MANAGER_STMT_WRAPPER_
 
 #include <string>
+#include <dpl/db/sql_connection.h>
 
 namespace SecurityManager {
 
-namespace Config {
+class StmtWrapper {
+public:
+    StmtWrapper(DB::SqlConnection::DataCommand &command) : m_command(command) {}
+    DB::SqlConnection::DataCommand &operator->() {
+        return *m_command;
+    }
+    ~StmtWrapper() {
+        m_command->Reset();
+    }
+private:
+    DB::SqlConnection::DataCommandAutoPtr &m_command;
 
-extern const std::string PRIVILEGE_VERSION;
-
-/* Privileges required from users of our API */
-extern const std::string PRIVILEGE_APPINST_USER;
-extern const std::string PRIVILEGE_APPINST_ADMIN;
-extern const std::string PRIVILEGE_USER_ADMIN;
-extern const std::string PRIVILEGE_POLICY_USER;
-extern const std::string PRIVILEGE_POLICY_ADMIN;
-extern const std::string PRIVILEGE_APPSHARING_ADMIN;
-
-/* Files used in permitted label managment*/
-extern const std::string APPS_NAME_FILE;
-
-extern const std::string SKEL_DIR;
 };
 
 } /* namespace SecurityManager */
 
-#endif /* SECURITY_MANAGER_CONFIG_ */
+#endif /* SECURITY_MANAGER_STMT_WRAPPER_ */
