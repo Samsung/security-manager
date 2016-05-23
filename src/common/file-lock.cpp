@@ -24,15 +24,16 @@
 /* vim: set ts=4 et sw=4 tw=78 : */
 
 #include <fstream>
-#include <dpl/log/log.h>
+
+#include "dpl/log/log.h"
+#include "tzplatform-config.h"
 
 #include "file-lock.h"
 
 namespace SecurityManager {
 
-char const * const SERVICE_LOCK_FILE = tzplatform_mkpath3(TZ_SYS_RUN,
-                                                         "lock",
-                                                         "security-manager.lock");
+const std::string SERVICE_LOCK_FILE = TizenPlatformConfig::makePath(
+    TZ_SYS_RUN, "lock", "security-manager.lock");
 
 FileLocker::FileLocker(const std::string &lockFile, bool blocking)
 {

@@ -31,40 +31,40 @@
 #include <fstream>
 #include <cstring>
 #include <sstream>
+#include <string>
 #include <memory>
 #include <algorithm>
 
-#include <dpl/log/log.h>
-#include <tzplatform_config.h>
-#include <dpl/errno_string.h>
-#include <dpl/fstream_accessors.h>
-
-#include <filesystem.h>
+#include "dpl/log/log.h"
+#include "dpl/errno_string.h"
+#include "dpl/fstream_accessors.h"
+#include "filesystem.h"
 #include "smack-labels.h"
+#include "tzplatform-config.h"
+
 #include "smack-rules.h"
 
 namespace SecurityManager {
 
-const char *const SMACK_APP_LABEL_TEMPLATE     = "~APP~";
-const char *const SMACK_PKG_LABEL_TEMPLATE     = "~PKG~";
-const char *const SMACK_AUTHOR_LABEL_TEMPLATE  = "~AUTHOR~";
-const char *const APP_RULES_TEMPLATE_FILE_PATH = tzplatform_mkpath4(TZ_SYS_RO_SHARE, "security-manager", "policy", "app-rules-template.smack");
-const char *const PKG_RULES_TEMPLATE_FILE_PATH = tzplatform_mkpath4(TZ_SYS_RO_SHARE, "security-manager", "policy", "pkg-rules-template.smack");
-const char *const AUTHOR_RULES_TEMPLATE_FILE_PATH =
-    tzplatform_mkpath4(TZ_SYS_RO_SHARE, "security-manager", "policy", "author-rules-template.smack");
-const char *const SMACK_RULES_PATH_MERGED      = LOCAL_STATE_DIR "/security-manager/rules-merged/rules.merged";
-const char *const SMACK_RULES_PATH_MERGED_T    = LOCAL_STATE_DIR "/security-manager/rules-merged/rules.merged.temp";
-const char *const SMACK_RULES_PATH             = LOCAL_STATE_DIR "/security-manager/rules";
-const char *const SMACK_RULES_SHARED_RO_PATH   = LOCAL_STATE_DIR "/security-manager/rules/2x_shared_ro";
-const char *const SMACK_APP_IN_PACKAGE_PERMS   = "rwxat";
-const char *const SMACK_APP_CROSS_PKG_PERMS    = "rx";
-const char *const SMACK_APP_PATH_OWNER_PERMS = "rwxat";
-const char *const SMACK_APP_PATH_TARGET_PERMS = "rxl";
-const char *const SMACK_APP_DIR_TARGET_PERMS = "x";
-const char *const SMACK_USER = "User";
-const char *const SMACK_SYSTEM = "System";
-const char *const SMACK_APP_PATH_SYSTEM_PERMS = "rwxat";
-const char *const SMACK_APP_PATH_USER_PERMS = "rwxat";
+const std::string SMACK_APP_LABEL_TEMPLATE     = "~APP~";
+const std::string SMACK_PKG_LABEL_TEMPLATE     = "~PKG~";
+const std::string SMACK_AUTHOR_LABEL_TEMPLATE  = "~AUTHOR~";
+const std::string APP_RULES_TEMPLATE_FILE_PATH = TizenPlatformConfig::makePath(TZ_SYS_RO_SHARE, "security-manager", "policy", "app-rules-template.smack");
+const std::string PKG_RULES_TEMPLATE_FILE_PATH = TizenPlatformConfig::makePath(TZ_SYS_RO_SHARE, "security-manager", "policy", "pkg-rules-template.smack");
+const std::string AUTHOR_RULES_TEMPLATE_FILE_PATH = TizenPlatformConfig::makePath(TZ_SYS_RO_SHARE, "security-manager", "policy", "author-rules-template.smack");
+const std::string SMACK_RULES_PATH_MERGED      = LOCAL_STATE_DIR "/security-manager/rules-merged/rules.merged";
+const std::string SMACK_RULES_PATH_MERGED_T    = LOCAL_STATE_DIR "/security-manager/rules-merged/rules.merged.temp";
+const std::string SMACK_RULES_PATH             = LOCAL_STATE_DIR "/security-manager/rules";
+const std::string SMACK_RULES_SHARED_RO_PATH   = LOCAL_STATE_DIR "/security-manager/rules/2x_shared_ro";
+const std::string SMACK_APP_IN_PACKAGE_PERMS   = "rwxat";
+const std::string SMACK_APP_CROSS_PKG_PERMS    = "rx";
+const std::string SMACK_APP_PATH_OWNER_PERMS = "rwxat";
+const std::string SMACK_APP_PATH_TARGET_PERMS = "rxl";
+const std::string SMACK_APP_DIR_TARGET_PERMS = "x";
+const std::string SMACK_USER = "User";
+const std::string SMACK_SYSTEM = "System";
+const std::string SMACK_APP_PATH_SYSTEM_PERMS = "rwxat";
+const std::string SMACK_APP_PATH_USER_PERMS = "rwxat";
 const std::string TEMPORARY_FILE_SUFFIX = ".temp";
 
 SmackRules::SmackRules()
@@ -346,7 +346,7 @@ void SmackRules::mergeRules()
         dst << src.rdbuf() << '\n';
         if (dst.bad()) {
             LogError("I/O Error. File " << SMACK_RULES_PATH_MERGED << " will not be updated!");
-            unlink(SMACK_RULES_PATH_MERGED_T);
+            unlink(SMACK_RULES_PATH_MERGED_T.c_str());
             ThrowMsg(SmackException::FileError,
                 "I/O Error. File " << SMACK_RULES_PATH_MERGED << " will not be updated!");
         }
@@ -359,24 +359,24 @@ void SmackRules::mergeRules()
 
     if (dst.flush().fail()) {
         LogError("Error flushing file: " << SMACK_RULES_PATH_MERGED_T);
-        unlink(SMACK_RULES_PATH_MERGED_T);
+        unlink(SMACK_RULES_PATH_MERGED_T.c_str());
         ThrowMsg(SmackException::FileError, "Error flushing file: " << SMACK_RULES_PATH_MERGED_T);
     }
 
     if (0 > fsync(DPL::FstreamAccessors<std::ofstream>::GetFd(dst))) {
         LogError("Error fsync on file: " << SMACK_RULES_PATH_MERGED_T);
-        unlink(SMACK_RULES_PATH_MERGED_T);
+        unlink(SMACK_RULES_PATH_MERGED_T.c_str());
         ThrowMsg(SmackException::FileError, "Error fsync on file: " << SMACK_RULES_PATH_MERGED_T);
     }
 
     dst.close();
     if (dst.fail()) {
         LogError("Error closing file: "  << SMACK_RULES_PATH_MERGED_T);
-        unlink(SMACK_RULES_PATH_MERGED_T);
+        unlink(SMACK_RULES_PATH_MERGED_T.c_str());
         ThrowMsg(SmackException::FileError, "Error closing file: " << SMACK_RULES_PATH_MERGED_T);
     }
 
-    if ((tmp = rename(SMACK_RULES_PATH_MERGED_T, SMACK_RULES_PATH_MERGED)) == 0)
+    if ((tmp = rename(SMACK_RULES_PATH_MERGED_T.c_str(), SMACK_RULES_PATH_MERGED.c_str())) == 0)
         return;
 
     int err = errno;
@@ -384,7 +384,7 @@ void SmackRules::mergeRules()
     LogError("Error during file rename: "
         << SMACK_RULES_PATH_MERGED_T << " to "
         << SMACK_RULES_PATH_MERGED << " Errno: " << GetErrnoString(err));
-    unlink(SMACK_RULES_PATH_MERGED_T);
+    unlink(SMACK_RULES_PATH_MERGED_T.c_str());
     ThrowMsg(SmackException::FileError, "Error during file rename: "
         << SMACK_RULES_PATH_MERGED_T << " to "
         << SMACK_RULES_PATH_MERGED << " Errno: " << GetErrnoString(err));

@@ -35,15 +35,15 @@
 #include <stdbool.h>
 #include <string>
 
-#include <dpl/db/sql_connection.h>
-#include <tzplatform_config.h>
+#include "dpl/db/sql_connection.h"
+#include "tzplatform-config.h"
 
 #ifndef PRIVILEGE_DB_H_
 #define PRIVILEGE_DB_H_
 
 namespace SecurityManager {
 
-const char *const PRIVILEGE_DB_PATH = tzplatform_mkpath(TZ_SYS_DB, ".security-manager.db");
+const std::string PRIVILEGE_DB_PATH = TizenPlatformConfig::makePath(TZ_SYS_DB, ".security-manager.db");
 
 enum class StmtType {
     EGetPkgPrivileges,

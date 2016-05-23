@@ -29,11 +29,10 @@
 
 #include <dpl/exception.h>
 #include <dpl/noncopyable.h>
-#include <tzplatform_config.h>
 
 namespace SecurityManager {
 
-extern char const * const SERVICE_LOCK_FILE;
+extern const std::string SERVICE_LOCK_FILE;
 
 class FileLocker :
     public Noncopyable

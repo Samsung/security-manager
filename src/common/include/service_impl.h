@@ -49,6 +49,7 @@ private:
                               app_install_type installType,
                               std::string &userPkgDir);
 
+
     static void setRequestDefaultValues(uid_t& uid, int& installationType);
 
     static void installRequestMangle(app_inst_req &req, std::string &cynaraUserStr);

@@ -33,7 +33,6 @@
 #include <algorithm>
 
 #include <dpl/log/log.h>
-#include <tzplatform_config.h>
 #include <dpl/errno_string.h>
 
 #include <config.h>
@@ -44,6 +43,7 @@
 #include "smack-rules.h"
 #include "smack-labels.h"
 #include "security-manager.h"
+#include "tzplatform-config.h"
 
 #include "service_impl.h"
 
@@ -185,7 +185,7 @@ bool ServiceImpl::authenticate(const Credentials &creds, const std::string &priv
 
 uid_t ServiceImpl::getGlobalUserId(void)
 {
-    static uid_t globaluid = tzplatform_getuid(TZ_SYS_GLOBALAPP_USER);
+    static uid_t globaluid = TizenPlatformConfig::getUid(TZ_SYS_GLOBALAPP_USER);
     return globaluid;
 }
 
@@ -203,20 +203,7 @@ bool ServiceImpl::getUserPkgDir(const uid_t &uid,
                                 app_install_type installType,
                                 std::string &userPkgDir)
 {
-    struct tzplatform_context *tz_ctx = nullptr;
-
-    if (tzplatform_context_create(&tz_ctx)) {
-        LogError("Error in tzplatform_context_create()");
-        return false;
-    }
-
-    std::unique_ptr<struct tzplatform_context, decltype(tzplatform_context_destroy)*> tz_ctxPtr(
-        tz_ctx, &tzplatform_context_destroy);
-
-    if (tzplatform_context_set_user(tz_ctxPtr.get(), uid)) {
-        LogError("Error in tzplatform_context_set_user()");
-        return false;
-    }
+    TizenPlatformConfig tpc(uid);
 
     enum tzplatform_variable id;
 
@@ -235,13 +222,8 @@ bool ServiceImpl::getUserPkgDir(const uid_t &uid,
         return false;
     }
 
-    const char *pkgDir = tzplatform_context_getenv(tz_ctxPtr.get(), id);
-    if (!pkgDir) {
-        LogError("Error in tzplatform_context_getenv()");
-        return false;
-    }
-
-    std::unique_ptr<char, decltype(free)*> real_pathPtr(realpath(pkgDir, NULL), free);
+    std::string pkgDir = tpc.ctxGetEnv(id);
+    std::unique_ptr<char, decltype(free)*> real_pathPtr(realpath(pkgDir.c_str(), NULL), free);
     if (!real_pathPtr.get()) {
         LogError("Error in realpath(): " << GetErrnoString(errno) << " for: " << pkgDir);
         return false;
