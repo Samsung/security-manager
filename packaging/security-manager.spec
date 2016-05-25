@@ -20,6 +20,7 @@ BuildRequires: pkgconfig(libcap)
 BuildRequires: pkgconfig(libsystemd-daemon)
 BuildRequires: pkgconfig(libsystemd-journal)
 BuildRequires: pkgconfig(libtzplatform-config)
+BuildRequires: tizen-platform-config-tools
 BuildRequires: pkgconfig(sqlite3)
 BuildRequires: pkgconfig(db-util)
 BuildRequires: pkgconfig(cynara-admin)
@@ -59,6 +60,8 @@ Requires(post): tizen-platform-config-tools
 
 %description policy
 Set of security rules that constitute security policy in the system
+
+%define TZ_SKEL_APP %(tzplatform-get TZ_USER_APP | cut -d= -f2 | sed "s|^$HOME|%{_sysconfdir}/skel|")
 
 %prep
 %setup -q
@@ -100,12 +103,9 @@ ln -s ../security-manager-rules-loader.service %{buildroot}/%{_unitdir}/basic.ta
 mkdir -p %{buildroot}/%{TZ_SYS_DB}
 touch %{buildroot}/%{TZ_SYS_DB}/.security-manager.db
 touch %{buildroot}/%{TZ_SYS_DB}/.security-manager.db-journal
-mkdir -p %{buildroot}%{_sysconfdir}/skel/apps_rw
-touch %{buildroot}%{_sysconfdir}/skel/apps_rw/apps-names
-chsmack -a _ %{buildroot}%{_sysconfdir}/skel/apps_rw/apps-names
-mkdir -p %{buildroot}%{TZ_SYS_RW_APP}
-touch %{buildroot}%{TZ_SYS_RW_APP}/apps-names
-chsmack -a _ %{buildroot}%{TZ_SYS_RW_APP}/apps-names
+
+install -m 0444 -D /dev/null %{buildroot}%{TZ_SKEL_APP}/apps-names
+install -m 0444 -D /dev/null %{buildroot}%{TZ_SYS_RW_APP}/apps-names
 
 %clean
 rm -rf %{buildroot}
@@ -125,8 +125,12 @@ if [ $1 = 2 ]; then
     systemctl restart security-manager.service
     %{_datadir}/security-manager/db/update.sh
 fi
+
 chsmack -a System %{TZ_SYS_DB}/.security-manager.db
 chsmack -a System %{TZ_SYS_DB}/.security-manager.db-journal
+
+chsmack -a _ %{TZ_SKEL_APP}/apps-names
+chsmack -a _ %{TZ_SYS_RW_APP}/apps-names
 
 %preun
 if [ $1 = 0 ]; then
@@ -157,8 +161,8 @@ fi
 %attr(755,root,root) %{_bindir}/security-manager-cleanup
 %attr(755,root,root) %{_sysconfdir}/gumd/useradd.d/50_security-manager-add.post
 %attr(755,root,root) %{_sysconfdir}/gumd/userdel.d/50_security-manager-remove.pre
-%attr(444,root,root) %{_sysconfdir}/skel/apps_rw/apps-names
-%attr(444,root,root) %{TZ_SYS_RW_APP}/apps-names
+%config(noreplace) %attr(444,root,root) %{TZ_SKEL_APP}/apps-names
+%config(noreplace) %attr(444,root,root) %{TZ_SYS_RW_APP}/apps-names
 %dir %attr(700,root,root) %{TZ_SYS_VAR}/security-manager/rules
 %dir %attr(700,root,root) %{TZ_SYS_VAR}/security-manager/rules-merged
 
