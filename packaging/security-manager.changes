@@ -1,3 +1,59 @@
+* Wed May 25 2016 Tomasz Swierczek <t.swierczek@samsung.com>
+- Version 1.1.6
+- Fix issues with local user app instalaltion and inotify file watches.
+- Fix and generalize generation of default "apps-names" configuration files
+- Allow application directories to be placed in /etc/skel/apps_rw
+- Introduce an interface class for tzplatform-config
+- Implement API for managing list of permitted labels for launcher
+- Simplify and fix code generating SharedRO Smack rules
+- Cleanup around Tizen2X apps/packages generation functions
+- Add tizen version handling to the cmd line tool
+- Add dlog log provider. Make log backend configurable.
+- Revert "Completely remove dlog remainings"
+
+* Wed May 18 2016 Jooseong Lee <jooseong.lee@samsung.com>
+- Version 1.1.5
+- Fixing small spelling error in db.sql, reproduction only with building new image with MIC
+- Require usermanagement permission for local app installation for other users
+- Fix the update of package cross-rules during uninstallation
+- Path registration requests - server side implementation
+- Path registration requests - client side implementation
+- Move author_id to pkg - server code adjustment
+- Move author_id to pkg - db migration
+- Add path registration API stub
+- Add privilege-group mapping for tethering.admin privilege
+
+* Mon May 9 2016 Jooseong Lee <jooseong.lee@samsung.com>
+- Version 1.1.4
+- Use wildcard user in cynara policy installing a preloaded app
+
+* Mon May 2 2016 Tomasz Swierczek <t.swierczek@samsung.com>
+- Version 1.1.3
+- Change logic of security_manager_set_process_groups_from_appid
+- Don't check permissions on API calls in off-line mode
+- Fix implementation of filesystem.cpp
+- Move smack files to new directory
+- refactoring: use common function template for getting label by libsmack
+- Add installation types (global, local, preloaded).
+- Integrate with Cynara, clients must be privileged
+- db: update schema to version 2
+- Add constraint error in database logic.
+- More error messages
+- Use app instead of app_pkg_view in sqlite queries
+- security-manager-policy-reload: don't print errors on image build
+- Add privilege-group mapping for iotcon
+- Remove unused table version
+- Adjust Cynara privileges required by privacy manager APIs
+- Revert "Add installation types (global, local, preloaded)."
+- DB: Change app ids to app names in private sharing
+- Revoke subject label of uninstalled application
+
+* Wed Mar 23 2016 Yunjin Lee <yunjin-.lee@samsung.com>
+- Version 1.1.2
+
+* Mon Mar 21 2016 Keeho Yang <keeho.yang@samsung.com>
+- Updated version for release
+
 * Thu Sep 03 2015 Rafal Krypa <r.krypa@samsung.com>
 - Version 1.1.0
 - Master-slave mode to support Vasum (Tizen containers)
