@@ -44,13 +44,20 @@ public:
 
     std::string ctxGetEnv(enum tzplatform_variable id);
 
+    std::string ctxMakePath(enum tzplatform_variable id, const std::string &p);
+
+    std::string ctxMakePath(enum tzplatform_variable id, const std::string &p1, const std::string &p2);
+
+    std::string ctxMakePath(enum tzplatform_variable id, const std::string &p1, const std::string &p2, const std::string &p3);
+
+
     static std::string getEnv(enum tzplatform_variable id);
 
     static std::string makePath(enum tzplatform_variable id, const std::string &p);
 
     static std::string makePath(enum tzplatform_variable id, const std::string &p1, const std::string &p2);
 
-    static std::string makePath(enum tzplatform_variable id, const std::string &p1, const std::string &p2, const std::string p3);
+    static std::string makePath(enum tzplatform_variable id, const std::string &p1, const std::string &p2, const std::string &p3);
 
     static uid_t getUid(enum tzplatform_variable id);
 

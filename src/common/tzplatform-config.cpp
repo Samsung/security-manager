@@ -62,6 +62,24 @@ std::string TizenPlatformConfig::ctxGetEnv(enum tzplatform_variable id)
     return validate(tzplatform_context_getenv(m_ctx, id));
 }
 
+std::string TizenPlatformConfig::ctxMakePath(enum tzplatform_variable id,
+    const std::string &p)
+{
+    return validate(tzplatform_context_mkpath(m_ctx, id, p.c_str()));
+}
+
+std::string TizenPlatformConfig::ctxMakePath(enum tzplatform_variable id,
+    const std::string &p1, const std::string &p2)
+{
+    return validate(tzplatform_context_mkpath3(m_ctx, id, p1.c_str(), p2.c_str()));
+}
+
+std::string TizenPlatformConfig::ctxMakePath(enum tzplatform_variable id,
+    const std::string &p1, const std::string &p2, const std::string &p3)
+{
+    return validate(tzplatform_context_mkpath4(m_ctx, id, p1.c_str(), p2.c_str(), p3.c_str()));
+}
+
 std::string TizenPlatformConfig::getEnv(enum tzplatform_variable id)
 {
     return validate(tzplatform_getenv(id));
@@ -80,7 +98,7 @@ std::string TizenPlatformConfig::makePath(enum tzplatform_variable id,
 }
 
 std::string TizenPlatformConfig::makePath(enum tzplatform_variable id,
-    const std::string &p1, const std::string &p2, const std::string p3)
+    const std::string &p1, const std::string &p2, const std::string &p3)
 {
     return validate(tzplatform_mkpath4(id, p1.c_str(), p2.c_str(), p3.c_str()));
 }

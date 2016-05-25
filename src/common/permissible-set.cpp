@@ -46,6 +46,8 @@
 #include <security-manager-types.h>
 #include <tzplatform_config.h>
 
+#include "tzplatform-config.h"
+
 typedef std::unique_ptr<FILE, int (*)(FILE *)> filePtr;
 
 namespace SecurityManager {
@@ -67,13 +69,14 @@ static filePtr openAndLockNameFile(const std::string &nameFile, const char* mode
     return file;
 }
 
-std::string getPerrmissibleFileLocation(int installationType)
+std::string getPerrmissibleFileLocation(uid_t uid, int installationType)
 {
+    TizenPlatformConfig tpc(uid);
     if ((installationType == SM_APP_INSTALL_GLOBAL)
             || (installationType == SM_APP_INSTALL_PRELOADED))
-        return tzplatform_mkpath(TZ_SYS_RW_APP, Config::APPS_NAME_FILE.c_str());
-    return tzplatform_mkpath(TZ_USER_APP, Config::APPS_NAME_FILE.c_str());
-
+        return tpc.ctxMakePath(TZ_SYS_RW_APP, Config::APPS_NAME_FILE.c_str());
+    else
+        return tpc.ctxMakePath(TZ_USER_APP, Config::APPS_NAME_FILE.c_str());
 }
 
 static void markPermissibleFileValid(int fd, const std::string &nameFile, bool valid)
@@ -91,7 +94,7 @@ static void markPermissibleFileValid(int fd, const std::string &nameFile, bool v
 
 void updatePermissibleFile(uid_t uid, int installationType)
 {
-    std::string nameFile = getPerrmissibleFileLocation(installationType);
+    std::string nameFile = getPerrmissibleFileLocation(uid, installationType);
     filePtr file = openAndLockNameFile(nameFile, "w");
     markPermissibleFileValid(fileno(file.get()), nameFile, false);
     std::vector<std::string> appNames;

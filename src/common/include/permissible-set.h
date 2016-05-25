@@ -48,10 +48,11 @@ public:
  * Return path to file with current list of application names
  * installed globally or locally for the user.
  *
+ * @param[in] uid identifier of the user whose application it should be
  * @param[in] installationType type of installation (global or local)
  * @return path to file with names
  */
-std::string getPerrmissibleFileLocation(int installationType);
+std::string getPerrmissibleFileLocation(uid_t uid, int installationType);
 /**
  * Update permissable file with current content of database
  * @throws FileLockError
@@ -62,7 +63,7 @@ std::string getPerrmissibleFileLocation(int installationType);
  * @param[in] installationType type of installation (global or local)
  * @return resulting true on success
  */
-void updatePermissibleFile(const uid_t uid, const int installationType);
+void updatePermissibleFile(uid_t uid, int installationType);
 /**
  * Read names from a file into a vector
  * @throws FileLockError
