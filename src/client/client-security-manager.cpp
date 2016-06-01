@@ -54,6 +54,7 @@
 #include <service_impl.h>
 #include <connection.h>
 #include <check-proper-drop.h>
+#include <utils.h>
 
 #include <security-manager.h>
 #include <client-offline.h>
@@ -397,7 +398,7 @@ static int getProcessGroups(std::vector<gid_t> &groups)
     }
     int cnt = ret;
 
-    std::unique_ptr<gid_t[]> groupsPtr(new gid_t[cnt]);
+    auto groupsPtr = makeUnique<gid_t[]>(cnt);
     if (!groupsPtr) {
         LogError("Memory allocation failed.");
         return SECURITY_MANAGER_ERROR_MEMORY;
@@ -1179,11 +1180,10 @@ int security_manager_groups_get(char ***groups, size_t *groups_count)
         const auto vgroups_size = vgroups.size();
         LogInfo("Number of groups: " << vgroups_size);
 
-        std::unique_ptr<char *, std::function<void(char **)>> array(
-            static_cast<char **>(calloc(vgroups_size, sizeof(char *))),
+        auto array = makeUnique(static_cast<char **>(calloc(vgroups_size, sizeof(char *))),
             std::bind(security_manager_groups_free, std::placeholders::_1, vgroups_size));
 
-        if (array == nullptr)
+        if (!array)
             return SECURITY_MANAGER_ERROR_MEMORY;
 
         for (size_t i = 0; i < vgroups_size; ++i) {

@@ -43,6 +43,7 @@
 
 #include "security-manager.h"
 #include "smack-labels.h"
+#include "utils.h"
 
 
 namespace SecurityManager {
@@ -86,10 +87,7 @@ static void dirSetSmack(const std::string &path, const std::string &label,
     char *const path_argv[] = {const_cast<char *>(path.c_str()), NULL};
     FTSENT *ftsent;
 
-    std::unique_ptr<FTS, std::function<void(FTS*)> > fts(
-            fts_open(path_argv, FTS_PHYSICAL | FTS_NOCHDIR, NULL),
-            fts_close);
-
+    auto fts = makeUnique(fts_open(path_argv, FTS_PHYSICAL | FTS_NOCHDIR, NULL), fts_close);
     if (!fts) {
         LogError("fts_open failed.");
         ThrowMsg(SmackException::FileError, "fts_open failed.");
@@ -265,7 +263,7 @@ static std::string getSmackLabel(FuncType func, ArgsType... args)
     ssize_t labelLen = func(args..., &label);
     if (labelLen <= 0)
         ThrowMsg(SmackException::Base, "Error while getting Smack label");
-    std::unique_ptr<char, decltype(free)*> labelPtr(label, free);
+    auto labelPtr = makeUnique(label, free);
     return std::string(labelPtr.get(), labelLen);
 }
 

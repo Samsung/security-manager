@@ -48,6 +48,7 @@
 #include <permissible-set.h>
 #include <protocols.h>
 #include <smack-labels.h>
+#include <utils.h>
 
 struct app_labels_monitor {
     int inotify;
@@ -99,7 +100,6 @@ static lib_retcode inotify_add_watch_full(int fd, const char* pathname, uint32_t
 SECURITY_MANAGER_API
 int security_manager_app_labels_monitor_init(app_labels_monitor **monitor)
 {
-    typedef std::unique_ptr<app_labels_monitor, void (*)(app_labels_monitor *)> monitorPtr;
     return try_catch([&] {
         LogDebug("security_manager_app_labels_monitor_init() called");
         if (monitor == nullptr) {
@@ -111,8 +111,8 @@ int security_manager_app_labels_monitor_init(app_labels_monitor **monitor)
 
         *monitor = nullptr;
 
-        monitorPtr m(new app_labels_monitor, security_manager_app_labels_monitor_finish);
-        if (!m) {
+        auto monitorPtr = makeUnique(new app_labels_monitor, security_manager_app_labels_monitor_finish);
+        if (!monitorPtr) {
             LogError("Bad memory allocation for app_labels_monitor");
             return SECURITY_MANAGER_ERROR_MEMORY;
         }
@@ -129,20 +129,20 @@ int security_manager_app_labels_monitor_init(app_labels_monitor **monitor)
             LogError("Inotify init failed: " << GetErrnoString(errno));
             return SECURITY_MANAGER_ERROR_WATCH_ADD_TO_FILE_FAILED;
         }
-        m.get()->inotify = ret;
-        ret_lib = inotify_add_watch_full(m.get()->inotify, globalFile.c_str(),
-                IN_CLOSE_WRITE, &(m.get()->global_labels_file_watch));
+        monitorPtr.get()->inotify = ret;
+        ret_lib = inotify_add_watch_full(monitorPtr->inotify, globalFile.c_str(),
+                IN_CLOSE_WRITE, &(monitorPtr->global_labels_file_watch));
         if (ret_lib != SECURITY_MANAGER_SUCCESS) {
             return ret_lib;
         }
-        ret_lib = inotify_add_watch_full(m.get()->inotify,
-            userFile.c_str(), IN_CLOSE_WRITE, &(m.get()->user_labels_file_watch));
+        ret_lib = inotify_add_watch_full(monitorPtr->inotify, userFile.c_str(),
+                IN_CLOSE_WRITE, &(monitorPtr->user_labels_file_watch));
         if (ret_lib != SECURITY_MANAGER_SUCCESS) {
             return ret_lib;
         }
-        m->user_label_file_path = userFile;
-        m->global_label_file_path = globalFile;
-        *monitor = m.release();
+        monitorPtr->user_label_file_path = userFile;
+        monitorPtr->global_label_file_path = globalFile;
+        *monitor = monitorPtr.release();
         return SECURITY_MANAGER_SUCCESS;
     });
 }
@@ -156,25 +156,23 @@ void security_manager_app_labels_monitor_finish(app_labels_monitor *monitor)
             LogDebug("input param \"monitor\" is nullptr");
             return 0;
         }
-        std::unique_ptr<app_labels_monitor> m(monitor);
-        if (!m)
-            LogError("Bad memory allocation for app_labels_monitor");
-        if (monitor->inotify != -1) {
-            if (monitor->global_labels_file_watch != -1) {
-                int ret = inotify_rm_watch(monitor->inotify, monitor->global_labels_file_watch);
+        auto monitorPtr = makeUnique(monitor);
+        if (monitorPtr->inotify != -1) {
+            if (monitorPtr->global_labels_file_watch != -1) {
+                int ret = inotify_rm_watch(monitorPtr->inotify, monitorPtr->global_labels_file_watch);
                 if (ret == -1) {
                     LogError("Inotify watch removal failed on file " <<
                             Config::APPS_NAME_FILE << ": " << GetErrnoString(errno));
                 }
             }
-            if (monitor->user_labels_file_watch != -1) {
-                int ret = inotify_rm_watch(monitor->inotify, monitor->user_labels_file_watch);
+            if (monitorPtr->user_labels_file_watch != -1) {
+                int ret = inotify_rm_watch(monitorPtr->inotify, monitorPtr->user_labels_file_watch);
                 if (ret == -1) {
                     LogError("Inotify watch removal failed on file "
                             << monitor->user_label_file_path << ": " << GetErrnoString(errno));
                 }
             }
-            close(monitor->inotify);
+            close(monitorPtr->inotify);
         }
         return 0;
     });
@@ -210,7 +208,6 @@ int security_manager_app_labels_monitor_get_fd(app_labels_monitor const *monitor
 SECURITY_MANAGER_API
 int security_manager_app_labels_monitor_process(app_labels_monitor *monitor)
 {
-    typedef std::unique_ptr<char, void (*)(void *)> bufPtr;
     return try_catch([&] {
         LogDebug("security_manager_app_labels_process() called");
         if (monitor == nullptr) {
@@ -237,9 +234,9 @@ int security_manager_app_labels_monitor_process(app_labels_monitor *monitor)
             return SECURITY_MANAGER_ERROR_UNKNOWN;
         }
 
-        bufPtr buffer(static_cast<char *>(malloc(avail)), free);
+        auto bufPtr = makeUnique<char[]>(avail);
         for (int pos = 0; pos < avail;) {
-            int ret = TEMP_FAILURE_RETRY(read(monitor->inotify, buffer.get() + pos, avail - pos));
+            int ret = TEMP_FAILURE_RETRY(read(monitor->inotify, bufPtr.get() + pos, avail - pos));
             if (ret == -1) {
                 LogError("Inotify read failed: " << GetErrnoString(errno));
                 return SECURITY_MANAGER_ERROR_UNKNOWN;
@@ -251,7 +248,7 @@ int security_manager_app_labels_monitor_process(app_labels_monitor *monitor)
             struct inotify_event event;
 
             /* Event must be copied to avoid memory alignment issues */
-            memcpy(&event, buffer.get() + pos, sizeof(struct inotify_event));
+            memcpy(&event, bufPtr.get() + pos, sizeof(struct inotify_event));
             pos += sizeof(struct inotify_event) + event.len;
             if ((event.mask & IN_CLOSE_WRITE) &&
                 ((event.wd == monitor->global_labels_file_watch) ||
