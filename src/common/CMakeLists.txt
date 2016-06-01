@@ -9,6 +9,7 @@ PKG_CHECK_MODULES(COMMON_DEP
     cynara-admin
     cynara-client-async
     libtzplatform-config
+    security-privilege-manager
     )
 
 IF(DPL_WITH_DLOG)

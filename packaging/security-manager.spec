@@ -25,6 +25,7 @@ BuildRequires: pkgconfig(sqlite3)
 BuildRequires: pkgconfig(db-util)
 BuildRequires: pkgconfig(cynara-admin)
 BuildRequires: pkgconfig(cynara-client-async)
+BuildRequires: pkgconfig(security-privilege-manager)
 BuildRequires: boost-devel
 %{?systemd_requires}
 

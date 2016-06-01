@@ -72,6 +72,8 @@ private:
 
     static void getTizen2XApps(SmackRules::PkgsApps &pkgsApps);
 
+    static bool isPrivilegePrivacy(const std::string &privilege);
+
     int dropOnePrivateSharing(const std::string &ownerAppName,
                               const std::string &ownerPkgName,
                               const std::vector<std::string> &ownerPkgContents,

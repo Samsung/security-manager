@@ -35,6 +35,8 @@
 #include <dpl/log/log.h>
 #include <dpl/errno_string.h>
 
+#include <privilege_info.h>
+
 #include <config.h>
 #include "protocols.h"
 #include "privilege_db.h"
@@ -398,6 +400,19 @@ void ServiceImpl::getTizen2XApps(SmackRules::PkgsApps &pkgsApps)
     }
 }
 
+bool ServiceImpl::isPrivilegePrivacy(const std::string &privilege)
+{
+    int ret = privilege_info_is_privacy(privilege.c_str());
+    if (ret == 1)
+        return true;
+    if (ret != 0)
+        LogError("privilege_info_is_privacy called with " << privilege << " returned error: " << ret);
+    // FIXME: we should probably disallow such installation where privilege is not known
+    // However, currently privielge-checker seems to return -1 with so many real privileges
+    // that it would make ask-user testing impossible.
+    return false;
+}
+
 int ServiceImpl::appInstall(const Credentials &creds, app_inst_req &&req)
 {
     std::vector<std::string> addedPermissions;
@@ -442,8 +457,7 @@ int ServiceImpl::appInstall(const Credentials &creds, app_inst_req &&req)
         /* Get all application ids in the package to generate rules withing the package */
         PrivilegeDb::getInstance().GetPkgApps(req.pkgName, pkgContents);
         PrivilegeDb::getInstance().GetPkgAuthorId(req.pkgName, authorId);
-        CynaraAdmin::getInstance().UpdateAppPolicy(appLabel, cynaraUserStr, req.privileges);
-
+        CynaraAdmin::getInstance().UpdateAppPolicy(appLabel, cynaraUserStr, req.privileges, isPrivilegePrivacy);
         // if app is targetted to Tizen 2.X, give other 2.X apps RO rules to it's shared dir
         if (isTizen2XVersion(req.tizenVersion))
             getTizen2XApps(tizen2XpkgsApps);
@@ -563,7 +577,8 @@ int ServiceImpl::appUninstall(const Credentials &creds, app_inst_req &&req)
         if (isTizen2XVersion(req.tizenVersion))
             getTizen2XApps(tizen2XpkgsApps);
 
-        CynaraAdmin::getInstance().UpdateAppPolicy(smackLabel, cynaraUserStr, std::vector<std::string>());
+        CynaraAdmin::getInstance().UpdateAppPolicy(smackLabel, cynaraUserStr, std::vector<std::string>(), isPrivilegePrivacy);
+
         PrivilegeDb::getInstance().CommitTransaction();
         LogDebug("Application uninstallation commited to database");
         PermissibleSet::updatePermissibleFile(req.uid, req.installationType);
@@ -713,7 +728,8 @@ int ServiceImpl::userAdd(const Credentials &creds, uid_t uidAdded, int userType)
     }
 
     try {
-        CynaraAdmin::getInstance().UserInit(uidAdded, static_cast<security_manager_user_type>(userType));
+        CynaraAdmin::getInstance().UserInit(uidAdded, static_cast<security_manager_user_type>(userType), isPrivilegePrivacy);
+
     } catch (CynaraException::InvalidParam &e) {
         return SECURITY_MANAGER_ERROR_INPUT_PARAM;
     }

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2014 Samsung Electronics Co., Ltd All Rights Reserved
+ *  Copyright (c) 2014-2016 Samsung Electronics Co., Ltd All Rights Reserved
  *
  *  Contact: Rafal Krypa <r.krypa@samsung.com>
  *
@@ -33,6 +33,7 @@
 #include <mutex>
 #include <thread>
 #include <future>
+#include <functional>
 
 #include <poll.h>
 #include <sys/eventfd.h>
@@ -126,10 +127,11 @@ public:
      * @param label application Smack label
      * @param user user identifier
      * @param privileges currently enabled privileges
-     *
+     * @param isPrivacy a function that checks if privilege is privacy-related
      */
     void UpdateAppPolicy(const std::string &label, const std::string &user,
-        const std::vector<std::string> &privileges);
+        const std::vector<std::string> &privileges,
+        std::function <bool(const std::string &)> isPrivacy);
 
     /**
      * Fetch Cynara policies for the application and the user.
@@ -150,8 +152,10 @@ public:
      *
      * @param uid new user uid
      * @param userType type as enumerated in security-manager.h
+     * @param isPrivacy a function that checks if privilege is privacy-related
      */
-    void UserInit(uid_t uid, security_manager_user_type userType);
+    void UserInit(uid_t uid, security_manager_user_type userType,
+        std::function <bool(const std::string &)> isPrivacy);
 
     /**
      * List all users registered in Cynara

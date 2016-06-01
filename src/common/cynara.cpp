@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2014 Samsung Electronics Co., Ltd All Rights Reserved
+ *  Copyright (c) 2014-2016 Samsung Electronics Co., Ltd All Rights Reserved
  *
  *  Contact: Rafal Krypa <r.krypa@samsung.com>
  *
@@ -27,6 +27,7 @@
 
 #include <dpl/log/log.h>
 #include <dpl/errno_string.h>
+#include <config.h>
 
 namespace SecurityManager {
 
@@ -112,7 +113,6 @@ CynaraAdmin::BucketsMap CynaraAdmin::Buckets =
     { Bucket::ADMIN, std::string("ADMIN")},
     { Bucket::MANIFESTS, std::string("MANIFESTS")},
 };
-
 
 CynaraAdminPolicy::CynaraAdminPolicy(const std::string &client, const std::string &user,
         const std::string &privilege, int operation,
@@ -288,37 +288,74 @@ void CynaraAdmin::SetPolicies(const std::vector<CynaraAdminPolicy> &policies)
 void CynaraAdmin::UpdateAppPolicy(
     const std::string &label,
     const std::string &user,
-    const std::vector<std::string> &privileges)
+    const std::vector<std::string> &privileges,
+    std::function <bool(const std::string &)> isPrivacy)
 {
-    std::unordered_set<std::string> privilegesSet(privileges.begin(), privileges.end());
+    auto calcPolicies = [&label](
+        const std::string &user,
+        const std::vector<std::string> &privileges,
+        const std::string &bucket,
+        int policyToSet,
+        std::vector<CynaraAdminPolicy> &policies)
+    {
+        std::vector<CynaraAdminPolicy> oldPolicies;
+        std::unordered_set<std::string> privilegesSet(privileges.begin(),
+                                                      privileges.end());
+        CynaraAdmin::getInstance().ListPolicies(bucket, label, user,
+                                               CYNARA_ADMIN_ANY, oldPolicies);
+
+        // Compare previous policies with set of new requested privileges
+        for (auto &policy : oldPolicies) {
+            if (privilegesSet.erase(policy.privilege)) {
+                // privilege was found and removed from the set, keeping policy
+                LogDebug("(user = " << user << " label = " << label << ") " <<
+                         "keeping privilege " << policy.privilege);
+            } else {
+                // privilege was not found in the set, deleting policy
+                policy.result = static_cast<int>(CynaraAdminPolicy::Operation::Delete);
+                LogDebug("(user = " << user << " label = " << label << ") " <<
+                        "removing privilege " << policy.privilege);
+            }
+            policies.push_back(std::move(policy));
+        }
+
+        // Add policies for privileges that weren't previously enabled
+        // Those that were previously enabled are now removed from privilegesSet
+        for (const auto &privilege : privilegesSet) {
+            LogDebug("(user = " << user << " label = " << label << ") " <<
+                     "adding privilege " << privilege);
+            policies.push_back(CynaraAdminPolicy(label, user, privilege, policyToSet, bucket));
+        }
+    };
 
     std::vector<CynaraAdminPolicy> policies;
-    CynaraAdmin::getInstance().ListPolicies(
-        CynaraAdmin::Buckets.at(Bucket::MANIFESTS),
-        label, user, CYNARA_ADMIN_ANY, policies);
 
-    // Compare previous policies with set of new requested privileges
-    for (auto &policy : policies) {
-        if (privilegesSet.erase(policy.privilege)) {
-            // privilege was found and removed from the set, keeping policy
-            LogDebug("(user = " << user << " label = " << label << ") " <<
-                "keeping privilege " << policy.privilege);
-        } else {
-            // privilege was not found in the set, deleting policy
-            policy.result = static_cast<int>(CynaraAdminPolicy::Operation::Delete);
-            LogDebug("(user = " << user << " label = " << label << ") " <<
-                "removing privilege " << policy.privilege);
+    // 1st, performing operation on MANIFESTS bucket
+    calcPolicies(user, privileges, Buckets.at(Bucket::MANIFESTS),
+        static_cast<int>(CynaraAdminPolicy::Operation::Allow),
+        policies);
+
+    int askUserPolicy = convertToPolicyType(Config::PRIVACY_POLICY_DESC);
+
+    std::vector<std::string> privacyPrivileges;
+    for (auto &p : privileges)
+        if (isPrivacy(p))
+            privacyPrivileges.push_back(p);
+
+    // 2nd, performing operation on PRIVACY_MANAGER bucket for all affected users
+    if (user == CYNARA_ADMIN_WILDCARD) {
+        // perform bucket setting for all users in the system, app is installed for everyone
+        std::vector<uid_t> users;
+        ListUsers(users);
+        for (uid_t id : users) {
+            calcPolicies(std::to_string(id), privacyPrivileges,
+                         Buckets.at(Bucket::PRIVACY_MANAGER),
+                         askUserPolicy, policies);
         }
-    }
-
-    // Add policies for privileges that weren't previously enabled
-    // Those that were previously enabled are now removed from privilegesSet
-    for (const auto &privilege : privilegesSet) {
-        LogDebug("(user = " << user << " label = " << label << ") " <<
-            "adding privilege " << privilege);
-        policies.push_back(CynaraAdminPolicy(label, user, privilege,
-                    static_cast<int>(CynaraAdminPolicy::Operation::Allow),
-                    Buckets.at(Bucket::MANIFESTS)));
+    } else {
+        // local single user installation, do it only for that particular user
+        calcPolicies(user, privacyPrivileges, Buckets.at(Bucket::PRIVACY_MANAGER),
+            askUserPolicy, policies);
     }
 
     SetPolicies(policies);
@@ -339,10 +376,12 @@ void CynaraAdmin::GetAppPolicy(const std::string &label, const std::string &user
     }
 }
 
-void CynaraAdmin::UserInit(uid_t uid, security_manager_user_type userType)
+void CynaraAdmin::UserInit(uid_t uid, security_manager_user_type userType,
+        std::function <bool(const std::string &)> isPrivacy)
 {
     Bucket bucket;
     std::vector<CynaraAdminPolicy> policies;
+    std::string userStr = std::to_string(uid);
 
     switch (userType) {
         case SM_USER_TYPE_SYSTEM:
@@ -365,10 +404,27 @@ void CynaraAdmin::UserInit(uid_t uid, security_manager_user_type userType)
     }
 
     policies.push_back(CynaraAdminPolicy(CYNARA_ADMIN_WILDCARD,
-                                            std::to_string(static_cast<unsigned int>(uid)),
+                                            userStr,
                                             CYNARA_ADMIN_WILDCARD,
                                             Buckets.at(bucket),
                                             Buckets.at(Bucket::MAIN)));
+
+    // for each global app: retrieve its privacy-related privileges and set
+    // their policy in PRIVACY_MANAGER bucket to "Ask user"
+    int askUserPolicy = convertToPolicyType(Config::PRIVACY_POLICY_DESC);
+
+    std::vector<CynaraAdminPolicy> appPolicies;
+    CynaraAdmin::getInstance().ListPolicies(CynaraAdmin::Buckets.at(Bucket::MANIFESTS),
+                                            CYNARA_ADMIN_ANY, CYNARA_ADMIN_WILDCARD,
+                                            CYNARA_ADMIN_ANY, appPolicies);
+
+    for (CynaraAdminPolicy &policy : appPolicies)
+        if (isPrivacy(policy.privilege))
+            policies.push_back(CynaraAdminPolicy(policy.client,
+                userStr,
+                policy.privilege,
+                askUserPolicy,
+                Buckets.at(Bucket::PRIVACY_MANAGER)));
 
     CynaraAdmin::getInstance().SetPolicies(policies);
 }

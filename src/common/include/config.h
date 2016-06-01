@@ -41,10 +41,13 @@ extern const std::string PRIVILEGE_POLICY_USER;
 extern const std::string PRIVILEGE_POLICY_ADMIN;
 extern const std::string PRIVILEGE_APPSHARING_ADMIN;
 
-/* Files used in permitted label managment*/
+/* Files used in permitted label managment */
 extern const std::string APPS_NAME_FILE;
 
 extern const std::string SKEL_DIR;
+
+/* Ask-user policy description */
+extern const std::string PRIVACY_POLICY_DESC;
 };
 
 } /* namespace SecurityManager */

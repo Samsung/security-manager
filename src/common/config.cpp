@@ -45,6 +45,8 @@ const std::string PRIVILEGE_APPSHARING_ADMIN = "http://tizen.org/privilege/notex
 
 const std::string APPS_NAME_FILE = "apps-names";
 const std::string SKEL_DIR = "/etc/skel";
+
+const std::string PRIVACY_POLICY_DESC = "Ask user";
 };
 
 } /* namespace SecurityManager */
