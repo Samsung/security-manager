@@ -876,8 +876,8 @@ int ServiceImpl::getConfiguredPolicy(const Credentials &creds, bool forAdmin,
 
             if (uidStr.compare(user)) {
                 if (!authenticate(creds, Config::PRIVILEGE_POLICY_ADMIN)) {
-                    LogWarning("Not enough privilege to access other user's personal policies. Limiting query to personal privileges.");
-                    user = uidStr;
+                    LogWarning("Not enough privilege to access other user's personal policies");
+                    return SECURITY_MANAGER_ERROR_ACCESS_DENIED;
                 };
             };
             //Fetch privileges from PRIVACY_MANAGER bucket
