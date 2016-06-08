@@ -48,6 +48,9 @@ extern const std::string SKEL_DIR;
 
 /* Ask-user policy description */
 extern const std::string PRIVACY_POLICY_DESC;
+
+/* true if privacy-related privileges should result in UI-popup question*/
+extern const bool IS_ASKUSER_ENABLED;
 };
 
 } /* namespace SecurityManager */

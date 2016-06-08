@@ -47,6 +47,11 @@ const std::string APPS_NAME_FILE = "apps-names";
 const std::string SKEL_DIR = "/etc/skel";
 
 const std::string PRIVACY_POLICY_DESC = "Ask user";
+#ifdef ASKUSER_ENABLED
+const bool IS_ASKUSER_ENABLED = true;
+#else
+const bool IS_ASKUSER_ENABLED = false;
+#endif
 };
 
 } /* namespace SecurityManager */
