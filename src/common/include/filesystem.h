@@ -34,7 +34,9 @@ namespace FS {
 
 typedef std::vector<std::string> FileNameVector;
 
+FileNameVector getDirContents(const std::string &path, const mode_t &mode);
 FileNameVector getFilesFromDirectory(const std::string &path);
+FileNameVector getDirsFromDirectory(const std::string &path);
 
 } // namespace FS
 } // nanespace SecurityManager
