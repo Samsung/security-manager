@@ -262,12 +262,11 @@ void ServiceImpl::setRequestDefaultValues(uid_t& uid, int& installationType)
 {
     uid_t globalUid = getGlobalUserId();
 
-    if (uid == 0)
-        uid = globalUid;
-
     if (installationType == SM_APP_INSTALL_NONE)
-        installationType = (uid == globalUid) ? SM_APP_INSTALL_GLOBAL :
-                                                SM_APP_INSTALL_LOCAL;
+        installationType = (uid == 0) ? SM_APP_INSTALL_GLOBAL : SM_APP_INSTALL_LOCAL;
+    if ((installationType == SM_APP_INSTALL_GLOBAL)
+        || (installationType == SM_APP_INSTALL_PRELOADED))
+        uid = globalUid;
 }
 
 void ServiceImpl::installRequestMangle(app_inst_req &req, std::string &cynaraUserStr)
