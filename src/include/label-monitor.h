@@ -73,6 +73,7 @@ typedef struct app_labels_monitor app_labels_monitor;
  *     security_manager_app_labels_monitor_finish(monitor);
  *
  * \endcode
+ * \endparblock
  */
 int security_manager_app_labels_monitor_init(app_labels_monitor **monitor);
 

@@ -26,104 +26,105 @@
 extern "C" {
 #endif
 
-/*
+/**
  * This function is responsible for initialize app_inst_req data structure
  * It uses dynamic allocation inside and user responsibility is to call
  * app_inst_req_free() for freeing allocated resources
  *
- * \param[in] Address of pointer for handle app_inst_req structure
+ * \param[in] pp_req  Address of pointer for handle app_inst_req structure
  * \return API return code or error code
  */
 int security_manager_app_inst_req_new(app_inst_req **pp_req);
 
-/*
+/**
  * This function is used to free resources allocated by calling app_inst_req_new()
- *  \param[in] Pointer handling allocated app_inst_req structure
+ *
+ * \param[in] p_req  Pointer handling allocated app_inst_req structure
  */
 void security_manager_app_inst_req_free(app_inst_req *p_req);
 
-/*
+/**
  * This function is used to set up target Tizen API version for app in app_inst_req structure
  *
- * \param[in] Pointer handling app_inst_req structure
- * \param[in] Target Tizen version
+ * \param[in] p_req      Pointer handling app_inst_req structure
+ * \param[in] tizen_ver  Target Tizen version
  * \return API return code or error code
  */
 int security_manager_app_inst_req_set_target_version(app_inst_req *p_req, const char *tizen_ver);
 
-/*
+/**
  * This function is used to set up application identifier in app_inst_req structure
  *
- * \param[in] Pointer handling app_inst_req structure
- * \param[in] Application identifier
+ * \param[in] p_req   Pointer handling app_inst_req structure
+ * \param[in] app_id  Application identifier
  * \return API return code or error code
  */
 int security_manager_app_inst_req_set_app_id(app_inst_req *p_req, const char *app_id);
 
-/*
+/**
  * This function is used to set up package identifier in app_inst_req structure
  *
- * \param[in] Pointer handling app_inst_req structure
- * \param[in] Package identifier
+ * \param[in] p_req   Pointer handling app_inst_req structure
+ * \param[in] pkg_id  Package identifier
  * \return API return code or error code
  */
 int security_manager_app_inst_req_set_pkg_id(app_inst_req *p_req, const char *pkg_id);
 
-/*
+/**
  * This function is used to add privilege to app_inst_req structure,
  * it can be called multiple times
  *
- * \param[in] Pointer handling app_inst_req structure
- * \param[in] Application privilager
+ * \param[in] p_req      Pointer handling app_inst_req structure
+ * \param[in] privilege  Application privilager
  * \return API return code or error code
  */
 int security_manager_app_inst_req_add_privilege(app_inst_req *p_req, const char *privilege);
 
-/*
+/**
  * This function is used to add application path to app_inst_req structure,
  * it can be called multiple times
  *
- * \param[in] Pointer handling app_inst_req structure
- * \param[in] Application path
- * \param[in] Application path type
+ * \param[in] p_req      Pointer handling app_inst_req structure
+ * \param[in] path       Application path
+ * \param[in] path_type  Application path type
  * \return API return code or error code
  */
 int security_manager_app_inst_req_add_path(app_inst_req *p_req, const char *path, const int path_type);
 
-/*
+/**
  * This function is used to set up user identifier in app_inst_req structure.
  * This field simplifies support for online and offline modes.
  *
- * \param[in] Pointer handling app_inst_req structure
- * \param[in] User identifier (UID)
+ * \param[in] p_req  Pointer handling app_inst_req structure
+ * \param[in] uid    User identifier (UID)
  * \return API return code or error code
  */
 int security_manager_app_inst_req_set_uid(app_inst_req *p_req,
                                           const uid_t uid);
 
-/*
+/**
  * This function is used to set up author identifier in app_inst_req structure.
  * This field is required for trusted paths only (SECURITY_MANAGER_PATH_TRUSTED_RW).
  *
- * \param[in] Pointer handling app_inst_req structure
- * \param[in] Author's identifier
+ * \param[in] p_req      Pointer handling app_inst_req structure
+ * \param[in] author_id  Author's identifier
  * \return API return code or error code
  */
 int security_manager_app_inst_req_set_author_id(app_inst_req *p_req, const char *author_id);
 
-/*
+/**
  * This function is used to set up installation type (global, local, preloaded).
  * If type is not set and if installation is performed by global user, type is set to
  * 'SM_APP_INSTALL_GLOBAL'. Otherwise installation type is set to 'SM_APP_INSTALL_LOCAL'.
  *
- * \param[in] Pointer handling app_inst_req structure
- * \param[in] Installation type
+ * \param[in] p_req  Pointer handling app_inst_req structure
+ * \param[in] type   Installation type
  * \return API return code or error code
  *
  */
 int security_manager_app_inst_req_set_install_type(app_inst_req *p_req, const enum app_install_type type);
 
-/*
+/**
  * This function is used to install application based on
  * using filled up app_inst_req data structure
  *
@@ -132,7 +133,7 @@ int security_manager_app_inst_req_set_install_type(app_inst_req *p_req, const en
  * - http://tizen.org/privilege/notexist (global installation)
  * - http://tizen.org/privilege/internal/usermanagement (local installation for other users)
  *
- * \param[in] Pointer handling app_inst_req structure
+ * \param[in] p_req  Pointer handling app_inst_req structure
  * \return API return code or error code: it would be
  * - SECURITY_MANAGER_SUCCESS on success,
  * - SECURITY_MANAGER_ERROR_AUTHENTICATION_FAILED when user does not
@@ -141,7 +142,7 @@ int security_manager_app_inst_req_set_install_type(app_inst_req *p_req, const en
  */
 int security_manager_app_install(const app_inst_req *p_req);
 
-/*
+/**
  * This function is used to uninstall application based on
  * using filled up app_inst_req data structure
  *
@@ -150,12 +151,12 @@ int security_manager_app_install(const app_inst_req *p_req);
  * - http://tizen.org/privilege/notexist (global uninstallation)
  * - http://tizen.org/privilege/internal/usermanagement (local uninstallation for other users)
  *
- * \param[in] Pointer handling app_inst_req structure
+ * \param[in] p_req  Pointer handling app_inst_req structure
  * \return API return code or error code
  */
 int security_manager_app_uninstall(const app_inst_req *p_req);
 
-/*
+/**
  * This function is responsible for initialize path_req data structure. It uses
  * dynamic allocation inside and user responsibility is to call
  * security_manager_path_req_free() for freeing allocated resources.
@@ -165,14 +166,14 @@ int security_manager_app_uninstall(const app_inst_req *p_req);
  */
 int security_manager_path_req_new(path_req **pp_req);
 
-/*
+/**
  * This function is used to free resources allocated by calling
  * security_manager_path_req_new().
  *  \param[in] p_req    Pointer handling allocated path_req structure
  */
 void security_manager_path_req_free(path_req *p_req);
 
-/*
+/**
  * This function is used to set up package identifier in path_req structure.
  *
  * \param[in] p_req     Pointer handling path_req structure
@@ -181,7 +182,7 @@ void security_manager_path_req_free(path_req *p_req);
  */
 int security_manager_path_req_set_pkg_id(path_req *p_req, const char *pkg_id);
 
-/*
+/**
  * This function is used to set up installation type (global, local, preloaded).
  * If type is not set and if installation is performed by global user, type is set to
  * 'SM_APP_INSTALL_GLOBAL'. Otherwise installation type is set to 'SM_APP_INSTALL_LOCAL'.
@@ -192,7 +193,7 @@ int security_manager_path_req_set_pkg_id(path_req *p_req, const char *pkg_id);
  */
 int security_manager_path_req_set_install_type(path_req *p_req, const enum app_install_type type);
 
-/*
+/**
  * This function is used to add a package path to path_req structure. It can be
  * called multiple times.
  *
@@ -203,7 +204,7 @@ int security_manager_path_req_set_install_type(path_req *p_req, const enum app_i
  */
 int security_manager_path_req_add_path(path_req *p_req, const char *path, const int path_type);
 
-/*
+/**
  * This function is used to set up user identifier in path_req structure.
  * This field simplifies support for online and offline modes.
  *
@@ -213,7 +214,7 @@ int security_manager_path_req_add_path(path_req *p_req, const char *path, const 
  */
 int security_manager_path_req_set_uid(path_req *p_req, const uid_t uid);
 
-/*
+/**
  * This function is used to register a set of paths for given package using
  * filled up path_req data structure.
  *

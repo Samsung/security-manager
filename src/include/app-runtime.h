@@ -31,8 +31,8 @@ extern "C" {
  *
  * On successful call pkg_id should be freed by the caller using free() function
  *
- * \param[out] Pointer to package identifier string
- * \param[in]  Application identifier
+ * \param[out] pkg_id  Pointer to package identifier string
+ * \param[in]  app_id  Application identifier
  * \return API return code or error code
  */
 int security_manager_get_app_pkgid(char **pkg_id, const char *app_id);
@@ -41,7 +41,7 @@ int security_manager_get_app_pkgid(char **pkg_id, const char *app_id);
  * Compute smack label for given application id and set it for
  * currently running process
  *
- * \param[in] Application identifier
+ * \param[in] app_id  Application identifier
  * \return API return code or error code
  */
 int security_manager_set_process_label_from_appid(const char *app_id);
@@ -57,7 +57,7 @@ int security_manager_set_process_label_from_appid(const char *app_id);
  * adding application process to all permitted groups that are assigned to such
  * privileges.
  *
- * \param[in] Application identifier
+ * \param[in] app_id  Application identifier
  * \return API return code or error code
  */
 int security_manager_set_process_groups_from_appid(const char *app_id);
@@ -84,7 +84,7 @@ int security_manager_drop_process_privileges(void);
  * - security_manager_set_process_groups_from_appid
  * - security_manager_drop_process_privileges
  *
- * \param[in] Application identifier
+ * \param[in] app_id  Application identifier
  * \return API return code or error code
  */
 int security_manager_prepare_app(const char *app_id);
@@ -120,9 +120,9 @@ void security_manager_groups_free(char **groups, size_t groups_count);
  * When socket descriptor is incorrect or not related to any package, this function will
  * return SECURITY_MANAGER_ERROR_NO_SUCH_OBJECT.
  *
- * \param[in] Socket descriptor of wanted application
- * \param[out]  package id of the application
- * \param[out]  application id of the application
+ * \param[in]   sockfd  Socket descriptor of wanted application
+ * \param[out]  pkg_id  Package id of the application
+ * \param[out]  app_id  Application id of the application
  * \return API return code or error code
  */
 int security_manager_identify_app_from_socket(int sockfd, char **pkg_id, char **app_id);
@@ -140,9 +140,9 @@ int security_manager_identify_app_from_socket(int sockfd, char **pkg_id, char **
  * \note Caller must be able to access and read file /proc/PID/atrr/current where PID is the given
  * process identifier.
  *
- * \param[in] process identifier of wanted application
- * \param[out]  package id of the application
- * \param[out]  application id of the application
+ * \param[in]   pid     Process identifier of wanted application
+ * \param[out]  pkg_id  Package id of the application
+ * \param[out]  app_id  Application id of the application
  * \return API return code or error code
  */
 int security_manager_identify_app_from_pid(pid_t pid, char **pkg_id, char **app_id);
@@ -154,15 +154,15 @@ int security_manager_identify_app_from_pid(pid_t pid, char **pkg_id, char **app_
  * process running. In such case the application label cannot be determined from
  * the process and the query for privilege must be based on app_id.
  *
- * The check result is placed in \ref result:
+ * The check result is placed in \b result:
  * - 0: access denied
  * - 1: access granted
  *
- * @param[in] app_id application identifier
- * @param[in] privilege name
- * @param[in] uid user identifier
- * @param[out] result placeholder for result
- * @return API return code or error code
+ * \param[in]  app_id     Application identifier
+ * \param[in]  privilege  Privilege name
+ * \param[in]  uid        User identifier
+ * \param[out] result     Placeholder for result
+ * \return API return code or error code
  */
 int security_manager_app_has_privilege(const char *app_id, const char *privilege,
                                        uid_t uid, int *result);

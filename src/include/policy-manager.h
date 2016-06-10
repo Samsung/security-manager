@@ -262,6 +262,8 @@ const char *security_manager_policy_entry_get_max_level(policy_entry *p_entry);
  *   deny access from app MyApp2 to privilege http://tizen.org/privilege/systemsettings,
  *   deny access from app MyApp3 to privilege http://tizen.org/privilege/notificationmanager)
  *
+ * \parblock
+ * \code{.c}
  *      policy_update_req *policy_update_request;
  *      policy_entry *entry1;
  *      policy_entry *entry2;
@@ -296,15 +298,19 @@ const char *security_manager_policy_entry_get_max_level(policy_entry *p_entry);
  *      security_manager_policy_entry_free(entry2);
  *      security_manager_policy_entry_free(entry3);
  *      security_manager_policy_update_free(policy_update_request);
+ * \endcode
+ * \endparblock
  *
  * - to update policy by administrator for some user:
  *   (Deny access of user of uid 2001 from any app to privilege http://tizen.org/privilege/vibrator,
  *   (allow access of user of uid 2002 using app "App1" to privilege http://tizen.org/privilege/email.admin)
  *
+ * \parblock
+ * \code{.c}
  *      policy_update_req *policy_update_request;
  *
  *      security_manager_policy_update_req_new(&policy_update_request);
-
+ *
  *      policy_entry *entry1;
  *      policy_entry *entry2;
  *      char *adminswife = "2001";
@@ -333,6 +339,8 @@ const char *security_manager_policy_entry_get_max_level(policy_entry *p_entry);
  *      security_manager_policy_entry_free(entry1);
  *      security_manager_policy_entry_free(entry2);
  *      security_manager_policy_update_free(policy_update_request);
+ * \endcode
+ * \endparblock
  *
  */
 int security_manager_policy_update_send(policy_update_req *p_req);
@@ -414,9 +422,9 @@ void security_manager_policy_entries_free(policy_entry *p_entries, const size_t 
  * Caller needs to free memory allocated for the list using
  * security_manager_policy_levels_free().
  *
- * @param levels pointer to array of strings.
- * @param levels_count number of strings in levels array.
- * @return API return code or error code.
+ * \param levels        Pointer to array of strings
+ * \param levels_count  Number of strings in levels array
+ * \return API return code or error code.
  */
 int security_manager_policy_levels_get(char ***levels, size_t *levels_count);
 
@@ -424,9 +432,10 @@ int security_manager_policy_levels_get(char ***levels, size_t *levels_count);
  * This function free memory allocated by security_manager_policy_levels_get()
  * function.
  *
- * @param levels array of strings returned by
- * security_manager_policy_levels_get() function.
- * @return API return code or error code.
+ * \param levels        Array of strings returned by
+ *                      security_manager_policy_levels_get() function.
+ * \param levels_count  Number of strings in levels array
+ * \return API return code or error code.
  */
 void security_manager_policy_levels_free(char **levels, size_t levels_count);
 

@@ -26,29 +26,29 @@
 extern "C" {
 #endif
 
-/*
+/**
  * This function is responsible for initialize private_sharing_req data structure
  * It uses dynamic allocation inside and user responsibility is to call
  * private_sharing_req_free() for freeing allocated resources
  *
- * \param[out] Address of pointer for handle private_sharing_req structure
+ * \param[out] pp_req  Address of pointer for handle private_sharing_req structure
  * \return API return code or error code
  */
 int security_manager_private_sharing_req_new(private_sharing_req **pp_req);
 
-/*
+/**
  * This function is used to free resources allocated by calling private_sharing_req_new()
  *
- * \param[in] Pointer handling allocated app_inst_req structure
+ * \param[in] p_req  Pointer handling allocated app_inst_req structure
  */
 void security_manager_private_sharing_req_free(private_sharing_req *p_req);
 
-/*
+/**
  * This function is used to set up package identifier of paths owner application
  * in private_sharing_req structure
  *
- * \param[in] Pointer handling private_sharing_req structure
- * \param[in] Application identifier
+ * \param[in] p_req   Pointer handling private_sharing_req structure
+ * \param[in] app_id  Application identifier
  * \return API return code or error code: it would be
  * - SECURITY_MANAGER_SUCCESS on success,
  * - SECURITY_MANAGER_ERROR_REQ_NOT_COMPLETE when either owner app_id, target app_id
@@ -58,37 +58,37 @@ void security_manager_private_sharing_req_free(private_sharing_req *p_req);
 int security_manager_private_sharing_req_set_owner_appid(private_sharing_req *p_req,
                                                          const char *app_id);
 
-/*
+/**
  * This function is used to set up package identifier of sharing target application
  * in private_sharing_req structure
  *
- * \param[in] Pointer handling private_sharing_req structure
- * \param[in] Application identifier
+ * \param[in] p_req   Pointer handling private_sharing_req structure
+ * \param[in] app_id  Application identifier
  * \return API return code or error code
  */
 int security_manager_private_sharing_req_set_target_appid(private_sharing_req *p_req,
                                                           const char *app_id);
 
-/*
+/**
  * This function is used to add path list to be shared in private_sharing_req structure
  *
- * \param[in] Pointer handling private_sharing_req structure
- * \param[in] Path list
- * \param[in] Path count
+ * \param[in] p_req       Pointer handling private_sharing_req structure
+ * \param[in] pp_paths    Path list
+ * \param[in] path_count  Path count
  * \return API return code or error code
  */
 int security_manager_private_sharing_req_add_paths(private_sharing_req *p_req,
                                                    const char **pp_paths,
                                                    size_t path_count);
 
-/*
+/**
  * This function is used to apply private sharing based on given private_sharing_req.
  * One path can be shared with multiple applications at the same time.
  *
  * Required privileges:
  * - http://tizen.org/privilege/notexist
  *
- * \param[in] Pointer handling private_sharing_req structure
+ * \param[in] p_req  Pointer handling private_sharing_req structure
  * \return API return code or error code: it would be
  * - SECURITY_MANAGER_SUCCESS on success,
  * - SECURITY_MANAGER_ERROR_INPUT_PARAM when either owner app_id, target app_id or paths are not set,
@@ -96,13 +96,13 @@ int security_manager_private_sharing_req_add_paths(private_sharing_req *p_req,
  */
 int security_manager_private_sharing_apply(const private_sharing_req *p_req);
 
-/*
+/**
  * This function is used to drop private sharing based on given private_sharing_req.
  *
  * Required privileges:
  * - http://tizen.org/privilege/notexist
  *
- * \param[in] Pointer handling private_sharing_req structure
+ * \param[in] p_req  Pointer handling private_sharing_req structure
  * \return API return code or error code: it would be
  * - SECURITY_MANAGER_SUCCESS on success,
  * - SECURITY_MANAGER_ERROR_REQ_NOT_COMPLETE when either owner app_id, target app_id
