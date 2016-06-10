@@ -321,61 +321,19 @@ int security_manager_get_app_pkgid(char **pkg_name, const char *app_name)
 
 static bool setup_smack(const char *label)
 {
-    int labelSize = strlen(label);
+    /* Here we also should change open socket labels for future process identification.
+       However, since Smack support for "dyntransition"-like feature will be enabled soon,
+       relabeling the sockets will no longer be possible.
 
-    // Set Smack label for open socket file descriptors
-
-    std::unique_ptr<DIR, std::function<int(DIR*)>> dir(
-        opendir("/proc/self/fd"), closedir);
-    if (!dir.get()) {
-        LogError("Unable to read list of open file descriptors: " <<
-            GetErrnoString(errno));
+       After careful review it was found that only opened sockets are ones to systemd
+       (user and system session) and enlightment. Both services are not integrated with Cynara
+       and seem to be fine with these sockets retaining IPIN/IPOUT "User" label.
+    */
+    // Set Smack label of current process
+    if (smack_set_label_for_self(label) != 0) {
+        LogError("Failed to set Smack label for application: " << label);
         return SECURITY_MANAGER_ERROR_UNKNOWN;
     }
-
-    do {
-        errno = 0;
-        struct dirent *dirEntry = readdir(dir.get());
-        if (dirEntry == nullptr) {
-            if (errno == 0) // NULL return value also signals end of directory
-                break;
-
-            LogError("Unable to read list of open file descriptors: " <<
-                GetErrnoString(errno));
-            return SECURITY_MANAGER_ERROR_UNKNOWN;
-        }
-
-        // Entries with numerical names specify file descriptors, ignore the rest
-        if (!isdigit(dirEntry->d_name[0]))
-            continue;
-
-        struct stat statBuf;
-        int fd = atoi(dirEntry->d_name);
-        int ret = fstat(fd, &statBuf);
-        if (ret != 0) {
-            LogWarning("fstat failed on file descriptor " << fd << ": " <<
-                GetErrnoString(errno));
-            continue;
-        }
-        if (S_ISSOCK(statBuf.st_mode)) {
-            ret = fsetxattr(fd, XATTR_NAME_SMACKIPIN, label, labelSize, 0);
-            if (ret != 0) {
-                LogError("Setting Smack label failed on file descriptor " <<
-                    fd << ": " << GetErrnoString(errno));
-                return SECURITY_MANAGER_ERROR_UNKNOWN;
-            }
-
-            ret = fsetxattr(fd, XATTR_NAME_SMACKIPOUT, label, labelSize, 0);
-            if (ret != 0) {
-                LogError("Setting Smack label failed on file descriptor " <<
-                    fd << ": " << GetErrnoString(errno));
-                return SECURITY_MANAGER_ERROR_UNKNOWN;
-            }
-        }
-    } while (true);
-
-    // Set Smack label of current process
-    smack_set_label_for_self(label);
 
     return SECURITY_MANAGER_SUCCESS;
 }
