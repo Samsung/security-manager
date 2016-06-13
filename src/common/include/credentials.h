@@ -39,11 +39,13 @@ public:
     Credentials() = delete;
     static Credentials getCredentialsFromSelf(void);
     static Credentials getCredentialsFromSocket(int socket);
+    static Credentials getCredentialsFromFd(int fd);
 
     class Exception {
     public:
         DECLARE_EXCEPTION_TYPE(SecurityManager::Exception, Base)
         DECLARE_EXCEPTION_TYPE(Base, SocketError)
+        DECLARE_EXCEPTION_TYPE(Base, FdError)
     };
 
 private:

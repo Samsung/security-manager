@@ -234,6 +234,19 @@ public:
      * @return API return code, as defined in protocols.h
      */
     int labelForProcess(const std::string &appName, std::string &label);
+    /*
+     * Request for access to shared memory segment for
+     * appName application.
+     *
+     * @param[in] creds credentials of the requesting process
+     * @param[in] name shared memory identifier
+     * @param[in] appName application identifier
+     *
+     * @return API return code, as defined in protocols.h
+     */
+    int shmAppName(const Credentials &creds,
+                   const std::string &shmName,
+                   const std::string &appName);
 private:
     bool authenticate(const Credentials &creds, const std::string &privilege);
 
@@ -299,7 +312,6 @@ private:
     Cynara m_cynara;
     PrivilegeDb m_priviligeDb;
     CynaraAdmin m_cynaraAdmin;
-
 };
 
 } /* namespace SecurityManager */

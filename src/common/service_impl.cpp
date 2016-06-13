@@ -29,6 +29,7 @@
 #include <linux/xattr.h>
 #include <limits.h>
 #include <pwd.h>
+#include <sys/mman.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -1645,6 +1646,62 @@ int ServiceImpl::labelForProcess(const std::string &appName, std::string &label)
     LogDebug("Requested label generation for process of application " << appName);
     label = getAppProcessLabel(appName);
 
+    return SECURITY_MANAGER_SUCCESS;
+}
+
+int ServiceImpl::shmAppName(const Credentials &creds, const std::string &shmName, const std::string &appName)
+{
+    try {
+        if (shmName.empty() || appName.empty())
+            return SECURITY_MANAGER_ERROR_INPUT_PARAM;
+
+        if (!PrivilegeDb::getInstance().AppNameExists(appName)) {
+            LogError("Unknown application id: " << appName);
+            return SECURITY_MANAGER_ERROR_NO_SUCH_OBJECT;
+        }
+
+        if (!authenticate(creds, Config::PRIVILEGE_SHM)) {
+            LogError("Request from uid=" << creds.uid << ", Smack=" << creds.label << " for shm denied");
+            return SECURITY_MANAGER_ERROR_AUTHENTICATION_FAILED;
+        }
+
+        std::string label = getAppProcessLabel(appName);
+
+        int fd = shm_open(shmName.c_str(), O_RDWR, 0);
+        if (fd < 0) {
+            LogError("Error in shm_open");
+            return SECURITY_MANAGER_ERROR_INPUT_PARAM;
+        }
+
+        auto scopeClose = makeUnique(&fd, [](int *ptr) -> void { if (*ptr >= 0) close(*ptr);});
+
+        Credentials fdCreds = Credentials::getCredentialsFromFd(fd);
+
+        if (fdCreds.label == label) {
+            // Nothing to do. The file already has proper label.
+            // Client called this function twice?
+            LogDebug("Noting to do. File have already label: " << label << " The client probably called this api twice.");
+            return SECURITY_MANAGER_SUCCESS;
+        }
+
+        if ((creds.label != fdCreds.label) || (creds.uid != fdCreds.uid)) {
+            LogDebug("Client (smack: " << creds.label <<", pid: " << creds.pid
+                << ") does not have permission to access shared memory file (segment name: "
+                << shmName << ").");
+            return SECURITY_MANAGER_ERROR_ACCESS_DENIED;
+        }
+
+        SmackLabels::setSmackLabelForFd(fd, label);
+    } catch (const CynaraException::Base &e) {
+        LogError("Error while querying Cynara for permissions: " << e.DumpToString());
+        return SECURITY_MANAGER_ERROR_SERVER_ERROR;
+    } catch (const SmackException::Base &e) {
+        LogError("Error while set/get smack label in /dev/shm: " << e.DumpToString());
+        return SECURITY_MANAGER_ERROR_SERVER_ERROR;
+    } catch (const std::bad_alloc &e) {
+        LogError("Memory allocation failed: " << e.what());
+        return SECURITY_MANAGER_ERROR_MEMORY;
+    }
     return SECURITY_MANAGER_SUCCESS;
 }
 

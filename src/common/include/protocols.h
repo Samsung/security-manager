@@ -87,6 +87,7 @@ enum class SecurityModuleCall
     PATHS_REGISTER,
     GROUPS_FOR_UID,
     LABEL_FOR_PROCESS,
+    SHM_APP_NAME,
     NOOP = 0x90,
 };
 

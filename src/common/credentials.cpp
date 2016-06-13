@@ -20,6 +20,7 @@
  */
 
 #include <unistd.h>
+#include <sys/stat.h>
 #include <sys/socket.h>
 
 #include "smack-check.h"
@@ -43,6 +44,15 @@ Credentials Credentials::getCredentialsFromSocket(int sock)
         ThrowMsg(Exception::SocketError, "Failed to read peer credentials for sockfd " << sock);
 
     return Credentials(cr.pid, cr.uid, cr.gid, SmackLabels::getSmackLabelFromSocket(sock));
+}
+
+Credentials Credentials::getCredentialsFromFd(int fd)
+{
+    struct stat buf;
+    if (-1 == fstat(fd, &buf))
+        ThrowMsg(Exception::FdError, "Failed to read credentials from filefd " << fd);
+
+    return Credentials(-1, buf.st_uid, buf.st_gid, SmackLabels::getSmackLabelFromFd(fd));
 }
 
 } // namespace SecurityManager

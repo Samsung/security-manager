@@ -205,6 +205,20 @@ int security_manager_identify_app_from_cynara_client(const char *client, char **
 int security_manager_app_has_privilege(const char *app_id, const char *privilege,
                                        uid_t uid, int *result);
 
+/**
+ * This function creates descriptor that may be used as shared memory segment
+ * with app_id application.
+ *
+ * \param[in]  name       This value is passed to shm_open as first parameter (man 3 shm_open for details)
+ * \param[in]  oflag      This value is passed to shm_open as second parameter (man 3 shm_open for details)
+ * \param[in]  mode       This value is passed to shm_open as third parameter (man 3 shm_open for details)
+ * \param[in]  app_id     Identifier of application that will gain access to shared memory segment
+ * \return file descriptor or -1 on error. If -1 is returned then errno will be set. Errno == ECONNABORTED
+ *                        means that the security-manager server failed and did not return any information
+ *                        about error.
+ */
+int security_manager_shm_open(const char *name, int oflag, mode_t mode, const char *app_id);
+
 #ifdef __cplusplus
 }
 #endif

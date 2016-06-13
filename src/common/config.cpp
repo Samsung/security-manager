@@ -36,6 +36,7 @@ const std::string PRIVILEGE_USER_ADMIN       = "http://tizen.org/privilege/inter
 const std::string PRIVILEGE_POLICY_USER      = "http://tizen.org/privilege/notexist";
 const std::string PRIVILEGE_POLICY_ADMIN     = "http://tizen.org/privilege/internal/usermanagement";
 const std::string PRIVILEGE_APPSHARING_ADMIN = "http://tizen.org/privilege/notexist";
+const std::string PRIVILEGE_SHM              = "http://tizen.org/privilege/internal/shm";
 
 const std::string APPS_LABELS_FILE = "apps-labels";
 const std::string SKEL_DIR = "/etc/skel";
