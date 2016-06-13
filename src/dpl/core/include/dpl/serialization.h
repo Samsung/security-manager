@@ -400,6 +400,13 @@ struct Deserialization {
         map = new std::map<K, T>;
         Deserialize(stream, *map);
     }
+
+    template<typename T1, typename T2, typename... Tail>
+    static void Deserialize(IStream& stream, T1 &first, T2 &second, Tail&... tail)
+    {
+        Deserialization::Deserialize(stream, first);
+        Deserialization::Deserialize(stream, second, tail...);
+    }
 }; // struct Deserialization
 } // namespace SecurityManager
 
