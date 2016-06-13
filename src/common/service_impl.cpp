@@ -48,6 +48,7 @@
 #include "privilege_db.h"
 #include "cynara.h"
 #include "permissible-set.h"
+#include "smack-exceptions.h"
 #include "smack-rules.h"
 #include "smack-labels.h"
 #include "security-manager.h"
@@ -859,6 +860,9 @@ int ServiceImpl::userAdd(const Credentials &creds, uid_t uidAdded, int userType)
     } catch (CynaraException::InvalidParam &e) {
         return SECURITY_MANAGER_ERROR_INPUT_PARAM;
     } catch (const PermissibleSet::PermissibleSetException::FileInitError &e) {
+        LogError("Error while adding user: " << e.DumpToString());
+        return SECURITY_MANAGER_ERROR_SETTING_FILE_LABEL_FAILED;
+    } catch (const SmackException::FileError &e) {
         LogError("Error while adding user: " << e.DumpToString());
         return SECURITY_MANAGER_ERROR_SETTING_FILE_LABEL_FAILED;
     } catch (const std::exception &e) {

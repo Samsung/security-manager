@@ -157,9 +157,7 @@ void initializeUserPermissibleFile(uid_t uid)
 
     std::ofstream fstream;
     openAndLockNameFile(nameFile, fstream);
-    if (smack_set_label_for_file(getFd(fstream), XATTR_NAME_SMACK, "_") != 0)
-        ThrowMsg(PermissibleSetException::FileInitError,
-            "Unable to set Smack label for user permissible file");
+    SmackLabels::setSmackLabelForFd(getFd(fstream), "_");
 
     markPermissibleFileValid(getFd(fstream), nameFile, true);
 }

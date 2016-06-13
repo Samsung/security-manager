@@ -75,9 +75,10 @@ static bool labelExecs(const FTSENT *ftsent)
 static inline void pathSetSmack(const char *path, const std::string &label,
         const char *xattr_name)
 {
-    if (lsetxattr(path, xattr_name, label.c_str(), label.length(), 0)) {
-        LogError("lsetxattr failed.");
-        ThrowMsg(SmackException::FileError, "lsetxattr failed.");
+    if (smack_set_label_for_path(path, xattr_name, 0, label.c_str())) {
+        LogError("smack_set_label_for_path failed. Path: " << path << " Label:" << label);
+        ThrowMsg(SmackException::FileError,
+            "smack_set_label_for_path failed failed. Path: " << path << " Label: " << label);
     }
 }
 
@@ -287,6 +288,11 @@ std::string getSmackLabelFromPath(const std::string &path)
     return getSmackLabel(&smack_new_label_from_path, path.c_str(), XATTR_NAME_SMACK, true);
 }
 
+std::string getSmackLabelFromFd(int fd)
+{
+    return getSmackLabel(&smack_new_label_from_file, fd, XATTR_NAME_SMACK);
+}
+
 std::string getSmackLabelFromSelf(void)
 {
     return getSmackLabel(&smack_new_label_from_self);
@@ -305,6 +311,14 @@ std::string generatePathTrustedLabel(const int authorId)
     }
 
     return "User::Author::" + std::to_string(authorId);
+}
+
+void setSmackLabelForFd(int fd, const std::string &label)
+{
+    if (smack_set_label_for_file(fd, XATTR_NAME_SMACK, label.c_str())) {
+        LogError("smack_set_label_for_file failed.");
+        ThrowMsg(SmackException::FileError, "smack_set_label_for_file failed.");
+    }
 }
 
 } // namespace SmackLabels
