@@ -119,3 +119,13 @@
 *	http://tizen.org/privilege/internal/inputdevice.block
 *	http://tizen.org/privilege/internal/usermanagement
 *	http://tizen.org/privilege/internal/appdebugging
+*	http://tizen.org/privilege/internal/web/appmanager.certificate
+*	http://tizen.org/privilege/internal/web/datasync
+*	http://tizen.org/privilege/internal/web/fullscreen
+*	http://tizen.org/privilege/internal/web/tv.audio
+*	http://tizen.org/privilege/internal/web/tv.channel
+*	http://tizen.org/privilege/internal/web/tv.display
+*	http://tizen.org/privilege/internal/web/tv.inputdevice
+*	http://tizen.org/privilege/internal/web/tv.window
+*	http://tizen.org/privilege/internal/web/unlimitedstorage
+*	http://tizen.org/privilege/internal/web/websetting
