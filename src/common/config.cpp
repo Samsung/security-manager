@@ -28,14 +28,6 @@ namespace SecurityManager {
 
 namespace Config {
 
-const std::string PRIVILEGE_VERSION =
-#ifdef PRIVILEGE_VERSION
-        PRIVILEGE_VERSION
-#else
-        "3.0"
-#endif
-;
-
 const std::string PRIVILEGE_APPINST_USER     = "http://tizen.org/privilege/notexist";
 const std::string PRIVILEGE_APPINST_ADMIN    = "http://tizen.org/privilege/notexist";
 const std::string PRIVILEGE_USER_ADMIN       = "http://tizen.org/privilege/internal/usermanagement";

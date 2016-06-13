@@ -31,8 +31,6 @@ namespace SecurityManager {
 
 namespace Config {
 
-extern const std::string PRIVILEGE_VERSION;
-
 /* Privileges required from users of our API */
 extern const std::string PRIVILEGE_APPINST_USER;
 extern const std::string PRIVILEGE_APPINST_ADMIN;
