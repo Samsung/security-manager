@@ -28,6 +28,7 @@
 #include <limits.h>
 #include <pwd.h>
 #include <sys/socket.h>
+#include <sys/stat.h>
 
 #include <cstring>
 #include <algorithm>
@@ -145,6 +146,11 @@ bool sharingExists(const std::string &targetAppName, const std::string &path)
     int targetPathCount;
     PrivilegeDb::getInstance().GetTargetPathSharingCount(targetAppName, path, targetPathCount);
     return targetPathCount != 0;
+}
+
+bool fileExists(const std::string &path) {
+    struct stat buffer;
+    return (stat(path.c_str(), &buffer) == 0) && S_ISREG(buffer.st_mode);
 }
 
 class ScopedTransaction {
@@ -544,6 +550,8 @@ int ServiceImpl::appUninstall(const Credentials &creds, app_inst_req &&req)
     bool removeAuthor = false;
     std::string cynaraUserStr;
     SmackRules::PkgsApps tizen2XpkgsApps;
+    std::map<std::string, std::vector<std::string>> asOwnerSharing;
+    std::map<std::string, std::vector<std::string>> asTargetSharing;
     int authorId;
 
     installRequestMangle(req, cynaraUserStr);
@@ -579,14 +587,47 @@ int ServiceImpl::appUninstall(const Credentials &creds, app_inst_req &&req)
         PrivilegeDb::getInstance().GetPkgApps(req.pkgName, pkgContents);
         PrivilegeDb::getInstance().GetAppVersion(req.appName, req.tizenVersion);
         PrivilegeDb::getInstance().UpdateAppPrivileges(req.appName, req.uid, std::vector<std::string>());
-        PrivilegeDb::getInstance().RemoveApplication(req.appName, req.uid, removeApp, removePkg, removeAuthor);
+        PrivilegeDb::getInstance().GetPrivateSharingForOwner(req.appName, asOwnerSharing);
+        PrivilegeDb::getInstance().GetPrivateSharingForTarget(req.appName, asTargetSharing);
 
         // if uninstalled app is targetted to Tizen 2.X, remove other 2.X apps RO rules it's shared dir
         if (isTizen2XVersion(req.tizenVersion))
             getTizen2XApps(tizen2XpkgsApps);
 
-        CynaraAdmin::getInstance().UpdateAppPolicy(smackLabel, cynaraUserStr, std::vector<std::string>(), isPrivilegePrivacy);
+        for (const auto &targetPathsInfo : asOwnerSharing) {
+            const auto &targetAppName = targetPathsInfo.first;
+            const auto &paths = targetPathsInfo.second;
+            // Squash sharing - change counter to 1, so dropPrivatePathSharing will completely clean it
+            for (const auto &path : paths) {
+                PrivilegeDb::getInstance().SquashSharing(targetAppName, path);
+                int ret = dropOnePrivateSharing(req.appName, req.pkgName, pkgContents, targetAppName, path);
+                if (ret != SECURITY_MANAGER_SUCCESS) {
+                    //Ignore error, we want to drop as much as we can
+                    LogError("Couldn't drop sharing between " << req.appName << " and " << targetAppName);
+                }
+            }
+        }
 
+        for (const auto &ownerPathsInfo : asTargetSharing) {
+            const auto &ownerAppName = ownerPathsInfo.first;
+            const auto &paths = ownerPathsInfo.second;
+            // Squash sharing - change counter to 1, so dropPrivatePathSharing will completely clean it
+            std::string ownerPkgName;
+            std::vector<std::string> ownerPkgContents;
+            PrivilegeDb::getInstance().GetAppPkgName(ownerAppName, ownerPkgName);
+            PrivilegeDb::getInstance().GetPkgApps(ownerPkgName, ownerPkgContents);
+            for (const auto &path : paths) {
+                PrivilegeDb::getInstance().SquashSharing(req.appName, path);
+                    int ret = dropOnePrivateSharing(ownerAppName, ownerPkgName, ownerPkgContents, req.appName, path);
+                    if (ret != SECURITY_MANAGER_SUCCESS) {
+                        //Ignore error, we want to drop as much as we can
+                        LogError("Couldn't drop sharing between " << req.appName << " and " << ownerAppName);
+                    }
+                }
+        }
+
+        PrivilegeDb::getInstance().RemoveApplication(req.appName, req.uid, removeApp, removePkg, removeAuthor);
+        CynaraAdmin::getInstance().UpdateAppPolicy(smackLabel, cynaraUserStr, std::vector<std::string>(), isPrivilegePrivacy);
         PrivilegeDb::getInstance().CommitTransaction();
         LogDebug("Application uninstallation commited to database");
         PermissibleSet::updatePermissibleFile(req.uid, req.installationType);
@@ -1152,7 +1193,8 @@ int ServiceImpl::dropOnePrivateSharing(
         if (targetPathCount > 0) {
             return SECURITY_MANAGER_SUCCESS;
         }
-        if (pathCount < 1) {
+        //This function can be also called when application is uninstalled, so path won't exist
+        if (pathCount < 1 && fileExists(path)) {
             SmackLabels::setupPath(ownerPkgName, path, SECURITY_MANAGER_PATH_RW);
         }
         std::string pathLabel = SmackLabels::generateSharedPrivateLabel(ownerPkgName, path);
