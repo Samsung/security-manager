@@ -1,3 +1,17 @@
+* Thu June 16 2016 Tomasz Swierczek <t.swierczek@samsung.com>
+- Version 1.1.7
+- Add internal privilege for app debugging
+- Add core privileges
+- Add check if privileges were properly dropped
+- Threads security context synchronization
+- Added parameter mode and made more generic getDirContents function
+- Prepare setup_smack client function for running without CAP_MAC_ADMIN
+- Fix installation user mangling
+- Disable ASKUSER policy by default
+- Fix policy access control for accessing another user's policy
+- Add proper policy setup for privacy-related privileges
+- Fix doxygen comments
+
 * Wed May 25 2016 Tomasz Swierczek <t.swierczek@samsung.com>
 - Version 1.1.6
 - Fix issues with local user app instalaltion and inotify file watches.
