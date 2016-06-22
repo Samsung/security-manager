@@ -1,8 +1,8 @@
 #!/bin/sh -e
 
 PATH=/bin:/usr/bin:/sbin:/usr/sbin
-POLICY_PATH=/usr/share/security-manager/policy
-PRIVILEGE_GROUP_MAPPING=$POLICY_PATH/privilege-group.list
+POLICY_PATH=@POLICY_DIR@
+PRIVILEGE_GROUP_MAPPING=$POLICY_PATH/@PRIVILEGE_GROUP_LIST_FILE@
 
 DB_FILE=`tzplatform-get TZ_SYS_DB | cut -d= -f2`/.security-manager.db
 

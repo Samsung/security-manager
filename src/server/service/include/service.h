@@ -147,6 +147,13 @@ private:
     void processGroupsGet(MessageBuffer &send);
 
     /**
+     * Process getting groups bound with privileges for given uid
+     *
+     * @param  send   Raw data buffer to be sent
+     */
+    void processGroupsForUid(MessageBuffer &recv, MessageBuffer &send);
+
+    /**
      * Process checking application's privilege access based on app_id
      *
      * @param  recv   Raw received data buffer

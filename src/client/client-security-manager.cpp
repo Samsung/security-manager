@@ -28,6 +28,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <functional>
+#include <fstream>
 #include <memory>
 #include <unordered_set>
 #include <utility>
@@ -1149,6 +1150,53 @@ void security_manager_policy_levels_free(char **levels, size_t levels_count)
     delete[] levels;
 }
 
+static void loadGroups(std::vector<std::string> &vgroups) {
+    static const int LINEMAX = 256;
+    char line[LINEMAX];
+    std::ifstream input(POLICY_DIR "/" PRIVILEGE_GROUP_LIST_FILE);
+
+    while(input.getline(line, LINEMAX)) {
+        if (line[0] == '#')
+            continue;
+        char *pos = strchr(line, ' ');
+        if (pos == NULL)
+            continue;
+        pos++;
+        vgroups.push_back(std::string(pos));
+    }
+}
+
+static int group_vector_to_array(const std::vector<std::string> &vgroups, char ***groups, size_t *groups_count)
+{
+    const auto vgroups_size = vgroups.size();
+
+    std::unique_ptr<char *[], std::function<void(char **)>> array(
+        static_cast<char **>(calloc(vgroups_size, sizeof(char *))),
+        std::bind(security_manager_groups_free, std::placeholders::_1, vgroups_size));
+
+    if (array == nullptr)
+        return SECURITY_MANAGER_ERROR_MEMORY;
+
+    for (size_t i = 0; i < vgroups_size; ++i) {
+        const auto &group = vgroups.at(i);
+
+        if (group.empty()) {
+            LogError("Unexpected empty group");
+            return SECURITY_MANAGER_ERROR_UNKNOWN;
+        }
+
+        array[i] = strdup(group.c_str());
+        if (array[i] == nullptr) {
+            return SECURITY_MANAGER_ERROR_MEMORY;
+        }
+    }
+
+    *groups_count = vgroups_size;
+    *groups = array.release();
+
+    return SECURITY_MANAGER_SUCCESS;
+}
+
 SECURITY_MANAGER_API
 int security_manager_groups_get(char ***groups, size_t *groups_count)
 {
@@ -1157,9 +1205,34 @@ int security_manager_groups_get(char ***groups, size_t *groups_count)
     if (!groups || !groups_count)
         return SECURITY_MANAGER_ERROR_INPUT_PARAM;
     return try_catch([&]() -> int {
+        std::vector<std::string> vgroups;
+        loadGroups(vgroups);
+        return group_vector_to_array(vgroups, groups, groups_count);
+    });
+}
+
+SECURITY_MANAGER_API
+int security_manager_groups_get_for_user(uid_t uid, char ***groups, size_t *groups_count)
+{
+    using namespace SecurityManager;
+    if (!groups || !groups_count)
+        return SECURITY_MANAGER_ERROR_INPUT_PARAM;
+
+    // Security manager does not manage platform system daemons
+    // This 5000 value is defined only in this document:
+    // https://wiki.tizen.org/wiki/Security/User_and_group_ID_assignment_policy
+    // TODO: Value 5000 should be defined in tizen-platform-config
+
+    if (uid < 5000) {
+        return SECURITY_MANAGER_ERROR_NO_SUCH_OBJECT;
+    }
+
+    return try_catch([&]() -> int {
+        MessageBuffer send, recv;
 
         //put data into buffer
-        Serialization::Serialize(send, static_cast<int>(SecurityModuleCall::GROUPS_GET));
+        Serialization::Serialize(send, static_cast<int>(SecurityModuleCall::GROUPS_FOR_UID));
+        Serialization::Serialize(send, uid);
 
         //send buffer to server
         int retval = sendToServer(SERVICE_SOCKET, send.Pop(), recv);
@@ -1170,39 +1243,14 @@ int security_manager_groups_get(char ***groups, size_t *groups_count)
 
         //receive response from server
         Deserialization::Deserialize(recv, retval);
-
         if (retval != SECURITY_MANAGER_SUCCESS) {
             return retval;
         }
 
         std::vector<std::string> vgroups;
         Deserialization::Deserialize(recv, vgroups);
-        const auto vgroups_size = vgroups.size();
-        LogInfo("Number of groups: " << vgroups_size);
 
-        auto array = makeUnique(static_cast<char **>(calloc(vgroups_size, sizeof(char *))),
-            std::bind(security_manager_groups_free, std::placeholders::_1, vgroups_size));
-
-        if (!array)
-            return SECURITY_MANAGER_ERROR_MEMORY;
-
-        for (size_t i = 0; i < vgroups_size; ++i) {
-            const auto &group = vgroups.at(i);
-
-            if (group.empty()) {
-                LogError("Unexpected empty group");
-                return SECURITY_MANAGER_ERROR_UNKNOWN;
-            }
-
-            array.get()[i] = strdup(group.c_str());
-            if (array.get()[i] == nullptr)
-                return SECURITY_MANAGER_ERROR_MEMORY;
-        }
-
-        *groups_count = vgroups_size;
-        *groups = array.release();
-
-        return SECURITY_MANAGER_SUCCESS;
+        return group_vector_to_array(vgroups, groups, groups_count);
     });
 }
 

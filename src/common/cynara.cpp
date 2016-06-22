@@ -473,6 +473,37 @@ void CynaraAdmin::UserRemove(uid_t uid)
             CYNARA_ADMIN_ANY, user, CYNARA_ADMIN_ANY);
 }
 
+security_manager_user_type CynaraAdmin::GetUserType(uid_t uid)
+{
+    std::string uidStr = std::to_string(uid);
+    std::vector<CynaraAdminPolicy> tmpListOfUsers;
+    CynaraAdmin::getInstance().ListPolicies(
+            CynaraAdmin::Buckets.at(Bucket::MAIN),
+            CYNARA_ADMIN_WILDCARD,
+            uidStr,
+            CYNARA_ADMIN_WILDCARD,
+            tmpListOfUsers);
+
+    if (tmpListOfUsers.size() != 1) {
+        // < 1 -> user not found
+        // > 1 -> impossible
+        return SM_USER_TYPE_NONE;
+    }
+
+    auto metadata = tmpListOfUsers.at(0).result_extra;
+
+    if (metadata == Buckets.at(Bucket::USER_TYPE_NORMAL))
+        return SM_USER_TYPE_NORMAL;
+    else if (metadata == Buckets.at(Bucket::USER_TYPE_ADMIN))
+        return SM_USER_TYPE_ADMIN;
+    else if (metadata == Buckets.at(Bucket::USER_TYPE_GUEST))
+        return SM_USER_TYPE_GUEST;
+    else if (metadata == Buckets.at(Bucket::USER_TYPE_SYSTEM))
+        return SM_USER_TYPE_SYSTEM;
+    else    // improperly configured
+        return SM_USER_TYPE_NONE;
+};
+
 void CynaraAdmin::ListPolicies(
     const std::string &bucket,
     const std::string &label,

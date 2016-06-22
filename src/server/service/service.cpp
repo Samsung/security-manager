@@ -126,6 +126,9 @@ bool Service::processOne(const ConnectionID &conn, MessageBuffer &buffer,
                     LogDebug("call_type: SecurityModuleCall::GROUPS_GET");
                     processGroupsGet(send);
                     break;
+                case SecurityModuleCall::GROUPS_FOR_UID:
+                    processGroupsForUid(buffer, send);
+                    break;
                 case SecurityModuleCall::APP_HAS_PRIVILEGE:
                     LogDebug("call_type: SecurityModuleCall::APP_HAS_PRIVILEGE");
                     processAppHasPrivilege(buffer, send);
@@ -316,6 +319,21 @@ void Service::processGroupsGet(MessageBuffer &send)
 {
     std::vector<std::string> groups;
     int ret = serviceImpl.policyGetGroups(groups);
+
+    Serialization::Serialize(send, ret);
+    if (ret == SECURITY_MANAGER_SUCCESS) {
+        Serialization::Serialize(send, groups);
+    }
+}
+
+void Service::processGroupsForUid(MessageBuffer &recv, MessageBuffer &send)
+{
+    uid_t uid;
+    std::vector<std::string> groups;
+
+    Deserialization::Deserialize(recv, uid);
+
+    int ret = serviceImpl.policyGroupsForUid(uid, groups);
 
     Serialization::Serialize(send, ret);
     if (ret == SECURITY_MANAGER_SUCCESS) {

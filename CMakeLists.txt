@@ -33,7 +33,28 @@ SET(LOCAL_STATE_DIR
     CACHE PATH
     "Modifiable single-machine data directory")
 
+SET(DATA_ROOT_DIR
+    "${CMAKE_INSTALL_FULL_DATAROOTDIR}"
+    CACHE PATH
+    "Read-only data root directory")
+
+SET(POLICY_DIR
+    "${DATA_ROOT_DIR}/security-manager/policy"
+    CACHE PATH
+    "Read-only data root directory")
+
 ADD_DEFINITIONS("-DLOCAL_STATE_DIR=\"${LOCAL_STATE_DIR}\"")
+ADD_DEFINITIONS("-DDATA_ROOT_DIR=\"${DATA_ROOT_DIR}\"")
+ADD_DEFINITIONS("-DPOLICY_DIR=\"${POLICY_DIR}\"")
+
+############################## file names #####################################
+
+SET(PRIVILEGE_GROUP_LIST_FILE
+    "privilege-group.list"
+    CACHE PATH
+    "File with mapping from privileges into groups")
+
+ADD_DEFINITIONS("-DPRIVILEGE_GROUP_LIST_FILE=\"${PRIVILEGE_GROUP_LIST_FILE}\"")
 
 ############################# compiler flags ##################################
 

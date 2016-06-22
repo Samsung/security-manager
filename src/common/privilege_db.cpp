@@ -1,7 +1,7 @@
 /*
  * security-manager, database access
  *
- * Copyright (c) 2000 - 2015 Samsung Electronics Co., Ltd All Rights Reserved
+ * Copyright (c) 2000 - 2016 Samsung Electronics Co., Ltd All Rights Reserved
  *
  * Contact: Rafal Krypa <r.krypa@samsung.com>
  *
@@ -29,6 +29,7 @@
 
 #include <cstdio>
 #include <list>
+#include <utility>
 #include <string>
 #include <iostream>
 
@@ -493,6 +494,20 @@ void PrivilegeDb::GetGroups(std::vector<std::string> &groups)
             std::string groupName = command->GetColumnString(0);
             LogDebug("Group " << groupName);
             groups.push_back(groupName);
+        };
+    });
+}
+
+void PrivilegeDb::GetGroupsRelatedPrivileges(std::vector<std::pair<std::string, std::string>> &privileges)
+{
+    try_catch<void>([&] {
+        auto command = getStatement(StmtType::EGetGroups);
+
+        while (command->Step()) {
+            const auto &groupName = command->GetColumnString(0);
+            const auto &privName = command->GetColumnString(1);
+            LogDebug("Privilege " << privName << " Group " << groupName);
+            privileges.emplace_back(std::make_pair(groupName, privName));
         };
     });
 }

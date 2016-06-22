@@ -102,6 +102,20 @@ int security_manager_prepare_app(const char *app_id);
 int security_manager_groups_get(char ***groups, size_t *groups_count);
 
 /**
+ * This function returns array of groups bound to privileges, the process
+ * run by particular user should get.
+ *
+ * Caller needs to free memory allocated for the list using
+ * security_manager_groups_free().
+ *
+ * @param[in] uid uid for user running the process
+ * @param[out] groups pointer to array of group names
+ * @param[out] groups_count number of strings in levels array
+ * @return API return code or error code.
+ */
+int security_manager_groups_get_for_user(uid_t uid, char ***groups, size_t *groups_count);
+
+/**
  * This function frees memory allocated by security_manager_groups_get()
  * function.
  *

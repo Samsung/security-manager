@@ -176,6 +176,16 @@ public:
     void UserRemove(uid_t uid);
 
     /**
+     * Returns user type of given uid
+     *
+     * @param[in] uid uid to check
+     *
+     * @return security_manager_user_type for given uid or SM_USER_TYPE_NONE if user not found
+     *
+     */
+    security_manager_user_type GetUserType(uid_t uid);
+
+    /**
      * List Cynara policies that match selected criteria in given bucket.
      *
      * @param bucketName name of the bucket to search policies in

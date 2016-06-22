@@ -85,6 +85,7 @@ enum class SecurityModuleCall
     GROUPS_GET,
     APP_HAS_PRIVILEGE,
     PATHS_REGISTER,
+    GROUPS_FOR_UID,
     NOOP = 0x90,
 };
 

@@ -1,7 +1,7 @@
 /*
  * security-manager, database access
  *
- * Copyright (c) 2000 - 2015 Samsung Electronics Co., Ltd All Rights Reserved
+ * Copyright (c) 2000 - 2016 Samsung Electronics Co., Ltd All Rights Reserved
  *
  * Contact: Rafal Krypa <r.krypa@samsung.com>
  *
@@ -31,6 +31,7 @@
 
 #include <cstdio>
 #include <list>
+#include <utility>
 #include <map>
 #include <stdbool.h>
 #include <string>
@@ -121,7 +122,7 @@ private:
         { StmtType::EGetUserApps, "SELECT app_name FROM user_app_pkg_view WHERE uid=?" },
         { StmtType::EGetTizen2XPackages,  "SELECT DISTINCT pkg_name FROM user_app_pkg_view WHERE version LIKE '2.%%'" },
         { StmtType::EGetAppsInPkg, " SELECT app_name FROM user_app_pkg_view WHERE pkg_name = ?" },
-        { StmtType::EGetGroups, "SELECT DISTINCT group_name FROM privilege_group" },
+        { StmtType::EGetGroups, "SELECT DISTINCT group_name, privilege_name FROM privilege_group" },
         { StmtType::EGetPkgAuthorId, "SELECT author_id FROM pkg WHERE name = ? AND author_id IS NOT NULL"},
         { StmtType::EAuthorIdExists, "SELECT count(*) FROM author where author_id=?"},
         { StmtType::EGetAuthorIdByName, "SELECT author_id FROM author WHERE name=?"},
@@ -453,6 +454,16 @@ public:
      * @exception DB::SqlConnection::Exception::ConstraintError on constraint violation
      */
     void GetGroups(std::vector<std::string> &grp_names);
+
+    /**
+     * Retrieve vector of pairs with group_name (1st value) and privilege_name (2nd value)
+     *
+     * @param[out] privileges - list of privileges
+     * @exception DB::SqlConnection::Exception::InternalError on internal error
+     * @exception DB::SqlConnection::Exception::ConstraintError on constraint violation
+     */
+    void GetGroupsRelatedPrivileges(std::vector<std::pair<std::string, std::string>> &privileges);
+
 };
 
 } //namespace SecurityManager
