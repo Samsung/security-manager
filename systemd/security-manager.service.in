@@ -1,5 +1,6 @@
 [Unit]
 Description=Start the security manager
+Before=dbus.service
 
 [Service]
 Type=notify
@@ -7,3 +8,6 @@ ExecStart=@BIN_INSTALL_DIR@/security-manager
 Sockets=security-manager.socket
 Restart=always
 SmackProcessLabel=System::Privileged
+
+[Install]
+WantedBy=dbus.service

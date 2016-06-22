@@ -7,6 +7,7 @@ License:    Apache-2.0
 Source0:    %{name}-%{version}.tar.gz
 Source1:    security-manager.manifest
 Source3:    libsecurity-manager-client.manifest
+Source4:    libnss-security-manager.manifest
 Requires: security-manager-policy
 Requires: nether
 Requires(post): sqlite3
@@ -51,6 +52,15 @@ Requires:   libsecurity-manager-client = %{version}-%{release}
 %description -n libsecurity-manager-client-devel
 Development files needed for using the security manager client
 
+%package -n libnss-security-manager
+Summary:    Security Manager NSS library
+Group:      Security/Libraries
+Requires(post): /sbin/ldconfig
+Requires(postun): /sbin/ldconfig
+
+%description -n libnss-security-manager
+Tizen Security Manager NSS library
+
 %package policy
 Summary:    Security manager policy
 Group:      Security/Access Control
@@ -67,6 +77,7 @@ Set of security rules that constitute security policy in the system
 %setup -q
 cp %{SOURCE1} .
 cp %{SOURCE3} .
+cp %{SOURCE4} .
 
 %build
 %if 0%{?sec_build_binary_debug_enable}
@@ -92,14 +103,17 @@ rm -rf %{buildroot}
 mkdir -p %{buildroot}%{_datadir}/license
 cp LICENSE %{buildroot}%{_datadir}/license/%{name}
 cp LICENSE %{buildroot}%{_datadir}/license/libsecurity-manager-client
+cp LICENSE %{buildroot}%{_datadir}/license/libnss-security-manager
 %make_install
 
 mkdir -p %{buildroot}/%{_unitdir}/sockets.target.wants
 mkdir -p %{buildroot}/%{_unitdir}/sysinit.target.wants
 mkdir -p %{buildroot}/%{_unitdir}/basic.target.wants
+mkdir -p %{buildroot}/%{_unitdir}/dbus.service.wants
 ln -s ../security-manager.socket %{buildroot}/%{_unitdir}/sockets.target.wants/security-manager.socket
 ln -s ../security-manager-cleanup.service %{buildroot}/%{_unitdir}/sysinit.target.wants/security-manager-cleanup.service
 ln -s ../security-manager-rules-loader.service %{buildroot}/%{_unitdir}/basic.target.wants/security-manager-rules-loader.service
+ln -s ../security-manager.service %{buildroot}/%{_unitdir}/dbus.service.wants/security-manager.service
 
 mkdir -p %{buildroot}/%{TZ_SYS_DB}
 touch %{buildroot}/%{TZ_SYS_DB}/.security-manager.db
@@ -148,6 +162,10 @@ fi
 
 %postun -n libsecurity-manager-client -p /sbin/ldconfig
 
+%post -n libnss-security-manager -p /sbin/ldconfig
+
+%postun -n libnss-security-manager -p /sbin/ldconfig
+
 %post policy
 %{_bindir}/security-manager-policy-reload
 
@@ -193,6 +211,13 @@ fi
 %{_libdir}/libsecurity-manager-commons.so
 %{_includedir}/security-manager/*.h
 %{_libdir}/pkgconfig/security-manager.pc
+
+%files -n libnss-security-manager
+%manifest libnss-security-manager.manifest
+%defattr(-,root,root,-)
+%%attr(-,root,root) %{_unitdir}/dbus.service.wants/security-manager.service
+%{_libdir}/libnss_securitymanager.so.*
+%{_datadir}/license/libnss-security-manager
 
 %files -n security-manager-policy
 %manifest %{name}.manifest
