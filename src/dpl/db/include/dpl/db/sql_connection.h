@@ -27,7 +27,6 @@
 #include <dpl/availability.h>
 #include <memory>
 #include <boost/optional.hpp>
-#include <dpl/string.h>
 #include <dpl/log/log.h>
 #include <sqlite3.h>
 #include <string>
@@ -157,14 +156,6 @@ class SqlConnection
          * @param position Index of argument to bind value to
          * @param value Value to bind
          */
-        void BindString(ArgumentIndex position, const String& value);
-
-        /**
-         * Bind string to the prepared statement argument
-         *
-         * @param position Index of argument to bind value to
-         * @param value Value to bind
-         */
         void BindString(ArgumentIndex position, const std::string& value);
 
         /**
@@ -229,15 +220,6 @@ class SqlConnection
          * @param value Value to bind
          */
         void BindDouble(ArgumentIndex position, const boost::optional<double> &value);
-
-        /**
-         * Bind optional string to the prepared statement argument.
-         * If optional is not set null will be bound
-         *
-         * @param position Index of argument to bind value to
-         * @param value Value to bind
-         */
-        void BindString(ArgumentIndex position, const boost::optional<String> &value);
 
         /**
          * Execute the prepared statement and/or move
@@ -366,13 +348,6 @@ class SqlConnection
          * @throw Exception::InvalidColumn
          */
         boost::optional<double> GetColumnOptionalDouble(ColumnIndex column);
-
-        /**
-         * Get optional string value from column in current row.
-         *
-         * @throw Exception::InvalidColumn
-         */
-        boost::optional<String> GetColumnOptionalString(ColumnIndex column);
     };
 
     // Move on copy semantics

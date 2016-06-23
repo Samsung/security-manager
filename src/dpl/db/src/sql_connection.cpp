@@ -226,13 +226,6 @@ void SqlConnection::DataCommand::BindString(
 }
 
 void SqlConnection::DataCommand::BindString(
-    SqlConnection::ArgumentIndex position,
-    const String &value)
-{
-    BindString(position, ToUTF8String(value).c_str());
-}
-
-void SqlConnection::DataCommand::BindString(
         SqlConnection::ArgumentIndex position,
         const std::string& value)
 {
@@ -318,17 +311,6 @@ void SqlConnection::DataCommand::BindDouble(
         BindNull(position);
     } else {
         BindDouble(position, *value);
-    }
-}
-
-void SqlConnection::DataCommand::BindString(
-    SqlConnection::ArgumentIndex position,
-    const boost::optional<String> &value)
-{
-    if (!!value) {
-        BindString(position, ToUTF8String(*value).c_str());
-    } else {
-        BindNull(position);
     }
 }
 
@@ -591,22 +573,6 @@ boost::optional<double> SqlConnection::DataCommand::GetColumnOptionalDouble(
     double value = sqlite3_column_double(m_stmt, column);
     LogPedantic("    Value: " << value);
     return boost::optional<double>(value);
-}
-
-boost::optional<String> SqlConnection::DataCommand::GetColumnOptionalString(
-    SqlConnection::ColumnIndex column)
-{
-    LogPedantic("SQL data command get column optional string: ["
-                << column << "]");
-    CheckColumnIndex(column);
-    if (sqlite3_column_type(m_stmt, column) == SQLITE_NULL) {
-        return boost::optional<String>();
-    }
-    const char *value = reinterpret_cast<const char *>(
-            sqlite3_column_text(m_stmt, column));
-    LogPedantic("Value: " << value);
-    String s = FromUTF8String(value);
-    return boost::optional<String>(s);
 }
 
 void SqlConnection::Connect(const std::string &address,

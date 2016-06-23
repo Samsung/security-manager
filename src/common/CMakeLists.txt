@@ -44,7 +44,6 @@ SET(COMMON_SOURCES
     ${DPL_PATH}/core/src/serialization.cpp
     ${DPL_PATH}/core/src/singleton.cpp
     ${DPL_PATH}/core/src/errno_string.cpp
-    ${DPL_PATH}/core/src/string.cpp
     ${DPL_PATH}/db/src/naive_synchronization_object.cpp
     ${DPL_PATH}/db/src/sql_connection.cpp
     ${COMMON_PATH}/config.cpp
