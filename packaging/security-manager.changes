@@ -1,3 +1,13 @@
+* Thu Jun 23 2016 Tomasz Swierczek <t.swierczek@samsung.com>
+- Version 1.1.8
+- Fix global apps deinstallation
+- Remove DPL String class and dependencies on it
+- Add internal privilege for web only privilege
+- ServiceImpl: remove sharing rules on application uninstall
+- PrivilegeDB: Add private sharing squashing
+- PrivilegeDB: Add getters for fetching owner/target private sharing
+- Return error when private sharing doesn't exist
+
 * Thu June 16 2016 Tomasz Swierczek <t.swierczek@samsung.com>
 - Version 1.1.7
 - Add internal privilege for app debugging
