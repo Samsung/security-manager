@@ -276,7 +276,8 @@ void ServiceImpl::setRequestDefaultValues(uid_t& uid, int& installationType)
     uid_t globalUid = getGlobalUserId();
 
     if (installationType == SM_APP_INSTALL_NONE)
-        installationType = (uid == 0) ? SM_APP_INSTALL_GLOBAL : SM_APP_INSTALL_LOCAL;
+        installationType = ((uid == 0) || (uid == globalUid)) ? SM_APP_INSTALL_GLOBAL :
+                SM_APP_INSTALL_LOCAL;
     if ((installationType == SM_APP_INSTALL_GLOBAL)
         || (installationType == SM_APP_INSTALL_PRELOADED))
         uid = globalUid;
@@ -308,6 +309,10 @@ bool ServiceImpl::authCheck(const Credentials &creds,
         }
         if (uid != creds.uid && !authenticate(creds, Config::PRIVILEGE_USER_ADMIN)) {
             LogError("Caller is not permitted to manage applications for other users");
+            return false;
+        }
+        if (uid == getGlobalUserId()) {
+            LogError("Request local installation for global uid=" << uid);
             return false;
         }
     } else {

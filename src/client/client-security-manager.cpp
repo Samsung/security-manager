@@ -266,7 +266,14 @@ int security_manager_app_uninstall(const app_inst_req *p_req)
 
         //put data into buffer
         Serialization::Serialize(send, (int)SecurityModuleCall::APP_UNINSTALL,
-            p_req->appName);
+            p_req->appName,
+            p_req->pkgName,
+            p_req->privileges,
+            p_req->pkgPaths,
+            p_req->uid,
+            p_req->tizenVersion,
+            p_req->authorName,
+            p_req->installationType);
 
         //send buffer to server
         int retval = sendToServer(SERVICE_SOCKET, send.Pop(), recv);
