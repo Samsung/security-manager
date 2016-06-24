@@ -595,10 +595,6 @@ int ServiceImpl::appUninstall(const Credentials &creds, app_inst_req &&req)
         PrivilegeDb::getInstance().GetPrivateSharingForOwner(req.appName, asOwnerSharing);
         PrivilegeDb::getInstance().GetPrivateSharingForTarget(req.appName, asTargetSharing);
 
-        // if uninstalled app is targetted to Tizen 2.X, remove other 2.X apps RO rules it's shared dir
-        if (isTizen2XVersion(req.tizenVersion))
-            getTizen2XApps(tizen2XpkgsApps);
-
         for (const auto &targetPathsInfo : asOwnerSharing) {
             const auto &targetAppName = targetPathsInfo.first;
             const auto &paths = targetPathsInfo.second;
@@ -632,6 +628,11 @@ int ServiceImpl::appUninstall(const Credentials &creds, app_inst_req &&req)
         }
 
         PrivilegeDb::getInstance().RemoveApplication(req.appName, req.uid, removeApp, removePkg, removeAuthor);
+
+        // if uninstalled app is targetted to Tizen 2.X, remove other 2.X apps RO rules it's shared dir
+        if (isTizen2XVersion(req.tizenVersion))
+            getTizen2XApps(tizen2XpkgsApps);
+
         CynaraAdmin::getInstance().UpdateAppPolicy(smackLabel, cynaraUserStr, std::vector<std::string>(), isPrivilegePrivacy);
         PrivilegeDb::getInstance().CommitTransaction();
         LogDebug("Application uninstallation commited to database");
