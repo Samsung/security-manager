@@ -1,3 +1,8 @@
+* Tue Jun 28 2016 Tomasz Swierczek <t.swierczek@samsung.com>
+- Version 1.1.9
+- Define PATH environment variable in scripts.
+- Fix wrong tizen2X apps fetching on app uninstall
+
 * Thu Jun 23 2016 Tomasz Swierczek <t.swierczek@samsung.com>
 - Version 1.1.8
 - Fix global apps deinstallation
