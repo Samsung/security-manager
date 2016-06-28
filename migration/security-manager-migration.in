@@ -1,5 +1,6 @@
 #!/bin/bash
 
+PATH=/bin:/usr/bin:/sbin:/usr/sbin
 SRC_PATH=/etc/smack/accesses.d
 DSC_PATH=@LOCAL_STATE_DIR@/security-manager/rules
 MRG_PATH=@LOCAL_STATE_DIR@/security-manager/rules-merged/rules.merged

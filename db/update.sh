@@ -7,6 +7,7 @@
 source /etc/tizen-platform.conf
 
 # Some useful constants
+PATH=/bin:/usr/bin:/sbin:/usr/sbin
 db="$TZ_SYS_DB/.security-manager.db"
 db_journal="$db-journal"
 sm_dir="/usr/share/security-manager/db"
