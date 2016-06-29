@@ -342,7 +342,7 @@ int security_manager_get_app_pkgid(char **pkg_name, const char *app_name)
     });
 }
 
-static bool setup_smack(const char *label)
+static int setup_smack(const char *label)
 {
     /* Here we also should change open socket labels for future process identification.
        However, since Smack support for "dyntransition"-like feature will be enabled soon,
