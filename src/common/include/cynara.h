@@ -67,6 +67,10 @@ public:
     DECLARE_EXCEPTION_TYPE(Base, OperationFailed)
     DECLARE_EXCEPTION_TYPE(Base, BucketNotFound)
     DECLARE_EXCEPTION_TYPE(Base, UnknownError)
+    DECLARE_EXCEPTION_TYPE(Base, ConfigurationError)
+    DECLARE_EXCEPTION_TYPE(Base, InvalidCommandlineParam)
+    DECLARE_EXCEPTION_TYPE(Base, BufferTooShort)
+    DECLARE_EXCEPTION_TYPE(Base, DatabaseCorrupted)
 };
 
 struct CynaraAdminPolicy : cynara_admin_policy

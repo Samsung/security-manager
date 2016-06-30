@@ -230,6 +230,14 @@ static bool checkCynaraError(int result, const std::string &msg)
             ThrowMsg(CynaraException::OperationFailed, msg);
         case CYNARA_API_BUCKET_NOT_FOUND:
             ThrowMsg(CynaraException::BucketNotFound, msg);
+        case CYNARA_API_CONFIGURATION_ERROR:
+            ThrowMsg(CynaraException::ConfigurationError, msg);
+        case CYNARA_API_INVALID_COMMANDLINE_PARAM:
+            ThrowMsg(CynaraException::InvalidCommandlineParam, msg);
+        case CYNARA_API_BUFFER_TOO_SHORT:
+            ThrowMsg(CynaraException::BufferTooShort, msg);
+        case CYNARA_API_DATABASE_CORRUPTED:
+            ThrowMsg(CynaraException::DatabaseCorrupted, msg);
         default:
             ThrowMsg(CynaraException::UnknownError, msg);
     }
