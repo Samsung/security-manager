@@ -46,12 +46,8 @@ namespace SecurityManager {
 const std::string PRIVILEGE_DB_PATH = TizenPlatformConfig::makePath(TZ_SYS_DB, ".security-manager.db");
 
 enum class StmtType {
-    EGetPkgPrivileges,
-    EGetAppPrivileges,
     EAddApplication,
     ERemoveApplication,
-    EAddAppPrivileges,
-    ERemoveAppPrivileges,
     EPkgNameExists,
     EAppNameExists,
     EGetAppPkgName,
@@ -104,12 +100,8 @@ private:
 
     SecurityManager::DB::SqlConnection *mSqlConnection;
     const std::map<StmtType, const char * const > Queries = {
-        { StmtType::EGetPkgPrivileges, "SELECT DISTINCT privilege_name FROM app_privilege_view WHERE pkg_name=? AND uid=? ORDER BY privilege_name"},
-        { StmtType::EGetAppPrivileges, "SELECT DISTINCT privilege_name FROM app_privilege_view WHERE app_name=? AND uid=? ORDER BY privilege_name"},
         { StmtType::EAddApplication, "INSERT INTO app_pkg_view (app_name, pkg_name, uid, version, author_name) VALUES (?, ?, ?, ?, ?)" },
         { StmtType::ERemoveApplication, "DELETE FROM app_pkg_view WHERE app_name=? AND uid=?" },
-        { StmtType::EAddAppPrivileges, "INSERT INTO app_privilege_view (app_name, uid, privilege_name) VALUES (?, ?, ?)" },
-        { StmtType::ERemoveAppPrivileges, "DELETE FROM app_privilege_view WHERE app_name=? AND uid=?" },
         { StmtType::EPkgNameExists, "SELECT count(*) FROM pkg WHERE name=?" },
         { StmtType::EAppNameExists, "SELECT count(*) FROM app WHERE name=?" },
         { StmtType::EGetAppPkgName, "SELECT pkg_name FROM app_pkg_view WHERE app_name = ?" },
@@ -125,11 +117,11 @@ private:
         { StmtType::ESquashSharing, "UPDATE app_private_sharing_view SET counter = 1 WHERE target_app_name = ? AND path = ?"},
         { StmtType::EClearSharing, "DELETE FROM app_private_sharing;"},
         { StmtType::EClearPrivatePaths, "DELETE FROM shared_path;"},
-        { StmtType::EGetPrivilegeGroups, " SELECT group_name FROM privilege_group_view WHERE privilege_name = ?" },
+        { StmtType::EGetPrivilegeGroups, " SELECT group_name FROM privilege_group WHERE privilege_name = ?" },
         { StmtType::EGetUserApps, "SELECT name FROM app WHERE uid=?" },
         { StmtType::EGetTizen2XPackages,  "SELECT DISTINCT pkg_name FROM app_pkg_view WHERE version LIKE '2.%%'" },
         { StmtType::EGetAppsInPkg, " SELECT app_name FROM app_pkg_view WHERE pkg_name = ?" },
-        { StmtType::EGetGroups, "SELECT DISTINCT group_name FROM privilege_group_view" },
+        { StmtType::EGetGroups, "SELECT DISTINCT group_name FROM privilege_group" },
         { StmtType::EGetPkgAuthorId, "SELECT author_id FROM pkg WHERE name = ? AND author_id IS NOT NULL"},
         { StmtType::EAuthorIdExists, "SELECT count(*) FROM author where author_id=?"},
         { StmtType::EGetAuthorIdByName, "SELECT author_id FROM author WHERE name=?"},
@@ -246,30 +238,6 @@ public:
     void GetAppVersion(const std::string &appName, std::string &tizenVer);
 
     /**
-     * Retrieve list of privileges assigned to a package
-     *
-     * @param pkgName - package identifier
-     * @param uid - user identifier for whom privileges will be retrieved
-     * @param[out] currentPrivileges - list of current privileges assigned to the package
-     * @exception DB::SqlConnection::Exception::InternalError on internal error
-     * @exception DB::SqlConnection::Exception::ConstraintError on constraint violation
-     */
-    void GetPkgPrivileges(const std::string &pkgName, uid_t uid,
-            std::vector<std::string> &currentPrivilege);
-
-    /**
-     * Retrieve list of privileges assigned to an appName
-     *
-     * @param appName - application identifier
-     * @param uid - user identifier for whom privileges will be retrieved
-     * @param[out] currentPrivileges - list of current privileges assigned to appName
-     * @exception DB::SqlConnection::Exception::InternalError on internal error
-     * @exception DB::SqlConnection::Exception::ConstraintError on constraint violation
-     */
-    void GetAppPrivileges(const std::string &appName, uid_t uid,
-        std::vector<std::string> &currentPrivileges);
-
-    /**
      * Add an application into the database
      *
      * @param appName - application identifier
@@ -304,29 +272,6 @@ public:
             bool &appNameIsNoMore,
             bool &pkgNameIsNoMore,
             bool &authorNameIsNoMore);
-
-    /**
-     * Remove privileges assigned to application
-     *
-     * @param appName - application identifier
-     * @param uid - user identifier for whom privileges will be removed
-     * @exception DB::SqlConnection::Exception::InternalError on internal error
-     * @exception DB::SqlConnection::Exception::ConstraintError on constraint violation
-     */
-    void RemoveAppPrivileges(const std::string &appName, uid_t uid);
-
-    /**
-     * Update privileges assigned to application
-     * To assure data integrity this method must be called inside db transaction.
-     *
-     * @param appName - application identifier
-     * @param uid - user identifier for whom privileges will be updated
-     * @param privileges - list of privileges to assign
-     * @exception DB::SqlConnection::Exception::InternalError on internal error
-     * @exception DB::SqlConnection::Exception::ConstraintError on constraint violation
-     */
-    void UpdateAppPrivileges(const std::string &appName, uid_t uid,
-            const std::vector<std::string> &privileges);
 
     /**
      * Get count of existing sharing of given path
