@@ -87,42 +87,55 @@ bool Service::processOne(const ConnectionID &conn, MessageBuffer &buffer,
                     processAppUninstall(buffer, send, creds);
                     break;
                 case SecurityModuleCall::APP_GET_PKG_NAME:
+                    LogDebug("call_type: SecurityModuleCall::APP_GET_PKG_NAME");
                     processGetPkgName(buffer, send);
                     break;
                 case SecurityModuleCall::APP_GET_GROUPS:
+                    LogDebug("call_type: SecurityModuleCall::APP_GET_GROUPS");
                     processGetAppGroups(buffer, send, creds);
                     break;
                 case SecurityModuleCall::USER_ADD:
+                    LogDebug("call_type: SecurityModuleCall::USER_ADD");
                     processUserAdd(buffer, send, creds);
                     break;
                 case SecurityModuleCall::USER_DELETE:
+                    LogDebug("call_type: SecurityModuleCall::USER_DELETE");
                     processUserDelete(buffer, send, creds);
                     break;
                 case SecurityModuleCall::POLICY_UPDATE:
+                    LogDebug("call_type: SecurityModuleCall::POLICY_UPDATE");
                     processPolicyUpdate(buffer, send, creds);
                     break;
                 case SecurityModuleCall::GET_CONF_POLICY_ADMIN:
+                    LogDebug("call_type: SecurityModuleCall::GET_CONF_POLICY_ADMIN");
                     processGetConfiguredPolicy(buffer, send, creds, true);
                     break;
                 case SecurityModuleCall::GET_CONF_POLICY_SELF:
+                    LogDebug("call_type: SecurityModuleCall::GET_CONF_POLICY_SELF");
                     processGetConfiguredPolicy(buffer, send, creds, false);
                     break;
                 case SecurityModuleCall::GET_POLICY:
+                    LogDebug("call_type: SecurityModuleCall::GET_POLICY");
                     processGetPolicy(buffer, send, creds);
                     break;
                 case SecurityModuleCall::POLICY_GET_DESCRIPTIONS:
+                    LogDebug("call_type: SecurityModuleCall::POLICY_GET_DESCRIPTIONS");
                     processPolicyGetDesc(send);
                     break;
                 case SecurityModuleCall::GROUPS_GET:
+                    LogDebug("call_type: SecurityModuleCall::GROUPS_GET");
                     processGroupsGet(send);
                     break;
                 case SecurityModuleCall::APP_HAS_PRIVILEGE:
+                    LogDebug("call_type: SecurityModuleCall::APP_HAS_PRIVILEGE");
                     processAppHasPrivilege(buffer, send);
                     break;
                 case SecurityModuleCall::APP_APPLY_PRIVATE_SHARING:
+                    LogDebug("call_type: SecurityModuleCall::APP_APPLY_PRIVATE_SHARING");
                     processApplyPrivateSharing(buffer, send, creds);
                     break;
                 case SecurityModuleCall::APP_DROP_PRIVATE_SHARING:
+                    LogDebug("call_type: SecurityModuleCall::APP_DROP_PRIVATE_SHARING");
                     processDropPrivateSharing(buffer, send, creds);
                     break;
                 case SecurityModuleCall::PATHS_REGISTER:
