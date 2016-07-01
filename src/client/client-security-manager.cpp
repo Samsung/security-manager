@@ -715,7 +715,7 @@ int security_manager_prepare_app(const char *app_name)
         ret = security_manager_sync_threads_internal(app_name);
         if (ret != SECURITY_MANAGER_SUCCESS) {
             LogError("Can't properly setup application threads (Smack label & capabilities)");
-            exit(EXIT_FAILURE);
+            return ret;
         }
 
         try {
@@ -723,11 +723,11 @@ int security_manager_prepare_app(const char *app_name)
             cpd.getThreads();
             if (!cpd.checkThreads()) {
                 LogError("Privileges haven't been properly dropped for the whole process");
-                exit(EXIT_FAILURE);
+                return ret;
             }
         } catch (const SecurityManager::Exception &e) {
             LogError("Error while checking privileges of the process: " << e.DumpToString());
-            exit(EXIT_FAILURE);
+            return ret;
         }
 
         return ret;
