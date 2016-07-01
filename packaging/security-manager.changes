@@ -1,3 +1,9 @@
+* Fri Jul 01 2016 Tomasz Swierczek <t.swierczek@samsung.com>
+* Version 1.1.10
+- Don't store application privileges in db
+- Fix return type in setup_smack function
+- Do not exit when security_manager_prepare_app fails
+
 * Tue Jun 28 2016 Tomasz Swierczek <t.swierczek@samsung.com>
 - Version 1.1.9
 - Define PATH environment variable in scripts.
