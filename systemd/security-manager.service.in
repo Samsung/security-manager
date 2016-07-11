@@ -5,3 +5,4 @@ Description=Start the security manager
 Type=notify
 ExecStart=@BIN_INSTALL_DIR@/security-manager
 Sockets=security-manager.socket
+Restart=always
