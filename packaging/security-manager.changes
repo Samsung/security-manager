@@ -1,3 +1,8 @@
+* Thu Jul 14 2016 Jooseong Lee <jooseong.lee@samsung.com>
+* Version 1.1.11
+- Add systemd option - Restart
+- Update policy template for onlycap feature
+
 * Fri Jul 01 2016 Tomasz Swierczek <t.swierczek@samsung.com>
 * Version 1.1.10
 - Don't store application privileges in db
