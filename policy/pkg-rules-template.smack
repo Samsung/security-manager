@@ -1,6 +1,9 @@
 System ~PKG~ rwxat
 System ~PKG~::RO rwxat
 System ~PKG~::SharedRO rwxat
+System::Privileged ~PKG~ rwxat
+System::Privileged ~PKG~::RO rwxat
+System::Privileged ~PKG~::SharedRO rwxat
 User ~PKG~ rwxat
 User ~PKG~::RO rwxat
 User ~PKG~::SharedRO rwxat

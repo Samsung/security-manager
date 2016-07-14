@@ -63,6 +63,7 @@ const std::string SMACK_APP_PATH_TARGET_PERMS = "rxl";
 const std::string SMACK_APP_DIR_TARGET_PERMS = "x";
 const std::string SMACK_USER = "User";
 const std::string SMACK_SYSTEM = "System";
+const std::string SMACK_SYSTEM_PRIVILEGED = "System::Privileged";
 const std::string SMACK_APP_PATH_SYSTEM_PERMS = "rwxat";
 const std::string SMACK_APP_PATH_USER_PERMS = "rwxat";
 const std::string TEMPORARY_FILE_SUFFIX = ".temp";
@@ -521,6 +522,7 @@ void SmackRules::applyPrivateSharingRules(
         }
         rules.add(SMACK_USER, pathLabel, SMACK_APP_PATH_USER_PERMS);
         rules.add(SMACK_SYSTEM, pathLabel, SMACK_APP_PATH_SYSTEM_PERMS);
+        rules.add(SMACK_SYSTEM_PRIVILEGED, pathLabel, SMACK_APP_PATH_SYSTEM_PERMS);
     }
     rules.add(targetLabel, pathLabel, SMACK_APP_PATH_TARGET_PERMS);
     rules.apply();
@@ -548,6 +550,7 @@ void SmackRules::dropPrivateSharingRules(
         }
         rules.addModify(SMACK_USER, pathLabel, "", SMACK_APP_PATH_USER_PERMS);
         rules.addModify(SMACK_SYSTEM, pathLabel, "", SMACK_APP_PATH_SYSTEM_PERMS);
+        rules.addModify(SMACK_SYSTEM_PRIVILEGED, pathLabel, "", SMACK_APP_PATH_SYSTEM_PERMS);
     }
     rules.addModify(targetLabel, pathLabel, "", SMACK_APP_PATH_TARGET_PERMS);
     rules.apply();

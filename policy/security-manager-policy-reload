@@ -56,7 +56,7 @@ do
 done
 
 # Non-application programs get access to all privileges
-for client in User System
+for client in User System System::Privileged
 do
     cyad --set-policy --bucket=MANIFESTS --client="$client" --user="*" --privilege="*" --type=ALLOW
 done

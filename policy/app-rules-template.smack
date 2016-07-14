@@ -1,5 +1,7 @@
 System ~APP~ rwx
+System::Privileged ~APP~ rwx
 ~APP~ System wx
+~APP~ System::Privileged wx
 ~APP~ System::Shared rxl
 ~APP~ System::Run rwxat
 ~APP~ System::Log rwxa
