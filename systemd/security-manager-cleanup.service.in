@@ -7,4 +7,5 @@ Requires=sysinit.target
 Type=oneshot
 RemainAfterExit=yes
 ExecStart = @BIN_INSTALL_DIR@/security-manager-cleanup
+SmackProcessLabel=System::Privileged
 

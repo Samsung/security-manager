@@ -6,3 +6,4 @@ Type=notify
 ExecStart=@BIN_INSTALL_DIR@/security-manager
 Sockets=security-manager.socket
 Restart=always
+SmackProcessLabel=System::Privileged
