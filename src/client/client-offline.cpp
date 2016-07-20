@@ -32,39 +32,40 @@
 
 namespace SecurityManager {
 
-ClientOffline::ClientOffline()
+ClientOffline::ClientOffline(bool wakeUp)
+  : m_offlineMode(false)
+  , m_serviceLock(nullptr)
 {
-    offlineMode = false;
-    serviceLock = nullptr;
-
     if (geteuid()) {
         LogInfo("UID != 0, attempting only on-line mode.");
         return;
     }
 
     try {
-        serviceLock = new SecurityManager::FileLocker(SecurityManager::SERVICE_LOCK_FILE, false);
-        if (serviceLock->Locked()) {
+        m_serviceLock = new SecurityManager::FileLocker(SecurityManager::SERVICE_LOCK_FILE, false);
+        if (wakeUp && m_serviceLock->Locked()) {
             int retval;
             MessageBuffer send, recv;
 
             LogInfo("Service isn't running, try to trigger it via socket activation.");
-            serviceLock->Unlock();
+            m_serviceLock->Unlock();
             Serialization::Serialize(send, static_cast<int>(SecurityModuleCall::NOOP));
             retval = sendToServer(SERVICE_SOCKET, send.Pop(), recv);
             if (retval != SECURITY_MANAGER_SUCCESS) {
                 LogInfo("Socket activation attempt failed.");
-                serviceLock->Lock();
-                offlineMode = serviceLock->Locked();
+                m_serviceLock->Lock();
+                m_offlineMode = m_serviceLock->Locked();
             } else
                 LogInfo("Service seems to be running now.");
+        } if (m_serviceLock->Locked()) {
+            m_offlineMode = true;
         }
     } catch (...) {
         LogError("Cannot detect off-line mode by lock.");
-        offlineMode = false;
+        m_offlineMode = false;
     }
 
-    if (offlineMode)
+    if (m_offlineMode)
         LogInfo("Working in off-line mode.");
     else
         LogInfo("Working in on-line mode.");
@@ -72,13 +73,12 @@ ClientOffline::ClientOffline()
 
 ClientOffline::~ClientOffline()
 {
-    if (serviceLock != nullptr)
-        delete serviceLock;
+    delete m_serviceLock;
 }
 
 bool ClientOffline::isOffline(void)
 {
-    return offlineMode;
+    return m_offlineMode;
 }
 
 Credentials ClientOffline::getCredentials()

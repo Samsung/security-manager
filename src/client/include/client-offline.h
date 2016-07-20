@@ -32,14 +32,14 @@ namespace SecurityManager {
 
 class ClientOffline {
 public:
-    ClientOffline();
+    ClientOffline(bool wakeUp = true);
     ~ClientOffline();
+    ClientOffline& operator=(const ClientOffline &) = delete;
     bool isOffline(void);
     Credentials getCredentials();
-
 private:
-    bool offlineMode;
-    SecurityManager::FileLocker *serviceLock;
+    bool m_offlineMode;
+    SecurityManager::FileLocker *m_serviceLock;
 };
 
 } // namespace SecurityManager
