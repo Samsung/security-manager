@@ -1,10 +1,17 @@
+* Thu Jul 21 2016 Jooseong Lee <jooseong.lee@samsung.com>
+- Version 1.1.12
+- Handle missing Cynara error codes, throw specific exceptions
+- Add missing logs in service on several service calls
+- Mark old path registration function as deprecated
+- Set SmackProcessLabel to System::Privileged
+
 * Thu Jul 14 2016 Jooseong Lee <jooseong.lee@samsung.com>
-* Version 1.1.11
+- Version 1.1.11
 - Add systemd option - Restart
 - Update policy template for onlycap feature
 
 * Fri Jul 01 2016 Tomasz Swierczek <t.swierczek@samsung.com>
-* Version 1.1.10
+- Version 1.1.10
 - Don't store application privileges in db
 - Fix return type in setup_smack function
 - Do not exit when security_manager_prepare_app fails
