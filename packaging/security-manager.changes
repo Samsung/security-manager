@@ -1,3 +1,7 @@
+* Fri Jul 22 2016 Yunjin Lee <yunjin-.lee@samsung.com>
+- Version 1.1.13
+- Fix typo in service file SmackProcessLabel set
+
 * Thu Jul 21 2016 Jooseong Lee <jooseong.lee@samsung.com>
 - Version 1.1.12
 - Handle missing Cynara error codes, throw specific exceptions
