@@ -119,6 +119,7 @@
 *	http://tizen.org/privilege/internal/inputdevice.block
 *	http://tizen.org/privilege/internal/usermanagement
 *	http://tizen.org/privilege/internal/appdebugging
+*	http://tizen.org/privilege/internal/service
 *	http://tizen.org/privilege/internal/web/appmanager.certificate
 *	http://tizen.org/privilege/internal/web/datasync
 *	http://tizen.org/privilege/internal/web/fullscreen
