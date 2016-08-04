@@ -30,6 +30,9 @@
 namespace SecurityManager {
 
 namespace Config {
+/* Service name */
+
+extern const std::string SERVICE_NAME;
 
 /* Privileges required from users of our API */
 extern const std::string PRIVILEGE_APPINST_USER;

@@ -28,6 +28,8 @@ namespace SecurityManager {
 
 namespace Config {
 
+const std::string SERVICE_NAME = "security-manager";
+
 const std::string PRIVILEGE_APPINST_USER     = "http://tizen.org/privilege/notexist";
 const std::string PRIVILEGE_APPINST_ADMIN    = "http://tizen.org/privilege/notexist";
 const std::string PRIVILEGE_USER_ADMIN       = "http://tizen.org/privilege/internal/usermanagement";

@@ -63,8 +63,6 @@ Requires(post): tizen-platform-config-tools
 %description policy
 Set of security rules that constitute security policy in the system
 
-%define TZ_SKEL_APP %(tzplatform-get TZ_USER_APP | cut -d= -f2 | sed "s|^$HOME|%{_sysconfdir}/skel|")
-
 %prep
 %setup -q
 cp %{SOURCE1} .
@@ -106,8 +104,7 @@ mkdir -p %{buildroot}/%{TZ_SYS_DB}
 touch %{buildroot}/%{TZ_SYS_DB}/.security-manager.db
 touch %{buildroot}/%{TZ_SYS_DB}/.security-manager.db-journal
 
-install -m 0444 -D /dev/null %{buildroot}%{TZ_SKEL_APP}/apps-names
-install -m 0444 -D /dev/null %{buildroot}%{TZ_SYS_RW_APP}/apps-names
+install -m 0444 -D /dev/null %{buildroot}%{TZ_SYS_VAR}/security-manager/apps-names
 
 %clean
 rm -rf %{buildroot}
@@ -131,8 +128,7 @@ fi
 chsmack -a System %{TZ_SYS_DB}/.security-manager.db
 chsmack -a System %{TZ_SYS_DB}/.security-manager.db-journal
 
-chsmack -a _ %{TZ_SKEL_APP}/apps-names
-chsmack -a _ %{TZ_SYS_RW_APP}/apps-names
+chsmack -r -a _ %{TZ_SYS_VAR}/security-manager/
 
 %preun
 if [ $1 = 0 ]; then
@@ -163,8 +159,8 @@ fi
 %attr(755,root,root) %{_bindir}/security-manager-cleanup
 %attr(755,root,root) %{_sysconfdir}/gumd/useradd.d/50_security-manager-add.post
 %attr(755,root,root) %{_sysconfdir}/gumd/userdel.d/50_security-manager-remove.pre
-%config(noreplace) %attr(444,root,root) %{TZ_SKEL_APP}/apps-names
-%config(noreplace) %attr(444,root,root) %{TZ_SYS_RW_APP}/apps-names
+%config(noreplace) %attr(444,root,root) %{TZ_SYS_VAR}/security-manager/apps-names
+%dir %attr(711,root,root) %{TZ_SYS_VAR}/security-manager/
 %dir %attr(700,root,root) %{TZ_SYS_VAR}/security-manager/rules
 %dir %attr(700,root,root) %{TZ_SYS_VAR}/security-manager/rules-merged
 

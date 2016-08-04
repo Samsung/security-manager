@@ -74,9 +74,13 @@ std::string getPerrmissibleFileLocation(uid_t uid, int installationType)
     TizenPlatformConfig tpc(uid);
     if ((installationType == SM_APP_INSTALL_GLOBAL)
             || (installationType == SM_APP_INSTALL_PRELOADED))
-        return tpc.ctxMakePath(TZ_SYS_RW_APP, Config::APPS_NAME_FILE.c_str());
-    else
-        return tpc.ctxMakePath(TZ_USER_APP, Config::APPS_NAME_FILE.c_str());
+        return tpc.ctxMakePath(TZ_SYS_VAR, Config::SERVICE_NAME,
+                              Config::APPS_NAME_FILE.c_str());
+    else {
+        std::string user = tpc.ctxGetEnv(TZ_USER_NAME);
+        return tpc.ctxMakePath(TZ_SYS_VAR, Config::SERVICE_NAME, user,
+                              Config::APPS_NAME_FILE.c_str());
+    }
 }
 
 static void markPermissibleFileValid(int fd, const std::string &nameFile, bool valid)
