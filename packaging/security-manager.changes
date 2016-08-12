@@ -1,3 +1,9 @@
+* Fri Aug 12 2016 Tomasz Swierczek <t.swierczek@samsung.com>
+- Version 1.1.14
+- Moving user and global apps-names files to /opt/var
+- Simplify declaration and generation of unique_ptrs
+- Fix contraints for app installation.
+
 * Fri Jul 22 2016 Yunjin Lee <yunjin-.lee@samsung.com>
 - Version 1.1.13
 - Fix typo in service file SmackProcessLabel set
