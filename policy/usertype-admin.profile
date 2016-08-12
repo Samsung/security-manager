@@ -96,7 +96,6 @@
 *	http://tizen.org/privilege/use_ir
 *	http://tizen.org/privilege/volume.set
 *	http://tizen.org/privilege/vpnservice
-*	http://tizen.org/privilege/vpnservice.admin
 *	http://tizen.org/privilege/web-history.admin
 *	http://tizen.org/privilege/widget.viewer
 *	http://tizen.org/privilege/wifidirect
