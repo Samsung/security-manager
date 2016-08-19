@@ -76,20 +76,22 @@ public:
     void generatePackageCrossDeps(const std::vector<std::string> &pkgContents);
 
     /**
-     * Generate SharedRO rules for Tizen 2.x applications
-     * Each 2.X application gets read-only access to files shared by all other 2.X packages.
+     * Generate RO rules for all applications to SharedRO apps during appInstall/Uninstall
+     * Each application gets read-only access to files shared by SharedRO packages.
      *
-     * @param[in] pkgsApps    vector of Tizen 2.X applications - each element contains
-     *                        a pair with package name and contents
+     * @param[in] pkgsApps           vector of all applications - each element contains
+     *                               a pair with package name and contents
+     * @param[in] sharedROPkgsApps   vector of applications having sharedRO directory in their package -
+     *                               each element contains a pair with package name and contents
      */
-    static void generateSharedRORules(PkgsApps &pkgsApps);
+    static void generateSharedRORules(PkgsApps &pkgsApps, PkgsApps &sharedROPkgsApps);
 
     /**
-     * Revoke SharedRO rules for Tizen 2.x applications when a package is being removed
+     * Revoke SharedRO rules for applications when a package is being removed
      * Rules from all applications in \ref pkgsApps to SharedRO label of the package
      * under removal will be revoked from kernel.
      *
-     * @param[in] pkgsApps    vector of Tizen 2.X applications - each element contains
+     * @param[in] pkgsApps    vector of applications - each element contains
      *                        a pair with package name and contents
      * @param[in] revokePkg   package name being removed
      */

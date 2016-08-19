@@ -55,7 +55,7 @@ const std::string AUTHOR_RULES_TEMPLATE_FILE_PATH = TizenPlatformConfig::makePat
 const std::string SMACK_RULES_PATH_MERGED      = LOCAL_STATE_DIR "/security-manager/rules-merged/rules.merged";
 const std::string SMACK_RULES_PATH_MERGED_T    = LOCAL_STATE_DIR "/security-manager/rules-merged/rules.merged.temp";
 const std::string SMACK_RULES_PATH             = LOCAL_STATE_DIR "/security-manager/rules";
-const std::string SMACK_RULES_SHARED_RO_PATH   = LOCAL_STATE_DIR "/security-manager/rules/2x_shared_ro";
+const std::string SMACK_RULES_SHARED_RO_PATH   = LOCAL_STATE_DIR "/security-manager/rules/shared_ro";
 const std::string SMACK_APP_IN_PACKAGE_PERMS   = "rwxat";
 const std::string SMACK_APP_CROSS_PKG_PERMS    = "rx";
 const std::string SMACK_APP_PATH_OWNER_PERMS = "rwxat";
@@ -257,7 +257,7 @@ void SmackRules::generatePackageCrossDeps(const std::vector<std::string> &pkgCon
     }
 }
 
-void SmackRules::generateSharedRORules(PkgsApps &pkgsApps)
+void SmackRules::generateSharedRORules(PkgsApps &pkgsApps, PkgsApps &sharedROPkgsApps)
 {
     LogDebug("Generating SharedRO rules");
 
@@ -265,12 +265,13 @@ void SmackRules::generateSharedRORules(PkgsApps &pkgsApps)
     for (size_t i = 0; i < pkgsApps.size(); ++i) {
         for (const std::string &appName : pkgsApps[i].second) {
             std::string appLabel = SmackLabels::generateAppLabel(appName);
-            for (size_t j = 0; j < pkgsApps.size(); ++j) {
-                if (j != i) { // Rules for SharedRO files from own pkg are generated elsewhere
-                    std::string &pkgName = pkgsApps[j].first;
+            for (size_t j = 0; j < sharedROPkgsApps.size(); ++j) {
+                // Rules for SharedRO files from own pkg are generated elsewhere
+                if (pkgsApps[i] != sharedROPkgsApps[j]) {
+                    const std::string &pkgName = sharedROPkgsApps[j].first;
                     rules.add(appLabel,
-                        SmackLabels::generatePkgLabelOwnerRWothersRO(pkgName),
-                        SMACK_APP_CROSS_PKG_PERMS);
+                              SmackLabels::generatePkgLabelOwnerRWothersRO(pkgName),
+                              SMACK_APP_CROSS_PKG_PERMS);
                 }
             }
         }
@@ -294,8 +295,8 @@ void SmackRules::revokeSharedRORules(PkgsApps &pkgsApps, const std::string &revo
         for (const std::string &appName : pkgsApps[i].second) {
             std::string appLabel = SmackLabels::generateAppLabel(appName);
             rules.add(appLabel,
-                SmackLabels::generatePkgLabelOwnerRWothersRO(revokePkg),
-                SMACK_APP_CROSS_PKG_PERMS);
+                      SmackLabels::generatePkgLabelOwnerRWothersRO(revokePkg),
+                      SMACK_APP_CROSS_PKG_PERMS);
         }
     }
 

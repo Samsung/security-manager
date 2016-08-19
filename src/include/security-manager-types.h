@@ -63,8 +63,7 @@ enum app_install_path_type {
     SECURITY_MANAGER_PATH_RW,
     //! RO access for given application package
     SECURITY_MANAGER_PATH_RO,
-    //! RW access for the owner, RO for other 2.X applications
-    //! (other 3.0 apps will not have access to the shared folder)
+    //! RW access for the owner, RO for other applications
     SECURITY_MANAGER_PATH_OWNER_RW_OTHER_RO,
     //! RW access for application packages coming from the same author
     SECURITY_MANAGER_PATH_TRUSTED_RW,

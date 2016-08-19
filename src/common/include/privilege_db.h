@@ -66,12 +66,15 @@ enum class StmtType {
     EClearPrivatePaths,
     EGetPrivilegeGroups,
     EGetUserApps,
-    EGetTizen2XPackages,
+    EGetAllPackages,
     EGetAppsInPkg,
     EGetGroups,
     EGetPkgAuthorId,
     EAuthorIdExists,
     EGetAuthorIdByName,
+    EGetSharedROPackages,
+    ESetPackageSharedRO,
+    EIsPackageSharedRO,
 };
 
 class PrivilegeDb {
@@ -120,12 +123,15 @@ private:
         { StmtType::EClearPrivatePaths, "DELETE FROM shared_path;"},
         { StmtType::EGetPrivilegeGroups, " SELECT group_name FROM privilege_group WHERE privilege_name = ?" },
         { StmtType::EGetUserApps, "SELECT app_name FROM user_app_pkg_view WHERE uid=?" },
-        { StmtType::EGetTizen2XPackages,  "SELECT DISTINCT pkg_name FROM user_app_pkg_view WHERE version LIKE '2.%%'" },
+        { StmtType::EGetAllPackages,  "SELECT DISTINCT pkg_name FROM user_app_pkg_view" },
         { StmtType::EGetAppsInPkg, " SELECT app_name FROM user_app_pkg_view WHERE pkg_name = ?" },
         { StmtType::EGetGroups, "SELECT DISTINCT group_name, privilege_name FROM privilege_group" },
         { StmtType::EGetPkgAuthorId, "SELECT author_id FROM pkg WHERE name = ? AND author_id IS NOT NULL"},
         { StmtType::EAuthorIdExists, "SELECT count(*) FROM author where author_id=?"},
         { StmtType::EGetAuthorIdByName, "SELECT author_id FROM author WHERE name=?"},
+        { StmtType::EGetSharedROPackages, "SELECT DISTINCT name FROM pkg WHERE shared_ro = 1;"},
+        { StmtType::ESetPackageSharedRO, "UPDATE pkg SET shared_ro=1 WHERE name=?"},
+        { StmtType::EIsPackageSharedRO, "SELECT shared_ro FROM pkg WHERE name=?"},
     };
 
     /**
@@ -416,15 +422,15 @@ public:
     void GetPkgApps(const std::string &pkgName, std::vector<std::string> &appNames);
 
     /**
-     * Retrieve list of all Tizen 2.X packages
+     * Retrieve list of all packages
      *
-     * @param[out] packages - vector of package identifiers describing installed 2.x packages,
-     *                    this parameter do not need to be empty, but
-     *                    it is being overwritten during function call.
+     * @param[out] packages - vector of package identifiers describing installed packages,
+     *                        this parameter do not need to be empty, but
+     *                        it is being overwritten during function call.
      * @exception DB::SqlConnection::Exception::InternalError on internal error
      * @exception DB::SqlConnection::Exception::ConstraintError on constraint violation
      */
-    void GetTizen2XPackages(std::vector<std::string> &packages);
+    void GetAllPackages(std::vector<std::string> &packages);
 
     /* Retrive an id of an author from database
      *
@@ -464,6 +470,32 @@ public:
      */
     void GetGroupsRelatedPrivileges(std::vector<std::pair<std::string, std::string>> &privileges);
 
+    /**
+     * Retrieve list of packages with shared RO set to 1
+     *
+     * @param[out] packages - vector of package identifiers describing installed packages,
+     *                        this parameter do not need to be empty, but
+     *                        it is being overwritten during function call.
+     * @exception DB::SqlConnection::Exception::InternalError on internal error
+     * @exception DB::SqlConnection::Exception::ConstraintError on constraint violation
+     */
+    void GetSharedROPackages(std::vector<std::string> &packages);
+
+    /**
+     * Set shared_ro field to 1 in package given by name
+     *
+     * @exception DB::SqlConnection::Exception::InternalError on internal error
+     * @exception DB::SqlConnection::Exception::ConstraintError on constraint violation
+     */
+    void SetSharedROPackage(const std::string& pkgName);
+
+    /**
+     * Check whether package has shared_ro field set to 1 in db
+     *
+     * @exception DB::SqlConnection::Exception::InternalError on internal error
+     * @exception DB::SqlConnection::Exception::ConstraintError on constraint violation
+     */
+    bool IsPackageSharedRO(const std::string& pkgName);
 };
 
 } //namespace SecurityManager

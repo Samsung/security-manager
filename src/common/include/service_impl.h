@@ -66,11 +66,15 @@ private:
                            const std::vector<std::string> &allowedDirs);
 
     static int labelPaths(const pkg_paths &paths,
-                             const std::string &pkgName,
-                             app_install_type installationType,
-                             const uid_t &uid);
+                          const std::string &pkgName,
+                          app_install_type installationType,
+                          const uid_t &uid);
 
-    static void getTizen2XApps(SmackRules::PkgsApps &pkgsApps);
+    static void getAllApps(SmackRules::PkgsApps &pkgsApps);
+
+    static void getSharedROApps(SmackRules::PkgsApps &sharedROPkgsApps);
+
+    static bool isSharedRO(const pkg_paths& paths);
 
     static bool isPrivilegePrivacy(const std::string &privilege);
 

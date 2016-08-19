@@ -137,16 +137,6 @@ static inline int validatePolicy(policy_entry &policyEntry, std::string uidStr, 
     return SECURITY_MANAGER_SUCCESS;
 }
 
-bool isTizen2XVersion(const std::string &version)
-{
-    std::size_t notWhitePos = version.find_first_not_of(" \t");
-    if (notWhitePos == std::string::npos)
-        return false;
-    if (version.at(notWhitePos) == '2')
-        return true;
-    return false;
-}
-
 bool sharingExists(const std::string &targetAppName, const std::string &path)
 {
     int targetPathCount;
@@ -450,10 +440,22 @@ int ServiceImpl::labelPaths(const pkg_paths &paths,
     }
 }
 
-void ServiceImpl::getTizen2XApps(SmackRules::PkgsApps &pkgsApps)
+void ServiceImpl::getAllApps(SmackRules::PkgsApps &pkgsApps)
 {
     std::vector<std::string> pkgs;
-    PrivilegeDb::getInstance().GetTizen2XPackages(pkgs);
+    PrivilegeDb::getInstance().GetAllPackages(pkgs);
+
+    pkgsApps.resize(pkgs.size());
+    for (size_t i = 0; i < pkgs.size(); ++i) {
+        pkgsApps[i].first = std::move(pkgs[i]);
+        PrivilegeDb::getInstance().GetPkgApps(pkgsApps[i].first, pkgsApps[i].second);
+    }
+}
+
+void ServiceImpl::getSharedROApps(SmackRules::PkgsApps &pkgsApps)
+{
+    std::vector<std::string> pkgs;
+    PrivilegeDb::getInstance().GetSharedROPackages(pkgs);
 
     pkgsApps.resize(pkgs.size());
     for (size_t i = 0; i < pkgs.size(); ++i) {
@@ -477,6 +479,17 @@ bool ServiceImpl::isPrivilegePrivacy(const std::string &privilege)
     return false;
 }
 
+bool ServiceImpl::isSharedRO(const pkg_paths& paths)
+{
+    for (const auto& pkgPath : paths) {
+        auto pathType = static_cast<app_install_path_type>(pkgPath.second);
+        if (pathType == SECURITY_MANAGER_PATH_OWNER_RW_OTHER_RO)
+            return true;
+    }
+
+    return false;
+}
+
 int ServiceImpl::appInstall(const Credentials &creds, app_inst_req &&req)
 {
     std::vector<std::string> addedPermissions;
@@ -486,8 +499,10 @@ int ServiceImpl::appInstall(const Credentials &creds, app_inst_req &&req)
     std::string pkgBasePath;
     std::string appLabel;
     std::string pkgLabel;
-    SmackRules::PkgsApps tizen2XpkgsApps;
+    SmackRules::PkgsApps sharedROPkgsApps;
+    SmackRules::PkgsApps allApps;
     int authorId;
+    bool hasSharedRO = isSharedRO(req.pkgPaths);
 
     try {
         installRequestMangle(req, cynaraUserStr);
@@ -514,9 +529,9 @@ int ServiceImpl::appInstall(const Credentials &creds, app_inst_req &&req)
         PrivilegeDb::getInstance().GetPkgApps(req.pkgName, pkgContents);
         PrivilegeDb::getInstance().GetPkgAuthorId(req.pkgName, authorId);
         CynaraAdmin::getInstance().UpdateAppPolicy(appLabel, cynaraUserStr, req.privileges, isPrivilegePrivacy);
-        // if app is targetted to Tizen 2.X, give other 2.X apps RO rules to it's shared dir
-        if (isTizen2XVersion(req.tizenVersion))
-            getTizen2XApps(tizen2XpkgsApps);
+
+        if (hasSharedRO)
+            PrivilegeDb::getInstance().SetSharedROPackage(req.pkgName);
 
         // WTF? Why this commit is here? Shouldn't it be at the end of this function?
         PrivilegeDb::getInstance().CommitTransaction();
@@ -562,8 +577,10 @@ int ServiceImpl::appInstall(const Credentials &creds, app_inst_req &&req)
                 << req.pkgName << ". Applications in package: " << pkgContents.size());
         SmackRules::installApplicationRules(req.appName, req.pkgName, authorId, pkgContents);
 
-        if (isTizen2XVersion(req.tizenVersion))
-            SmackRules::generateSharedRORules(tizen2XpkgsApps);
+        getSharedROApps(sharedROPkgsApps);
+        getAllApps(allApps);
+
+        SmackRules::generateSharedRORules(allApps, sharedROPkgsApps);
 
         SmackRules::mergeRules();
     } catch (const SmackException::InvalidParam &e) {
@@ -591,7 +608,7 @@ int ServiceImpl::appUninstall(const Credentials &creds, app_inst_req &&req)
     bool removePkg = false;
     bool removeAuthor = false;
     std::string cynaraUserStr;
-    SmackRules::PkgsApps tizen2XpkgsApps;
+    SmackRules::PkgsApps pkgsApps, sharedROPkgsApps;
     std::map<std::string, std::vector<std::string>> asOwnerSharing;
     std::map<std::string, std::vector<std::string>> asTargetSharing;
     int authorId;
@@ -665,9 +682,8 @@ int ServiceImpl::appUninstall(const Credentials &creds, app_inst_req &&req)
 
         PrivilegeDb::getInstance().RemoveApplication(req.appName, req.uid, removeApp, removePkg, removeAuthor);
 
-        // if uninstalled app is targetted to Tizen 2.X, remove other 2.X apps RO rules it's shared dir
-        if (isTizen2XVersion(req.tizenVersion))
-            getTizen2XApps(tizen2XpkgsApps);
+        getAllApps(pkgsApps);
+        getSharedROApps(sharedROPkgsApps);
 
         CynaraAdmin::getInstance().UpdateAppPolicy(smackLabel, cynaraUserStr, std::vector<std::string>(), isPrivilegePrivacy);
         PrivilegeDb::getInstance().CommitTransaction();
@@ -709,11 +725,9 @@ int ServiceImpl::appUninstall(const Credentials &creds, app_inst_req &&req)
                 SmackRules::updatePackageRules(req.pkgName, pkgContents);
             }
 
-            if (isTizen2XVersion(req.tizenVersion)) {
-                SmackRules::generateSharedRORules(tizen2XpkgsApps);
-                if (removePkg)
-                    SmackRules::revokeSharedRORules(tizen2XpkgsApps, req.pkgName);
-            }
+            SmackRules::generateSharedRORules(pkgsApps, sharedROPkgsApps);
+            if (removePkg)
+               SmackRules::revokeSharedRORules(pkgsApps, req.pkgName);
         }
 
         if (authorId != -1 && removeAuthor) {
@@ -1549,6 +1563,34 @@ int ServiceImpl::pathsRegister(const Credentials &creds, path_req req)
     } catch (const std::bad_alloc &e) {
         LogError("Memory allocation failed: " << e.what());
         return SECURITY_MANAGER_ERROR_MEMORY;
+    }
+
+    try {
+        if (isSharedRO(req.pkgPaths)) {
+            PrivilegeDb::getInstance().BeginTransaction();
+
+            if (!PrivilegeDb::getInstance().IsPackageSharedRO(req.pkgName)) {
+
+                PrivilegeDb::getInstance().SetSharedROPackage(req.pkgName);
+
+                SmackRules::PkgsApps pkgsApps;
+                SmackRules::PkgsApps allApps;
+
+                getSharedROApps(pkgsApps);
+                getAllApps(allApps);
+
+                SmackRules::generateSharedRORules(allApps, pkgsApps);
+                SmackRules::mergeRules();
+            }
+        PrivilegeDb::getInstance().CommitTransaction();
+        }
+    } catch (const PrivilegeDb::Exception::IOError &e) {
+        LogError("Cannot access application database: " << e.DumpToString());
+        return SECURITY_MANAGER_ERROR_SERVER_ERROR;
+    } catch (const PrivilegeDb::Exception::InternalError &e) {
+        PrivilegeDb::getInstance().RollbackTransaction();
+        LogError("Error while saving application info to database: " << e.DumpToString());
+        return SECURITY_MANAGER_ERROR_SERVER_ERROR;
     }
 
     return labelPaths(req.pkgPaths,

@@ -407,15 +407,28 @@ void PrivilegeDb::GetUserApps(uid_t uid, std::vector<std::string> &apps)
     });
 }
 
-void PrivilegeDb::GetTizen2XPackages(std::vector<std::string> &packages)
+void PrivilegeDb::GetAllPackages(std::vector<std::string> &packages)
 {
     try_catch<void>([&] {
-        auto command = getStatement(StmtType::EGetTizen2XPackages);
+        auto command = getStatement(StmtType::EGetAllPackages);
         packages.clear();
         while (command->Step()) {
-            const std::string & tizen2XPkg = command->GetColumnString(0);
-            LogDebug("Found " << tizen2XPkg << " Tizen 2.X packages installed");
-            packages.push_back(tizen2XPkg);
+            const std::string &pkg = command->GetColumnString(0);
+            LogDebug("Found " << pkg << " package installed");
+            packages.push_back(pkg);
+        };
+     });
+}
+
+void PrivilegeDb::GetSharedROPackages(std::vector<std::string> &packages)
+{
+    try_catch<void>([&] {
+        auto command = getStatement(StmtType::EGetSharedROPackages);
+        packages.clear();
+        while (command->Step()) {
+            const std::string &pkg = command->GetColumnString(0);
+            LogDebug("Found " << pkg << " package installed");
+            packages.push_back(pkg);
         };
      });
 }
@@ -509,6 +522,33 @@ void PrivilegeDb::GetGroupsRelatedPrivileges(std::vector<std::pair<std::string, 
             LogDebug("Privilege " << privName << " Group " << groupName);
             privileges.emplace_back(std::make_pair(groupName, privName));
         };
+    });
+}
+
+void PrivilegeDb::SetSharedROPackage(const std::string &pkgName)
+{
+   try_catch<void>([&] {
+        auto command = getStatement(StmtType::ESetPackageSharedRO);
+        command->BindString(1, pkgName);
+
+        if (command->Step())
+            LogDebug("shared_ro has been set to 1 for pkg: " << pkgName);
+    });
+}
+
+bool PrivilegeDb::IsPackageSharedRO(const std::string &pkgName)
+{
+   return try_catch<bool>([&]() -> bool {
+        auto command = getStatement(StmtType::EIsPackageSharedRO);
+        command->BindString(1, pkgName);
+        int shared_ro = 0;
+
+        if (command->Step())
+            shared_ro = command->GetColumnInteger(0);
+
+        LogDebug("Package " << pkgName << "has shared_ro set to " << shared_ro);
+
+        return (shared_ro > 0);
     });
 }
 
