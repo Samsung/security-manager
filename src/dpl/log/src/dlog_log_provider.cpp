@@ -99,10 +99,8 @@ void DLOGLogProvider::Pedantic(const char *message,
                                int line,
                                const char *function)
 {
-    SLOG(LOG_DEBUG, "SecurityManager", "%s", FormatMessage(message,
-                                              filename,
-                                              line,
-                                              function).c_str());
+    SLOG(LOG_DEBUG, m_tag.get(), "%s",
+        FormatMessage(message, filename, line, function).c_str());
 }
 
 } // nemespace Log
