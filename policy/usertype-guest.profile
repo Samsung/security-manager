@@ -8,6 +8,7 @@
 *	http://tizen.org/privilege/antivirus.admin
 *	http://tizen.org/privilege/antivirus.scan
 *	http://tizen.org/privilege/antivirus.webprotect
+*	http://tizen.org/privilege/appdir.shareddata
 *	http://tizen.org/privilege/apphistory.read
 *	http://tizen.org/privilege/appmanager.kill
 *	http://tizen.org/privilege/appmanager.kill.bgapp
