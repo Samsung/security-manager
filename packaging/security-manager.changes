@@ -1,3 +1,7 @@
+* Mon Aug 22 2016 Yunjin Lee <yunjin-.lee@samsung.com>
+- Version 1.1.15
+- Add core privilege: appdir.shareddata
+
 * Fri Aug 12 2016 Tomasz Swierczek <t.swierczek@samsung.com>
 - Version 1.1.14
 - Moving user and global apps-names files to /opt/var

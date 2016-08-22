@@ -1,6 +1,6 @@
 Name:       security-manager
 Summary:    Security manager and utilities
-Version:    1.1.14
+Version:    1.1.15
 Release:    0
 Group:      Security/Service
 License:    Apache-2.0
