@@ -497,9 +497,9 @@ inline static uid_t gettid()
     return syscall(SYS_gettid);
 }
 
-inline static void tkill(uid_t tid)
+inline static void tgkill(pid_t tgid, uid_t tid)
 {
-    syscall(SYS_tkill, tid, SIGUSR1);
+    syscall(SYS_tgkill, tgid, tid, SIGUSR1);
 }
 
 inline static int label_for_self_internal()
@@ -530,6 +530,7 @@ static inline int security_manager_sync_threads_internal(const char *app_name)
 
     FS::FileNameVector files = FS::getDirsFromDirectory("/proc/self/task");
     uid_t cur_tid = gettid();
+    pid_t cur_pid = getpid();
 
     g_app_label = SecurityManager::SmackLabels::generateAppLabel(app_name);
     g_threads_count = 0;
@@ -590,7 +591,7 @@ static inline int security_manager_sync_threads_internal(const char *app_name)
 
         g_tid_attr_current_map[tid] = "/proc/self/task/" + std::to_string(tid) + "/attr/current";
         sent_signals_count++;
-        tkill(tid);
+        tgkill(cur_pid, tid);
     }
 
     LogDebug("sent_signals_count: " << sent_signals_count);
