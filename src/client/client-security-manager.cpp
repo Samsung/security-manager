@@ -497,9 +497,9 @@ inline static uid_t gettid()
     return syscall(SYS_gettid);
 }
 
-inline static void tgkill(pid_t tgid, uid_t tid)
+inline static bool tgkill(pid_t tgid, uid_t tid)
 {
-    syscall(SYS_tgkill, tgid, tid, SIGUSR1);
+    return syscall(SYS_tgkill, tgid, tid, SIGUSR1) == 0;
 }
 
 inline static int label_for_self_internal()
@@ -593,8 +593,12 @@ static inline int security_manager_sync_threads_internal(const char *app_name)
     std::atomic_thread_fence(std::memory_order_release);
 
     for (auto const& t_pair : g_tid_attr_current_map) {
+        if (!tgkill(cur_pid, t_pair.first)) {
+            LogWarning("Error in tgkill()");
+            continue;
+        }
+
         sent_signals_count++;
-        tgkill(cur_pid, t_pair.first);
     }
 
     LogDebug("sent_signals_count: " << sent_signals_count);
