@@ -549,8 +549,6 @@ static inline int security_manager_sync_threads_internal(const char *app_name)
         return SECURITY_MANAGER_ERROR_UNKNOWN;
     }
 
-    std::atomic_thread_fence(std::memory_order_release);
-
     struct sigaction act;
     struct sigaction old;
     memset(&act, '\0', sizeof(act));
@@ -590,8 +588,13 @@ static inline int security_manager_sync_threads_internal(const char *app_name)
             continue;
 
         g_tid_attr_current_map[tid] = "/proc/self/task/" + std::to_string(tid) + "/attr/current";
+    }
+
+    std::atomic_thread_fence(std::memory_order_release);
+
+    for (auto const& t_pair : g_tid_attr_current_map) {
         sent_signals_count++;
-        tgkill(cur_pid, tid);
+        tgkill(cur_pid, t_pair.first);
     }
 
     LogDebug("sent_signals_count: " << sent_signals_count);
