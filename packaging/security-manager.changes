@@ -1,3 +1,9 @@
+* Mon Aug 29 2016 Jin-gyu Kim <jin-gyu.kim@samsung.com>
+- Version 1.1.16
+- Implement libnss_securitymanager
+- Add security_manager_groups_for_uid()
+- Rewrite shared RO directory support in security-manager
+
 * Mon Aug 22 2016 Yunjin Lee <yunjin-.lee@samsung.com>
 - Version 1.1.15
 - Add core privilege: appdir.shareddata
