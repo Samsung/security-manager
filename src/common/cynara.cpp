@@ -59,6 +59,7 @@ namespace SecurityManager {
  * - USER_TYPE_ADMIN
  * - USER_TYPE_SYSTEM
  * - USER_TYPE_NORMAL
+ * - USER_TYPE_SECURITY
  * - USER_TYPE_GUEST - they store privileges from templates for apropriate
  *   user type. ALLOW rules only.
  * - ADMIN           - stores custom rules introduced by device administrator.
@@ -82,23 +83,29 @@ namespace SecurityManager {
  * |---------------|   |                        |     |-------------------|
  * |    <<deny>>   |<--| * * *  Bucket:MANIFESTS|---->|      <<deny>>     |
  * | USER_TYPE_SYST|   |------------------------|     |  USER_TYPE_NORMAL |
- * |               |        |              |          |                   |
- * |---------------|        |              |          |-------------------|
- *        |                 |              |                    |
- *        |                 V              V                    |
- *        |      |---------------|      |---------------|       |
- *        |      |    <<deny>>   |      |    <<deny>>   |       |
- *        |      |USER_TYPE_GUEST|      |USER_TYPE_ADMIN|       |
- *        |      |               |      |               |       |
- *        |      |---------------|      |---------------|       |
- *        |              |                      |               |
- *        |              |----             -----|               |
- *        |                  |             |                    |
- *        |                  V             V                    |
- *        |                |------------------|                 |
- *        |------------->  |     <<none>>     | <---------------|
- *                         |       ADMIN      |
- *                         |                  |
+ * |               |        |       |      |          |                   |
+ * |---------------|        |       |      |          |-------------------|
+ *        |                 |       |      |                    |
+ *        |                 V       |      V                    |
+ *        |      |---------------|  |   |---------------|       |
+ *        |      |    <<deny>>   |  |   |    <<deny>>   |       |
+ *        |      |USER_TYPE_GUEST|  |   |USER_TYPE_ADMIN|       |
+ *        |      |               |  |   |               |       |
+ *        |      |---------------|  |   |---------------|       |
+ *        |           |             V               |           |
+ *        |           |     |------------------|    |           |
+ *        |           |     |     <<deny>>     |    |           |
+ *        |           |     |USER_TYPE_SECURITY|    |           |
+ *        |           |     |                  |    |           |
+ *        |           |     |------------------|    |           |
+ *        |           |             |               |           |
+ *        |           |             |               |           |
+ *        |           |             |               |           |
+ *        |           |             V               |           |
+ *        |           |    |------------------|     |           |
+ *        |           |--->|     <<none>>     |<----|           |
+ *        |                |       ADMIN      |                 |
+ *        |--------------->|                  |<----------------|
  *                         |------------------|
  *
  */
@@ -108,6 +115,7 @@ CynaraAdmin::BucketsMap CynaraAdmin::Buckets =
     { Bucket::MAIN, std::string("MAIN")},
     { Bucket::USER_TYPE_ADMIN, std::string("USER_TYPE_ADMIN")},
     { Bucket::USER_TYPE_NORMAL, std::string("USER_TYPE_NORMAL")},
+    { Bucket::USER_TYPE_SECURITY, std::string("USER_TYPE_SECURITY")},
     { Bucket::USER_TYPE_GUEST, std::string("USER_TYPE_GUEST") },
     { Bucket::USER_TYPE_SYSTEM, std::string("USER_TYPE_SYSTEM")},
     { Bucket::ADMIN, std::string("ADMIN")},
@@ -405,9 +413,11 @@ void CynaraAdmin::UserInit(uid_t uid, security_manager_user_type userType,
         case SM_USER_TYPE_NORMAL:
             bucket = Bucket::USER_TYPE_NORMAL;
             break;
+        case SM_USER_TYPE_SECURITY:
+            bucket = Bucket::USER_TYPE_SECURITY;
+            break;
         case SM_USER_TYPE_ANY:
         case SM_USER_TYPE_NONE:
-        case SM_USER_TYPE_END:
         default:
             ThrowMsg(CynaraException::InvalidParam, "User type incorrect");
     }

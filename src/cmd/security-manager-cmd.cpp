@@ -52,7 +52,8 @@ static std::map <std::string, enum security_manager_user_type> user_type_map = {
     {"system", SM_USER_TYPE_SYSTEM},
     {"admin", SM_USER_TYPE_ADMIN},
     {"guest", SM_USER_TYPE_GUEST},
-    {"normal", SM_USER_TYPE_NORMAL}
+    {"normal", SM_USER_TYPE_NORMAL},
+    {"security", SM_USER_TYPE_SECURITY}
 };
 
 static std::map <std::string, enum app_install_type> install_type_map = {

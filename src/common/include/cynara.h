@@ -48,6 +48,7 @@ enum class Bucket
     MAIN,
     USER_TYPE_ADMIN,
     USER_TYPE_NORMAL,
+    USER_TYPE_SECURITY,
     USER_TYPE_GUEST,
     USER_TYPE_SYSTEM,
     ADMIN,

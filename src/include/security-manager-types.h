@@ -87,12 +87,12 @@ typedef enum app_install_type app_install_type;
  */
 enum security_manager_user_type {
     SM_USER_TYPE_NONE   = 0,/*<-this should not be used, if it is used, there will be an error returned by SM*/
-    SM_USER_TYPE_SYSTEM = 1,
-    SM_USER_TYPE_ADMIN  = 2,
-    SM_USER_TYPE_GUEST  = 3,
-    SM_USER_TYPE_NORMAL = 4,
-    SM_USER_TYPE_ANY = 5,/*<-this value may be used only for setting policies and not during user adding*/
-    SM_USER_TYPE_END
+    SM_USER_TYPE_ANY = 1,/*<-this value may be used only for setting policies and not during user adding*/
+    SM_USER_TYPE_SYSTEM = 2,
+    SM_USER_TYPE_ADMIN  = 3,
+    SM_USER_TYPE_GUEST  = 4,
+    SM_USER_TYPE_NORMAL = 5,
+    SM_USER_TYPE_SECURITY = 6,
 };
 typedef enum security_manager_user_type security_manager_user_type;
 
