@@ -41,7 +41,6 @@
 *	http://tizen.org/privilege/dpm.microphone
 *	http://tizen.org/privilege/dpm.password
 *	http://tizen.org/privilege/dpm.security
-*	http://tizen.org/privilege/dpm.settings
 *	http://tizen.org/privilege/dpm.storage
 *	http://tizen.org/privilege/dpm.usb
 *	http://tizen.org/privilege/dpm.wifi
@@ -51,6 +50,7 @@
 *	http://tizen.org/privilege/email.admin
 *	http://tizen.org/privilege/externalstorage
 *	http://tizen.org/privilege/externalstorage.appdata
+*	http://tizen.org/privilege/fido.client
 *	http://tizen.org/privilege/haptic
 *	http://tizen.org/privilege/healthinfo
 *	http://tizen.org/privilege/ime
