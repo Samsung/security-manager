@@ -77,7 +77,7 @@ std::string generateAppNameFromLabel(const std::string &label);
  * @param[in] appName application identifier
  * @return resulting Smack label
 */
-std::string generateAppLabel(const std::string &appName);
+std::string generateProcessLabel(const std::string &appName);
 
 /**
  * Generates label for an application with @ref pkgName, specific
@@ -86,7 +86,7 @@ std::string generateAppLabel(const std::string &appName);
  * @param[in] pkgName application package identifier
  * @return resulting Smack label
 */
-std::string generatePkgLabelOwnerRWothersRO(const std::string &pkgName);
+std::string generatePathSharedROLabel(const std::string &pkgName);
 
 /**
  * Generates label for a package identifier
@@ -94,7 +94,7 @@ std::string generatePkgLabelOwnerRWothersRO(const std::string &pkgName);
  * @param[in] pkgName package identifier
  * @return resulting Smack label
  */
-std::string generatePkgLabel(const std::string &pkgName);
+std::string generatePathRWLabel(const std::string &pkgName);
 
 /**
  * Generates label for private application RO files with package identifier @ref pkgName
@@ -102,7 +102,7 @@ std::string generatePkgLabel(const std::string &pkgName);
  * @param[in] pkgName package identifier
  * @return resulting Smack label
  */
-std::string generatePkgROLabel(const std::string &pkgName);
+std::string generatePathROLabel(const std::string &pkgName);
 
 /**
  * Generates unique label per path for private path sharing.
@@ -120,7 +120,7 @@ std::string generateSharedPrivateLabel(const std::string &pkgName, const std::st
  * @param[in] authorId
  * @return resulting Smack label
  */
-std::string generateAuthorLabel(const int authorId);
+std::string generatePathTrustedLabel(const int authorId);
 
 /**
  * Returns smack label for given socket

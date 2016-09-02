@@ -141,12 +141,12 @@ void setupPath(
 
     switch (pathType) {
     case SECURITY_MANAGER_PATH_RW:
-        label = generatePkgLabel(pkgName);
+        label = generatePathRWLabel(pkgName);
         label_executables = false;
         label_transmute = true;
         break;
     case SECURITY_MANAGER_PATH_RO:
-        label = generatePkgROLabel(pkgName);
+        label = generatePathROLabel(pkgName);
         label_executables = false;
         label_transmute = false;
         break;
@@ -156,14 +156,14 @@ void setupPath(
         label_transmute = true;
         break;
     case SECURITY_MANAGER_PATH_OWNER_RW_OTHER_RO:
-        label = generatePkgLabelOwnerRWothersRO(pkgName);
+        label = generatePathSharedROLabel(pkgName);
         label_executables = false;
         label_transmute = true;
         break;
     case SECURITY_MANAGER_PATH_TRUSTED_RW:
         if (authorId < 0)
             ThrowMsg(SmackException::InvalidParam, "You must define author to use PATH_TRUSED_RW");
-        label = generateAuthorLabel(authorId);
+        label = generatePathTrustedLabel(authorId);
         label_executables = false;
         label_transmute = true;
         break;
@@ -199,7 +199,7 @@ std::string generateAppNameFromLabel(const std::string &label)
     return ret;
 }
 
-std::string generateAppLabel(const std::string &appName)
+std::string generateProcessLabel(const std::string &appName)
 {
     std::string label = "User::App::" + appName;
 
@@ -209,7 +209,7 @@ std::string generateAppLabel(const std::string &appName)
     return label;
 }
 
-std::string generatePkgLabelOwnerRWothersRO(const std::string &pkgName)
+std::string generatePathSharedROLabel(const std::string &pkgName)
 {
     std::string label = "User::Pkg::" + pkgName + "::SharedRO";
 
@@ -219,7 +219,7 @@ std::string generatePkgLabelOwnerRWothersRO(const std::string &pkgName)
     return label;
 }
 
-std::string generatePkgLabel(const std::string &pkgName)
+std::string generatePathRWLabel(const std::string &pkgName)
 {
     std::string label = "User::Pkg::" + pkgName;
 
@@ -229,7 +229,7 @@ std::string generatePkgLabel(const std::string &pkgName)
     return label;
 }
 
-std::string generatePkgROLabel(const std::string &pkgName)
+std::string generatePathROLabel(const std::string &pkgName)
 {
     std::string label = "User::Pkg::" + pkgName + "::RO";
 
@@ -301,7 +301,7 @@ std::string getSmackLabelFromPid(pid_t pid)
     return result;
 }
 
-std::string generateAuthorLabel(const int authorId)
+std::string generatePathTrustedLabel(const int authorId)
 {
     if (authorId < 0) {
         LogError("Author was not set. It's not possible to generate label for unknown author.");

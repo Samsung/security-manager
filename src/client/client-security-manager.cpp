@@ -375,7 +375,7 @@ int security_manager_set_process_label_from_appid(const char *app_name)
         return SECURITY_MANAGER_SUCCESS;
 
     try {
-        appLabel = SecurityManager::SmackLabels::generateAppLabel(app_name);
+        appLabel = SecurityManager::SmackLabels::generateProcessLabel(app_name);
     } catch (...) {
         LogError("Failed to generate smack label for appName: " << app_name);
         return SECURITY_MANAGER_ERROR_NO_SUCH_OBJECT;
@@ -532,7 +532,7 @@ static inline int security_manager_sync_threads_internal(const char *app_name)
     uid_t cur_tid = gettid();
     pid_t cur_pid = getpid();
 
-    g_app_label = SecurityManager::SmackLabels::generateAppLabel(app_name);
+    g_app_label = SecurityManager::SmackLabels::generateProcessLabel(app_name);
     g_threads_count = 0;
     g_tid_attr_current_map.clear();
     g_smack_fs_path = smack_smackfs_path() != NULL;

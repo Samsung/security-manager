@@ -46,9 +46,11 @@
 
 namespace SecurityManager {
 
-const std::string SMACK_APP_LABEL_TEMPLATE     = "~APP~";
-const std::string SMACK_PKG_LABEL_TEMPLATE     = "~PKG~";
-const std::string SMACK_AUTHOR_LABEL_TEMPLATE  = "~AUTHOR~";
+const std::string SMACK_PROCESS_LABEL_TEMPLATE     = "~PROCESS~";
+const std::string SMACK_PATH_RW_LABEL_TEMPLATE     = "~PATH_RW~";
+const std::string SMACK_PATH_RO_LABEL_TEMPLATE     = "~PATH_RO~";
+const std::string SMACK_PATH_SHARED_RO_LABEL_TEMPLATE     = "~PATH_SHARED_RO~";
+const std::string SMACK_PATH_TRUSTED_LABEL_TEMPLATE  = "~PATH_TRUSTED~";
 const std::string APP_RULES_TEMPLATE_FILE_PATH = TizenPlatformConfig::makePath(TZ_SYS_RO_SHARE, "security-manager", "policy", "app-rules-template.smack");
 const std::string PKG_RULES_TEMPLATE_FILE_PATH = TizenPlatformConfig::makePath(TZ_SYS_RO_SHARE, "security-manager", "policy", "pkg-rules-template.smack");
 const std::string AUTHOR_RULES_TEMPLATE_FILE_PATH = TizenPlatformConfig::makePath(TZ_SYS_RO_SHARE, "security-manager", "policy", "author-rules-template.smack");
@@ -198,18 +200,21 @@ void SmackRules::addFromTemplate(
         const std::string &pkgName,
         const int authorId)
 {
-    std::string appLabel;
-    std::string pkgLabel;
-    std::string authorLabel;
+    std::string processLabel;
+    std::string pathRWLabel, pathROLabel, pathSharedROLabel;
+    std::string pathTrustedLabel;
 
     if (!appName.empty())
-        appLabel = SmackLabels::generateAppLabel(appName);
+        processLabel = SmackLabels::generateProcessLabel(appName);
 
-    if (!pkgName.empty())
-        pkgLabel = SmackLabels::generatePkgLabel(pkgName);
+    if (!pkgName.empty()) {
+        pathRWLabel = SmackLabels::generatePathRWLabel(pkgName);
+        pathROLabel = SmackLabels::generatePathROLabel(pkgName);
+        pathSharedROLabel = SmackLabels::generatePathSharedROLabel(pkgName);
+    }
 
     if (authorId >= 0)
-        authorLabel = SmackLabels::generateAuthorLabel(authorId);
+        pathTrustedLabel = SmackLabels::generatePathTrustedLabel(authorId);
 
     for (auto rule : templateRules) {
         if (rule.empty())
@@ -224,11 +229,12 @@ void SmackRules::addFromTemplate(
             ThrowMsg(SmackException::FileError, "Invalid rule template: " << rule);
         }
 
-        strReplace(subject, SMACK_APP_LABEL_TEMPLATE, appLabel);
-        strReplace(subject, SMACK_PKG_LABEL_TEMPLATE, pkgLabel);
-        strReplace(object,  SMACK_APP_LABEL_TEMPLATE, appLabel);
-        strReplace(object,  SMACK_PKG_LABEL_TEMPLATE, pkgLabel);
-        strReplace(object,  SMACK_AUTHOR_LABEL_TEMPLATE, authorLabel);
+        strReplace(subject, SMACK_PROCESS_LABEL_TEMPLATE, processLabel);
+        strReplace(object,  SMACK_PROCESS_LABEL_TEMPLATE, processLabel);
+        strReplace(object,  SMACK_PATH_RW_LABEL_TEMPLATE, pathRWLabel);
+        strReplace(object,  SMACK_PATH_RO_LABEL_TEMPLATE, pathROLabel);
+        strReplace(object,  SMACK_PATH_SHARED_RO_LABEL_TEMPLATE, pathSharedROLabel);
+        strReplace(object,  SMACK_PATH_TRUSTED_LABEL_TEMPLATE, pathTrustedLabel);
 
         if (subject.empty() || object.empty())
             continue;
@@ -249,9 +255,10 @@ void SmackRules::generatePackageCrossDeps(const std::vector<std::string> &pkgCon
             if (object == subject)
                 continue;
 
-            subjectLabel = SmackLabels::generateAppLabel(subject);
-            objectLabel = SmackLabels::generateAppLabel(object);
-            LogDebug ("Trying to add rule subject: " << subjectLabel << " object: " << objectLabel << " perms: " << appsInPackagePerms);
+            subjectLabel = SmackLabels::generateProcessLabel(subject);
+            objectLabel = SmackLabels::generateProcessLabel(object);
+            LogDebug ("Trying to add rule subject: " << subjectLabel
+                      << " object: " << objectLabel << " perms: " << appsInPackagePerms);
             add(subjectLabel, objectLabel, appsInPackagePerms);
         }
     }
@@ -264,13 +271,13 @@ void SmackRules::generateSharedRORules(PkgsApps &pkgsApps, PkgsApps &sharedROPkg
     SmackRules rules;
     for (size_t i = 0; i < pkgsApps.size(); ++i) {
         for (const std::string &appName : pkgsApps[i].second) {
-            std::string appLabel = SmackLabels::generateAppLabel(appName);
+            std::string appLabel = SmackLabels::generateProcessLabel(appName);
             for (size_t j = 0; j < sharedROPkgsApps.size(); ++j) {
                 // Rules for SharedRO files from own pkg are generated elsewhere
                 if (pkgsApps[i] != sharedROPkgsApps[j]) {
                     const std::string &pkgName = sharedROPkgsApps[j].first;
                     rules.add(appLabel,
-                              SmackLabels::generatePkgLabelOwnerRWothersRO(pkgName),
+                              SmackLabels::generatePathSharedROLabel(pkgName),
                               SMACK_APP_CROSS_PKG_PERMS);
                 }
             }
@@ -293,9 +300,9 @@ void SmackRules::revokeSharedRORules(PkgsApps &pkgsApps, const std::string &revo
     SmackRules rules;
     for (size_t i = 0; i < pkgsApps.size(); ++i) {
         for (const std::string &appName : pkgsApps[i].second) {
-            std::string appLabel = SmackLabels::generateAppLabel(appName);
+            std::string appLabel = SmackLabels::generateProcessLabel(appName);
             rules.add(appLabel,
-                      SmackLabels::generatePkgLabelOwnerRWothersRO(revokePkg),
+                      SmackLabels::generatePathSharedROLabel(revokePkg),
                       SMACK_APP_CROSS_PKG_PERMS);
         }
     }
@@ -444,7 +451,7 @@ void SmackRules::updatePackageRules(
 
 void SmackRules::revokeAppSubject(const std::string &appName)
 {
-    if (smack_revoke_subject(SmackLabels::generateAppLabel(appName).c_str()))
+    if (smack_revoke_subject(SmackLabels::generateProcessLabel(appName).c_str()))
         ThrowMsg(SmackException::LibsmackError, "smack_revoke_subject");
 }
 
@@ -509,16 +516,16 @@ void SmackRules::applyPrivateSharingRules(
         bool isTargetSharingAlready)
 {
     SmackRules rules;
-    const std::string &targetLabel = SmackLabels::generateAppLabel(targetAppName);
+    const std::string &targetLabel = SmackLabels::generateProcessLabel(targetAppName);
     if (!isTargetSharingAlready) {
 
         rules.add(targetLabel,
-                  SmackLabels::generatePkgLabel(ownerPkgName),
+                  SmackLabels::generatePathRWLabel(ownerPkgName),
                   SMACK_APP_DIR_TARGET_PERMS);
     }
     if (!isPathSharedAlready) {
         for (const auto &app: ownerPkgContents) {
-            const std::string appLabel = SmackLabels::generateAppLabel(app);
+            const std::string appLabel = SmackLabels::generateProcessLabel(app);
             rules.add(appLabel, pathLabel, SMACK_APP_PATH_OWNER_PERMS);
         }
         rules.add(SMACK_USER, pathLabel, SMACK_APP_PATH_USER_PERMS);
@@ -538,15 +545,15 @@ void SmackRules::dropPrivateSharingRules(
         bool isTargetSharingNoMore)
 {
     SmackRules rules;
-    const std::string &targetLabel = SmackLabels::generateAppLabel(targetAppName);
+    const std::string &targetLabel = SmackLabels::generateProcessLabel(targetAppName);
     if (isTargetSharingNoMore) {
         rules.addModify(targetLabel,
-                  SmackLabels::generatePkgLabel(ownerPkgName),
+                  SmackLabels::generatePathRWLabel(ownerPkgName),
                   "", SMACK_APP_DIR_TARGET_PERMS);
     }
     if (isPathSharedNoMore) {
         for (const auto &app: ownerPkgContents) {
-            const std::string appLabel = SmackLabels::generateAppLabel(app);
+            const std::string appLabel = SmackLabels::generateProcessLabel(app);
             rules.addModify(appLabel, pathLabel, "", SMACK_APP_PATH_OWNER_PERMS);
         }
         rules.addModify(SMACK_USER, pathLabel, "", SMACK_APP_PATH_USER_PERMS);

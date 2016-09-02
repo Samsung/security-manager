@@ -1,10 +1,10 @@
-System ~PKG~ rwxat
-System ~PKG~::RO rwxat
-System ~PKG~::SharedRO rwxat
-System::Privileged ~PKG~ rwxat
-System::Privileged ~PKG~::RO rwxat
-System::Privileged ~PKG~::SharedRO rwxat
-User ~PKG~ rwxat
-User ~PKG~::RO rwxat
-User ~PKG~::SharedRO rwxat
+System ~PATH_RW~ rwxat
+System ~PATH_RO~ rwxat
+System ~PATH_SHARED_RO~ rwxat
+System::Privileged ~PATH_RW~ rwxat
+System::Privileged ~PATH_RO~ rwxat
+System::Privileged ~PATH_SHARED_RO~ rwxat
+User ~PATH_RW~ rwxat
+User ~PATH_RO~ rwxat
+User ~PATH_SHARED_RO~ rwxat
 

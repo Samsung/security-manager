@@ -127,7 +127,7 @@ static inline int validatePolicy(policy_entry &policyEntry, std::string uidStr, 
 
     cyap = std::move(CynaraAdminPolicy(
         policyEntry.appName.compare(SECURITY_MANAGER_ANY) ?
-            SmackLabels::generateAppLabel(policyEntry.appName) : CYNARA_ADMIN_WILDCARD,
+            SmackLabels::generateProcessLabel(policyEntry.appName) : CYNARA_ADMIN_WILDCARD,
         policyEntry.user,
         policyEntry.privilege,
         level,
@@ -517,8 +517,8 @@ int ServiceImpl::appInstall(const Credentials &creds, app_inst_req &&req)
             return SECURITY_MANAGER_ERROR_AUTHENTICATION_FAILED;
         }
 
-        appLabel = SmackLabels::generateAppLabel(req.appName);
-        pkgLabel = SmackLabels::generatePkgLabel(req.pkgName);
+        appLabel = SmackLabels::generateProcessLabel(req.appName);
+        pkgLabel = SmackLabels::generatePathRWLabel(req.pkgName);
         LogDebug("Generated install parameters: app label: " << appLabel <<
                  ", pkg label: " << pkgLabel);
 
@@ -635,7 +635,7 @@ int ServiceImpl::appUninstall(const Credentials &creds, app_inst_req &&req)
             return SECURITY_MANAGER_SUCCESS;
         }
 
-        smackLabel = SmackLabels::generateAppLabel(req.appName);
+        smackLabel = SmackLabels::generateProcessLabel(req.appName);
         LogDebug("Generated uninstall parameters: pkgName=" << req.pkgName
             << " Smack label=" << smackLabel);
 
@@ -779,7 +779,7 @@ int ServiceImpl::getAppGroups(const Credentials &creds, const std::string &appNa
 {
     try {
         LogDebug("appName: " << appName);
-        std::string smackLabel = SmackLabels::generateAppLabel(appName);
+        std::string smackLabel = SmackLabels::generateProcessLabel(appName);
         LogDebug("smack label: " << smackLabel);
 
         std::vector<std::string> privileges;
@@ -981,7 +981,7 @@ int ServiceImpl::getConfiguredPolicy(const Credentials &creds, bool forAdmin,
         std::vector<CynaraAdminPolicy> listOfPolicies;
 
         //convert appName to smack label
-        std::string appLabel = filter.appName.compare(SECURITY_MANAGER_ANY) ? SmackLabels::generateAppLabel(filter.appName) : CYNARA_ADMIN_ANY;
+        std::string appLabel = filter.appName.compare(SECURITY_MANAGER_ANY) ? SmackLabels::generateProcessLabel(filter.appName) : CYNARA_ADMIN_ANY;
         std::string user = filter.user.compare(SECURITY_MANAGER_ANY) ? filter.user : CYNARA_ADMIN_ANY;
         std::string privilege = filter.privilege.compare(SECURITY_MANAGER_ANY) ? filter.privilege : CYNARA_ADMIN_ANY;
 
@@ -1128,7 +1128,7 @@ int ServiceImpl::getPolicy(const Credentials &creds, const policy_entry &filter,
 
             for (const std::string &appName : listOfApps) {
                 LogDebug("App: " << appName);
-                std::string smackLabelForApp = SmackLabels::generateAppLabel(appName);
+                std::string smackLabelForApp = SmackLabels::generateProcessLabel(appName);
                 std::vector<std::string> listOfPrivileges;
 
                 CynaraAdmin::getInstance().GetAppPolicy(smackLabelForApp, userStr, listOfPrivileges);
@@ -1293,7 +1293,7 @@ int ServiceImpl::appHasPrivilege(
         bool &result)
 {
     try {
-        std::string appLabel = SmackLabels::generateAppLabel(appName);
+        std::string appLabel = SmackLabels::generateProcessLabel(appName);
         std::string uidStr = std::to_string(uid);
         result = Cynara::getInstance().check(appLabel, privilege, uidStr, "");
         LogDebug("result = " << result);
@@ -1390,7 +1390,7 @@ int ServiceImpl::applyPrivatePathSharing(
 
         for(const auto &path : paths) {
             std::string pathLabel = SmackLabels::getSmackLabelFromPath(path);
-            if (pathLabel != SmackLabels::generatePkgLabel(ownerPkgName)) {
+            if (pathLabel != SmackLabels::generatePathRWLabel(ownerPkgName)) {
                 std::string generatedPathLabel = SmackLabels::generateSharedPrivateLabel(ownerPkgName, path);
                 if (generatedPathLabel != pathLabel) {
                     LogError("Path " << path << " has label " << pathLabel << " and dosen't belong"
@@ -1490,7 +1490,7 @@ int ServiceImpl::dropPrivatePathSharing(
                 return SECURITY_MANAGER_ERROR_INPUT_PARAM;
             }
             std::string pathLabel = SmackLabels::getSmackLabelFromPath(path);
-            if (pathLabel != SmackLabels::generatePkgLabel(ownerPkgName)) {
+            if (pathLabel != SmackLabels::generatePathRWLabel(ownerPkgName)) {
                 std::string generatedPathLabel = SmackLabels::generateSharedPrivateLabel(ownerPkgName, path);
                 if (generatedPathLabel != pathLabel) {
                     LogError("Path " << path << " has label " << pathLabel << " and dosen't belong"

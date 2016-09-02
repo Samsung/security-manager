@@ -70,7 +70,7 @@ static lib_retcode apply_relabel_list(const std::string &global_label_file,
         PermissibleSet::readNamesFromPermissibleFile(user_label_file, names);
         std::vector<const char*> temp;
         std::transform(names.begin(), names.end(), std::back_inserter(temp),
-                [] (std::string &label) {label = SmackLabels::generateAppLabel(label);
+                [] (std::string &label) {label = SmackLabels::generateProcessLabel(label);
                     return label.c_str();});
         if (smack_set_relabel_self(const_cast<const char **>(temp.data()), temp.size()) != 0) {
             LogError("smack_set_relabel_self failed");
