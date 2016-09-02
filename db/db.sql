@@ -4,13 +4,14 @@ PRAGMA auto_vacuum = NONE;
 
 BEGIN EXCLUSIVE TRANSACTION;
 
-PRAGMA user_version = 7;
+PRAGMA user_version = 8;
 
 CREATE TABLE IF NOT EXISTS pkg (
 pkg_id INTEGER PRIMARY KEY,
 name VARCHAR NOT NULL,
 author_id INTEGER,
 shared_ro INTEGER NOT NULL DEFAULT 0,
+is_hybrid INTEGER NOT NULL DEFAULT 0,
 UNIQUE (name)
 FOREIGN KEY (author_id) REFERENCES author (author_id)
 );
@@ -71,7 +72,8 @@ SELECT
     app.version as version,
     pkg.author_id,
     pkg.name as pkg_name,
-    author.name as author_name
+    author.name as author_name,
+    pkg.is_hybrid
 FROM user_app
 LEFT JOIN app USING (app_id)
 LEFT JOIN pkg USING (pkg_id)
@@ -98,10 +100,16 @@ BEGIN
                       AND NEW.author_name IS NOT NULL
                       AND author_name!=NEW.author_name);
 
+    SELECT RAISE(ABORT, 'Hybrid flag set differently for existing package')
+        WHERE EXISTS (SELECT 1 FROM user_app_pkg_view
+                      WHERE is_hybrid!=NEW.is_hybrid
+                      AND pkg_name=NEW.pkg_name);
+
     INSERT OR IGNORE INTO author(name) VALUES (NEW.author_name);
-    INSERT OR IGNORE INTO pkg(name, author_id) VALUES (
+    INSERT OR IGNORE INTO pkg(name, author_id, is_hybrid) VALUES (
         NEW.pkg_name,
-        (SELECT author_id FROM author WHERE name=NEW.author_name));
+        (SELECT author_id FROM author WHERE name=NEW.author_name),
+        NEW.is_hybrid);
 
     -- If pkg have already existed with empty author do update it
     UPDATE pkg SET author_id=(SELECT author_id FROM author WHERE name=NEW.author_name)

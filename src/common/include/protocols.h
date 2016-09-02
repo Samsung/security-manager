@@ -43,6 +43,7 @@ struct app_inst_req {
     std::string tizenVersion;
     std::string authorName;
     int installationType = SM_APP_INSTALL_NONE;
+    bool isHybrid = false;
 };
 
 struct user_req {

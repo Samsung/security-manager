@@ -104,7 +104,8 @@ private:
 
     SecurityManager::DB::SqlConnection *mSqlConnection;
     const std::map<StmtType, const char * const > Queries = {
-        { StmtType::EAddApplication, "INSERT INTO user_app_pkg_view (app_name, pkg_name, uid, version, author_name) VALUES (?, ?, ?, ?, ?)" },
+        { StmtType::EAddApplication, "INSERT INTO user_app_pkg_view (app_name, pkg_name, uid, version, author_name, is_hybrid)"
+                                    " VALUES (?, ?, ?, ?, ?, ?)" },
         { StmtType::ERemoveApplication, "DELETE FROM user_app_pkg_view WHERE app_name=? AND uid=?" },
         { StmtType::EPkgNameExists, "SELECT count(*) FROM pkg WHERE name=?" },
         { StmtType::EAppNameExists, "SELECT count(*) FROM app WHERE name=?" },
@@ -252,6 +253,7 @@ public:
      * @param uid - user identifier for whom application is going to be installed
      * @param targetTizenVer - target tizen version for application
      * @param author - author identifier
+     * @param isHybrid - hybrid flag setting
      * @exception DB::SqlConnection::Exception::InternalError on internal error
      * @exception DB::SqlConnection::Exception::ConstraintError on constraint violation
      */
@@ -260,7 +262,8 @@ public:
             const std::string &pkgName,
             uid_t uid,
             const std::string &targetTizenVer,
-            const std::string &authorId);
+            const std::string &authorId,
+            bool isHybrid);
 
     /**
      * Remove an application from the database

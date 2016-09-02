@@ -208,6 +208,17 @@ int security_manager_app_inst_req_set_install_type(app_inst_req *p_req, const en
 }
 
 SECURITY_MANAGER_API
+int security_manager_app_inst_req_set_hybrid(app_inst_req *p_req)
+{
+    if (!p_req)
+        return SECURITY_MANAGER_ERROR_INPUT_PARAM;
+
+    p_req->isHybrid = true;
+
+    return SECURITY_MANAGER_SUCCESS;
+}
+
+SECURITY_MANAGER_API
 int security_manager_app_install(const app_inst_req *p_req)
 {
     using namespace SecurityManager;
@@ -237,7 +248,8 @@ int security_manager_app_install(const app_inst_req *p_req)
                                      p_req->uid,
                                      p_req->tizenVersion,
                                      p_req->authorName,
-                                     p_req->installationType);
+                                     p_req->installationType,
+                                     p_req->isHybrid);
 
             //send buffer to server
             retval = sendToServer(SERVICE_SOCKET, send.Pop(), recv);

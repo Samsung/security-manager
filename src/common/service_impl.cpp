@@ -524,7 +524,8 @@ int ServiceImpl::appInstall(const Credentials &creds, app_inst_req &&req)
 
         PrivilegeDb::getInstance().BeginTransaction();
 
-        PrivilegeDb::getInstance().AddApplication(req.appName, req.pkgName, req.uid, req.tizenVersion, req.authorName);
+        PrivilegeDb::getInstance().AddApplication(req.appName, req.pkgName, req.uid,
+                                                  req.tizenVersion, req.authorName, req.isHybrid);
         /* Get all application ids in the package to generate rules withing the package */
         PrivilegeDb::getInstance().GetPkgApps(req.pkgName, pkgContents);
         PrivilegeDb::getInstance().GetPkgAuthorId(req.pkgName, authorId);

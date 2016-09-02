@@ -187,6 +187,7 @@ void Service::processAppInstall(MessageBuffer &buffer, MessageBuffer &send, cons
     Deserialization::Deserialize(buffer, req.tizenVersion);
     Deserialization::Deserialize(buffer, req.authorName);
     Deserialization::Deserialize(buffer, req.installationType);
+    Deserialization::Deserialize(buffer, req.isHybrid);
     Serialization::Serialize(send, serviceImpl.appInstall(creds, std::move(req)));
 }
 
