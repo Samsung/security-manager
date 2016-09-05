@@ -1,3 +1,13 @@
+* Mon Sep 05 2016 Yunjin Lee <yunjin-.lee@samsung.com>
+- Version 1.1.17
+- Add/remove core privilege(fido.client/ dpm.settings)
+- Remove core privilege : vpnservice.admin
+- Fix log prefix (tag) for Pedantic log level
+- Check tgkill() result
+- Move release fence after the last global variable is modified
+- Replace obsolete tkill with tgkill
+- Add variadic template for deserialization
+
 * Mon Aug 29 2016 Jin-gyu Kim <jin-gyu.kim@samsung.com>
 - Version 1.1.16
 - Implement libnss_securitymanager
