@@ -221,5 +221,6 @@ fi
 
 %files -n security-manager-policy
 %manifest %{name}.manifest
+%config(noreplace) %{TZ_SYS_VAR}/security-manager/policy-version
 %{_datadir}/security-manager/policy
 %attr(755,root,root) %{_bindir}/security-manager-policy-reload
