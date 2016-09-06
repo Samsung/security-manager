@@ -1600,4 +1600,13 @@ int ServiceImpl::pathsRegister(const Credentials &creds, path_req req)
                       req.uid);
 }
 
+int ServiceImpl::labelForProcess(const std::string &appName, std::string &label)
+{
+    LogDebug("Requested label generation for process of application " << appName);
+
+    label = SmackLabels::generateProcessLabel(appName);
+
+    return SECURITY_MANAGER_SUCCESS;
+}
+
 } /* namespace SecurityManager */

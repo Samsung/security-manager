@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2000 - 2014 Samsung Electronics Co., Ltd All Rights Reserved
+ *  Copyright (c) 2000 - 2016 Samsung Electronics Co., Ltd All Rights Reserved
  *
  *  Contact: Rafal Krypa <r.krypa@samsung.com>
  *
@@ -37,8 +37,8 @@
 #include <dpl/singleton.h>
 #include <dpl/singleton_safe_impl.h>
 
+#include <connection.h>
 #include <message-buffer.h>
-
 #include <protocols.h>
 
 IMPLEMENT_SAFE_SINGLETON(SecurityManager::Log::LogSystem);
@@ -66,6 +66,28 @@ int try_catch(const std::function<int()>& func)
     }
     return SECURITY_MANAGER_ERROR_UNKNOWN;
 }
+
+int fetchLabelForProcess(const std::string &appName, std::string &label)
+{
+    using namespace SecurityManager;
+
+    MessageBuffer send, recv;
+    Serialization::Serialize(send, (int) SecurityModuleCall::LABEL_FOR_PROCESS, appName);
+    int retval = sendToServer(SERVICE_SOCKET, send.Pop(), recv);
+    if (retval != SECURITY_MANAGER_SUCCESS) {
+        LogError("Error in sendToServer. Error code: " << retval);
+        return retval;
+    }
+
+    Deserialization::Deserialize(recv, retval);
+    if (retval != SECURITY_MANAGER_SUCCESS) {
+        LogError("Couldn't get label for process: " << retval);
+        return retval;
+    }
+    Deserialization::Deserialize(recv, label);
+    return SECURITY_MANAGER_SUCCESS;
+}
+
 
 } // namespace SecurityMANAGER
 

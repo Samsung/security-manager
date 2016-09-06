@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2000 - 2014 Samsung Electronics Co., Ltd All Rights Reserved
+ *  Copyright (c) 2000 - 2016 Samsung Electronics Co., Ltd All Rights Reserved
  *
  *  Contact: Rafal Krypa <r.krypa@samsung.com>
  *
@@ -38,6 +38,11 @@ namespace SecurityManager {
  * SS client API functions. Accepts lambda expression as an argument.
  */
 int try_catch(const std::function<int()>& func);
+
+/*
+ * Fetching label for application process.
+ */
+int fetchLabelForProcess(const std::string &appName, std::string &label);
 
 } // namespace SecurityManager
 

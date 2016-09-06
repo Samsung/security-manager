@@ -187,6 +187,14 @@ private:
      * @param  creds  credentials of the requesting process
      */
     void processPathsRegister(MessageBuffer &recv, MessageBuffer &send, const Credentials &creds);
+
+    /**
+     * Generate process label request
+     *
+     * @param  recv   Raw received data buffer
+     * @param  send   Raw data buffer to be sent
+     */
+    void processLabelForProcess(MessageBuffer &buffer, MessageBuffer &send);
 };
 
 } // namespace SecurityManager

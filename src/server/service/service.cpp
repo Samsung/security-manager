@@ -144,6 +144,9 @@ bool Service::processOne(const ConnectionID &conn, MessageBuffer &buffer,
                 case SecurityModuleCall::PATHS_REGISTER:
                     processPathsRegister(buffer, send, creds);
                     break;
+                case SecurityModuleCall::LABEL_FOR_PROCESS:
+                    processLabelForProcess(buffer, send);
+                    break;
                 default:
                     LogError("Invalid call: " << call_type_int);
                     Throw(ServiceException::InvalidAction);
@@ -391,5 +394,16 @@ void Service::processPathsRegister(MessageBuffer &recv, MessageBuffer &send, con
     Deserialization::Deserialize(recv, req.installationType);
     int ret = serviceImpl.pathsRegister(creds, std::move(req));
     Serialization::Serialize(send, ret);
+}
+
+void Service::processLabelForProcess(MessageBuffer &buffer, MessageBuffer &send)
+{
+    std::string appName;
+    Deserialization::Deserialize(buffer, appName);
+    std::string label;
+    int ret = serviceImpl.labelForProcess(appName, label);
+    Serialization::Serialize(send, ret);
+    if (ret == SECURITY_MANAGER_SUCCESS)
+        Serialization::Serialize(send, label);
 }
 } // namespace SecurityManager

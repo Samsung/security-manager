@@ -69,9 +69,17 @@ static lib_retcode apply_relabel_list(const std::string &global_label_file,
         PermissibleSet::readNamesFromPermissibleFile(global_label_file, names);
         PermissibleSet::readNamesFromPermissibleFile(user_label_file, names);
         std::vector<const char*> temp;
-        std::transform(names.begin(), names.end(), std::back_inserter(temp),
-                [] (std::string &label) {label = SmackLabels::generateProcessLabel(label);
-                    return label.c_str();});
+        // FIXME : monitor should store labels instead of app ids
+        for (auto &name : names) {
+            std::string label;
+            int ret = SecurityManager::fetchLabelForProcess(name, label);
+            if (ret != SECURITY_MANAGER_SUCCESS) {
+                LogError("Couldn't fetch label for process");
+                return static_cast<lib_retcode>(ret);
+            }
+            name = label;
+            temp.push_back(name.c_str());
+        }
         if (smack_set_relabel_self(const_cast<const char **>(temp.data()), temp.size()) != 0) {
             LogError("smack_set_relabel_self failed");
             return SECURITY_MANAGER_ERROR_SET_RELABEL_SELF_FAILED;

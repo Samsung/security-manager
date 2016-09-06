@@ -274,6 +274,16 @@ public:
      * @return API return code, as defined in protocols.h
      */
     int pathsRegister(const Credentials &creds, path_req p_req);
+
+    /**
+     * Generate label for process.
+     *
+     * @param[in] appName application identifier
+     * @param[out] label generated label
+     *
+     * @return API return code, as defined in protocols.h
+     */
+    int labelForProcess(const std::string &appName, std::string &label);
 };
 
 } /* namespace SecurityManager */
