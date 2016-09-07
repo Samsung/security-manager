@@ -70,9 +70,9 @@ private:
                           app_install_type installationType,
                           const uid_t &uid);
 
-    static void getAllApps(SmackRules::PkgsApps &pkgsApps);
+    static void getPkgsProcessLabels(SmackRules::PkgsLabels &pkgsLabels);
 
-    static void getSharedROApps(SmackRules::PkgsApps &sharedROPkgsApps);
+    static void getPkgLabels(const std::string &pkgName, SmackRules::Labels &pkgsLabels);
 
     static bool isSharedRO(const pkg_paths& paths);
 
@@ -84,7 +84,7 @@ private:
 
     int dropOnePrivateSharing(const std::string &ownerAppName,
                               const std::string &ownerPkgName,
-                              const std::vector<std::string> &ownerPkgContents,
+                              const SmackRules::Labels &ownerPkgLabels,
                               const std::string &targetAppName,
                               const std::string &path);
 
