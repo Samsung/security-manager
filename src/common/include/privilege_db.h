@@ -75,6 +75,7 @@ enum class StmtType {
     EGetSharedROPackages,
     ESetPackageSharedRO,
     EIsPackageSharedRO,
+    EIsPackageHybrid,
 };
 
 class PrivilegeDb {
@@ -133,6 +134,7 @@ private:
         { StmtType::EGetSharedROPackages, "SELECT DISTINCT name FROM pkg WHERE shared_ro = 1;"},
         { StmtType::ESetPackageSharedRO, "UPDATE pkg SET shared_ro=1 WHERE name=?"},
         { StmtType::EIsPackageSharedRO, "SELECT shared_ro FROM pkg WHERE name=?"},
+        { StmtType::EIsPackageHybrid, "SELECT is_hybrid FROM pkg WHERE name=?"},
     };
 
     /**
@@ -499,6 +501,14 @@ public:
      * @exception DB::SqlConnection::Exception::ConstraintError on constraint violation
      */
     bool IsPackageSharedRO(const std::string& pkgName);
+
+    /**
+     * Check whether package has is_hybrid field set to 1 in db
+     *
+     * @exception DB::SqlConnection::Exception::InternalError on internal error
+     * @exception DB::SqlConnection::Exception::ConstraintError on constraint violation
+     */
+    bool IsPackageHybrid(const std::string& pkgName);
 };
 
 } //namespace SecurityManager

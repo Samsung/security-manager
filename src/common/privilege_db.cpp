@@ -554,4 +554,20 @@ bool PrivilegeDb::IsPackageSharedRO(const std::string &pkgName)
     });
 }
 
+bool PrivilegeDb::IsPackageHybrid(const std::string& pkgName)
+{
+    return try_catch<bool>([&]() -> bool {
+        auto command = getStatement(StmtType::EIsPackageHybrid);
+        command->BindString(1, pkgName);
+        int isHybrid = 0;
+
+        if (command->Step())
+            isHybrid = command->GetColumnInteger(0);
+
+        LogDebug("Package " << pkgName << "has shared_ro set to " << isHybrid);
+
+        return (isHybrid > 0);
+    });
+}
+
 } //namespace SecurityManager
