@@ -199,8 +199,11 @@ std::string generateAppNameFromLabel(const std::string &label)
     return ret;
 }
 
-std::string generateProcessLabel(const std::string &appName)
+std::string generateProcessLabel(const std::string &appName, const std::string &pkgName,
+                                 bool isHybrid)
 {
+    (void)pkgName;
+    (void)isHybrid;
     std::string label = "User::App::" + appName;
 
     if (smack_label_length(label.c_str()) <= 0)

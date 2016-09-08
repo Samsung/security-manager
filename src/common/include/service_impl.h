@@ -86,6 +86,7 @@ private:
                               const std::string &ownerPkgName,
                               const SmackRules::Labels &ownerPkgLabels,
                               const std::string &targetAppName,
+                              const std::string &targetAppLabel,
                               const std::string &path);
 
 public:

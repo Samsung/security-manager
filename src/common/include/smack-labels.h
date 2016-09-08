@@ -75,9 +75,13 @@ std::string generateAppNameFromLabel(const std::string &label);
  * Generates label for an application identifier
  *
  * @param[in] appName application identifier
+ * @param[in] pkgName package identifier
+ * @param[in] isHybrid package is hybrid flag
  * @return resulting Smack label
 */
-std::string generateProcessLabel(const std::string &appName);
+std::string generateProcessLabel(const std::string &appName,
+                                 const std::string &pkgName,
+                                 bool isHybrid);
 
 /**
  * Generates label for an application with @ref pkgName, specific
