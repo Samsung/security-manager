@@ -70,6 +70,10 @@ static std::string getAppProcessLabel(const std::string &appName)
 {
     std::string pkgName;
     PrivilegeDb::getInstance().GetAppPkgName(appName, pkgName);
+    if (pkgName.empty()) {
+        LogWarning("Cannot create label for unknown application: " << appName);
+        return "";
+    }
     return getAppProcessLabel(appName, pkgName);
 }
 
@@ -138,9 +142,19 @@ static inline int validatePolicy(policy_entry &policyEntry, std::string uidStr, 
     if (!policyEntry.privilege.compare(SECURITY_MANAGER_ANY))
         policyEntry.privilege = CYNARA_ADMIN_WILDCARD;
 
+    std::string cynaraClient;
+    if (policyEntry.appName.compare(SECURITY_MANAGER_ANY)) {
+        cynaraClient = getAppProcessLabel(policyEntry.appName);
+        if (cynaraClient.empty()) {
+            LogWarning("Cannot set policy for unknown application " << policyEntry.appName);
+            return SECURITY_MANAGER_ERROR_APP_UNKNOWN;
+        }
+    } else {
+        cynaraClient = CYNARA_ADMIN_WILDCARD;
+    }
+
     cyap = std::move(CynaraAdminPolicy(
-        policyEntry.appName.compare(SECURITY_MANAGER_ANY) ?
-            getAppProcessLabel(policyEntry.appName) : CYNARA_ADMIN_WILDCARD,
+        cynaraClient,
         policyEntry.user,
         policyEntry.privilege,
         level,
@@ -633,6 +647,7 @@ int ServiceImpl::appUninstall(const Credentials &creds, app_inst_req &&req)
     std::map<std::string, std::vector<std::string>> asOwnerSharing;
     std::map<std::string, std::vector<std::string>> asTargetSharing;
     int authorId;
+    bool isPkgHybrid;
 
     installRequestMangle(req, cynaraUserStr);
 
@@ -656,6 +671,7 @@ int ServiceImpl::appUninstall(const Credentials &creds, app_inst_req &&req)
             return SECURITY_MANAGER_SUCCESS;
         }
 
+        isPkgHybrid = PrivilegeDb::getInstance().IsPackageHybrid(req.pkgName);
         processLabel = getAppProcessLabel(req.appName, req.pkgName);
         LogDebug("Generated uninstall parameters: pkgName=" << req.pkgName
             << " Smack label=" << processLabel);
@@ -741,7 +757,13 @@ int ServiceImpl::appUninstall(const Credentials &creds, app_inst_req &&req)
     try {
         if (removeApp) {
             LogDebug("Removing Smack rules for appName " << req.appName);
-            SmackRules::uninstallApplicationRules(req.appName, processLabel);
+            if (isPkgHybrid || removePkg) {
+                /*
+                 * Nonhybrid apps have the same label, so revoking it is unnecessary
+                 * unless whole packagee is being removed.
+                 */
+                SmackRules::uninstallApplicationRules(req.appName, processLabel);
+            }
             LogDebug("Removing Smack rules for pkgName " << req.pkgName);
             SmackRules::uninstallPackageRules(req.pkgName);
             if (!removePkg) {
@@ -753,7 +775,7 @@ int ServiceImpl::appUninstall(const Credentials &creds, app_inst_req &&req)
 
             SmackRules::generateSharedRORules(pkgsProcessLabels, sharedROPkgs);
             if (removePkg)
-               SmackRules::revokeSharedRORules(pkgsProcessLabels, req.pkgName);
+                SmackRules::revokeSharedRORules(pkgsProcessLabels, req.pkgName);
         }
 
         if (authorId != -1 && removeAuthor) {
@@ -1058,32 +1080,57 @@ int ServiceImpl::getConfiguredPolicy(const Credentials &creds, bool forAdmin,
                 continue;
 
             policy_entry pe;
+            std::vector<std::string> appNames;
+            std::string appName, pkgName;
 
-            pe.appName = strcmp(policy.client, CYNARA_ADMIN_WILDCARD) ? SmackLabels::generateAppNameFromLabel(policy.client) : SECURITY_MANAGER_ANY;
-            pe.user =  strcmp(policy.user, CYNARA_ADMIN_WILDCARD) ? policy.user : SECURITY_MANAGER_ANY;
-            pe.privilege = strcmp(policy.privilege, CYNARA_ADMIN_WILDCARD) ? policy.privilege : pe.privilege = SECURITY_MANAGER_ANY;
-            pe.currentLevel = CynaraAdmin::getInstance().convertToPolicyDescription(policy.result);
-
-            if (!forAdmin) {
-                // All policy entries in PRIVACY_MANAGER should be fully-qualified
-                pe.maxLevel = CynaraAdmin::getInstance().convertToPolicyDescription(
-                    CynaraAdmin::getInstance().GetPrivilegeManagerMaxLevel(
-                        policy.client, policy.user, policy.privilege));
+            if (strcmp(policy.client, CYNARA_ADMIN_WILDCARD)) {
+                SmackLabels::generateAppPkgNameFromLabel(policy.client, appName, pkgName);
+                if (!appName.empty()) {
+                    // Hybrid app
+                    appNames.push_back(appName);
+                } else {
+                    if (filter.appName == SECURITY_MANAGER_ANY) {
+                        // If user requested policy for all apps, we have to demangle pkgName to
+                        // set of appNames in case of non-hybrid apps
+                        PrivilegeDb::getInstance().GetPkgApps(pkgName, appNames);
+                    } else {
+                        // If user requested policy for specific appName, we have to copy
+                        // appName from filter for non-hybrid apps
+                        appNames.push_back(filter.appName);
+                    }
+                }
             } else {
-                // Cannot reliably calculate maxLavel for policies from ADMIN bucket
-                pe.maxLevel = CynaraAdmin::getInstance().convertToPolicyDescription(CYNARA_ADMIN_ALLOW);
+                // Cynara wildcard -> SM any
+                appNames.push_back(SECURITY_MANAGER_ANY);
             }
 
+            for (const auto &app : appNames) {
+                pe.appName = app;
+                pe.user =  strcmp(policy.user, CYNARA_ADMIN_WILDCARD) ? policy.user : SECURITY_MANAGER_ANY;
+                pe.privilege = strcmp(policy.privilege, CYNARA_ADMIN_WILDCARD) ? policy.privilege : pe.privilege = SECURITY_MANAGER_ANY;
+                pe.currentLevel = CynaraAdmin::getInstance().convertToPolicyDescription(policy.result);
 
-            LogDebug(
-                "[policy_entry] app: " << pe.appName
-                << " user: " << pe.user
-                << " privilege: " << pe.privilege
-                << " current: " << pe.currentLevel
-                << " max: " << pe.maxLevel
-                );
+                if (!forAdmin) {
+                    // All policy entries in PRIVACY_MANAGER should be fully-qualified
+                    pe.maxLevel = CynaraAdmin::getInstance().convertToPolicyDescription(
+                        CynaraAdmin::getInstance().GetPrivilegeManagerMaxLevel(
+                            policy.client, policy.user, policy.privilege));
+                } else {
+                    // Cannot reliably calculate maxLavel for policies from ADMIN bucket
+                    pe.maxLevel = CynaraAdmin::getInstance().convertToPolicyDescription(CYNARA_ADMIN_ALLOW);
+                }
 
-            policyEntries.push_back(pe);
+
+                LogDebug(
+                    "[policy_entry] app: " << pe.appName
+                    << " user: " << pe.user
+                    << " privilege: " << pe.privilege
+                    << " current: " << pe.currentLevel
+                    << " max: " << pe.maxLevel
+                    );
+
+                policyEntries.push_back(pe);
+            }
         };
 
     } catch (const CynaraException::Base &e) {

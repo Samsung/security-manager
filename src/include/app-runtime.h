@@ -133,6 +133,9 @@ void security_manager_groups_free(char **groups, size_t groups_count);
  * If both app_id and pkg_id are NULL then SECURITY_MANAGER_ERROR_INPUT_PARAM will be returned.
  * When socket descriptor is incorrect or not related to any package, this function will
  * return SECURITY_MANAGER_ERROR_NO_SUCH_OBJECT.
+ * If process on the other side is a nonhybrid application, no app_id will be available.
+ *
+ * \note For non hybrid applications only package id can be returned
  *
  * \param[in]   sockfd  Socket descriptor of wanted application
  * \param[out]  pkg_id  Package id of the application
@@ -150,9 +153,12 @@ int security_manager_identify_app_from_socket(int sockfd, char **pkg_id, char **
  * If both app_id and pkg_id are NULL then SECURITY_MANAGER_ERROR_INPUT_PARAM will be returned.
  * When process identifier is incorrect or not related to any package, this function will
  * return SECURITY_MANAGER_ERROR_NO_SUCH_OBJECT.
+ * If given process is a nonhybrid application, no app_id will be available.
  *
  * \note Caller must be able to access and read file /proc/PID/atrr/current where PID is the given
  * process identifier.
+ *
+ * \note For non hybrid applications only package id can be returned
  *
  * \param[in]   pid     Process identifier of wanted application
  * \param[out]  pkg_id  Package id of the application
@@ -171,6 +177,7 @@ int security_manager_identify_app_from_pid(pid_t pid, char **pkg_id, char **app_
  * When process identifier is incorrect or not related to any package, this function will
  * return SECURITY_MANAGER_ERROR_NO_SUCH_OBJECT.
  *
+ * \note For non hybrid applications only package id can be returned
  *
  * \param[in]   client  Application Cynara client identifier
  * \param[out]  pkg_id  Package id of the application

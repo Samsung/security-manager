@@ -1295,21 +1295,24 @@ static lib_retcode get_app_and_pkg_id_from_smack_label(
         char **pkg_name,
         char **app_name)
 {
-    std::string appNameString;
-
+    std::string appNameString, pkgNameString;
     try {
-        appNameString = SmackLabels::generateAppNameFromLabel(label);
+
+        SmackLabels::generateAppPkgNameFromLabel(label, appNameString, pkgNameString);
     } catch (const SmackException::InvalidLabel &) {
         return SECURITY_MANAGER_ERROR_NO_SUCH_OBJECT;
     }
 
-    if (app_name && !(*app_name = strdup(appNameString.c_str()))) {
+    if (app_name && !appNameString.empty() && !(*app_name = strdup(appNameString.c_str()))) {
         LogError("Memory allocation in strdup failed.");
         return SECURITY_MANAGER_ERROR_MEMORY;
     }
 
-    return pkg_name ? static_cast<lib_retcode>(security_manager_get_app_pkgid(pkg_name, appNameString.c_str()))
-            : SECURITY_MANAGER_SUCCESS;
+    if (pkg_name && !(*pkg_name = strdup(pkgNameString.c_str()))) {
+        LogError("Memory allocation in strdup failed.");
+        return SECURITY_MANAGER_ERROR_MEMORY;
+    }
+    return SECURITY_MANAGER_SUCCESS;
 }
 
 static int security_manager_identify_app(

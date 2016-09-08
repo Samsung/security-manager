@@ -67,9 +67,11 @@ void setupSharedPrivatePath(const std::string &pkgName, const std::string &path)
  * Generates application name for a label fetched from Cynara
  *
  * @param[in] label string to fetch application name for
+ * @param[out] appName application identifier (can be empty if label belongs to non-hybrid app)
+ * @param[out] pkgName package identifier (cannot be empty)
  * @return application name on success, empty string on error.
 */
-std::string generateAppNameFromLabel(const std::string &label);
+void generateAppPkgNameFromLabel(const std::string &label, std::string &appName, std::string &pkgName);
 
 /**
  * Generates label for an application identifier
