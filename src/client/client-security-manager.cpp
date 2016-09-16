@@ -1341,6 +1341,21 @@ int security_manager_identify_app_from_pid(pid_t pid, char **pkg_name, char **ap
 }
 
 SECURITY_MANAGER_API
+int security_manager_identify_app_from_cynara_client(const char *client, char **pkg_name,
+                                                     char **app_name)
+{
+    return try_catch([&] {
+        LogDebug(__PRETTY_FUNCTION__ << " called");
+
+        if (pkg_name == NULL && app_name == NULL) {
+            LogError("Both pkg_name and app_name are NULL");
+            return SECURITY_MANAGER_ERROR_INPUT_PARAM;
+        }
+        return get_app_and_pkg_id_from_smack_label(client, pkg_name, app_name);
+    });
+}
+
+SECURITY_MANAGER_API
 int security_manager_app_has_privilege(const char *app_name, const char *privilege,
                                        uid_t uid, int *result)
 {
