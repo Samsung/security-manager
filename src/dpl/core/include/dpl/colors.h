@@ -45,6 +45,7 @@ extern const char* BOLD_GOLD_BEGIN;
 extern const char* BOLD_GOLD_END;
 extern const char* BOLD_WHITE_BEGIN;
 extern const char* BOLD_WHITE_END;
+extern const char* COLOR_END;
 } //namespace Text
 
 namespace Html {

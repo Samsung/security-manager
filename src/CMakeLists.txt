@@ -1,18 +1,3 @@
-SET(INCLUDE_PATH ${PROJECT_SOURCE_DIR}/src/include)
-SET(COMMON_PATH  ${PROJECT_SOURCE_DIR}/src/common)
-SET(CLIENT_PATH  ${PROJECT_SOURCE_DIR}/src/client)
-SET(SERVER_PATH  ${PROJECT_SOURCE_DIR}/src/server)
-SET(DPL_PATH     ${PROJECT_SOURCE_DIR}/src/dpl)
-SET(CMD_PATH     ${PROJECT_SOURCE_DIR}/src/cmd)
-SET(NSS_PATH     ${PROJECT_SOURCE_DIR}/src/nss)
-
-SET(TARGET_SERVER "security-manager")
-SET(TARGET_CLIENT "security-manager-client")
-SET(TARGET_COMMON "security-manager-commons")
-SET(TARGET_CMD    "security-manager-cmd")
-SET(TARGET_CLEANUP "security-manager-cleanup")
-SET(TARGET_NSS     "security-manager-nss")
-
 ADD_SUBDIRECTORY(include)
 ADD_SUBDIRECTORY(common)
 ADD_SUBDIRECTORY(client)

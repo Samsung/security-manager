@@ -8,6 +8,7 @@ Source0:    %{name}-%{version}.tar.gz
 Source1:    security-manager.manifest
 Source3:    libsecurity-manager-client.manifest
 Source4:    libnss-security-manager.manifest
+Source5:    security-manager-tests.manifest
 Requires: security-manager-policy
 Requires: nether
 Requires(post): sqlite3
@@ -73,11 +74,20 @@ Requires(post): tizen-platform-config-tools
 %description policy
 Set of security rules that constitute security policy in the system
 
+%package -n security-manager-tests
+Summary:    Security manager unit test binaries
+Group:      Security/Development
+Requires:   boost-test
+
+%description -n security-manager-tests
+Internal test for security manager implementation.
+
 %prep
 %setup -q
 cp %{SOURCE1} .
 cp %{SOURCE3} .
 cp %{SOURCE4} .
+cp %{SOURCE5} .
 
 %build
 %if 0%{?sec_build_binary_debug_enable}
@@ -236,3 +246,8 @@ fi
 %{_datadir}/security-manager/policy
 %attr(755,root,root) %{_bindir}/security-manager-policy-reload
 %attr(755,root,root) %{_sysconfdir}/opt/upgrade/241.security-manager.policy-update.sh
+
+%files -n security-manager-tests
+%manifest %{name}.manifest
+%attr(755,root,root) %{_bindir}/security-manager-unit-tests
+

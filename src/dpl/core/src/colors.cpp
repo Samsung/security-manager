@@ -44,6 +44,7 @@ const char* BOLD_GOLD_BEGIN = "\033[0;33m";
 const char* BOLD_GOLD_END = "\033[m";
 const char* BOLD_WHITE_BEGIN = "\033[1;37m";
 const char* BOLD_WHITE_END = "\033[m";
+const char* COLOR_END = "\033[m";
 } //namespace Text
 
 namespace Html {
