@@ -167,6 +167,7 @@ fi
 %postun -n libnss-security-manager -p /sbin/ldconfig
 
 %post policy
+%{_datadir}/security-manager/policy/update.sh
 %{_bindir}/security-manager-policy-reload
 
 %files -n security-manager
