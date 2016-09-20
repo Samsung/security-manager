@@ -1,3 +1,10 @@
+* Tue Sep 20 2016 Rafal Krypa <r.krypa@samsung.com>
+- Version 1.2.0
+- Add internal privilege for internal APIs
+- Add support for USER_TYPE_SECURITY
+- Add policy versioning
+- Add API for identifying application from Cynara client
+
 * Mon Sep 05 2016 Yunjin Lee <yunjin-.lee@samsung.com>
 - Version 1.1.17
 - Add/remove core privilege(fido.client/ dpm.settings)
