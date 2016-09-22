@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014 Samsung Electronics Co., Ltd All Rights Reserved
+ * Copyright (c) 2014 - 2016 Samsung Electronics Co., Ltd All Rights Reserved
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -19,8 +19,7 @@
  * @version     1.0
  * @brief       This file is the implementation file deleter with use std::free()
  */
-#ifndef FREE_DELETER_H
-#define FREE_DELETER_H
+#pragma once
 
 #include <cstdlib>
 namespace SecurityManager
@@ -30,4 +29,3 @@ struct free_deleter
     void operator()(void *p) { std::free(p); }
 };
 }// SecurityManager
-#endif // FREE_DELETER_H

@@ -24,8 +24,7 @@
  * @brief       This file contains header of security-manager API
  */
 
-#ifndef SECURITY_MANAGER_H_
-#define SECURITY_MANAGER_H_
+#pragma once
 
 #include <sys/types.h>
 
@@ -51,5 +50,3 @@ const char *security_manager_strerror(enum lib_retcode rc);
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* SECURITY_MANAGER_H_ */

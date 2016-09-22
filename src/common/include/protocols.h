@@ -22,8 +22,7 @@
  * @brief       This file contains list of all protocols suported by security-manager.
  */
 
-#ifndef _SECURITY_MANAGER_PROTOCOLS_
-#define _SECURITY_MANAGER_PROTOCOLS_
+#pragma once
 
 #include <sys/types.h>
 #include <unistd.h>
@@ -129,6 +128,3 @@ typedef struct policy_entry policy_entry;
 struct policy_update_req {
     std::vector<const policy_entry *> units;
 };
-
-
-#endif // _SECURITY_MANAGER_PROTOCOLS_

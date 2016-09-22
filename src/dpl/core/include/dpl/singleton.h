@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011 Samsung Electronics Co., Ltd All Rights Reserved
+ * Copyright (c) 2011 - 2016 Samsung Electronics Co., Ltd All Rights Reserved
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -19,8 +19,7 @@
  * @version     1.0
  * @brief       This file is the implementation file of singleton
  */
-#ifndef SECURITYMANAGER_SINGLETON_H
-#define SECURITYMANAGER_SINGLETON_H
+#pragma once
 
 namespace SecurityManager {
 template<typename Class>
@@ -62,5 +61,3 @@ Class &Singleton<Class>::Instance()
 }
 
 } // namespace SecurityManager
-
-#endif // SECURITYMANAGER_SINGLETON_H

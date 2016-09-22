@@ -22,8 +22,7 @@
  * @brief       Implementation of security-manager base service
  */
 
-#ifndef _SECURITY_MANAGER_BASE_SERVICE_
-#define _SECURITY_MANAGER_BASE_SERVICE_
+#pragma once
 
 #include <service-thread.h>
 #include <generic-socket-manager.h>
@@ -77,5 +76,3 @@ protected:
 };
 
 } // namespace SecurityManager
-
-#endif // _SECURITY_MANAGER_BASE_SERVICE_

@@ -22,8 +22,7 @@
  * @brief       Definition of Configuration options
  */
 
-#ifndef SECURITY_MANAGER_CONFIG_
-#define SECURITY_MANAGER_CONFIG_
+#pragma once
 
 #include <string>
 
@@ -55,5 +54,3 @@ extern const bool IS_ASKUSER_ENABLED;
 };
 
 } /* namespace SecurityManager */
-
-#endif /* SECURITY_MANAGER_CONFIG_ */

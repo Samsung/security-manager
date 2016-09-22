@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2000 - 2014 Samsung Electronics Co., Ltd All Rights Reserved
+ *  Copyright (c) 2000 - 2016 Samsung Electronics Co., Ltd All Rights Reserved
  *
  *  Contact: Rafal Krypa <r.krypa@samsung.com>
  *
@@ -16,14 +16,13 @@
  *  limitations under the License
  */
 /*
- * @file        secket-buffer.h
+ * @file        message-buffer.h
  * @author      Bartlomiej Grzelewski (b.grzelewski@samsung.com)
  * @version     1.0
  * @brief       Implementatin of MessageBuffer.
  */
 
-#ifndef _SECURITY_MANAGER_SOCKET_BUFFER_
-#define _SECURITY_MANAGER_SOCKET_BUFFER_
+#pragma once
 
 #include <vector>
 
@@ -75,5 +74,3 @@ protected:
 };
 
 } // namespace SecurityManager
-
-#endif // _SECURITY_MANAGER_SOCKET_BUFFER_

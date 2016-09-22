@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011 Samsung Electronics Co., Ltd All Rights Reserved
+ * Copyright (c) 2011 - 2016 Samsung Electronics Co., Ltd All Rights Reserved
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -19,8 +19,7 @@
  * @version     1.0
  * @brief       This file is the implementation file of errno string
  */
-#ifndef SECURITY_MANAGER_ERRNO_STRING_H
-#define SECURITY_MANAGER_ERRNO_STRING_H
+#pragma once
 
 #include <dpl/exception.h>
 #include <string>
@@ -31,5 +30,3 @@ DECLARE_EXCEPTION_TYPE(SecurityManager::Exception, InvalidErrnoValue)
 
 std::string GetErrnoString(int error = errno);
 } // namespace SecurityManager
-
-#endif // SECURITY_MANAGER_ERRNO_STRING_H

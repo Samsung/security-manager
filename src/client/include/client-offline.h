@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2000 - 2014 Samsung Electronics Co., Ltd All Rights Reserved
+ *  Copyright (c) 2000 - 2016 Samsung Electronics Co., Ltd All Rights Reserved
  *
  *  Contact: Rafal Krypa <r.krypa@samsung.com>
  *
@@ -16,14 +16,13 @@
  *  limitations under the License
  */
 /*
- * @file        client-common.h
+ * @file        client-offline.h
  * @author      Rafal Krypa <r.krypa@samsung.com>
  * @version     1.0
  * @brief       Helper class for client "off-line" mode detection
  */
 
-#ifndef _SECURITY_MANAGER_OFFLINE_
-#define _SECURITY_MANAGER_OFFLINE_
+#pragma once
 
 #include <credentials.h>
 #include <file-lock.h>
@@ -43,5 +42,3 @@ private:
 };
 
 } // namespace SecurityManager
-
-#endif // _SECURITY_MANAGER_OFFLINE_

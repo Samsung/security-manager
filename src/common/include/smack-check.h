@@ -1,7 +1,5 @@
 /*
- *  security-manager
- *
- *  Copyright (c) 2000 - 2014 Samsung Electronics Co., Ltd All Rights Reserved
+ *  Copyright (c) 2000 - 2016 Samsung Electronics Co., Ltd All Rights Reserved
  *
  *  Contact: Rafal Krypa <r.krypa@samsung.com>
  *
@@ -18,8 +16,7 @@
  *  limitations under the License
  */
 
-#ifndef _SMACK_CHECK_H_
-#define _SMACK_CHECK_H_
+#pragma once
 
 namespace SecurityManager {
 
@@ -38,5 +35,3 @@ int smack_runtime_check(void);
 int smack_check(void);
 
 } // namespace SecurityManager
-
-#endif // _SMACK_CHECK_H_

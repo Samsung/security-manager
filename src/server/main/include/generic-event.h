@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2000 - 2014 Samsung Electronics Co., Ltd All Rights Reserved
+ *  Copyright (c) 2000 - 2016 Samsung Electronics Co., Ltd All Rights Reserved
  *
  *  Contact: Rafal Krypa <r.krypa@samsung.com>
  *
@@ -16,14 +16,13 @@
  *  limitations under the License
  */
 /*
- * @file        protocols.h
+ * @file        generic-event.h
  * @author      Bartlomiej Grzelewski (b.grzelewski@samsung.com)
  * @version     1.0
  * @brief       Implementation of GenericEvent.
  */
 
-#ifndef _SECURITY_MANAGER_GENERIC_EVENT_
-#define _SECURITY_MANAGER_GENERIC_EVENT_
+#pragma once
 
 namespace SecurityManager {
 
@@ -32,5 +31,3 @@ struct GenericEvent {
 };
 
 } // namespace SecurityManager
-
-#endif // _SECURITY_MANAGER_GENERIC_EVENT_

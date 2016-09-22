@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2000 - 2014 Samsung Electronics Co., Ltd All Rights Reserved
+ *  Copyright (c) 2000 - 2016 Samsung Electronics Co., Ltd All Rights Reserved
  *
  *  Contact: Rafal Krypa <r.krypa@samsung.com>
  *
@@ -22,8 +22,7 @@
  * @brief       Definition of ConnectionInfo structure and ConnectionInfoMap type.
  */
 
-#ifndef _CONNECTION_INFO_H_
-#define _CONNECTION_INFO_H_
+#pragma once
 
 #include <map>
 #include <generic-socket-manager.h>
@@ -38,5 +37,3 @@ namespace SecurityManager
 
     typedef std::map<int, ConnectionInfo> ConnectionInfoMap;
 } //namespace SecurityManager
-
-#endif //_CONNECTION_INFO_H_

@@ -22,8 +22,7 @@
  * @brief       Very simple wrapper for opendir/readdir.
  *
  */
-#ifndef _FILESYSTEM_H_
-#define _FILESYSTEM_H_
+#pragma once
 
 #include <vector>
 #include <string>
@@ -41,6 +40,3 @@ std::string dirName(const std::string &path);
 
 } // namespace FS
 } // nanespace SecurityManager
-
-#endif // _FILESYSTEM_H_
-

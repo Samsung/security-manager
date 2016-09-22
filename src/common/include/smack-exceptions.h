@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015 Samsung Electronics Co., Ltd All Rights Reserved
+ *  Copyright (c) 2015 - 2016 Samsung Electronics Co., Ltd All Rights Reserved
  *
  *  Contact: Rafal Krypa <r.krypa@samsung.com>
  *
@@ -22,8 +22,7 @@
  * @brief       Declaration of Smack-specific exceptions
  *
  */
-#ifndef _SMACK_EXCEPTIONS_H_
-#define _SMACK_EXCEPTIONS_H_
+#pragma once
 
 #include <dpl/exception.h>
 
@@ -40,5 +39,3 @@ public:
 };
 
 } // namespace SecurityManager
-
-#endif /* _SMACK_EXCEPTIONS_H_ */

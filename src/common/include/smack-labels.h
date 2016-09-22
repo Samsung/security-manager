@@ -23,8 +23,7 @@
  * @brief       Header file of functions managing smack labels
  *
  */
-#ifndef _SMACK_LABELS_H_
-#define _SMACK_LABELS_H_
+#pragma once
 
 #include <string>
 #include <utility>
@@ -162,5 +161,3 @@ std::string getSmackLabelFromSelf(void);
 
 } // namespace SmackLabels
 } // namespace SecurityManager
-
-#endif /* _SMACK_LABELS_H_ */

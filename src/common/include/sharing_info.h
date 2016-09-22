@@ -22,8 +22,7 @@
  * @brief       Definitions of sharing info wrapping types.
  */
 
-#ifndef SECURITY_MANAGER_SHARING_INFO
-#define SECURITY_MANAGER_SHARING_INFO
+#pragma once
 
 namespace SecurityManager {
 class AppInfo {
@@ -38,5 +37,3 @@ typedef std::vector<std::string> PathLabelVector;
 typedef std::map<AppInfo, PathLabelVector> OwnerSharingInfo;
 
 } //namespace SecurityManager
-
-#endif // SECURITY_MANAGER_SHARING_INFO

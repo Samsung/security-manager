@@ -17,8 +17,7 @@
  *
  */
 
-#ifndef SECURITY_MANAGER_APP_MANAGER_H_
-#define SECURITY_MANAGER_APP_MANAGER_H_
+#pragma once
 
 #include "security-manager-types.h"
 
@@ -256,5 +255,3 @@ int security_manager_paths_register(const path_req *p_req);
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* SECURITY_MANAGER_APP_MANAGER_H_ */

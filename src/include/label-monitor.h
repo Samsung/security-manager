@@ -22,8 +22,7 @@
  * @version     1.0
  * @brief       Header with API targeted for launcher to monitor labels of installed applications
  */
-#ifndef _LABEL_MONITOR_H_
-#define _LABEL_MONITOR_H_
+#pragma once
 
 #ifdef __cplusplus
 extern "C" {
@@ -115,5 +114,3 @@ int security_manager_app_labels_monitor_process(app_labels_monitor *monitor);
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* _LABEL_MONITOR_H_ */

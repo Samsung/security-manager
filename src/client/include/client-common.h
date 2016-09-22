@@ -23,8 +23,7 @@
  *              used in security manager.
  */
 
-#ifndef _SECURITY_MANAGER_CLIENT_
-#define _SECURITY_MANAGER_CLIENT_
+#pragma once
 
 #include <functional>
 
@@ -40,5 +39,3 @@ namespace SecurityManager {
 int try_catch(const std::function<int()>& func);
 
 } // namespace SecurityManager
-
-#endif // _SECURITY_MANAGER_CLIENT_

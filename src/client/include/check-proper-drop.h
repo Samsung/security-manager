@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015 Samsung Electronics Co., Ltd All Rights Reserved
+ *  Copyright (c) 2015-2016 Samsung Electronics Co., Ltd All Rights Reserved
  *
  *  Contact: Rafal Krypa <r.krypa@samsung.com>
  *
@@ -22,8 +22,7 @@
  * @brief       Definition of proper privilege dropping check utilities
  */
 
-#ifndef SECURITY_MANAGER_CHECK_PROPER_DROP_
-#define SECURITY_MANAGER_CHECK_PROPER_DROP_
+#pragma once
 
 #include <dpl/exception.h>
 
@@ -73,4 +72,3 @@ private:
 };
 
 } // namespace SecurityManager
-#endif /* SECURITY_MANAGER_CHECK_PROPER_DROP_H_ */

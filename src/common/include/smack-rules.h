@@ -22,8 +22,7 @@
  * @brief       Header file of a class managing smack rules
  *
  */
-#ifndef _SMACK_RULES_H_
-#define _SMACK_RULES_H_
+#pragma once
 
 #include <vector>
 #include <string>
@@ -272,5 +271,3 @@ private:
 };
 
 } // namespace SecurityManager
-
-#endif /* _SMACK_RULES_H_ */

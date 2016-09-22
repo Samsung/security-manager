@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2000 - 2014 Samsung Electronics Co., Ltd All Rights Reserved
+ *  Copyright (c) 2000 - 2016 Samsung Electronics Co., Ltd All Rights Reserved
  *
  *  Contact: Rafal Krypa <r.krypa@samsung.com>
  *
@@ -16,7 +16,7 @@
  *  limitations under the License
  */
 /*
- * @file        sock-raii.h
+ * @file        connection.h
  * @author      Bartlomiej Grzelewski (b.grzelewski@samsung.com)
  * @author      Lukasz Kostyra (l.kostyra@samsung.com)
  * @version     1.0
@@ -24,8 +24,7 @@
  *              used in security manager.
  */
 
-#ifndef _SECURITY_MANAGER_CONNECTION_
-#define _SECURITY_MANAGER_CONNECTION_
+#pragma once
 
 #include <vector>
 #include <functional>
@@ -53,5 +52,3 @@ int sendToServer(char const * const interface, const RawBuffer &send, MessageBuf
 int sendToManagerAncData(char const * const interface, const RawBuffer &send, struct msghdr &hdr);
 
 } // namespace SecurityManager
-
-#endif // _SECURITY_MANAGER_CONNECTION_

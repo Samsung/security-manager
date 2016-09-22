@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011 Samsung Electronics Co., Ltd All Rights Reserved
+ * Copyright (c) 2011 - 2016 Samsung Electronics Co., Ltd All Rights Reserved
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -19,8 +19,7 @@
  * @version     1.0
  * @brief       This file is the implementation file of SQL connection
  */
-#ifndef SECURITY_MANAGER_SQL_CONNECTION_H
-#define SECURITY_MANAGER_SQL_CONNECTION_H
+#pragma once
 
 #include <dpl/noncopyable.h>
 #include <dpl/exception.h>
@@ -494,5 +493,3 @@ class SqlConnection
 };
 } // namespace DB
 } // namespace SecurityManager
-
-#endif // SECURITY_MANAGER_SQL_CONNECTION_H

@@ -20,8 +20,7 @@
  *
  */
 
-#ifndef _FSTREAM_ACCESSORS_H
-#define _FSTREAM_ACCESSORS_H
+#pragma once
 
 namespace DPL {
 
@@ -42,5 +41,3 @@ public:
 };
 
 } // namespace DPL
-
-#endif // _FSTREAM_ACCESSORS_H

@@ -29,6 +29,8 @@
  * @brief       This file contains declaration of the API to privilges database.
  */
 
+#pragma once
+
 #include <cstdio>
 #include <list>
 #include <utility>
@@ -41,9 +43,6 @@
 #include "tzplatform-config.h"
 
 #include "pkg-info.h"
-
-#ifndef PRIVILEGE_DB_H_
-#define PRIVILEGE_DB_H_
 
 namespace SecurityManager {
 
@@ -529,5 +528,3 @@ public:
 };
 
 } //namespace SecurityManager
-
-#endif // PRIVILEGE_DB_H_

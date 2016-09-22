@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011 Samsung Electronics Co., Ltd All Rights Reserved
+ * Copyright (c) 2011 - 2016 Samsung Electronics Co., Ltd All Rights Reserved
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -19,8 +19,7 @@
  * @version     1.0
  * @brief       This file is the implementation file of old style log provider
  */
-#ifndef SECURITYMANAGER_OLD_STYLE_LOG_PROVIDER_H
-#define SECURITYMANAGER_OLD_STYLE_LOG_PROVIDER_H
+#pragma once
 
 #include <dpl/log/abstract_log_provider.h>
 #include <string>
@@ -80,5 +79,3 @@ class OldStyleLogProvider :
 };
 }
 } // namespace SecurityManager
-
-#endif // SECURITYMANAGER_OLD_STYLE_LOG_PROVIDER_H

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011 Samsung Electronics Co., Ltd All Rights Reserved
+ * Copyright (c) 2011 - 2016 Samsung Electronics Co., Ltd All Rights Reserved
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -20,8 +20,7 @@
  * @brief       This file is the implementation file of SQL naive
  * synchronization object
  */
-#ifndef SECURITY_MANAGER_NAIVE_SYNCHRONIZATION_OBJECT_H
-#define SECURITY_MANAGER_NAIVE_SYNCHRONIZATION_OBJECT_H
+#pragma once
 
 #include <dpl/db/sql_connection.h>
 
@@ -41,5 +40,3 @@ class NaiveSynchronizationObject :
 };
 } // namespace DB
 } // namespace SecurityManager
-
-#endif // SECURITY_MANAGER_NAIVE_SYNCHRONIZATION_OBJECT_H

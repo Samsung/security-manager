@@ -21,8 +21,7 @@
  * @brief       Implementation of the service methods
  */
 
-#ifndef _SECURITY_MANAGER_SERVICE_IMPL_
-#define _SECURITY_MANAGER_SERVICE_IMPL_
+#pragma once
 
 #include <unistd.h>
 #include <sys/types.h>
@@ -304,5 +303,3 @@ private:
 };
 
 } /* namespace SecurityManager */
-
-#endif /* _SECURITY_MANAGER_SERVICE_IMPL_ */

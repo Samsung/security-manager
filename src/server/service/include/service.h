@@ -22,8 +22,7 @@
  * @brief       Implementation of security-manager service
  */
 
-#ifndef _SECURITY_MANAGER_SERVICE_
-#define _SECURITY_MANAGER_SERVICE_
+#pragma once
 
 #include "base-service.h"
 #include "credentials.h"
@@ -198,5 +197,3 @@ private:
 };
 
 } // namespace SecurityManager
-
-#endif // _SECURITY_MANAGER_SERVICE_

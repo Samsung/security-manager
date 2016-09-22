@@ -17,8 +17,7 @@
  *
  */
 
-#ifndef SECURITY_MANAGER_APP_SHARING_H_
-#define SECURITY_MANAGER_APP_SHARING_H_
+#pragma once
 
 #include "security-manager-types.h"
 
@@ -114,5 +113,3 @@ int security_manager_private_sharing_drop(const private_sharing_req *p_req);
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* SECURITY_MANAGER_APP_SHARING_H_ */

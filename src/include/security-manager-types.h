@@ -23,8 +23,7 @@
  * @version     1.0
  * @brief       This file contains header of security-manager API
  */
-#ifndef SECURITY_MANAGER_TYPES_H_
-#define SECURITY_MANAGER_TYPES_H_
+#pragma once
 
 #ifdef __cplusplus
 extern "C" {
@@ -145,6 +144,3 @@ typedef struct app_labels_monitor app_labels_monitor;
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* SECURITY_MANAGER_TYPES_H_ */
-

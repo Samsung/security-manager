@@ -19,8 +19,7 @@
  * @version    1.0
  */
 
-#ifndef SECURITY_MANAGER_CREDENTIALS_
-#define SECURITY_MANAGER_CREDENTIALS_
+#pragma once
 
 #include <string>
 #include <sys/types.h>
@@ -53,5 +52,3 @@ private:
 };
 
 } // namespace SecurityManager
-
-#endif /* SECURITY_MANAGER_CREDENTIALS_ */

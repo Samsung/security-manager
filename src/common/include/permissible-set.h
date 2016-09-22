@@ -23,8 +23,7 @@
  * @brief       Header with API for adding, deleting and reading permissible names
  * @brief       (names of installed applications)
  */
-#ifndef _PERMISSIBLE_SET_H_
-#define _PERMISSIBLE_SET_H_
+#pragma once
 
 #include <cstdlib>
 #include <string>
@@ -89,4 +88,3 @@ void removeUserPermissibleFile(uid_t uid);
 
 } // PermissibleSet
 } // SecurityManager
-#endif /* _PERMISSIBLE_SET_H_ */

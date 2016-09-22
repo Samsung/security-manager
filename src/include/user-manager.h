@@ -17,8 +17,7 @@
  *
  */
 
-#ifndef SECURITY_MANAGER_USER_MANAGER_H_
-#define SECURITY_MANAGER_USER_MANAGER_H_
+#pragma once
 
 #include "security-manager-types.h"
 
@@ -101,5 +100,3 @@ int security_manager_user_delete(const user_req *p_req);
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* SECURITY_MANAGER_USER_MANAGER_H_ */

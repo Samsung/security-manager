@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015 Samsung Electronics Co., Ltd All Rights Reserved
+ *  Copyright (c) 2015 - 2016 Samsung Electronics Co., Ltd All Rights Reserved
  *
  *  Contact: Rafal Krypa <r.krypa@samsung.com>
  *
@@ -22,8 +22,7 @@
  * @brief       Definition of Statement Wrapper class.
  */
 
-#ifndef SECURITY_MANAGER_STMT_WRAPPER_
-#define SECURITY_MANAGER_STMT_WRAPPER_
+#pragma once
 
 #include <string>
 #include <dpl/db/sql_connection.h>
@@ -45,5 +44,3 @@ private:
 };
 
 } /* namespace SecurityManager */
-
-#endif /* SECURITY_MANAGER_STMT_WRAPPER_ */

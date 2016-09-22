@@ -20,8 +20,7 @@
  * @author     Krzysztof Jackiewicz (k.jackiewicz@samsung.com)
  * @version    1.0
  */
-#ifndef _PKG_INFO_H_
-#define _PKG_INFO_H_
+#pragma once
 
 #include <string>
 
@@ -34,5 +33,3 @@ struct PkgInfo {
 };
 
 } // SecurityManager
-
-#endif /* _PKG_INFO_H_ */

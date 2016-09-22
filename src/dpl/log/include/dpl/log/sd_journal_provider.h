@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014 Samsung Electronics Co., Ltd All Rights Reserved
+ * Copyright (c) 2014 - 2016 Samsung Electronics Co., Ltd All Rights Reserved
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -20,8 +20,7 @@
  * @brief       This file contains the implementation of systemd journal log provider
  */
 
-#ifndef SECURITYMANAGER_SD_JOURNAL_PROVIDER_H
-#define SECURITYMANAGER_SD_JOURNAL_PROVIDER_H
+#pragma once
 
 #include <dpl/log/abstract_log_provider.h>
 #include <memory>
@@ -74,5 +73,3 @@ class SdJournalProvider :
 
 } // namespace Log
 } // namespace SecurityManager
-
-#endif // SECURITYMANAGER_SD_JOURNAL_PROVIDER_H

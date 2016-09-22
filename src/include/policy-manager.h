@@ -17,8 +17,7 @@
  *
  */
 
-#ifndef SECURITY_MANAGER_POLICY_MANAGER_H_
-#define SECURITY_MANAGER_POLICY_MANAGER_H_
+#pragma once
 
 #include "security-manager-types.h"
 
@@ -442,5 +441,3 @@ void security_manager_policy_levels_free(char **levels, size_t levels_count);
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* SECURITY_MANAGER_POLICY_MANAGER_H_ */

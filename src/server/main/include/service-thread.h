@@ -22,8 +22,7 @@
  * @brief       Implementation of threads.
  */
 
-#ifndef _SECURITY_MANAGER_SERVICE_THREAD_
-#define _SECURITY_MANAGER_SERVICE_THREAD_
+#pragma once
 
 #include <cassert>
 #include <queue>
@@ -173,5 +172,3 @@ protected:
 };
 
 } // namespace SecurityManager
-
-#endif // _SECURITY_MANAGER_SERVICE_THREAD_

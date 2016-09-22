@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015 Samsung Electronics Co., Ltd All Rights Reserved
+ *  Copyright (c) 2015 - 2016 Samsung Electronics Co., Ltd All Rights Reserved
  *
  *  Contact: Rafal Krypa <r.krypa@samsung.com>
  *
@@ -16,14 +16,13 @@
  *  limitations under the License
  */
 /**
- * @file        fs-exceptions.h
+ * @file        filesystem-exception.h
  * @author      Rafal Krypa <r.krypa@samsung.com>
  * @version     1.0
  * @brief       Declaration of Smack-specific exceptions
  *
  */
-#ifndef _FILESYSTEM_EXCEPTIONS_H_
-#define _FILESYSTEM_EXCEPTIONS_H_
+#pragma once
 
 #include <dpl/exception.h>
 
@@ -38,5 +37,3 @@ public:
 
 } // namespace FS
 } // namespace SecurityManager
-
-#endif /* _FILESYSTEM_EXCEPTIONS_H_ */

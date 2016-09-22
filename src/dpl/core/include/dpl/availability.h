@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 Samsung Electronics Co., Ltd All Rights Reserved
+ * Copyright (c) 2013 - 2016 Samsung Electronics Co., Ltd All Rights Reserved
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -18,13 +18,10 @@
  * @author      Jihoon Chung (jihoon.chung@samsung.com)
  * @version     1.0
  */
-#ifndef SECURITY_MANAGER_AVAILABILITY_H
-#define SECURITY_MANAGER_AVAILABILITY_H
+#pragma once
 
 #define SECURITY_MANAGER_DEPRECATED __attribute__((deprecated))
 #define SECURITY_MANAGER_DEPRECATED_WITH_MESSAGE(msg) __attribute__((deprecated(msg)))
 
 #define SECURITY_MANAGER_UNUSED __attribute__((unused))
 #define SECURITY_MANAGER_UNUSED_PARAM(variable) (void)variable
-
-#endif // SECURITY_MANAGER_AVAILABILITY_H

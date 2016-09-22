@@ -17,8 +17,7 @@
  *
  */
 
-#ifndef SECURITY_MANAGER_APP_RUNTIME_H_
-#define SECURITY_MANAGER_APP_RUNTIME_H_
+#pragma once
 
 #include "security-manager-types.h"
 
@@ -209,5 +208,3 @@ int security_manager_app_has_privilege(const char *app_id, const char *privilege
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* SECURITY_MANAGER_APP_RUNTIME_H_ */

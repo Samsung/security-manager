@@ -21,8 +21,7 @@
  * @brief       Wrapper class for Cynara interface
  */
 
-#ifndef _SECURITY_MANAGER_CYNARA_
-#define _SECURITY_MANAGER_CYNARA_
+#pragma once
 
 #include <cynara-client-async.h>
 #include <cynara-admin.h>
@@ -353,5 +352,3 @@ private:
 };
 
 } // namespace SecurityManager
-
-#endif // _SECURITY_MANAGER_CYNARA_

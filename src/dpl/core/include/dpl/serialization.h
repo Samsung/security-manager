@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011 Samsung Electronics Co., Ltd All Rights Reserved
+ * Copyright (c) 2011 - 2016 Samsung Electronics Co., Ltd All Rights Reserved
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -19,8 +19,7 @@
  * @version 1.0
  * @brief   Interfaces and templates used for data serialization.
  */
-#ifndef SERIALIZATION_H
-#define SERIALIZATION_H
+#pragma once
 
 #include <string>
 #include <vector>
@@ -409,5 +408,3 @@ struct Deserialization {
     }
 }; // struct Deserialization
 } // namespace SecurityManager
-
-#endif // SERIALIZATION_H

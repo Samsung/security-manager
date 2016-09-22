@@ -22,8 +22,7 @@
  * @brief       SocketManager implementation.
  */
 
-#ifndef _SECURITY_MANAGER_SOCKET_MANAGER_
-#define _SECURITY_MANAGER_SOCKET_MANAGER_
+#pragma once
 
 #include <vector>
 #include <queue>
@@ -131,5 +130,3 @@ protected:
 };
 
 } // namespace SecurityManager
-
-#endif // _SECURITY_MANAGER_SOCKET_MANAGER_
