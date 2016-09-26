@@ -61,6 +61,12 @@ do
     cyad --set-policy --bucket=MANIFESTS --client="$client" --user="*" --privilege="*" --type=ALLOW
 done
 
+# Root shell get access to all privileges
+cyad --set-policy --bucket=MANIFESTS --client="User::Shell" --user="0" --privilege="*" --type=ALLOW
+
+# Shell process get access to packagemanager.admin privilege to install applications
+cyad --set-policy --bucket=MANIFESTS --client="User::Shell" --user="*" --privilege="http://tizen.org/privilege/packagemanager.admin" --type=ALLOW
+
 # Load privilege-group mappings
 (
 echo "BEGIN;"
