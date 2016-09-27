@@ -43,16 +43,20 @@ public:
     DECLARE_EXCEPTION_TYPE(Base, FileOpenError)
     DECLARE_EXCEPTION_TYPE(Base, FileReadError)
     DECLARE_EXCEPTION_TYPE(Base, FileWriteError)
+    DECLARE_EXCEPTION_TYPE(Base, FileInitError)
+    DECLARE_EXCEPTION_TYPE(Base, FileRemoveError)
 };
+
 /**
- * Return path to file with current list of application names
+ * Return path to file with current list of application labels
  * installed globally or locally for the user.
  *
  * @param[in] uid identifier of the user whose application it should be
  * @param[in] installationType type of installation (global or local)
- * @return path to file with names
+ * @return path to file with labels
  */
 std::string getPerrmissibleFileLocation(uid_t uid, int installationType);
+
 /**
  * Update permissable file with current content of database
  * @throws FileLockError
@@ -64,17 +68,23 @@ std::string getPerrmissibleFileLocation(uid_t uid, int installationType);
  * @return resulting true on success
  */
 void updatePermissibleFile(uid_t uid, int installationType);
+
 /**
- * Read names from a file into a vector
+ * Read labels from a file into a vector
  * @throws FileLockError
  * @throws FileOpenError
  * @throws FileReadError
  *
- * @param[in] nameFile contains application names
- * @param[out] names vector to which application names are added
+ * @param[in] nameFile path to the labels file
+ * @param[out] appLabels vector to which application labels are added
  * @return SECURITY_MANAGER_SUCCESS or error code
  */
-void readNamesFromPermissibleFile(const std::string &nameFile, std::vector<std::string> &names);
+void readLabelsFromPermissibleFile(const std::string &nameFile, std::vector<std::string> &appLabels);
+
+void initializeUserPermissibleFile(uid_t uid);
+
+void removeUserPermissibleFile(uid_t uid);
+
 } // PermissibleSet
 } // SecurityManager
 #endif /* _PERMISSIBLE_SET_H_ */

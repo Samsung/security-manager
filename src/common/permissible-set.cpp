@@ -30,10 +30,12 @@
 #include <cstdio>
 #include <cstring>
 #include <fstream>
+#include <linux/xattr.h>
 #include <memory>
 #include <pwd.h>
 #include <string>
 #include <sys/file.h>
+#include <sys/smack.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -43,9 +45,11 @@
 #include <dpl/exception.h>
 #include <dpl/fstream_accessors.h>
 #include <dpl/log/log.h>
+#include <filesystem.h>
 #include <permissible-set.h>
 #include <privilege_db.h>
 #include <security-manager-types.h>
+#include <smack-labels.h>
 #include <tzplatform_config.h>
 
 #include "tzplatform-config.h"
@@ -81,12 +85,10 @@ std::string getPerrmissibleFileLocation(uid_t uid, int installationType)
     if ((installationType == SM_APP_INSTALL_GLOBAL)
             || (installationType == SM_APP_INSTALL_PRELOADED))
         return tpc.ctxMakePath(TZ_SYS_VAR, Config::SERVICE_NAME,
-                              Config::APPS_NAME_FILE.c_str());
-    else {
-        std::string user = tpc.ctxGetEnv(TZ_USER_NAME);
-        return tpc.ctxMakePath(TZ_SYS_VAR, Config::SERVICE_NAME, user,
-                              Config::APPS_NAME_FILE.c_str());
-    }
+            Config::APPS_LABELS_FILE);
+    else
+        return tpc.ctxMakePath(TZ_SYS_VAR, Config::SERVICE_NAME,
+            tpc.ctxGetEnv(TZ_USER_NAME), Config::APPS_LABELS_FILE);
 }
 
 static void markPermissibleFileValid(int fd, const std::string &nameFile, bool valid)
@@ -108,10 +110,11 @@ void updatePermissibleFile(uid_t uid, int installationType)
     std::ofstream fstream;
     openAndLockNameFile(nameFile, fstream);
     markPermissibleFileValid(getFd(fstream), nameFile, false);
+
     std::vector<std::string> appNames;
     PrivilegeDb::getInstance().GetUserApps(uid, appNames);
-    for (auto &name : appNames) {
-        fstream << name << '\n';
+    for (auto &appName : appNames) {
+        fstream << SmackLabels::generateAppLabel(appName) << '\n';
         if (fstream.bad()) {
             LogError("Unable to write to file " << nameFile << ": " << GetErrnoString(errno));
             ThrowMsg(PermissibleSetException::PermissibleSetException::FileWriteError,
@@ -129,19 +132,51 @@ void updatePermissibleFile(uid_t uid, int installationType)
     markPermissibleFileValid(getFd(fstream), nameFile, true);
 }
 
-void readNamesFromPermissibleFile(const std::string &nameFile, std::vector<std::string> &names)
+void readLabelsFromPermissibleFile(const std::string &nameFile, std::vector<std::string> &appLabels)
 {
     std::ifstream fstream;
     openAndLockNameFile(nameFile, fstream);
 
     std::string line;
     while (std::getline(fstream, line))
-        names.push_back(line);
+        appLabels.push_back(line);
 
     if (fstream.bad()) {
         LogError("Failure while reading file " << nameFile << ": " << GetErrnoString(errno));
         ThrowMsg(PermissibleSetException::FileReadError, "Failure while reading file");
     }
+}
+
+void initializeUserPermissibleFile(uid_t uid)
+{
+    std::string nameFile = getPerrmissibleFileLocation(uid, SM_APP_INSTALL_LOCAL);
+    std::string nameDir = FS::dirName(nameFile);
+
+    if (mkdir(nameDir.c_str(), 0755) != 0 && errno != EEXIST)
+        ThrowMsg(PermissibleSetException::FileInitError,
+            "Unable to create directory for user permissible file:" << GetErrnoString(errno));
+
+    std::ofstream fstream;
+    openAndLockNameFile(nameFile, fstream);
+    if (smack_set_label_for_file(getFd(fstream), XATTR_NAME_SMACK, "_") != 0)
+        ThrowMsg(PermissibleSetException::FileInitError,
+            "Unable to set Smack label for user permissible file");
+
+    markPermissibleFileValid(getFd(fstream), nameFile, true);
+}
+
+void removeUserPermissibleFile(uid_t uid)
+{
+    std::string nameFile = getPerrmissibleFileLocation(uid, SM_APP_INSTALL_LOCAL);
+    std::string nameDir = FS::dirName(nameFile);
+
+    if (unlink(nameFile.c_str()) != 0 && errno != ENOENT)
+        ThrowMsg(PermissibleSetException::FileRemoveError,
+            "Unable to remove user permissible file:" << GetErrnoString(errno));
+
+    if (rmdir(nameFile.c_str()) != 0 && errno != ENOENT)
+        ThrowMsg(PermissibleSetException::FileRemoveError,
+            "Unable to remove directory for user permissible file:" << GetErrnoString(errno));
 }
 
 } // PermissibleSet

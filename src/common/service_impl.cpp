@@ -149,45 +149,6 @@ bool fileExists(const std::string &path) {
     return (stat(path.c_str(), &buffer) == 0) && S_ISREG(buffer.st_mode);
 }
 
-lib_retcode makeDirIfNotExists(const std::string &path, mode_t mode, const std::string &label)
-{
-    if (mkdir(path.c_str(), mode) != 0 && errno != EEXIST) {
-        LogError("Creation of directory " + path + "failed");
-        return SECURITY_MANAGER_ERROR_FILE_CREATE_FAILED;
-    }
-    if (smack_set_label_for_path(path.c_str(), XATTR_NAME_SMACK, 0, label.c_str()) < 0) {
-        LogError("Setting smack label failed for: " << path);
-        return SECURITY_MANAGER_ERROR_SETTING_FILE_LABEL_FAILED;
-    }
-    return SECURITY_MANAGER_SUCCESS;
-}
-
-lib_retcode initializeUserAppsNameConfig(uid_t userAdded, const std::string &label) {
-    TizenPlatformConfig tpc(userAdded);
-    std::string user = tpc.ctxGetEnv(TZ_USER_NAME);
-    std::string userDirectory = tpc.ctxMakePath(TZ_SYS_VAR, Config::SERVICE_NAME, user);
-    std::string userFile = tpc.ctxMakePath(TZ_SYS_VAR, Config::SERVICE_NAME, user,
-                                           Config::APPS_NAME_FILE);
-    lib_retcode ret = makeDirIfNotExists(userDirectory, S_IRUSR|S_IXUSR|S_IWUSR|S_IXGRP|S_IXOTH,
-                                         label);
-    if (ret != SECURITY_MANAGER_SUCCESS)
-        return ret;
-    int fd = open(userFile.c_str(), O_CREAT|O_WRONLY, S_IRUSR|S_IRGRP|S_IROTH);
-    if (fd == -1) {
-        LogError("File creation failed with: " << GetErrnoString(errno) << " for: " << userFile);
-        return SECURITY_MANAGER_ERROR_FILE_CREATE_FAILED;
-    }
-    if (smack_set_label_for_file(fd, XATTR_NAME_SMACK, label.c_str()) < 0) {
-        LogError("Setting smack label for file: " << userFile << "failed");
-        return SECURITY_MANAGER_ERROR_SETTING_FILE_LABEL_FAILED;
-    }
-    if (close(fd) == -1) {
-        LogWarning("Close of file failed with: " << GetErrnoString(errno) << " for: " << userFile);
-    }
-
-    return SECURITY_MANAGER_SUCCESS;
-}
-
 class ScopedTransaction {
 public:
     ScopedTransaction() : m_isCommited(false) {
@@ -832,12 +793,13 @@ int ServiceImpl::userAdd(const Credentials &creds, uid_t uidAdded, int userType)
         return SECURITY_MANAGER_ERROR_AUTHENTICATION_FAILED;
     }
     try {
-        lib_retcode ret;
         CynaraAdmin::getInstance().UserInit(uidAdded, static_cast<security_manager_user_type>(userType), isPrivilegePrivacy);
-        if ((ret = initializeUserAppsNameConfig(uidAdded, "_")) != SECURITY_MANAGER_SUCCESS)
-            return ret;
+        PermissibleSet::initializeUserPermissibleFile(uidAdded);
     } catch (CynaraException::InvalidParam &e) {
         return SECURITY_MANAGER_ERROR_INPUT_PARAM;
+    } catch (const PermissibleSet::PermissibleSetException::FileInitError &e) {
+        LogError("Error while adding user: " << e.DumpToString());
+        return SECURITY_MANAGER_ERROR_SETTING_FILE_LABEL_FAILED;
     } catch (const std::exception &e) {
         LogError("Memory allocation error while adding user: " << e.what());
         return SECURITY_MANAGER_ERROR_SERVER_ERROR;
@@ -858,8 +820,15 @@ int ServiceImpl::userDelete(const Credentials &creds, uid_t uidDeleted)
     std::vector<std::string> userApps;
     try {
         PrivilegeDb::getInstance().GetUserApps(uidDeleted, userApps);
+        PermissibleSet::removeUserPermissibleFile(uidDeleted);
     } catch (const PrivilegeDb::Exception::Base &e) {
         LogError("Error while getting user apps from database: " << e.DumpToString());
+        return SECURITY_MANAGER_ERROR_SERVER_ERROR;
+    } catch (const PermissibleSet::PermissibleSetException::FileRemoveError &e) {
+        LogError("Error while removing user: " << e.DumpToString());
+        return SECURITY_MANAGER_ERROR_FILE_DELETE_FAILED;
+    } catch (const std::exception &e) {
+        LogError("Memory allocation error while deleting user: " << e.what());
         return SECURITY_MANAGER_ERROR_SERVER_ERROR;
     }
 
@@ -876,32 +845,7 @@ int ServiceImpl::userDelete(const Credentials &creds, uid_t uidDeleted)
             ret = SECURITY_MANAGER_ERROR_SERVER_ERROR;
         }
     }
-    try {
-        TizenPlatformConfig tpc(uidDeleted);
-        std::string user = tpc.ctxGetEnv(TZ_USER_NAME);
-        std::string userDirectory = tpc.ctxMakePath(TZ_SYS_VAR, Config::SERVICE_NAME, user);
-        std::string userFile = tpc.ctxMakePath(TZ_SYS_VAR, Config::SERVICE_NAME, user,
-                                               Config::APPS_NAME_FILE);
-        int res = unlink(userFile.c_str());
-        if (res) {
-            if (errno != ENOENT) {
-                LogError("File deletion failed with: " << GetErrnoString(errno) <<
-                         " for: " << userFile);
-                ret = SECURITY_MANAGER_ERROR_FILE_DELETE_FAILED;
-            }
-        }
-        res = rmdir(userDirectory.c_str());
-        if (res) {
-            if (errno != ENOENT) {
-                LogError("Directory deletion failed with: " << GetErrnoString(errno) <<
-                         " for: " << userDirectory);
-                ret = SECURITY_MANAGER_ERROR_FILE_DELETE_FAILED;
-            }
-        }
-    } catch (const std::exception &e) {
-        LogError("Memory allocation error while deleting user: " << e.what());
-        return SECURITY_MANAGER_ERROR_SERVER_ERROR;
-    }
+
     CynaraAdmin::getInstance().UserRemove(uidDeleted);
 
     return ret;

@@ -86,6 +86,18 @@ FileNameVector getDirContents(const std::string &path, const mode_t &mode)
     return result;
 }
 
+std::string dirName(const std::string &path)
+{
+    size_t slashPos = path.find_last_of('/');
+
+    if (slashPos == std::string::npos)
+        return ".";
+    else if (slashPos == 0)
+        return "/";
+    else
+        return path.substr(0, slashPos);
+}
+
 } // namespace FS
 } // nanespace SecurityManager
 

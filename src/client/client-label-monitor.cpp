@@ -64,15 +64,17 @@ struct app_labels_monitor {
 static lib_retcode apply_relabel_list(const std::string &global_label_file,
         const std::string &user_label_file)
 {
-    std::vector<std::string> names;
+    std::vector<std::string> appLabels;
+
     try {
-        PermissibleSet::readNamesFromPermissibleFile(global_label_file, names);
-        PermissibleSet::readNamesFromPermissibleFile(user_label_file, names);
+        PermissibleSet::readLabelsFromPermissibleFile(global_label_file, appLabels);
+        PermissibleSet::readLabelsFromPermissibleFile(user_label_file, appLabels);
         std::vector<const char*> temp;
-        std::transform(names.begin(), names.end(), std::back_inserter(temp),
-                [] (std::string &label) {label = SmackLabels::generateAppLabel(label);
-                    return label.c_str();});
-        if (smack_set_relabel_self(const_cast<const char **>(temp.data()), temp.size()) != 0) {
+
+        std::transform(appLabels.begin(), appLabels.end(), std::back_inserter(temp),
+                [] (std::string &label) {return label.c_str();});
+
+        if (smack_set_relabel_self(temp.data(), temp.size()) != 0) {
             LogError("smack_set_relabel_self failed");
             return SECURITY_MANAGER_ERROR_SET_RELABEL_SELF_FAILED;
         }
@@ -162,7 +164,7 @@ void security_manager_app_labels_monitor_finish(app_labels_monitor *monitor)
                 int ret = inotify_rm_watch(monitorPtr->inotify, monitorPtr->global_labels_file_watch);
                 if (ret == -1) {
                     LogError("Inotify watch removal failed on file " <<
-                            Config::APPS_NAME_FILE << ": " << GetErrnoString(errno));
+                            Config::APPS_LABELS_FILE << ": " << GetErrnoString(errno));
                 }
             }
             if (monitorPtr->user_labels_file_watch != -1) {

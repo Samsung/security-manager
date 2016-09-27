@@ -43,7 +43,7 @@ extern const std::string PRIVILEGE_POLICY_ADMIN;
 extern const std::string PRIVILEGE_APPSHARING_ADMIN;
 
 /* Files used in permitted label managment */
-extern const std::string APPS_NAME_FILE;
+extern const std::string APPS_LABELS_FILE;
 
 extern const std::string SKEL_DIR;
 
