@@ -86,7 +86,11 @@ static std::atomic<int> g_threads_count;
 static std::map<uid_t, std::string> g_tid_attr_current_map;
 static bool g_smack_present;
 static cap_t g_cap;
+
 #define MAX_SIG_WAIT_TIME   1000
+
+// Hackish, based on glibc's definition in sysdeps/unix/sysv/linux/nptl-signals.h
+#define SIGSETXID           (__SIGRTMIN + 1)
 
 SECURITY_MANAGER_API
 const char *security_manager_strerror(enum lib_retcode rc)
@@ -528,21 +532,30 @@ static int getAppGroups(const std::string appName, std::vector<gid_t> &groups)
     return groupNamesToGids(groupNames, groups);
 }
 
-inline static uid_t gettid()
+namespace Syscall {
+
+inline static int gettid()
 {
     return syscall(SYS_gettid);
 }
 
-inline static bool tgkill(pid_t tgid, uid_t tid)
+inline static int tgkill(int tgid, int tid, int sig)
 {
-    return syscall(SYS_tgkill, tgid, tid, SIGUSR1) == 0;
+    return syscall(SYS_tgkill, tgid, tid, sig);
 }
+
+inline static int sigaction(int signum, const struct sigaction *act, struct sigaction *oldact)
+{
+    return syscall(SYS_sigaction, signum, act, oldact);
+}
+
+} // namespace Syscall
 
 inline static int label_for_self_internal()
 {
     int fd;
     int ret;
-    fd = open(g_tid_attr_current_map[gettid()].c_str(), O_WRONLY);
+    fd = open(g_tid_attr_current_map[Syscall::gettid()].c_str(), O_WRONLY);
     if (fd < 0) {
         return -1;
     }
@@ -565,7 +578,7 @@ static inline int security_manager_sync_threads_internal(const char *app_name)
     }
 
     FS::FileNameVector files = FS::getDirsFromDirectory("/proc/self/task");
-    uid_t cur_tid = gettid();
+    uid_t cur_tid = Syscall::gettid();
     pid_t cur_pid = getpid();
 
     int ret = fetchLabelForProcess(app_name, g_app_label);
@@ -609,7 +622,7 @@ static inline int security_manager_sync_threads_internal(const char *app_name)
         g_threads_count++;
     };
 
-    if (sigaction(SIGUSR1, &act, &old) < 0) {
+    if (Syscall::sigaction(SIGSETXID, &act, &old) < 0) {
         LogError("Error in sigaction()");
         cap_free(g_cap);
         return SECURITY_MANAGER_ERROR_UNKNOWN;
@@ -631,7 +644,7 @@ static inline int security_manager_sync_threads_internal(const char *app_name)
     std::atomic_thread_fence(std::memory_order_release);
 
     for (auto const& t_pair : g_tid_attr_current_map) {
-        if (!tgkill(cur_pid, t_pair.first)) {
+        if (Syscall::tgkill(cur_pid, t_pair.first, SIGSETXID) < 0) {
             LogWarning("Error in tgkill()");
             continue;
         }
@@ -644,7 +657,7 @@ static inline int security_manager_sync_threads_internal(const char *app_name)
     for (int i = 0; g_threads_count != sent_signals_count && i < MAX_SIG_WAIT_TIME; ++i)
         usleep(1000);   // 1 ms
 
-    sigaction(SIGUSR1, &old, nullptr);
+    Syscall::sigaction(SIGSETXID, &old, nullptr);
 
     if (g_threads_count != sent_signals_count) {
         LogError("Not all threads synchronized: threads done: " << g_threads_count);
