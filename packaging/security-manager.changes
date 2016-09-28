@@ -1,3 +1,8 @@
+* Wed Sep 28 2016 Rafal Krypa <r.krypa@samsung.com>
+- Version 1.2.1
+- Change the way of app process label generation
+- Update default policy for new domain('User::Shell')
+
 * Tue Sep 20 2016 Rafal Krypa <r.krypa@samsung.com>
 - Version 1.2.0
 - Add internal privilege for internal APIs
