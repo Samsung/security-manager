@@ -164,7 +164,7 @@ public:
     /**
      * List all users registered in Cynara
      *
-     * @param[out] listOfUsers list of users
+     * @param listOfUsers empty vector for list of users
      */
     void ListUsers(std::vector<uid_t> &listOfUsers);
 
