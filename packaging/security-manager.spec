@@ -119,7 +119,9 @@ mkdir -p %{buildroot}/%{TZ_SYS_DB}
 touch %{buildroot}/%{TZ_SYS_DB}/.security-manager.db
 touch %{buildroot}/%{TZ_SYS_DB}/.security-manager.db-journal
 
-install -m 0444 -D /dev/null %{buildroot}%{TZ_SYS_VAR}/security-manager/apps-names
+install -m 0755 -d %{buildroot}%{TZ_SYS_VAR}/security-manager
+install -m 0444 /dev/null %{buildroot}%{TZ_SYS_VAR}/security-manager/apps-names
+install -m 0444 /dev/null %{buildroot}%{TZ_SYS_VAR}/security-manager/policy-version
 
 %clean
 rm -rf %{buildroot}
@@ -165,6 +167,14 @@ fi
 %post -n libnss-security-manager -p /sbin/ldconfig
 
 %postun -n libnss-security-manager -p /sbin/ldconfig
+
+%pre
+### Workaround for invalid policy versioning mechanism
+if [ -e %{TZ_SYS_VAR}/security-manager/policy-version ] && [ x`cat %{TZ_SYS_VAR}/security-manager/policy-version` = x"1" ]
+then
+    ### Restart versioning, let the update scripts do their work
+    echo 0 >%{TZ_SYS_VAR}/security-manager/policy-version
+fi
 
 %post policy
 %{_datadir}/security-manager/policy/update.sh
