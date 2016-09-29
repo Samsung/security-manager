@@ -192,7 +192,7 @@ void generateAppPkgNameFromLabel(const std::string &label, std::string &appName,
         ThrowMsg(SmackException::InvalidLabel, "Invalid application process label " << label);
 
     size_t pkgStartPos = sizeof(pkgPrefix) - 1;
-    size_t pkgEndPos = pkgName.find(appPrefix, pkgStartPos);
+    size_t pkgEndPos = label.find(appPrefix, pkgStartPos);
     if (pkgEndPos != std::string::npos) {
         LogDebug("Hybrid application process label");
         size_t appStartPos = pkgEndPos + sizeof(appPrefix) - 1;
