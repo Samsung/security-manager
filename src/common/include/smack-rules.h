@@ -38,6 +38,9 @@ class SmackRules
 public:
     typedef std::string Rule;
     typedef std::vector<Rule> RuleVector;
+    typedef std::vector<std::string> Pkgs;
+    typedef std::vector<std::string> Labels;
+    typedef std::vector<std::pair<std::string, std::vector<std::string>>> PkgsLabels;
     typedef std::vector<std::pair<std::string, std::vector<std::string>>> PkgsApps;
 
     SmackRules();
@@ -51,13 +54,13 @@ public:
 
     void addFromTemplate(
             const RuleVector &templateRules,
-            const std::string &appName,
+            const std::string &appProcessLabel,
             const std::string &pkgName,
             const int authorId);
 
     void addFromTemplateFile(
             const std::string &templatePath,
-            const std::string &appName,
+            const std::string &appProcessLabel,
             const std::string &pkgName,
             const int authorId);
 
@@ -71,31 +74,28 @@ public:
      * This is needed for all applications within a package to have
      * correct permissions to shared data.
      *
-     * @param[in] pkgContents - a list of all applications inside this package
+     * @param[in] pkgLabels - a list of process labels of all applications inside this package
      */
-    void generatePackageCrossDeps(const std::vector<std::string> &pkgContents);
+    void generatePackageCrossDeps(const Labels &pkgLabels);
 
     /**
      * Generate RO rules for all applications to SharedRO apps during appInstall/Uninstall
      * Each application gets read-only access to files shared by SharedRO packages.
      *
-     * @param[in] pkgsApps           vector of all applications - each element contains
-     *                               a pair with package name and contents
-     * @param[in] sharedROPkgsApps   vector of applications having sharedRO directory in their package -
-     *                               each element contains a pair with package name and contents
+     * @param[in] pkgsLabels         vector of process labels per each existing package
+     * @param[in] sharedROPkgs       vector of packages having sharedRO directory
      */
-    static void generateSharedRORules(PkgsApps &pkgsApps, PkgsApps &sharedROPkgsApps);
+    static void generateSharedRORules(PkgsLabels &pkgsLabels, Pkgs &sharedROPkgs);
 
     /**
      * Revoke SharedRO rules for applications when a package is being removed
      * Rules from all applications in \ref pkgsApps to SharedRO label of the package
      * under removal will be revoked from kernel.
      *
-     * @param[in] pkgsApps    vector of applications - each element contains
-     *                        a pair with package name and contents
+     * @param[in] pkgsLabels         vector of process labels per each existing package
      * @param[in] revokePkg   package name being removed
      */
-    static void revokeSharedRORules(PkgsApps &pkgsApps, const std::string &revokePkg);
+    static void revokeSharedRORules(PkgsLabels &pkgsLabels, const std::string &revokePkg);
 
     /**
      * Install package-specific smack rules plus add rules for specified external apps.
@@ -106,13 +106,14 @@ public:
      * @param[in] appName - application identifier
      * @param[in] pkgName - package identifier
      * @param[in] authorId - author id of application
-     * @param[in] pkgContents - list of all applications in the package
+     * @param[in] pkgLabels - a list of process labels of all applications inside this package
      */
     static void installApplicationRules(
             const std::string &appName,
+            const std::string &appProcessLabel,
             const std::string &pkgName,
             const int authorId,
-            const std::vector<std::string> &pkgContents);
+            const Labels &pkgLabels);
 
     /**
      * Uninstall package-specific smack rules.
@@ -131,8 +132,9 @@ public:
     * removes them for persistent storage.
     *
     * @param[in] appName - application identifier
+    * @param[in] appLabel - application process label
     */
-    static void uninstallApplicationRules(const std::string &appName);
+    static void uninstallApplicationRules(const std::string &appName, const std::string &appLabel);
 
     /**
      * Update package specific rules
@@ -163,17 +165,17 @@ public:
      * If isTargetSharingAlready, no rule for directory traversing is set for target.
      *
      * @param[in] ownerPkgName - package identifier of path owner
-     * @param[in] ownerPkgContents - vector of application ids contained in package which owner
-     *                               application belongs to
-     * @param[in] targetAppName - application identifier of the target application
+     * @param[in] ownerPkgLabels - vector of process labels of applications contained in package
+     *                             which owner application belongs to
+     * @param[in] targetAppLabel - process label of the target application
      * @param[in] pathLabel - a list of all applications in the package
      * @param[in] isPathSharedAlready - flag indicated, if path has been shared before
      * @param[in] isTargetSharingAlready - flag indicated, if target is already sharing anything
      *                                     with owner
      */
     static void applyPrivateSharingRules(const std::string &ownerPkgName,
-                                         const std::vector<std::string> &ownerPkgContents,
-                                         const std::string &targetAppName,
+                                         const SmackRules::Labels &ownerPkgLabels,
+                                         const std::string &targetAppLabel,
                                          const std::string &pathLabel,
                                          bool isPathSharedAlready,
                                          bool isTargetSharingAlready);
@@ -186,17 +188,17 @@ public:
      * If isTargetSharingNoMore, rule for directory traversing is removed for target.
      *
      * @param[in] ownerPkgName - package identifier of path owner
-     * @param[in] ownerPkgContents - vector of application ids contained in package which owner
-     *                               application belongs to
-     * @param[in] targetAppName - application identifier of the target application
+     * @param[in] ownerPkgLabels - vector of process labels of applications contained in package
+     *                             which owner application belongs to
+     * @param[in] targetAppLabel - process label of the target application
      * @param[in] pathLabel - a list of all applications in the package
      * @param[in] isPathSharedNoMore - flag indicated, if path is not shared anymore
      * @param[in] isTargetSharingNoMore - flag indicated, if target is not sharing anything
      *                                    with owner
      */
     static void dropPrivateSharingRules(const std::string &ownerPkgName,
-                                        const std::vector<std::string> &ownerPkgContents,
-                                        const std::string &targetAppName,
+                                        const Labels &ownerPkgLabels,
+                                        const std::string &targetAppLabel,
                                         const std::string &pathLabel,
                                         bool isPathSharedNoMore,
                                         bool isTargetSharingNoMore);
@@ -212,7 +214,7 @@ private:
     static void useTemplate(
             const std::string &templatePath,
             const std::string &outputPath,
-            const std::string &appName,
+            const std::string &appProcessLabel,
             const std::string &pkgName,
             const int authorId = -1);
 
@@ -263,9 +265,9 @@ private:
     /**
      * Revoke rules for which label of given \ref appName is a subject.
      *
-     * @param[in] appName = application identifier
+     * @param[in] appLabel = application process label
      */
-    static void revokeAppSubject(const std::string &appName);
+    static void revokeAppSubject(const std::string &appLabel);
 };
 
 } // namespace SecurityManager

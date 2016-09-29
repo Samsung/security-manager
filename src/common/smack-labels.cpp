@@ -141,12 +141,12 @@ void setupPath(
 
     switch (pathType) {
     case SECURITY_MANAGER_PATH_RW:
-        label = generatePkgLabel(pkgName);
+        label = generatePathRWLabel(pkgName);
         label_executables = false;
         label_transmute = true;
         break;
     case SECURITY_MANAGER_PATH_RO:
-        label = generatePkgROLabel(pkgName);
+        label = generatePathROLabel(pkgName);
         label_executables = false;
         label_transmute = false;
         break;
@@ -156,14 +156,14 @@ void setupPath(
         label_transmute = true;
         break;
     case SECURITY_MANAGER_PATH_OWNER_RW_OTHER_RO:
-        label = generatePkgLabelOwnerRWothersRO(pkgName);
+        label = generatePathSharedROLabel(pkgName);
         label_executables = false;
         label_transmute = true;
         break;
     case SECURITY_MANAGER_PATH_TRUSTED_RW:
         if (authorId < 0)
             ThrowMsg(SmackException::InvalidParam, "You must define author to use PATH_TRUSED_RW");
-        label = generateAuthorLabel(authorId);
+        label = generatePathTrustedLabel(authorId);
         label_executables = false;
         label_transmute = true;
         break;
@@ -183,25 +183,35 @@ void setupSharedPrivatePath(const std::string &pkgName, const std::string &path)
     pathSetSmack(path.c_str(), generateSharedPrivateLabel(pkgName, path), XATTR_NAME_SMACK);
 }
 
-std::string generateAppNameFromLabel(const std::string &label)
+void generateAppPkgNameFromLabel(const std::string &label, std::string &appName, std::string &pkgName)
 {
-    static const char prefix[] = "User::App::";
+    static const char pkgPrefix[] = "User::Pkg::";
+    static const char appPrefix[] = "::App::";
 
-    if (label.compare(0, sizeof(prefix) - 1, prefix))
-        ThrowMsg(SmackException::InvalidLabel, "Cannot extract appName from Smack label " << label);
+    if (label.compare(0, sizeof(pkgPrefix) - 1, pkgPrefix))
+        ThrowMsg(SmackException::InvalidLabel, "Invalid application process label " << label);
 
-    std::string ret = label.substr(sizeof(prefix) - 1);
-
-    if (ret.size() == 0) {
-        ThrowMsg(SmackException::InvalidLabel, "No appName in Smack label " << label);
+    size_t pkgStartPos = sizeof(pkgPrefix) - 1;
+    size_t pkgEndPos = label.find(appPrefix, pkgStartPos);
+    if (pkgEndPos != std::string::npos) {
+        LogDebug("Hybrid application process label");
+        size_t appStartPos = pkgEndPos + sizeof(appPrefix) - 1;
+        appName = label.substr(appStartPos, std::string::npos);
+        pkgName = label.substr(pkgStartPos, pkgEndPos - pkgStartPos);
+    } else {
+        pkgName = label.substr(pkgStartPos, std::string::npos);
     }
 
-    return ret;
+    if (pkgName.empty())
+        ThrowMsg(SmackException::InvalidLabel, "No pkgName in Smack label " << label);
 }
 
-std::string generateAppLabel(const std::string &appName)
+std::string generateProcessLabel(const std::string &appName, const std::string &pkgName,
+                                 bool isHybrid)
 {
-    std::string label = "User::App::" + appName;
+    std::string label = "User::Pkg::" + pkgName;
+    if (isHybrid)
+        label += "::App::" + appName;
 
     if (smack_label_length(label.c_str()) <= 0)
         ThrowMsg(SmackException::InvalidLabel, "Invalid Smack label generated from appName " << appName);
@@ -209,7 +219,7 @@ std::string generateAppLabel(const std::string &appName)
     return label;
 }
 
-std::string generatePkgLabelOwnerRWothersRO(const std::string &pkgName)
+std::string generatePathSharedROLabel(const std::string &pkgName)
 {
     std::string label = "User::Pkg::" + pkgName + "::SharedRO";
 
@@ -219,7 +229,7 @@ std::string generatePkgLabelOwnerRWothersRO(const std::string &pkgName)
     return label;
 }
 
-std::string generatePkgLabel(const std::string &pkgName)
+std::string generatePathRWLabel(const std::string &pkgName)
 {
     std::string label = "User::Pkg::" + pkgName;
 
@@ -229,7 +239,7 @@ std::string generatePkgLabel(const std::string &pkgName)
     return label;
 }
 
-std::string generatePkgROLabel(const std::string &pkgName)
+std::string generatePathROLabel(const std::string &pkgName)
 {
     std::string label = "User::Pkg::" + pkgName + "::RO";
 
@@ -301,7 +311,7 @@ std::string getSmackLabelFromPid(pid_t pid)
     return result;
 }
 
-std::string generateAuthorLabel(const int authorId)
+std::string generatePathTrustedLabel(const int authorId)
 {
     if (authorId < 0) {
         LogError("Author was not set. It's not possible to generate label for unknown author.");

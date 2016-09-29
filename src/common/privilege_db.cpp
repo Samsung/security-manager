@@ -195,7 +195,8 @@ void PrivilegeDb::AddApplication(
         const std::string &pkgName,
         uid_t uid,
         const std::string &targetTizenVer,
-        const std::string &authorName)
+        const std::string &authorName,
+        bool isHybrid)
 {
     try_catch<void>([&] {
         auto command = getStatement(StmtType::EAddApplication);
@@ -204,10 +205,11 @@ void PrivilegeDb::AddApplication(
         command->BindInteger(3, static_cast<unsigned int>(uid));
         command->BindString(4, targetTizenVer);
         authorName.empty() ? command->BindNull(5) : command->BindString(5, authorName);
+        command->BindInteger(6, isHybrid ? 1 : 0);
 
         if (command->Step()) {
             LogDebug("Unexpected SQLITE_ROW answer to query: " <<
-                    Queries.at(StmtType::EAddApplication));
+                     Queries.at(StmtType::EAddApplication));
         };
 
         LogDebug("Added appName: " << appName << ", pkgName: " << pkgName);
@@ -549,6 +551,22 @@ bool PrivilegeDb::IsPackageSharedRO(const std::string &pkgName)
         LogDebug("Package " << pkgName << "has shared_ro set to " << shared_ro);
 
         return (shared_ro > 0);
+    });
+}
+
+bool PrivilegeDb::IsPackageHybrid(const std::string& pkgName)
+{
+    return try_catch<bool>([&]() -> bool {
+        auto command = getStatement(StmtType::EIsPackageHybrid);
+        command->BindString(1, pkgName);
+        int isHybrid = 0;
+
+        if (command->Step())
+            isHybrid = command->GetColumnInteger(0);
+
+        LogDebug("Package " << pkgName << "has shared_ro set to " << isHybrid);
+
+        return (isHybrid > 0);
     });
 }
 

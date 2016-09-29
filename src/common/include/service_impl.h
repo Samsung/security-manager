@@ -70,9 +70,9 @@ private:
                           app_install_type installationType,
                           const uid_t &uid);
 
-    static void getAllApps(SmackRules::PkgsApps &pkgsApps);
+    static void getPkgsProcessLabels(SmackRules::PkgsLabels &pkgsLabels);
 
-    static void getSharedROApps(SmackRules::PkgsApps &sharedROPkgsApps);
+    static void getPkgLabels(const std::string &pkgName, SmackRules::Labels &pkgsLabels);
 
     static bool isSharedRO(const pkg_paths& paths);
 
@@ -84,8 +84,9 @@ private:
 
     int dropOnePrivateSharing(const std::string &ownerAppName,
                               const std::string &ownerPkgName,
-                              const std::vector<std::string> &ownerPkgContents,
+                              const SmackRules::Labels &ownerPkgLabels,
                               const std::string &targetAppName,
+                              const std::string &targetAppLabel,
                               const std::string &path);
 
 public:
@@ -274,6 +275,16 @@ public:
      * @return API return code, as defined in protocols.h
      */
     int pathsRegister(const Credentials &creds, path_req p_req);
+
+    /**
+     * Generate label for process.
+     *
+     * @param[in] appName application identifier
+     * @param[out] label generated label
+     *
+     * @return API return code, as defined in protocols.h
+     */
+    int labelForProcess(const std::string &appName, std::string &label);
 };
 
 } /* namespace SecurityManager */

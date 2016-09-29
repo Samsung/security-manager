@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2000 - 2014 Samsung Electronics Co., Ltd All Rights Reserved
+ *  Copyright (c) 2000 - 2016 Samsung Electronics Co., Ltd All Rights Reserved
  *
  *  Contact: Rafal Krypa <r.krypa@samsung.com>
  *

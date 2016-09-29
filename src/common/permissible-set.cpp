@@ -114,7 +114,11 @@ void updatePermissibleFile(uid_t uid, int installationType)
     std::vector<std::string> appNames;
     PrivilegeDb::getInstance().GetUserApps(uid, appNames);
     for (auto &appName : appNames) {
-        fstream << SmackLabels::generateAppLabel(appName) << '\n';
+        std::string pkgName;
+        PrivilegeDb::getInstance().GetAppPkgName(appName, pkgName);
+        bool isPkgHybrid = PrivilegeDb::getInstance().IsPackageHybrid(pkgName);
+
+        fstream << SmackLabels::generateProcessLabel(appName, pkgName, isPkgHybrid) << '\n';
         if (fstream.bad()) {
             LogError("Unable to write to file " << nameFile << ": " << GetErrnoString(errno));
             ThrowMsg(PermissibleSetException::PermissibleSetException::FileWriteError,

@@ -60,6 +60,23 @@ namespace SecurityManager {
 
 namespace {
 
+static std::string getAppProcessLabel(const std::string &appName, const std::string &pkgName)
+{
+    bool isPkgHybrid = PrivilegeDb::getInstance().IsPackageHybrid(pkgName);
+    return SmackLabels::generateProcessLabel(appName, pkgName, isPkgHybrid);
+}
+
+static std::string getAppProcessLabel(const std::string &appName)
+{
+    std::string pkgName;
+    PrivilegeDb::getInstance().GetAppPkgName(appName, pkgName);
+    if (pkgName.empty()) {
+        LogWarning("Cannot create label for unknown application: " << appName);
+        return "";
+    }
+    return getAppProcessLabel(appName, pkgName);
+}
+
 static inline int validatePolicy(policy_entry &policyEntry, std::string uidStr, bool &forAdmin, CynaraAdminPolicy &cyap)
 {
     LogDebug("Authenticating and validating policy update request for user with id: " << uidStr);
@@ -125,9 +142,19 @@ static inline int validatePolicy(policy_entry &policyEntry, std::string uidStr, 
     if (!policyEntry.privilege.compare(SECURITY_MANAGER_ANY))
         policyEntry.privilege = CYNARA_ADMIN_WILDCARD;
 
+    std::string cynaraClient;
+    if (policyEntry.appName.compare(SECURITY_MANAGER_ANY)) {
+        cynaraClient = getAppProcessLabel(policyEntry.appName);
+        if (cynaraClient.empty()) {
+            LogWarning("Cannot set policy for unknown application " << policyEntry.appName);
+            return SECURITY_MANAGER_ERROR_APP_UNKNOWN;
+        }
+    } else {
+        cynaraClient = CYNARA_ADMIN_WILDCARD;
+    }
+
     cyap = std::move(CynaraAdminPolicy(
-        policyEntry.appName.compare(SECURITY_MANAGER_ANY) ?
-            SmackLabels::generateAppLabel(policyEntry.appName) : CYNARA_ADMIN_WILDCARD,
+        cynaraClient,
         policyEntry.user,
         policyEntry.privilege,
         level,
@@ -401,27 +428,21 @@ int ServiceImpl::labelPaths(const pkg_paths &paths,
     }
 }
 
-void ServiceImpl::getAllApps(SmackRules::PkgsApps &pkgsApps)
+void ServiceImpl::getPkgsProcessLabels(SmackRules::PkgsLabels &pkgsLabels)
 {
     std::vector<std::string> pkgs;
     PrivilegeDb::getInstance().GetAllPackages(pkgs);
 
-    pkgsApps.resize(pkgs.size());
+    pkgsLabels.resize(pkgs.size());
     for (size_t i = 0; i < pkgs.size(); ++i) {
-        pkgsApps[i].first = std::move(pkgs[i]);
-        PrivilegeDb::getInstance().GetPkgApps(pkgsApps[i].first, pkgsApps[i].second);
-    }
-}
-
-void ServiceImpl::getSharedROApps(SmackRules::PkgsApps &pkgsApps)
-{
-    std::vector<std::string> pkgs;
-    PrivilegeDb::getInstance().GetSharedROPackages(pkgs);
-
-    pkgsApps.resize(pkgs.size());
-    for (size_t i = 0; i < pkgs.size(); ++i) {
-        pkgsApps[i].first = std::move(pkgs[i]);
-        PrivilegeDb::getInstance().GetPkgApps(pkgsApps[i].first, pkgsApps[i].second);
+        pkgsLabels[i].first = std::move(pkgs[i]);
+        bool isPkgHybrid = PrivilegeDb::getInstance().IsPackageHybrid(pkgsLabels[i].first);
+        PrivilegeDb::getInstance().GetPkgApps(pkgsLabels[i].first, pkgsLabels[i].second);
+        for (auto &appName : pkgsLabels[i].second) {
+            std::string label = SmackLabels::generateProcessLabel(appName, pkgsLabels[i].first,
+                                                                  isPkgHybrid);
+            appName = label;
+        }
     }
 }
 
@@ -451,17 +472,29 @@ bool ServiceImpl::isSharedRO(const pkg_paths& paths)
     return false;
 }
 
+void ServiceImpl::getPkgLabels(const std::string &pkgName, SmackRules::Labels &pkgsLabels)
+{
+    std::vector<std::string> apps;
+    PrivilegeDb::getInstance().GetPkgApps(pkgName, apps);
+    bool isPkgHybrid = PrivilegeDb::getInstance().IsPackageHybrid(pkgName);
+    for (auto &app : apps) {
+        auto appLabel = SmackLabels::generateProcessLabel(app, pkgName, isPkgHybrid);
+        app = appLabel;
+    }
+    pkgsLabels = std::move(apps);
+}
+
 int ServiceImpl::appInstall(const Credentials &creds, app_inst_req &&req)
 {
     std::vector<std::string> addedPermissions;
     std::vector<std::string> removedPermissions;
-    std::vector<std::string> pkgContents;
+    SmackRules::Labels pkgLabels;
     std::string cynaraUserStr;
     std::string pkgBasePath;
     std::string appLabel;
     std::string pkgLabel;
-    SmackRules::PkgsApps sharedROPkgsApps;
-    SmackRules::PkgsApps allApps;
+    SmackRules::Pkgs sharedROPkgs;
+    SmackRules::PkgsLabels pkgsProcessLabels;
     int authorId;
     bool hasSharedRO = isSharedRO(req.pkgPaths);
 
@@ -478,21 +511,24 @@ int ServiceImpl::appInstall(const Credentials &creds, app_inst_req &&req)
             return SECURITY_MANAGER_ERROR_AUTHENTICATION_FAILED;
         }
 
-        appLabel = SmackLabels::generateAppLabel(req.appName);
-        pkgLabel = SmackLabels::generatePkgLabel(req.pkgName);
+        appLabel = SmackLabels::generateProcessLabel(req.appName, req.pkgName, req.isHybrid);
+        pkgLabel = SmackLabels::generatePathRWLabel(req.pkgName);
         LogDebug("Generated install parameters: app label: " << appLabel <<
                  ", pkg label: " << pkgLabel);
 
         PrivilegeDb::getInstance().BeginTransaction();
 
-        PrivilegeDb::getInstance().AddApplication(req.appName, req.pkgName, req.uid, req.tizenVersion, req.authorName);
+        PrivilegeDb::getInstance().AddApplication(req.appName, req.pkgName, req.uid,
+                                                  req.tizenVersion, req.authorName, req.isHybrid);
         /* Get all application ids in the package to generate rules withing the package */
-        PrivilegeDb::getInstance().GetPkgApps(req.pkgName, pkgContents);
+        getPkgLabels(req.pkgName, pkgLabels);
         PrivilegeDb::getInstance().GetPkgAuthorId(req.pkgName, authorId);
         CynaraAdmin::getInstance().UpdateAppPolicy(appLabel, cynaraUserStr, req.privileges, isPrivilegePrivacy);
 
         if (hasSharedRO)
             PrivilegeDb::getInstance().SetSharedROPackage(req.pkgName);
+        PrivilegeDb::getInstance().GetSharedROPackages(sharedROPkgs);
+        getPkgsProcessLabels(pkgsProcessLabels);
 
         // WTF? Why this commit is here? Shouldn't it be at the end of this function?
         PrivilegeDb::getInstance().CommitTransaction();
@@ -535,13 +571,11 @@ int ServiceImpl::appInstall(const Credentials &creds, app_inst_req &&req)
 
     try {
         LogDebug("Adding Smack rules for new appName: " << req.appName << " with pkgName: "
-                << req.pkgName << ". Applications in package: " << pkgContents.size());
-        SmackRules::installApplicationRules(req.appName, req.pkgName, authorId, pkgContents);
+                << req.pkgName << ".");
+        SmackRules::installApplicationRules(req.appName, appLabel, req.pkgName,
+                                            authorId, pkgLabels);
 
-        getSharedROApps(sharedROPkgsApps);
-        getAllApps(allApps);
-
-        SmackRules::generateSharedRORules(allApps, sharedROPkgsApps);
+        SmackRules::generateSharedRORules(pkgsProcessLabels, sharedROPkgs);
 
         SmackRules::mergeRules();
     } catch (const SmackException::InvalidParam &e) {
@@ -563,16 +597,18 @@ int ServiceImpl::appInstall(const Credentials &creds, app_inst_req &&req)
 
 int ServiceImpl::appUninstall(const Credentials &creds, app_inst_req &&req)
 {
-    std::string smackLabel;
-    std::vector<std::string> pkgContents;
+    std::string processLabel;
+    SmackRules::Labels pkgLabels;
     bool removeApp = false;
     bool removePkg = false;
     bool removeAuthor = false;
     std::string cynaraUserStr;
-    SmackRules::PkgsApps pkgsApps, sharedROPkgsApps;
+    SmackRules::PkgsLabels pkgsProcessLabels;
+    SmackRules::Pkgs sharedROPkgs;
     std::map<std::string, std::vector<std::string>> asOwnerSharing;
     std::map<std::string, std::vector<std::string>> asTargetSharing;
     int authorId;
+    bool isPkgHybrid;
 
     installRequestMangle(req, cynaraUserStr);
 
@@ -596,15 +632,16 @@ int ServiceImpl::appUninstall(const Credentials &creds, app_inst_req &&req)
             return SECURITY_MANAGER_SUCCESS;
         }
 
-        smackLabel = SmackLabels::generateAppLabel(req.appName);
+        isPkgHybrid = PrivilegeDb::getInstance().IsPackageHybrid(req.pkgName);
+        processLabel = getAppProcessLabel(req.appName, req.pkgName);
         LogDebug("Generated uninstall parameters: pkgName=" << req.pkgName
-            << " Smack label=" << smackLabel);
+            << " Smack label=" << processLabel);
 
         /* Before we remove the app from the database, let's fetch all apps in the package
             that this app belongs to, this will allow us to remove all rules withing the
             package that the app appears in */
         PrivilegeDb::getInstance().GetPkgAuthorId(req.pkgName, authorId);
-        PrivilegeDb::getInstance().GetPkgApps(req.pkgName, pkgContents);
+        getPkgLabels(req.pkgName, pkgLabels);
         PrivilegeDb::getInstance().GetAppVersion(req.appName, req.tizenVersion);
         PrivilegeDb::getInstance().GetPrivateSharingForOwner(req.appName, asOwnerSharing);
         PrivilegeDb::getInstance().GetPrivateSharingForTarget(req.appName, asTargetSharing);
@@ -615,7 +652,9 @@ int ServiceImpl::appUninstall(const Credentials &creds, app_inst_req &&req)
             // Squash sharing - change counter to 1, so dropPrivatePathSharing will completely clean it
             for (const auto &path : paths) {
                 PrivilegeDb::getInstance().SquashSharing(targetAppName, path);
-                int ret = dropOnePrivateSharing(req.appName, req.pkgName, pkgContents, targetAppName, path);
+                auto targetAppLabel = getAppProcessLabel(targetAppName);
+                int ret = dropOnePrivateSharing(req.appName, req.pkgName, pkgLabels,
+                                                targetAppName, targetAppLabel, path);
                 if (ret != SECURITY_MANAGER_SUCCESS) {
                     //Ignore error, we want to drop as much as we can
                     LogError("Couldn't drop sharing between " << req.appName << " and " << targetAppName);
@@ -628,12 +667,13 @@ int ServiceImpl::appUninstall(const Credentials &creds, app_inst_req &&req)
             const auto &paths = ownerPathsInfo.second;
             // Squash sharing - change counter to 1, so dropPrivatePathSharing will completely clean it
             std::string ownerPkgName;
-            std::vector<std::string> ownerPkgContents;
+            SmackRules::Labels ownerPkgLabels;
             PrivilegeDb::getInstance().GetAppPkgName(ownerAppName, ownerPkgName);
-            PrivilegeDb::getInstance().GetPkgApps(ownerPkgName, ownerPkgContents);
+            getPkgLabels(ownerPkgName, ownerPkgLabels);
             for (const auto &path : paths) {
                 PrivilegeDb::getInstance().SquashSharing(req.appName, path);
-                    int ret = dropOnePrivateSharing(ownerAppName, ownerPkgName, ownerPkgContents, req.appName, path);
+                    int ret = dropOnePrivateSharing(ownerAppName, ownerPkgName, ownerPkgLabels,
+                                                    req.appName, processLabel, path);
                     if (ret != SECURITY_MANAGER_SUCCESS) {
                         //Ignore error, we want to drop as much as we can
                         LogError("Couldn't drop sharing between " << req.appName << " and " << ownerAppName);
@@ -643,10 +683,11 @@ int ServiceImpl::appUninstall(const Credentials &creds, app_inst_req &&req)
 
         PrivilegeDb::getInstance().RemoveApplication(req.appName, req.uid, removeApp, removePkg, removeAuthor);
 
-        getAllApps(pkgsApps);
-        getSharedROApps(sharedROPkgsApps);
+        getPkgsProcessLabels(pkgsProcessLabels);
+        PrivilegeDb::getInstance().GetSharedROPackages(sharedROPkgs);
 
-        CynaraAdmin::getInstance().UpdateAppPolicy(smackLabel, cynaraUserStr, std::vector<std::string>(), isPrivilegePrivacy);
+        CynaraAdmin::getInstance().UpdateAppPolicy(processLabel, cynaraUserStr,
+                                                   std::vector<std::string>(), isPrivilegePrivacy);
         PrivilegeDb::getInstance().CommitTransaction();
         LogDebug("Application uninstallation commited to database");
         PermissibleSet::updatePermissibleFile(req.uid, req.installationType);
@@ -677,18 +718,25 @@ int ServiceImpl::appUninstall(const Credentials &creds, app_inst_req &&req)
     try {
         if (removeApp) {
             LogDebug("Removing Smack rules for appName " << req.appName);
-            SmackRules::uninstallApplicationRules(req.appName);
+            if (isPkgHybrid || removePkg) {
+                /*
+                 * Nonhybrid apps have the same label, so revoking it is unnecessary
+                 * unless whole packagee is being removed.
+                 */
+                SmackRules::uninstallApplicationRules(req.appName, processLabel);
+            }
             LogDebug("Removing Smack rules for pkgName " << req.pkgName);
             SmackRules::uninstallPackageRules(req.pkgName);
             if (!removePkg) {
                 LogDebug("Recreating Smack rules for pkgName " << req.pkgName);
-                pkgContents.erase(std::remove(pkgContents.begin(), pkgContents.end(),req.appName), pkgContents.end());
-                SmackRules::updatePackageRules(req.pkgName, pkgContents);
+                pkgLabels.erase(std::remove(pkgLabels.begin(), pkgLabels.end(), processLabel),
+                                pkgLabels.end());
+                SmackRules::updatePackageRules(req.pkgName, pkgLabels);
             }
 
-            SmackRules::generateSharedRORules(pkgsApps, sharedROPkgsApps);
+            SmackRules::generateSharedRORules(pkgsProcessLabels, sharedROPkgs);
             if (removePkg)
-               SmackRules::revokeSharedRORules(pkgsApps, req.pkgName);
+                SmackRules::revokeSharedRORules(pkgsProcessLabels, req.pkgName);
         }
 
         if (authorId != -1 && removeAuthor) {
@@ -740,14 +788,14 @@ int ServiceImpl::getAppGroups(const Credentials &creds, const std::string &appNa
 {
     try {
         LogDebug("appName: " << appName);
-        std::string smackLabel = SmackLabels::generateAppLabel(appName);
-        LogDebug("smack label: " << smackLabel);
+        std::string appProcessLabel = getAppProcessLabel(appName);
+        LogDebug("smack label: " << appProcessLabel);
 
         std::vector<std::string> privileges;
 
         std::string uidStr = std::to_string(creds.uid);
-        CynaraAdmin::getInstance().GetAppPolicy(smackLabel, uidStr, privileges);
-        CynaraAdmin::getInstance().GetAppPolicy(smackLabel, CYNARA_ADMIN_WILDCARD, privileges);
+        CynaraAdmin::getInstance().GetAppPolicy(appProcessLabel, uidStr, privileges);
+        CynaraAdmin::getInstance().GetAppPolicy(appProcessLabel, CYNARA_ADMIN_WILDCARD, privileges);
 
         vectorRemoveDuplicates(privileges);
 
@@ -759,7 +807,7 @@ int ServiceImpl::getAppGroups(const Credentials &creds, const std::string &appNa
                 LogDebug("Considering privilege " << privilege << " with " <<
                     privGroups.size() << " groups assigned");
 
-                if (Cynara::getInstance().check(smackLabel, privilege, uidStr, pidStr)) {
+                if (Cynara::getInstance().check(appProcessLabel, privilege, uidStr, pidStr)) {
                     groups.insert(groups.end(),
                         std::make_move_iterator(privGroups.begin()),
                         std::make_move_iterator(privGroups.end()));
@@ -925,11 +973,12 @@ int ServiceImpl::getConfiguredPolicy(const Credentials &creds, bool forAdmin,
         std::vector<CynaraAdminPolicy> listOfPolicies;
 
         //convert appName to smack label
-        std::string appLabel = filter.appName.compare(SECURITY_MANAGER_ANY) ? SmackLabels::generateAppLabel(filter.appName) : CYNARA_ADMIN_ANY;
+        std::string appProcessLabel = filter.appName.compare(SECURITY_MANAGER_ANY) ?
+                                getAppProcessLabel(filter.appName) : CYNARA_ADMIN_ANY;
         std::string user = filter.user.compare(SECURITY_MANAGER_ANY) ? filter.user : CYNARA_ADMIN_ANY;
         std::string privilege = filter.privilege.compare(SECURITY_MANAGER_ANY) ? filter.privilege : CYNARA_ADMIN_ANY;
 
-        LogDebug("App: " << filter.appName << ", Label: " << appLabel);
+        LogDebug("App: " << filter.appName << ", Label: " << appProcessLabel);
 
         if (forAdmin) {
             if (!authenticate(creds, Config::PRIVILEGE_POLICY_ADMIN)) {
@@ -940,7 +989,7 @@ int ServiceImpl::getConfiguredPolicy(const Credentials &creds, bool forAdmin,
             //Fetch privileges from ADMIN bucket
             CynaraAdmin::getInstance().ListPolicies(
                 CynaraAdmin::Buckets.at(Bucket::ADMIN),
-                appLabel,
+                appProcessLabel,
                 user,
                 privilege,
                 listOfPolicies
@@ -961,7 +1010,7 @@ int ServiceImpl::getConfiguredPolicy(const Credentials &creds, bool forAdmin,
             //Fetch privileges from PRIVACY_MANAGER bucket
             CynaraAdmin::getInstance().ListPolicies(
                 CynaraAdmin::Buckets.at(Bucket::PRIVACY_MANAGER),
-                appLabel,
+                appProcessLabel,
                 user,
                 privilege,
                 listOfPolicies
@@ -975,32 +1024,57 @@ int ServiceImpl::getConfiguredPolicy(const Credentials &creds, bool forAdmin,
                 continue;
 
             policy_entry pe;
+            std::vector<std::string> appNames;
+            std::string appName, pkgName;
 
-            pe.appName = strcmp(policy.client, CYNARA_ADMIN_WILDCARD) ? SmackLabels::generateAppNameFromLabel(policy.client) : SECURITY_MANAGER_ANY;
-            pe.user =  strcmp(policy.user, CYNARA_ADMIN_WILDCARD) ? policy.user : SECURITY_MANAGER_ANY;
-            pe.privilege = strcmp(policy.privilege, CYNARA_ADMIN_WILDCARD) ? policy.privilege : pe.privilege = SECURITY_MANAGER_ANY;
-            pe.currentLevel = CynaraAdmin::getInstance().convertToPolicyDescription(policy.result);
-
-            if (!forAdmin) {
-                // All policy entries in PRIVACY_MANAGER should be fully-qualified
-                pe.maxLevel = CynaraAdmin::getInstance().convertToPolicyDescription(
-                    CynaraAdmin::getInstance().GetPrivilegeManagerMaxLevel(
-                        policy.client, policy.user, policy.privilege));
+            if (strcmp(policy.client, CYNARA_ADMIN_WILDCARD)) {
+                SmackLabels::generateAppPkgNameFromLabel(policy.client, appName, pkgName);
+                if (!appName.empty()) {
+                    // Hybrid app
+                    appNames.push_back(appName);
+                } else {
+                    if (filter.appName == SECURITY_MANAGER_ANY) {
+                        // If user requested policy for all apps, we have to demangle pkgName to
+                        // set of appNames in case of non-hybrid apps
+                        PrivilegeDb::getInstance().GetPkgApps(pkgName, appNames);
+                    } else {
+                        // If user requested policy for specific appName, we have to copy
+                        // appName from filter for non-hybrid apps
+                        appNames.push_back(filter.appName);
+                    }
+                }
             } else {
-                // Cannot reliably calculate maxLavel for policies from ADMIN bucket
-                pe.maxLevel = CynaraAdmin::getInstance().convertToPolicyDescription(CYNARA_ADMIN_ALLOW);
+                // Cynara wildcard -> SM any
+                appNames.push_back(SECURITY_MANAGER_ANY);
             }
 
+            for (const auto &app : appNames) {
+                pe.appName = app;
+                pe.user =  strcmp(policy.user, CYNARA_ADMIN_WILDCARD) ? policy.user : SECURITY_MANAGER_ANY;
+                pe.privilege = strcmp(policy.privilege, CYNARA_ADMIN_WILDCARD) ? policy.privilege : pe.privilege = SECURITY_MANAGER_ANY;
+                pe.currentLevel = CynaraAdmin::getInstance().convertToPolicyDescription(policy.result);
 
-            LogDebug(
-                "[policy_entry] app: " << pe.appName
-                << " user: " << pe.user
-                << " privilege: " << pe.privilege
-                << " current: " << pe.currentLevel
-                << " max: " << pe.maxLevel
-                );
+                if (!forAdmin) {
+                    // All policy entries in PRIVACY_MANAGER should be fully-qualified
+                    pe.maxLevel = CynaraAdmin::getInstance().convertToPolicyDescription(
+                        CynaraAdmin::getInstance().GetPrivilegeManagerMaxLevel(
+                            policy.client, policy.user, policy.privilege));
+                } else {
+                    // Cannot reliably calculate maxLavel for policies from ADMIN bucket
+                    pe.maxLevel = CynaraAdmin::getInstance().convertToPolicyDescription(CYNARA_ADMIN_ALLOW);
+                }
 
-            policyEntries.push_back(pe);
+
+                LogDebug(
+                    "[policy_entry] app: " << pe.appName
+                    << " user: " << pe.user
+                    << " privilege: " << pe.privilege
+                    << " current: " << pe.currentLevel
+                    << " max: " << pe.maxLevel
+                    );
+
+                policyEntries.push_back(pe);
+            }
         };
 
     } catch (const CynaraException::Base &e) {
@@ -1072,11 +1146,11 @@ int ServiceImpl::getPolicy(const Credentials &creds, const policy_entry &filter,
 
             for (const std::string &appName : listOfApps) {
                 LogDebug("App: " << appName);
-                std::string smackLabelForApp = SmackLabels::generateAppLabel(appName);
+                std::string appProcessLabel = getAppProcessLabel(appName);
                 std::vector<std::string> listOfPrivileges;
 
-                CynaraAdmin::getInstance().GetAppPolicy(smackLabelForApp, userStr, listOfPrivileges);
-                CynaraAdmin::getInstance().GetAppPolicy(smackLabelForApp, CYNARA_ADMIN_WILDCARD, listOfPrivileges);
+                CynaraAdmin::getInstance().GetAppPolicy(appProcessLabel, userStr, listOfPrivileges);
+                CynaraAdmin::getInstance().GetAppPolicy(appProcessLabel, CYNARA_ADMIN_WILDCARD, listOfPrivileges);
 
                 if (filter.privilege.compare(SECURITY_MANAGER_ANY)) {
                     LogDebug("Limitting Cynara query to privilege: " << filter.privilege);
@@ -1103,11 +1177,11 @@ int ServiceImpl::getPolicy(const Credentials &creds, const policy_entry &filter,
 
                     pe.currentLevel = CynaraAdmin::getInstance().convertToPolicyDescription(
                         CynaraAdmin::getInstance().GetPrivilegeManagerCurrLevel(
-                            smackLabelForApp, userStr, privilege));
+                            appProcessLabel, userStr, privilege));
 
                     pe.maxLevel = CynaraAdmin::getInstance().convertToPolicyDescription(
                         CynaraAdmin::getInstance().GetPrivilegeManagerMaxLevel(
-                            smackLabelForApp, userStr, privilege));
+                            appProcessLabel, userStr, privilege));
 
                     LogDebug(
                         "[policy_entry] app: " << pe.appName
@@ -1237,9 +1311,9 @@ int ServiceImpl::appHasPrivilege(
         bool &result)
 {
     try {
-        std::string appLabel = SmackLabels::generateAppLabel(appName);
+        std::string appProcessLabel = getAppProcessLabel(appName);
         std::string uidStr = std::to_string(uid);
-        result = Cynara::getInstance().check(appLabel, privilege, uidStr, "");
+        result = Cynara::getInstance().check(appProcessLabel, privilege, uidStr, "");
         LogDebug("result = " << result);
     } catch (const CynaraException::Base &e) {
         LogError("Error while querying Cynara for permissions: " << e.DumpToString());
@@ -1257,12 +1331,12 @@ int ServiceImpl::appHasPrivilege(
     return SECURITY_MANAGER_SUCCESS;
 }
 
-
 int ServiceImpl::dropOnePrivateSharing(
         const std::string &ownerAppName,
         const std::string &ownerPkgName,
-        const std::vector<std::string> &ownerPkgContents,
+        const SmackRules::Labels &ownerPkgLabels,
         const std::string &targetAppName,
+        const std::string &targetAppLabel,
         const std::string &path)
 {
     int errorRet;
@@ -1280,8 +1354,8 @@ int ServiceImpl::dropOnePrivateSharing(
             SmackLabels::setupPath(ownerPkgName, path, SECURITY_MANAGER_PATH_RW);
         }
         std::string pathLabel = SmackLabels::generateSharedPrivateLabel(ownerPkgName, path);
-        SmackRules::dropPrivateSharingRules(ownerPkgName, ownerPkgContents, targetAppName, pathLabel,
-                pathCount < 1, ownerTargetCount < 1);
+        SmackRules::dropPrivateSharingRules(ownerPkgName, ownerPkgLabels, targetAppLabel,
+                                            pathLabel, pathCount < 1, ownerTargetCount < 1);
         return SECURITY_MANAGER_SUCCESS;
     } catch (const PrivilegeDb::Exception::Base &e) {
         LogError("Error while dropping private sharing in database: " << e.DumpToString());
@@ -1312,7 +1386,8 @@ int ServiceImpl::applyPrivatePathSharing(
     int sharingAdded = 0;
     std::string ownerPkgName;
     std::string targetPkgName;
-    std::vector<std::string> pkgContents;
+    std::string targetAppLabel;
+    SmackRules::Labels pkgsLabels;
 
     try {
         if (!authenticate(creds, Config::PRIVILEGE_APPSHARING_ADMIN)) {
@@ -1334,7 +1409,7 @@ int ServiceImpl::applyPrivatePathSharing(
 
         for(const auto &path : paths) {
             std::string pathLabel = SmackLabels::getSmackLabelFromPath(path);
-            if (pathLabel != SmackLabels::generatePkgLabel(ownerPkgName)) {
+            if (pathLabel != SmackLabels::generatePathRWLabel(ownerPkgName)) {
                 std::string generatedPathLabel = SmackLabels::generateSharedPrivateLabel(ownerPkgName, path);
                 if (generatedPathLabel != pathLabel) {
                     LogError("Path " << path << " has label " << pathLabel << " and dosen't belong"
@@ -1352,8 +1427,10 @@ int ServiceImpl::applyPrivatePathSharing(
             LogDebug("Owner and target belong to the same package");
             return SECURITY_MANAGER_SUCCESS;
         }
+        targetAppLabel = getAppProcessLabel(targetAppName);
+        getPkgLabels(ownerPkgName, pkgsLabels);
+
         ScopedTransaction trans;
-        PrivilegeDb::getInstance().GetPkgApps(ownerPkgName, pkgContents);
         for (const auto &path : paths) {
             int targetPathCount, pathCount, ownerTargetCount;
             PrivilegeDb::getInstance().GetTargetPathSharingCount(targetAppName, path, targetPathCount);
@@ -1369,9 +1446,8 @@ int ServiceImpl::applyPrivatePathSharing(
             if (pathCount <= 0) {
                 SmackLabels::setupSharedPrivatePath(ownerPkgName, path);
             }
-
-            SmackRules::applyPrivateSharingRules(ownerPkgName, pkgContents,
-                targetAppName, pathLabel, (pathCount > 0), (ownerTargetCount > 0));
+            SmackRules::applyPrivateSharingRules(ownerPkgName, pkgsLabels,
+                    targetAppLabel, pathLabel, (pathCount > 0), (ownerTargetCount > 0));
         }
         trans.commit();
         return SECURITY_MANAGER_SUCCESS;
@@ -1394,7 +1470,8 @@ int ServiceImpl::applyPrivatePathSharing(
 
     for (int i = 0; i < sharingAdded; i++) {
         const std::string &path = paths[i];
-        dropOnePrivateSharing(ownerAppName, ownerPkgName, pkgContents, targetAppName, path);
+        dropOnePrivateSharing(ownerAppName, ownerPkgName, pkgsLabels,
+                              targetAppName, targetAppLabel, path);
     }
 
     return errorRet;
@@ -1434,7 +1511,7 @@ int ServiceImpl::dropPrivatePathSharing(
                 return SECURITY_MANAGER_ERROR_INPUT_PARAM;
             }
             std::string pathLabel = SmackLabels::getSmackLabelFromPath(path);
-            if (pathLabel != SmackLabels::generatePkgLabel(ownerPkgName)) {
+            if (pathLabel != SmackLabels::generatePathRWLabel(ownerPkgName)) {
                 std::string generatedPathLabel = SmackLabels::generateSharedPrivateLabel(ownerPkgName, path);
                 if (generatedPathLabel != pathLabel) {
                     LogError("Path " << path << " has label " << pathLabel << " and dosen't belong"
@@ -1454,11 +1531,14 @@ int ServiceImpl::dropPrivatePathSharing(
             return SECURITY_MANAGER_SUCCESS;
         }
 
-        std::vector<std::string> pkgContents;
-        PrivilegeDb::getInstance().GetPkgApps(ownerPkgName, pkgContents);
+        SmackRules::Labels pkgLabels;
+        getPkgLabels(ownerPkgName, pkgLabels);
+        auto targetAppLabel = getAppProcessLabel(targetAppName, targetPkgName);
+
         ScopedTransaction trans;
         for (const auto &path : paths) {
-            int ret = dropOnePrivateSharing(ownerAppName, ownerPkgName, pkgContents, targetAppName, path);
+            int ret = dropOnePrivateSharing(ownerAppName, ownerPkgName, pkgLabels,
+                                            targetAppName, targetAppLabel, path);
             if (ret != SECURITY_MANAGER_SUCCESS) {
                 return ret;
             }
@@ -1517,13 +1597,13 @@ int ServiceImpl::pathsRegister(const Credentials &creds, path_req req)
 
                 PrivilegeDb::getInstance().SetSharedROPackage(req.pkgName);
 
-                SmackRules::PkgsApps pkgsApps;
-                SmackRules::PkgsApps allApps;
+                SmackRules::Pkgs sharedROPkgs;
+                SmackRules::PkgsLabels pkgsLabels;
 
-                getSharedROApps(pkgsApps);
-                getAllApps(allApps);
+                PrivilegeDb::getInstance().GetSharedROPackages(sharedROPkgs);
+                getPkgsProcessLabels(pkgsLabels);
 
-                SmackRules::generateSharedRORules(allApps, pkgsApps);
+                SmackRules::generateSharedRORules(pkgsLabels, sharedROPkgs);
                 SmackRules::mergeRules();
             }
         PrivilegeDb::getInstance().CommitTransaction();
@@ -1541,6 +1621,14 @@ int ServiceImpl::pathsRegister(const Credentials &creds, path_req req)
                       req.pkgName,
                       static_cast<app_install_type>(req.installationType),
                       req.uid);
+}
+
+int ServiceImpl::labelForProcess(const std::string &appName, std::string &label)
+{
+    LogDebug("Requested label generation for process of application " << appName);
+    label = getAppProcessLabel(appName);
+
+    return SECURITY_MANAGER_SUCCESS;
 }
 
 } /* namespace SecurityManager */

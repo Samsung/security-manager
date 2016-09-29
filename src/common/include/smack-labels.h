@@ -67,17 +67,23 @@ void setupSharedPrivatePath(const std::string &pkgName, const std::string &path)
  * Generates application name for a label fetched from Cynara
  *
  * @param[in] label string to fetch application name for
+ * @param[out] appName application identifier (can be empty if label belongs to non-hybrid app)
+ * @param[out] pkgName package identifier (cannot be empty)
  * @return application name on success, empty string on error.
 */
-std::string generateAppNameFromLabel(const std::string &label);
+void generateAppPkgNameFromLabel(const std::string &label, std::string &appName, std::string &pkgName);
 
 /**
  * Generates label for an application identifier
  *
  * @param[in] appName application identifier
+ * @param[in] pkgName package identifier
+ * @param[in] isHybrid package is hybrid flag
  * @return resulting Smack label
 */
-std::string generateAppLabel(const std::string &appName);
+std::string generateProcessLabel(const std::string &appName,
+                                 const std::string &pkgName,
+                                 bool isHybrid);
 
 /**
  * Generates label for an application with @ref pkgName, specific
@@ -86,7 +92,7 @@ std::string generateAppLabel(const std::string &appName);
  * @param[in] pkgName application package identifier
  * @return resulting Smack label
 */
-std::string generatePkgLabelOwnerRWothersRO(const std::string &pkgName);
+std::string generatePathSharedROLabel(const std::string &pkgName);
 
 /**
  * Generates label for a package identifier
@@ -94,7 +100,7 @@ std::string generatePkgLabelOwnerRWothersRO(const std::string &pkgName);
  * @param[in] pkgName package identifier
  * @return resulting Smack label
  */
-std::string generatePkgLabel(const std::string &pkgName);
+std::string generatePathRWLabel(const std::string &pkgName);
 
 /**
  * Generates label for private application RO files with package identifier @ref pkgName
@@ -102,7 +108,7 @@ std::string generatePkgLabel(const std::string &pkgName);
  * @param[in] pkgName package identifier
  * @return resulting Smack label
  */
-std::string generatePkgROLabel(const std::string &pkgName);
+std::string generatePathROLabel(const std::string &pkgName);
 
 /**
  * Generates unique label per path for private path sharing.
@@ -120,7 +126,7 @@ std::string generateSharedPrivateLabel(const std::string &pkgName, const std::st
  * @param[in] authorId
  * @return resulting Smack label
  */
-std::string generateAuthorLabel(const int authorId);
+std::string generatePathTrustedLabel(const int authorId);
 
 /**
  * Returns smack label for given socket

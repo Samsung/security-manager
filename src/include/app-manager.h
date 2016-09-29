@@ -132,6 +132,19 @@ int security_manager_app_inst_req_set_author_id(app_inst_req *p_req, const char 
 int security_manager_app_inst_req_set_install_type(app_inst_req *p_req, const enum app_install_type type);
 
 /**
+ * This function is used to flag package as hybrid. This must be done consequently for every
+ * application installed in package - if first application installed sets this flag, others also
+ * must set it, otherwise installation will fail, the same applies to non-hybrid packages -
+ * if first application doesn't set this flag, then no other application for this package can set
+ * it, otherwise its installation will fail.
+ *
+ * \param[in] p_req  Pointer handling app_inst_req structure
+ * \return API return code or error code
+ *
+ */
+int security_manager_app_inst_req_set_hybrid(app_inst_req *p_req);
+
+/**
  * This function is used to install application based on
  * using filled up app_inst_req data structure
  *

@@ -208,6 +208,17 @@ int security_manager_app_inst_req_set_install_type(app_inst_req *p_req, const en
 }
 
 SECURITY_MANAGER_API
+int security_manager_app_inst_req_set_hybrid(app_inst_req *p_req)
+{
+    if (!p_req)
+        return SECURITY_MANAGER_ERROR_INPUT_PARAM;
+
+    p_req->isHybrid = true;
+
+    return SECURITY_MANAGER_SUCCESS;
+}
+
+SECURITY_MANAGER_API
 int security_manager_app_install(const app_inst_req *p_req)
 {
     using namespace SecurityManager;
@@ -237,7 +248,8 @@ int security_manager_app_install(const app_inst_req *p_req)
                                      p_req->uid,
                                      p_req->tizenVersion,
                                      p_req->authorName,
-                                     p_req->installationType);
+                                     p_req->installationType,
+                                     p_req->isHybrid);
 
             //send buffer to server
             retval = sendToServer(SERVICE_SOCKET, send.Pop(), recv);
@@ -363,6 +375,27 @@ static int setup_smack(const char *label)
     return SECURITY_MANAGER_SUCCESS;
 }
 
+static int fetchLabelForProcess(const std::string &appName, std::string &label)
+{
+    using namespace SecurityManager;
+
+    MessageBuffer send, recv;
+    Serialization::Serialize(send, (int) SecurityModuleCall::LABEL_FOR_PROCESS, appName);
+    int retval = sendToServer(SERVICE_SOCKET, send.Pop(), recv);
+    if (retval != SECURITY_MANAGER_SUCCESS) {
+        LogError("Error in sendToServer. Error code: " << retval);
+        return retval;
+    }
+
+    Deserialization::Deserialize(recv, retval);
+    if (retval != SECURITY_MANAGER_SUCCESS) {
+        LogError("Couldn't get label for process: " << retval);
+        return retval;
+    }
+    Deserialization::Deserialize(recv, label);
+    return SECURITY_MANAGER_SUCCESS;
+}
+
 SECURITY_MANAGER_API
 int security_manager_set_process_label_from_appid(const char *app_name)
 {
@@ -375,7 +408,9 @@ int security_manager_set_process_label_from_appid(const char *app_name)
         return SECURITY_MANAGER_SUCCESS;
 
     try {
-        appLabel = SecurityManager::SmackLabels::generateAppLabel(app_name);
+        ret = fetchLabelForProcess(app_name, appLabel);
+        if (ret != SECURITY_MANAGER_SUCCESS)
+            return ret;
     } catch (...) {
         LogError("Failed to generate smack label for appName: " << app_name);
         return SECURITY_MANAGER_ERROR_NO_SUCH_OBJECT;
@@ -532,7 +567,9 @@ static inline int security_manager_sync_threads_internal(const char *app_name)
     uid_t cur_tid = gettid();
     pid_t cur_pid = getpid();
 
-    g_app_label = SecurityManager::SmackLabels::generateAppLabel(app_name);
+    int ret = fetchLabelForProcess(app_name, g_app_label);
+    if (ret != SECURITY_MANAGER_SUCCESS)
+        return ret;
     g_threads_count = 0;
     g_tid_attr_current_map.clear();
     g_smack_fs_path = smack_smackfs_path() != NULL;
@@ -1279,21 +1316,24 @@ static lib_retcode get_app_and_pkg_id_from_smack_label(
         char **pkg_name,
         char **app_name)
 {
-    std::string appNameString;
-
+    std::string appNameString, pkgNameString;
     try {
-        appNameString = SmackLabels::generateAppNameFromLabel(label);
+
+        SmackLabels::generateAppPkgNameFromLabel(label, appNameString, pkgNameString);
     } catch (const SmackException::InvalidLabel &) {
         return SECURITY_MANAGER_ERROR_NO_SUCH_OBJECT;
     }
 
-    if (app_name && !(*app_name = strdup(appNameString.c_str()))) {
+    if (app_name && !appNameString.empty() && !(*app_name = strdup(appNameString.c_str()))) {
         LogError("Memory allocation in strdup failed.");
         return SECURITY_MANAGER_ERROR_MEMORY;
     }
 
-    return pkg_name ? static_cast<lib_retcode>(security_manager_get_app_pkgid(pkg_name, appNameString.c_str()))
-            : SECURITY_MANAGER_SUCCESS;
+    if (pkg_name && !(*pkg_name = strdup(pkgNameString.c_str()))) {
+        LogError("Memory allocation in strdup failed.");
+        return SECURITY_MANAGER_ERROR_MEMORY;
+    }
+    return SECURITY_MANAGER_SUCCESS;
 }
 
 static int security_manager_identify_app(
