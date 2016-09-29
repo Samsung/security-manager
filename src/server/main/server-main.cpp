@@ -26,7 +26,6 @@
 
 #include <dpl/log/log.h>
 #include <dpl/singleton.h>
-#include <dpl/singleton_safe_impl.h>
 
 #include <iostream>
 
@@ -34,8 +33,6 @@
 #include <file-lock.h>
 
 #include <service.h>
-
-IMPLEMENT_SAFE_SINGLETON(SecurityManager::Log::LogSystem);
 
 #define REGISTER_SOCKET_SERVICE(manager, service) \
     registerSocketService<service>(manager, #service)

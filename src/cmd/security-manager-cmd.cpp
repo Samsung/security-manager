@@ -31,14 +31,11 @@
 
 #include <dpl/log/log.h>
 #include <dpl/singleton.h>
-#include <dpl/singleton_safe_impl.h>
 #include <protocols.h>
 #include <security-manager.h>
 
 #include <boost/program_options.hpp>
 namespace po = boost::program_options;
-
-IMPLEMENT_SAFE_SINGLETON(SecurityManager::Log::LogSystem);
 
 static std::map <std::string, enum app_install_path_type> app_install_path_type_map = {
     {"rw", SECURITY_MANAGER_PATH_RW},

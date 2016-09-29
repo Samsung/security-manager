@@ -23,7 +23,6 @@
 #include <string.h>
 
 #include <dpl/log/log.h>
-#include <dpl/singleton_impl.h>
 #include <dpl/log/old_style_log_provider.h>
 
 #ifdef DPL_DLOG_ENABLED
@@ -34,9 +33,11 @@
 #include <dpl/log/sd_journal_provider.h>
 #endif
 
-IMPLEMENT_SINGLETON(SecurityManager::Log::LogSystem)
-
 namespace SecurityManager {
+
+// explicit template instantiation definition
+template class Singleton<Log::LogSystem>;
+
 namespace Log {
 namespace // anonymous
 {

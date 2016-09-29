@@ -124,7 +124,14 @@ class NullStream
  * Log system singleton
  */
 typedef Singleton<LogSystem> LogSystemSingleton;
-}
+} // namespace Log
+
+/*
+ * Explicit template instantiation declaration = do not instantiate this template implicitly
+ * in every translation unit because there's an explicit instantiation somewhere.
+ */
+extern template class Singleton<Log::LogSystem>;
+
 } // namespace SecurityManager
 
 //

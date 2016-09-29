@@ -35,13 +35,10 @@
 #include <dpl/log/log.h>
 #include <dpl/serialization.h>
 #include <dpl/singleton.h>
-#include <dpl/singleton_safe_impl.h>
 
 #include <message-buffer.h>
 
 #include <protocols.h>
-
-IMPLEMENT_SAFE_SINGLETON(SecurityManager::Log::LogSystem);
 
 namespace {
 
