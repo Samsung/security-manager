@@ -35,9 +35,12 @@
 #include <map>
 #include <stdbool.h>
 #include <string>
+#include <vector>
 
 #include "dpl/db/sql_connection.h"
 #include "tzplatform-config.h"
+
+#include "pkg-info.h"
 
 #ifndef PRIVILEGE_DB_H_
 #define PRIVILEGE_DB_H_
@@ -72,10 +75,10 @@ enum class StmtType {
     EGetPkgAuthorId,
     EAuthorIdExists,
     EGetAuthorIdByName,
-    EGetSharedROPackages,
     ESetPackageSharedRO,
     EIsPackageSharedRO,
     EIsPackageHybrid,
+    EGetPackagesInfo,
 };
 
 class PrivilegeDb {
@@ -131,10 +134,10 @@ private:
         { StmtType::EGetPkgAuthorId, "SELECT author_id FROM pkg WHERE name = ? AND author_id IS NOT NULL"},
         { StmtType::EAuthorIdExists, "SELECT count(*) FROM author where author_id=?"},
         { StmtType::EGetAuthorIdByName, "SELECT author_id FROM author WHERE name=?"},
-        { StmtType::EGetSharedROPackages, "SELECT DISTINCT name FROM pkg WHERE shared_ro = 1;"},
         { StmtType::ESetPackageSharedRO, "UPDATE pkg SET shared_ro=1 WHERE name=?"},
         { StmtType::EIsPackageSharedRO, "SELECT shared_ro FROM pkg WHERE name=?"},
         { StmtType::EIsPackageHybrid, "SELECT is_hybrid FROM pkg WHERE name=?"},
+        { StmtType::EGetPackagesInfo, "SELECT name, shared_ro, is_hybrid FROM pkg"},
     };
 
     /**
@@ -476,17 +479,6 @@ public:
     void GetGroupsRelatedPrivileges(std::vector<std::pair<std::string, std::string>> &privileges);
 
     /**
-     * Retrieve list of packages with shared RO set to 1
-     *
-     * @param[out] packages - vector of package identifiers describing installed packages,
-     *                        this parameter do not need to be empty, but
-     *                        it is being overwritten during function call.
-     * @exception DB::SqlConnection::Exception::InternalError on internal error
-     * @exception DB::SqlConnection::Exception::ConstraintError on constraint violation
-     */
-    void GetSharedROPackages(std::vector<std::string> &packages);
-
-    /**
      * Set shared_ro field to 1 in package given by name
      *
      * @exception DB::SqlConnection::Exception::InternalError on internal error
@@ -509,6 +501,18 @@ public:
      * @exception DB::SqlConnection::Exception::ConstraintError on constraint violation
      */
     bool IsPackageHybrid(const std::string& pkgName);
+
+    /**
+     * Retrieve list of packages with information about shared RO presence and package type
+     *
+     * @param[out] packages - vector of PackageInfo objects describing installed packages,
+     *                        this parameter do not need to be empty, but
+     *                        it is being overwritten during function call.
+     *
+     * @exception DB::SqlConnection::Exception::InternalError on internal error
+     * @exception DB::SqlConnection::Exception::ConstraintError on constraint violation
+     */
+    void GetPackagesInfo(std::vector<PkgInfo> &packages);
 };
 
 } //namespace SecurityManager

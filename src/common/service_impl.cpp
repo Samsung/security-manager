@@ -203,6 +203,20 @@ private:
     bool m_isCommited;
 };
 
+void getPkgsProcessLabels(const std::vector<PkgInfo> &pkgsInfo, SmackRules::PkgsLabels &pkgsLabels)
+{
+    pkgsLabels.resize(pkgsInfo.size());
+    for (size_t i = 0; i < pkgsInfo.size(); ++i) {
+        pkgsLabels[i].first = pkgsInfo[i].name;
+        PrivilegeDb::getInstance().GetPkgApps(pkgsLabels[i].first, pkgsLabels[i].second);
+        for (auto &appName : pkgsLabels[i].second) {
+            std::string label = SmackLabels::generateProcessLabel(appName, pkgsLabels[i].first,
+                                                                  pkgsInfo[i].hybrid);
+            appName = label;
+        }
+    }
+}
+
 } // end of anonymous namespace
 
 ServiceImpl::ServiceImpl()
@@ -428,24 +442,6 @@ int ServiceImpl::labelPaths(const pkg_paths &paths,
     }
 }
 
-void ServiceImpl::getPkgsProcessLabels(SmackRules::PkgsLabels &pkgsLabels)
-{
-    std::vector<std::string> pkgs;
-    PrivilegeDb::getInstance().GetAllPackages(pkgs);
-
-    pkgsLabels.resize(pkgs.size());
-    for (size_t i = 0; i < pkgs.size(); ++i) {
-        pkgsLabels[i].first = std::move(pkgs[i]);
-        bool isPkgHybrid = PrivilegeDb::getInstance().IsPackageHybrid(pkgsLabels[i].first);
-        PrivilegeDb::getInstance().GetPkgApps(pkgsLabels[i].first, pkgsLabels[i].second);
-        for (auto &appName : pkgsLabels[i].second) {
-            std::string label = SmackLabels::generateProcessLabel(appName, pkgsLabels[i].first,
-                                                                  isPkgHybrid);
-            appName = label;
-        }
-    }
-}
-
 bool ServiceImpl::isPrivilegePrivacy(const std::string &privilege)
 {
     if (Config::IS_ASKUSER_ENABLED) {
@@ -493,9 +489,9 @@ int ServiceImpl::appInstall(const Credentials &creds, app_inst_req &&req)
     std::string pkgBasePath;
     std::string appLabel;
     std::string pkgLabel;
-    SmackRules::Pkgs sharedROPkgs;
     SmackRules::PkgsLabels pkgsProcessLabels;
     int authorId;
+    std::vector<PkgInfo> pkgsInfo;
     bool hasSharedRO = isSharedRO(req.pkgPaths);
 
     try {
@@ -527,8 +523,9 @@ int ServiceImpl::appInstall(const Credentials &creds, app_inst_req &&req)
 
         if (hasSharedRO)
             PrivilegeDb::getInstance().SetSharedROPackage(req.pkgName);
-        PrivilegeDb::getInstance().GetSharedROPackages(sharedROPkgs);
-        getPkgsProcessLabels(pkgsProcessLabels);
+
+        PrivilegeDb::getInstance().GetPackagesInfo(pkgsInfo);
+        getPkgsProcessLabels(pkgsInfo, pkgsProcessLabels);
 
         // WTF? Why this commit is here? Shouldn't it be at the end of this function?
         PrivilegeDb::getInstance().CommitTransaction();
@@ -575,7 +572,7 @@ int ServiceImpl::appInstall(const Credentials &creds, app_inst_req &&req)
         SmackRules::installApplicationRules(req.appName, appLabel, req.pkgName,
                                             authorId, pkgLabels);
 
-        SmackRules::generateSharedRORules(pkgsProcessLabels, sharedROPkgs);
+        SmackRules::generateSharedRORules(pkgsProcessLabels, pkgsInfo);
 
         SmackRules::mergeRules();
     } catch (const SmackException::InvalidParam &e) {
@@ -604,11 +601,11 @@ int ServiceImpl::appUninstall(const Credentials &creds, app_inst_req &&req)
     bool removeAuthor = false;
     std::string cynaraUserStr;
     SmackRules::PkgsLabels pkgsProcessLabels;
-    SmackRules::Pkgs sharedROPkgs;
     std::map<std::string, std::vector<std::string>> asOwnerSharing;
     std::map<std::string, std::vector<std::string>> asTargetSharing;
     int authorId;
     bool isPkgHybrid;
+    std::vector<PkgInfo> pkgsInfo;
 
     installRequestMangle(req, cynaraUserStr);
 
@@ -683,8 +680,8 @@ int ServiceImpl::appUninstall(const Credentials &creds, app_inst_req &&req)
 
         PrivilegeDb::getInstance().RemoveApplication(req.appName, req.uid, removeApp, removePkg, removeAuthor);
 
-        getPkgsProcessLabels(pkgsProcessLabels);
-        PrivilegeDb::getInstance().GetSharedROPackages(sharedROPkgs);
+        PrivilegeDb::getInstance().GetPackagesInfo(pkgsInfo);
+        getPkgsProcessLabels(pkgsInfo, pkgsProcessLabels);
 
         CynaraAdmin::getInstance().UpdateAppPolicy(processLabel, cynaraUserStr,
                                                    std::vector<std::string>(), isPrivilegePrivacy);
@@ -734,7 +731,7 @@ int ServiceImpl::appUninstall(const Credentials &creds, app_inst_req &&req)
                 SmackRules::updatePackageRules(req.pkgName, pkgLabels);
             }
 
-            SmackRules::generateSharedRORules(pkgsProcessLabels, sharedROPkgs);
+            SmackRules::generateSharedRORules(pkgsProcessLabels, pkgsInfo);
             if (removePkg)
                 SmackRules::revokeSharedRORules(pkgsProcessLabels, req.pkgName);
         }
@@ -1597,16 +1594,16 @@ int ServiceImpl::pathsRegister(const Credentials &creds, path_req req)
 
                 PrivilegeDb::getInstance().SetSharedROPackage(req.pkgName);
 
-                SmackRules::Pkgs sharedROPkgs;
                 SmackRules::PkgsLabels pkgsLabels;
 
-                PrivilegeDb::getInstance().GetSharedROPackages(sharedROPkgs);
-                getPkgsProcessLabels(pkgsLabels);
+                std::vector<PkgInfo> pkgsInfo;
+                PrivilegeDb::getInstance().GetPackagesInfo(pkgsInfo);
+                getPkgsProcessLabels(pkgsInfo, pkgsLabels);
 
-                SmackRules::generateSharedRORules(pkgsLabels, sharedROPkgs);
+                SmackRules::generateSharedRORules(pkgsLabels, pkgsInfo);
                 SmackRules::mergeRules();
             }
-        PrivilegeDb::getInstance().CommitTransaction();
+            PrivilegeDb::getInstance().CommitTransaction();
         }
     } catch (const PrivilegeDb::Exception::IOError &e) {
         LogError("Cannot access application database: " << e.DumpToString());

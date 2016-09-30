@@ -422,19 +422,6 @@ void PrivilegeDb::GetAllPackages(std::vector<std::string> &packages)
      });
 }
 
-void PrivilegeDb::GetSharedROPackages(std::vector<std::string> &packages)
-{
-    try_catch<void>([&] {
-        auto command = getStatement(StmtType::EGetSharedROPackages);
-        packages.clear();
-        while (command->Step()) {
-            const std::string &pkg = command->GetColumnString(0);
-            LogDebug("Found " << pkg << " package installed");
-            packages.push_back(pkg);
-        };
-     });
-}
-
 void PrivilegeDb::GetPkgApps(const std::string &pkgName,
         std::vector<std::string> &appNames)
 {
@@ -568,6 +555,23 @@ bool PrivilegeDb::IsPackageHybrid(const std::string& pkgName)
 
         return (isHybrid > 0);
     });
+}
+
+void PrivilegeDb::GetPackagesInfo(std::vector<PkgInfo> &packages)
+{
+    try_catch<void>([&] {
+        auto command = getStatement(StmtType::EGetPackagesInfo);
+        packages.clear();
+        while (command->Step()) {
+            PkgInfo info;
+            info.name = command->GetColumnString(0);
+            info.sharedRO = command->GetColumnInteger(1) > 0;
+            info.hybrid = command->GetColumnInteger(2) > 0;
+            LogDebug("Found package info " << info.name << " shared ro: " <<
+                     info.sharedRO << " hybrid: " << info.hybrid);
+            packages.push_back(info);
+        };
+     });
 }
 
 } //namespace SecurityManager

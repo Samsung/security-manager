@@ -28,6 +28,7 @@
 #include <vector>
 #include <string>
 #include <smack-exceptions.h>
+#include "pkg-info.h"
 
 struct smack_accesses;
 
@@ -83,9 +84,9 @@ public:
      * Each application gets read-only access to files shared by SharedRO packages.
      *
      * @param[in] pkgsLabels         vector of process labels per each existing package
-     * @param[in] sharedROPkgs       vector of packages having sharedRO directory
+     * @param[in] allPkgs            vector of PkgInfo objects of all existing packages
      */
-    static void generateSharedRORules(PkgsLabels &pkgsLabels, Pkgs &sharedROPkgs);
+    static void generateSharedRORules(PkgsLabels &pkgsLabels, std::vector<PkgInfo> &allPkgs);
 
     /**
      * Revoke SharedRO rules for applications when a package is being removed

@@ -70,8 +70,6 @@ private:
                           app_install_type installationType,
                           const uid_t &uid);
 
-    static void getPkgsProcessLabels(SmackRules::PkgsLabels &pkgsLabels);
-
     static void getPkgLabels(const std::string &pkgName, SmackRules::Labels &pkgsLabels);
 
     static bool isSharedRO(const pkg_paths& paths);

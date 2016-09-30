@@ -258,21 +258,22 @@ void SmackRules::generatePackageCrossDeps(const Labels &pkgLabels)
     }
 }
 
-void SmackRules::generateSharedRORules(PkgsLabels &pkgsLabels, Pkgs &sharedROPkgs)
+void SmackRules::generateSharedRORules(PkgsLabels &pkgsLabels, std::vector<PkgInfo> &allPkgs)
 {
     LogDebug("Generating SharedRO rules");
 
     SmackRules rules;
     for (size_t i = 0; i < pkgsLabels.size(); ++i) {
         for (const std::string &appLabel : pkgsLabels[i].second) {
-            for (size_t j = 0; j < sharedROPkgs.size(); ++j) {
+            for (size_t j = 0; j < allPkgs.size(); ++j) {
                 // Rules for SharedRO files from own package are generated elsewhere
-                if (pkgsLabels[i].first != sharedROPkgs[j]) {
-                    const std::string &pkgName = sharedROPkgs[j];
-                    rules.add(appLabel,
-                              SmackLabels::generatePathSharedROLabel(pkgName),
-                              SMACK_APP_CROSS_PKG_PERMS);
-                }
+                if (!allPkgs[j].sharedRO || pkgsLabels[i].first == allPkgs[j].name)
+                    continue;
+
+                const std::string &pkgName = allPkgs[j].name;
+                rules.add(appLabel,
+                          SmackLabels::generatePathSharedROLabel(pkgName),
+                          SMACK_APP_CROSS_PKG_PERMS);
             }
         }
     }
