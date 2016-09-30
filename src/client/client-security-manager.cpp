@@ -48,6 +48,7 @@
 
 #include <dpl/log/log.h>
 #include <dpl/exception.h>
+#include <smack-check.h>
 #include <smack-labels.h>
 #include <message-buffer.h>
 #include <client-common.h>
@@ -83,7 +84,7 @@ static std::map<enum lib_retcode, std::string> lib_retcode_string_map = {
 static std::string g_app_label;
 static std::atomic<int> g_threads_count;
 static std::map<uid_t, std::string> g_tid_attr_current_map;
-static bool g_smack_fs_path;
+static bool g_smack_present;
 static cap_t g_cap;
 #define MAX_SIG_WAIT_TIME   1000
 
@@ -404,7 +405,7 @@ int security_manager_set_process_label_from_appid(const char *app_name)
 
     LogDebug("security_manager_set_process_label_from_appid() called");
 
-    if (smack_smackfs_path() == NULL)
+    if (!smack_check())
         return SECURITY_MANAGER_SUCCESS;
 
     try {
@@ -572,7 +573,7 @@ static inline int security_manager_sync_threads_internal(const char *app_name)
         return ret;
     g_threads_count = 0;
     g_tid_attr_current_map.clear();
-    g_smack_fs_path = smack_smackfs_path() != NULL;
+    g_smack_present = smack_check();
     g_cap = cap_init();
 
     if (!g_cap) {
@@ -598,7 +599,7 @@ static inline int security_manager_sync_threads_internal(const char *app_name)
 
         std::atomic_thread_fence(std::memory_order_acquire);
 
-        if (g_smack_fs_path)
+        if (g_smack_present)
             if(label_for_self_internal() != 0)
                 return;
 
@@ -651,12 +652,11 @@ static inline int security_manager_sync_threads_internal(const char *app_name)
         return SECURITY_MANAGER_ERROR_UNKNOWN;
     }
 
-    if (g_smack_fs_path)
-        if (smack_set_label_for_self(g_app_label.c_str()) != 0) {
-            LogError("smack_set_label_for_self failed");
-            cap_free(g_cap);
-            return SECURITY_MANAGER_ERROR_UNKNOWN;
-        }
+    if (g_smack_present && smack_set_label_for_self(g_app_label.c_str()) != 0) {
+        LogError("smack_set_label_for_self failed");
+        cap_free(g_cap);
+        return SECURITY_MANAGER_ERROR_UNKNOWN;
+    }
 
     if (cap_set_proc(g_cap)) {
         LogError("Can't drop main thread capabilities");

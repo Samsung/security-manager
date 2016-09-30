@@ -42,6 +42,7 @@
 #include "smack-labels.h"
 #include "tzplatform-config.h"
 
+#include "smack-check.h"
 #include "smack-rules.h"
 
 namespace SecurityManager {
@@ -278,7 +279,7 @@ void SmackRules::generateSharedRORules(PkgsLabels &pkgsLabels, std::vector<PkgIn
         }
     }
 
-    if (smack_smackfs_path() != NULL)
+    if (smack_check())
         rules.apply();
 
     rules.saveToFile(SMACK_RULES_SHARED_RO_PATH);
@@ -288,7 +289,7 @@ void SmackRules::revokeSharedRORules(PkgsLabels &pkgsLabels, const std::string &
 {
     LogDebug("Revoking SharedRO rules for target pkg " << revokePkg);
 
-    if (smack_smackfs_path() == NULL)
+    if (!smack_check())
         return;
 
     SmackRules rules;
@@ -402,7 +403,7 @@ void SmackRules::useTemplate(
     SmackRules smackRules;
     smackRules.addFromTemplateFile(templatePath, appProcessLabel, pkgName, authorId);
 
-    if (smack_smackfs_path() != NULL)
+    if (smack_check())
         smackRules.apply();
 
     smackRules.saveToFile(outputPath);
@@ -438,7 +439,7 @@ void SmackRules::updatePackageRules(
 
     smackRules.generatePackageCrossDeps(pkgLabels);
 
-    if (smack_smackfs_path() != NULL)
+    if (smack_check())
         smackRules.apply();
 
     smackRules.saveToFile(getPackageRulesFilePath(pkgName));
@@ -477,7 +478,7 @@ void SmackRules::uninstallRules(const std::string &path)
     try {
         SmackRules rules;
         rules.loadFromFile(path);
-        if (smack_smackfs_path())
+        if (smack_check())
             rules.clear();
     } catch (const SmackException::Base &e) {
         LogWarning("Failed to clear smack kernel rules from file: " << path);
