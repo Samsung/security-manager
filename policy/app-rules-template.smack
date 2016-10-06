@@ -1,12 +1,12 @@
-System ~PROCESS~ rwx
-System::Privileged ~PROCESS~ rwx
+System ~PROCESS~ rwxat
+System::Privileged ~PROCESS~ rwxat
 ~PROCESS~ System wx
 ~PROCESS~ System::Privileged wx
 ~PROCESS~ System::Shared rxl
 ~PROCESS~ System::Run rwxat
 ~PROCESS~ System::Log rwxa
 ~PROCESS~ _ l
-User ~PROCESS~ rwx
+User ~PROCESS~ rwxat
 ~PROCESS~ User wx
 ~PROCESS~ User::Home rxl
 ~PROCESS~ User::App::Shared rwxat
