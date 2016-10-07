@@ -409,6 +409,20 @@ void PrivilegeDb::GetUserApps(uid_t uid, std::vector<std::string> &apps)
     });
 }
 
+void PrivilegeDb::GetUserPkgs(uid_t uid, std::vector<std::string> &pkgs)
+{
+   try_catch<void>([&] {
+        auto command = getStatement(StmtType::EGetUserPkgs);
+        command->BindInteger(1, static_cast<unsigned int>(uid));
+        pkgs.clear();
+        while (command->Step()) {
+            std::string pkg = command->GetColumnString(0);
+            LogDebug("User " << uid << " has pkg " << pkg << " installed");
+            pkgs.push_back(pkg);
+        };
+    });
+}
+
 void PrivilegeDb::GetAllPackages(std::vector<std::string> &packages)
 {
     try_catch<void>([&] {

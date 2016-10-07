@@ -69,6 +69,7 @@ enum class StmtType {
     EClearPrivatePaths,
     EGetPrivilegeGroups,
     EGetUserApps,
+    EGetUserPkgs,
     EGetAllPackages,
     EGetAppsInPkg,
     EGetGroups,
@@ -128,6 +129,7 @@ private:
         { StmtType::EClearPrivatePaths, "DELETE FROM shared_path;"},
         { StmtType::EGetPrivilegeGroups, " SELECT group_name FROM privilege_group WHERE privilege_name = ?" },
         { StmtType::EGetUserApps, "SELECT app_name FROM user_app_pkg_view WHERE uid=?" },
+        { StmtType::EGetUserPkgs, "SELECT DISTINCT pkg_name FROM user_app_pkg_view WHERE uid=?" },
         { StmtType::EGetAllPackages,  "SELECT DISTINCT pkg_name FROM user_app_pkg_view" },
         { StmtType::EGetAppsInPkg, " SELECT app_name FROM user_app_pkg_view WHERE pkg_name = ?" },
         { StmtType::EGetGroups, "SELECT DISTINCT group_name, privilege_name FROM privilege_group" },
@@ -420,6 +422,18 @@ public:
     void GetUserApps(uid_t uid, std::vector<std::string> &apps);
 
     /**
+     * Retrieve list of apps assigned to user
+     *
+     * @param uid - user identifier
+     * @param[out] pkgs - list of packages assigned to user,
+     *                    this parameter do not need to be empty, but
+     *                    it is being overwritten during function call.
+     * @exception DB::SqlConnection::Exception::InternalError on internal error
+     * @exception DB::SqlConnection::Exception::ConstraintError on constraint violation
+     */
+    void GetUserPkgs(uid_t uid, std::vector<std::string> &pkgs);
+
+/**
      * Retrieve a list of all application ids for a package id
      *
      * @param pkgName - package identifier
