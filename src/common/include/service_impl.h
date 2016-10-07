@@ -30,6 +30,7 @@
 #include <vector>
 
 #include "credentials.h"
+#include "cynara.h"
 #include "security-manager.h"
 #include "smack-rules.h"
 #include "protocols.h"
@@ -37,56 +38,6 @@
 namespace SecurityManager {
 
 class ServiceImpl {
-private:
-    static bool authenticate(const Credentials &creds, const std::string &privilege);
-
-    static uid_t getGlobalUserId(void);
-
-    static std::string realPath(const std::string &path);
-
-    static bool isSubDir(const std::string &parent, const std::string &subdir);
-
-    static bool getUserPkgDir(const uid_t &uid,
-                              const std::string &pkgName,
-                              app_install_type installType,
-                              std::string &userPkgDir);
-
-    static void getSkelPkgDir(const std::string &pkgName,
-                              std::string &skelPkgDir);
-
-    static void setRequestDefaultValues(uid_t& uid, int& installationType);
-
-    static void installRequestMangle(app_inst_req &req, std::string &cynaraUserStr);
-
-    static bool authCheck(const Credentials &creds,
-                                        const uid_t &uid,
-                                        int installationType);
-
-    static bool pathsCheck(const pkg_paths &requestedPaths,
-                           const std::vector<std::string> &allowedDirs);
-
-    static int labelPaths(const pkg_paths &paths,
-                          const std::string &pkgName,
-                          app_install_type installationType,
-                          const uid_t &uid);
-
-    static void getPkgLabels(const std::string &pkgName, SmackRules::Labels &pkgsLabels);
-
-    static bool isSharedRO(const pkg_paths& paths);
-
-    static bool isPrivilegePrivacy(const std::string &privilege);
-
-    int squashDropPrivateSharing(const std::string &ownerAppName,
-                                 const std::string &targetAppName,
-                                 const std::string &path);
-
-    int dropOnePrivateSharing(const std::string &ownerAppName,
-                              const std::string &ownerPkgName,
-                              const SmackRules::Labels &ownerPkgLabels,
-                              const std::string &targetAppName,
-                              const std::string &targetAppLabel,
-                              const std::string &path);
-
 public:
     ServiceImpl();
     virtual ~ServiceImpl();
@@ -283,6 +234,58 @@ public:
      * @return API return code, as defined in protocols.h
      */
     int labelForProcess(const std::string &appName, std::string &label);
+private:
+    bool authenticate(const Credentials &creds, const std::string &privilege);
+
+    static uid_t getGlobalUserId(void);
+
+    static std::string realPath(const std::string &path);
+
+    static bool isSubDir(const std::string &parent, const std::string &subdir);
+
+    static bool getUserPkgDir(const uid_t &uid,
+                              const std::string &pkgName,
+                              app_install_type installType,
+                              std::string &userPkgDir);
+
+    static void getSkelPkgDir(const std::string &pkgName,
+                              std::string &skelPkgDir);
+
+    static void setRequestDefaultValues(uid_t& uid, int& installationType);
+
+    static void installRequestMangle(app_inst_req &req, std::string &cynaraUserStr);
+
+    bool authCheck(const Credentials &creds,
+                                        const uid_t &uid,
+                                        int installationType);
+
+    static bool pathsCheck(const pkg_paths &requestedPaths,
+                           const std::vector<std::string> &allowedDirs);
+
+    static int labelPaths(const pkg_paths &paths,
+                          const std::string &pkgName,
+                          app_install_type installationType,
+                          const uid_t &uid);
+
+    static void getPkgLabels(const std::string &pkgName, SmackRules::Labels &pkgsLabels);
+
+    static bool isSharedRO(const pkg_paths& paths);
+
+    static bool isPrivilegePrivacy(const std::string &privilege);
+
+    int squashDropPrivateSharing(const std::string &ownerAppName,
+                                 const std::string &targetAppName,
+                                 const std::string &path);
+
+    int dropOnePrivateSharing(const std::string &ownerAppName,
+                              const std::string &ownerPkgName,
+                              const SmackRules::Labels &ownerPkgLabels,
+                              const std::string &targetAppName,
+                              const std::string &targetAppLabel,
+                              const std::string &path);
+
+    Cynara m_cynara;
+
 };
 
 } /* namespace SecurityManager */

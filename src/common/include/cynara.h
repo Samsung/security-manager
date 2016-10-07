@@ -321,9 +321,8 @@ private:
 class Cynara
 {
 public:
+    Cynara();
     ~Cynara();
-
-    static Cynara &getInstance();
 
     /**
      * Ask Cynara for permission.
@@ -338,8 +337,6 @@ public:
         const std::string &user, const std::string &session);
 
 private:
-    Cynara();
-
     static void statusCallback(int oldFd, int newFd,
         cynara_async_status status, void *ptr);
 

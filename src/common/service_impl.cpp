@@ -231,7 +231,7 @@ bool ServiceImpl::authenticate(const Credentials &creds, const std::string &priv
 {
     if (creds.authenticated)
         return true;
-    return Cynara::getInstance().check(creds.label, privilege,
+    return m_cynara.check(creds.label, privilege,
         std::to_string(creds.uid), std::to_string(creds.pid));
 }
 
@@ -808,7 +808,7 @@ int ServiceImpl::getAppGroups(const Credentials &creds, const std::string &appNa
                 LogDebug("Considering privilege " << privilege << " with " <<
                     privGroups.size() << " groups assigned");
 
-                if (Cynara::getInstance().check(appProcessLabel, privilege, uidStr, pidStr)) {
+                if (m_cynara.check(appProcessLabel, privilege, uidStr, pidStr)) {
                     groups.insert(groups.end(),
                         std::make_move_iterator(privGroups.begin()),
                         std::make_move_iterator(privGroups.end()));
@@ -1314,7 +1314,7 @@ int ServiceImpl::appHasPrivilege(
     try {
         std::string appProcessLabel = getAppProcessLabel(appName);
         std::string uidStr = std::to_string(uid);
-        result = Cynara::getInstance().check(appProcessLabel, privilege, uidStr, "");
+        result = m_cynara.check(appProcessLabel, privilege, uidStr, "");
         LogDebug("result = " << result);
     } catch (const CynaraException::Base &e) {
         LogError("Error while querying Cynara for permissions: " << e.DumpToString());

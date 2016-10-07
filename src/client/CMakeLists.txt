@@ -1,5 +1,6 @@
 PKG_CHECK_MODULES(CLIENT_DEP
     REQUIRED
+    cynara-client-async
     libsmack
     libcap
     libprocps

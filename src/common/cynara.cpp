@@ -687,12 +687,6 @@ Cynara::~Cynara()
     cynara_async_finish(cynara);
 }
 
-Cynara &Cynara::getInstance()
-{
-    static Cynara cynara;
-    return cynara;
-}
-
 void Cynara::threadNotifyPut()
 {
     int ret = eventfd_write(pollFds[0].fd, 1);
