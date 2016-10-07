@@ -470,14 +470,18 @@ bool ServiceImpl::isSharedRO(const pkg_paths& paths)
 
 void ServiceImpl::getPkgLabels(const std::string &pkgName, SmackRules::Labels &pkgsLabels)
 {
-    std::vector<std::string> apps;
-    PrivilegeDb::getInstance().GetPkgApps(pkgName, apps);
     bool isPkgHybrid = PrivilegeDb::getInstance().IsPackageHybrid(pkgName);
-    for (auto &app : apps) {
-        auto appLabel = SmackLabels::generateProcessLabel(app, pkgName, isPkgHybrid);
-        app = appLabel;
+    if (isPkgHybrid) {
+        std::vector<std::string> apps;
+        PrivilegeDb::getInstance().GetPkgApps(pkgName, apps);
+        for (auto &app : apps) {
+            auto appLabel = SmackLabels::generateProcessLabel(app, pkgName, isPkgHybrid);
+            app = appLabel;
+        }
+        pkgsLabels = std::move(apps);
+    } else {
+        pkgsLabels.push_back(SmackLabels::generateProcessLabel("", pkgName, false));
     }
-    pkgsLabels = std::move(apps);
 }
 
 int ServiceImpl::appInstall(const Credentials &creds, app_inst_req &&req)
