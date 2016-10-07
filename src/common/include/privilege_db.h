@@ -89,13 +89,6 @@ class PrivilegeDb {
 
 private:
     /**
-     * Constructor
-     * @exception DB::SqlConnection::Exception::IOError on problems with database access
-     *
-     */
-    PrivilegeDb(const std::string &path = std::string(PRIVILEGE_DB_PATH));
-
-    /**
      * Wrapper for prepared statement, it will reset statement at destruction.
      */
     class StatementWrapper {
@@ -176,6 +169,12 @@ public:
     };
 
     ~PrivilegeDb(void);
+    /**
+     * Constructor
+     * @exception DB::SqlConnection::Exception::IOError on problems with database access
+     *
+     */
+    PrivilegeDb(const std::string &path = std::string(PRIVILEGE_DB_PATH));
 
     static PrivilegeDb &getInstance();
 

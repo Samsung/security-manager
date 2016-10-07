@@ -34,6 +34,7 @@
 #include "security-manager.h"
 #include "smack-rules.h"
 #include "protocols.h"
+#include "privilege_db.h"
 
 namespace SecurityManager {
 
@@ -262,12 +263,12 @@ private:
     static bool pathsCheck(const pkg_paths &requestedPaths,
                            const std::vector<std::string> &allowedDirs);
 
-    static int labelPaths(const pkg_paths &paths,
+    int labelPaths(const pkg_paths &paths,
                           const std::string &pkgName,
                           app_install_type installationType,
                           const uid_t &uid);
 
-    static void getPkgLabels(const std::string &pkgName, SmackRules::Labels &pkgsLabels);
+    void getPkgLabels(const std::string &pkgName, SmackRules::Labels &pkgsLabels);
 
     static bool isSharedRO(const pkg_paths& paths);
 
@@ -286,7 +287,18 @@ private:
 
     void updatePermissibleSet(uid_t uid, int type);
 
+    std::string getAppProcessLabel(const std::string &appName, const std::string &pkgName);
+
+    std::string getAppProcessLabel(const std::string &appName);
+
+    bool sharingExists(const std::string &targetAppName, const std::string &path);
+
+    void getPkgsProcessLabels(const std::vector<PkgInfo> &pkgsInfo, SmackRules::PkgsLabels &pkgsLabels);
+
+    int validatePolicy(policy_entry &policyEntry, std::string uidStr, bool &forAdmin, CynaraAdminPolicy &cyap);
+
     Cynara m_cynara;
+    PrivilegeDb m_priviligeDb;
 
 };
 
