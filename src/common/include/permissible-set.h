@@ -65,9 +65,11 @@ std::string getPerrmissibleFileLocation(uid_t uid, int installationType);
  *
  * @param[in] uid user id
  * @param[in] installationType type of installation (global or local)
+ * @param[in] labelsForUser set of labels permitted for given user
  * @return resulting true on success
  */
-void updatePermissibleFile(uid_t uid, int installationType);
+void updatePermissibleFile(uid_t uid, int installationType,
+                           const std::vector<std::string> &labelsForUser);
 
 /**
  * Read labels from a file into a vector

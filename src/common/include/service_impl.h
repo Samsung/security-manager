@@ -284,6 +284,8 @@ private:
                               const std::string &targetAppLabel,
                               const std::string &path);
 
+    void updatePermissibleSet(uid_t uid, int type);
+
     Cynara m_cynara;
 
 };

@@ -484,6 +484,19 @@ void ServiceImpl::getPkgLabels(const std::string &pkgName, SmackRules::Labels &p
     }
 }
 
+void ServiceImpl::updatePermissibleSet(uid_t uid, int type)
+{
+    std::vector<std::string> userPkgs;
+    PrivilegeDb::getInstance().GetUserPkgs(uid, userPkgs);
+    std::vector<std::string> labelsForUser;
+    for (const auto &pkg : userPkgs) {
+        std::vector<std::string> pkgLabels;
+        getPkgLabels(pkg, pkgLabels);
+        labelsForUser.insert(labelsForUser.end(), pkgLabels.begin(), pkgLabels.end());
+    }
+    PermissibleSet::updatePermissibleFile(uid, type, labelsForUser);
+}
+
 int ServiceImpl::appInstall(const Credentials &creds, app_inst_req &&req)
 {
     std::vector<std::string> addedPermissions;
@@ -534,7 +547,7 @@ int ServiceImpl::appInstall(const Credentials &creds, app_inst_req &&req)
         // WTF? Why this commit is here? Shouldn't it be at the end of this function?
         PrivilegeDb::getInstance().CommitTransaction();
         LogDebug("Application installation commited to database");
-        PermissibleSet::updatePermissibleFile(req.uid, req.installationType);
+        updatePermissibleSet(req.uid, req.installationType);
     } catch (const PrivilegeDb::Exception::IOError &e) {
         LogError("Cannot access application database: " << e.DumpToString());
         return SECURITY_MANAGER_ERROR_SERVER_ERROR;
@@ -691,7 +704,7 @@ int ServiceImpl::appUninstall(const Credentials &creds, app_inst_req &&req)
                                                    std::vector<std::string>(), isPrivilegePrivacy);
         PrivilegeDb::getInstance().CommitTransaction();
         LogDebug("Application uninstallation commited to database");
-        PermissibleSet::updatePermissibleFile(req.uid, req.installationType);
+        updatePermissibleSet(req.uid, req.installationType);
     } catch (const PrivilegeDb::Exception::IOError &e) {
         LogError("Cannot access application database: " << e.DumpToString());
         return SECURITY_MANAGER_ERROR_SERVER_ERROR;
