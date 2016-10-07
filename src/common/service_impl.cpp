@@ -129,7 +129,7 @@ int ServiceImpl::validatePolicy(policy_entry &policyEntry, std::string uidStr, b
             level = CYNARA_ADMIN_DELETE;
         } else {
             try {
-                level = CynaraAdmin::getInstance().convertToPolicyType(policyEntry.maxLevel);
+                level = m_cynaraAdmin.convertToPolicyType(policyEntry.maxLevel);
             } catch (const std::out_of_range& e) {
                 LogError("policy max level cannot be: " << policyEntry.maxLevel);
                 return SECURITY_MANAGER_ERROR_INPUT_PARAM;
@@ -151,7 +151,7 @@ int ServiceImpl::validatePolicy(policy_entry &policyEntry, std::string uidStr, b
             level = CYNARA_ADMIN_DELETE;
         } else {
             try {
-                level = CynaraAdmin::getInstance().convertToPolicyType(policyEntry.currentLevel);
+                level = m_cynaraAdmin.convertToPolicyType(policyEntry.currentLevel);
             } catch (const std::out_of_range& e) {
                 LogError("policy current level cannot be: " << policyEntry.currentLevel);
                 return SECURITY_MANAGER_ERROR_INPUT_PARAM;
@@ -537,7 +537,7 @@ int ServiceImpl::appInstall(const Credentials &creds, app_inst_req &&req)
         /* Get all application ids in the package to generate rules withing the package */
         getPkgLabels(req.pkgName, pkgLabels);
         m_priviligeDb.GetPkgAuthorId(req.pkgName, authorId);
-        CynaraAdmin::getInstance().UpdateAppPolicy(appLabel, cynaraUserStr, req.privileges, isPrivilegePrivacy);
+        m_cynaraAdmin.UpdateAppPolicy(appLabel, cynaraUserStr, req.privileges, isPrivilegePrivacy);
 
         if (hasSharedRO)
             m_priviligeDb.SetSharedROPackage(req.pkgName);
@@ -701,7 +701,7 @@ int ServiceImpl::appUninstall(const Credentials &creds, app_inst_req &&req)
         m_priviligeDb.GetPackagesInfo(pkgsInfo);
         getPkgsProcessLabels(pkgsInfo, pkgsProcessLabels);
 
-        CynaraAdmin::getInstance().UpdateAppPolicy(processLabel, cynaraUserStr,
+        m_cynaraAdmin.UpdateAppPolicy(processLabel, cynaraUserStr,
                                                    std::vector<std::string>(), isPrivilegePrivacy);
         m_priviligeDb.CommitTransaction();
         LogDebug("Application uninstallation commited to database");
@@ -809,8 +809,8 @@ int ServiceImpl::getAppGroups(const Credentials &creds, const std::string &appNa
         std::vector<std::string> privileges;
 
         std::string uidStr = std::to_string(creds.uid);
-        CynaraAdmin::getInstance().GetAppPolicy(appProcessLabel, uidStr, privileges);
-        CynaraAdmin::getInstance().GetAppPolicy(appProcessLabel, CYNARA_ADMIN_WILDCARD, privileges);
+        m_cynaraAdmin.GetAppPolicy(appProcessLabel, uidStr, privileges);
+        m_cynaraAdmin.GetAppPolicy(appProcessLabel, CYNARA_ADMIN_WILDCARD, privileges);
 
         vectorRemoveDuplicates(privileges);
 
@@ -856,7 +856,7 @@ int ServiceImpl::userAdd(const Credentials &creds, uid_t uidAdded, int userType)
         return SECURITY_MANAGER_ERROR_AUTHENTICATION_FAILED;
     }
     try {
-        CynaraAdmin::getInstance().UserInit(uidAdded, static_cast<security_manager_user_type>(userType), isPrivilegePrivacy);
+        m_cynaraAdmin.UserInit(uidAdded, static_cast<security_manager_user_type>(userType), isPrivilegePrivacy);
         PermissibleSet::initializeUserPermissibleFile(uidAdded);
     } catch (CynaraException::InvalidParam &e) {
         return SECURITY_MANAGER_ERROR_INPUT_PARAM;
@@ -909,7 +909,7 @@ int ServiceImpl::userDelete(const Credentials &creds, uid_t uidDeleted)
         }
     }
 
-    CynaraAdmin::getInstance().UserRemove(uidDeleted);
+    m_cynaraAdmin.UserRemove(uidDeleted);
 
     return ret;
 }
@@ -958,7 +958,7 @@ int ServiceImpl::policyUpdate(const Credentials &creds, const std::vector<policy
         }
 
         // Apply updates
-        CynaraAdmin::getInstance().SetPolicies(validatedPolicies);
+        m_cynaraAdmin.SetPolicies(validatedPolicies);
 
     } catch (const CynaraException::Base &e) {
         LogError("Error while updating Cynara rules: " << e.DumpToString());
@@ -1002,7 +1002,7 @@ int ServiceImpl::getConfiguredPolicy(const Credentials &creds, bool forAdmin,
             }
 
             //Fetch privileges from ADMIN bucket
-            CynaraAdmin::getInstance().ListPolicies(
+            m_cynaraAdmin.ListPolicies(
                 CynaraAdmin::Buckets.at(Bucket::ADMIN),
                 appProcessLabel,
                 user,
@@ -1023,7 +1023,7 @@ int ServiceImpl::getConfiguredPolicy(const Credentials &creds, bool forAdmin,
                 };
             };
             //Fetch privileges from PRIVACY_MANAGER bucket
-            CynaraAdmin::getInstance().ListPolicies(
+            m_cynaraAdmin.ListPolicies(
                 CynaraAdmin::Buckets.at(Bucket::PRIVACY_MANAGER),
                 appProcessLabel,
                 user,
@@ -1067,16 +1067,16 @@ int ServiceImpl::getConfiguredPolicy(const Credentials &creds, bool forAdmin,
                 pe.appName = app;
                 pe.user =  strcmp(policy.user, CYNARA_ADMIN_WILDCARD) ? policy.user : SECURITY_MANAGER_ANY;
                 pe.privilege = strcmp(policy.privilege, CYNARA_ADMIN_WILDCARD) ? policy.privilege : pe.privilege = SECURITY_MANAGER_ANY;
-                pe.currentLevel = CynaraAdmin::getInstance().convertToPolicyDescription(policy.result);
+                pe.currentLevel = m_cynaraAdmin.convertToPolicyDescription(policy.result);
 
                 if (!forAdmin) {
                     // All policy entries in PRIVACY_MANAGER should be fully-qualified
-                    pe.maxLevel = CynaraAdmin::getInstance().convertToPolicyDescription(
-                        CynaraAdmin::getInstance().GetPrivilegeManagerMaxLevel(
+                    pe.maxLevel = m_cynaraAdmin.convertToPolicyDescription(
+                        m_cynaraAdmin.GetPrivilegeManagerMaxLevel(
                             policy.client, policy.user, policy.privilege));
                 } else {
                     // Cannot reliably calculate maxLavel for policies from ADMIN bucket
-                    pe.maxLevel = CynaraAdmin::getInstance().convertToPolicyDescription(CYNARA_ADMIN_ALLOW);
+                    pe.maxLevel = m_cynaraAdmin.convertToPolicyDescription(CYNARA_ADMIN_ALLOW);
                 }
 
 
@@ -1138,7 +1138,7 @@ int ServiceImpl::getPolicy(const Credentials &creds, const policy_entry &filter,
                     LogError("Invalid UID: " << e.what());
                 };
             } else
-                CynaraAdmin::getInstance().ListUsers(listOfUsers);
+                m_cynaraAdmin.ListUsers(listOfUsers);
         } else {
             LogWarning("Not enough privilege to fetch user policy for all users by user: " << creds.uid);
             LogDebug("Fetching personal policy for user: " << creds.uid);
@@ -1164,8 +1164,8 @@ int ServiceImpl::getPolicy(const Credentials &creds, const policy_entry &filter,
                 std::string appProcessLabel = getAppProcessLabel(appName);
                 std::vector<std::string> listOfPrivileges;
 
-                CynaraAdmin::getInstance().GetAppPolicy(appProcessLabel, userStr, listOfPrivileges);
-                CynaraAdmin::getInstance().GetAppPolicy(appProcessLabel, CYNARA_ADMIN_WILDCARD, listOfPrivileges);
+                m_cynaraAdmin.GetAppPolicy(appProcessLabel, userStr, listOfPrivileges);
+                m_cynaraAdmin.GetAppPolicy(appProcessLabel, CYNARA_ADMIN_WILDCARD, listOfPrivileges);
 
                 if (filter.privilege.compare(SECURITY_MANAGER_ANY)) {
                     LogDebug("Limitting Cynara query to privilege: " << filter.privilege);
@@ -1190,12 +1190,12 @@ int ServiceImpl::getPolicy(const Credentials &creds, const policy_entry &filter,
                     pe.user = userStr;
                     pe.privilege = privilege;
 
-                    pe.currentLevel = CynaraAdmin::getInstance().convertToPolicyDescription(
-                        CynaraAdmin::getInstance().GetPrivilegeManagerCurrLevel(
+                    pe.currentLevel = m_cynaraAdmin.convertToPolicyDescription(
+                        m_cynaraAdmin.GetPrivilegeManagerCurrLevel(
                             appProcessLabel, userStr, privilege));
 
-                    pe.maxLevel = CynaraAdmin::getInstance().convertToPolicyDescription(
-                        CynaraAdmin::getInstance().GetPrivilegeManagerMaxLevel(
+                    pe.maxLevel = m_cynaraAdmin.convertToPolicyDescription(
+                        m_cynaraAdmin.GetPrivilegeManagerMaxLevel(
                             appProcessLabel, userStr, privilege));
 
                     LogDebug(
@@ -1233,7 +1233,7 @@ int ServiceImpl::policyGetDesc(std::vector<std::string> &levels)
     int ret = SECURITY_MANAGER_SUCCESS;
 
     try {
-        CynaraAdmin::getInstance().ListPoliciesDescriptions(levels);
+        m_cynaraAdmin.ListPoliciesDescriptions(levels);
     } catch (const CynaraException::OutOfMemory &e) {
         LogError("Error - out of memory while querying Cynara for policy descriptions list: " << e.DumpToString());
         return SECURITY_MANAGER_ERROR_MEMORY;
@@ -1270,7 +1270,7 @@ int ServiceImpl::policyGroupsForUid(uid_t uid, std::vector<std::string> &groups)
     int ret = SECURITY_MANAGER_SUCCESS;
 
     try {
-        auto userType = CynaraAdmin::getInstance().GetUserType(uid);
+        auto userType = m_cynaraAdmin.GetUserType(uid);
 
         if (userType == SM_USER_TYPE_NONE) {
             return SECURITY_MANAGER_ERROR_NO_SUCH_OBJECT;
@@ -1303,7 +1303,7 @@ int ServiceImpl::policyGroupsForUid(uid_t uid, std::vector<std::string> &groups)
         m_priviligeDb.GetGroupsRelatedPrivileges(group2privVector);
 
         for (const auto &g2p : group2privVector) {
-            CynaraAdmin::getInstance().Check(CYNARA_ADMIN_ANY, uidStr, g2p.second,
+            m_cynaraAdmin.Check(CYNARA_ADMIN_ANY, uidStr, g2p.second,
                                              bucket, result, resultExtra, true);
             if (result == CYNARA_ADMIN_ALLOW)
                 groups.push_back(g2p.first);

@@ -112,8 +112,7 @@ public:
     typedef  std::map<std::string, int> DescriptionToTypeMap;
 
     virtual ~CynaraAdmin();
-
-    static CynaraAdmin &getInstance();
+    CynaraAdmin();
 
     /**
      * Update Cynara policies.
@@ -290,8 +289,6 @@ public:
         const std::string &privilege);
 
 private:
-    CynaraAdmin();
-
     /**
      * Empty bucket using filter - matching rules will be removed
      *

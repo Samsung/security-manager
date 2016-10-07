@@ -267,12 +267,6 @@ CynaraAdmin::~CynaraAdmin()
     cynara_admin_finish(m_CynaraAdmin);
 }
 
-CynaraAdmin &CynaraAdmin::getInstance()
-{
-    static CynaraAdmin cynaraAdmin;
-    return cynaraAdmin;
-}
-
 void CynaraAdmin::SetPolicies(const std::vector<CynaraAdminPolicy> &policies)
 {
     if (policies.empty()) {
@@ -307,7 +301,7 @@ void CynaraAdmin::UpdateAppPolicy(
     const std::vector<std::string> &privileges,
     std::function <bool(const std::string &)> isPrivacy)
 {
-    auto calcPolicies = [&label](
+    auto calcPolicies = [&](
         const std::string &user,
         const std::vector<std::string> &privileges,
         const std::string &bucket,
@@ -317,7 +311,7 @@ void CynaraAdmin::UpdateAppPolicy(
         std::vector<CynaraAdminPolicy> oldPolicies;
         std::unordered_set<std::string> privilegesSet(privileges.begin(),
                                                       privileges.end());
-        CynaraAdmin::getInstance().ListPolicies(bucket, label, user,
+        ListPolicies(bucket, label, user,
                                                CYNARA_ADMIN_ANY, oldPolicies);
 
         // Compare previous policies with set of new requested privileges
@@ -382,7 +376,7 @@ void CynaraAdmin::GetAppPolicy(const std::string &label, const std::string &user
         std::vector<std::string> &privileges)
 {
     std::vector<CynaraAdminPolicy> policies;
-    CynaraAdmin::getInstance().ListPolicies(
+    ListPolicies(
         CynaraAdmin::Buckets.at(Bucket::MANIFESTS),
         label, user, CYNARA_ADMIN_ANY, policies);
 
@@ -434,7 +428,7 @@ void CynaraAdmin::UserInit(uid_t uid, security_manager_user_type userType,
         int askUserPolicy = convertToPolicyType(Config::PRIVACY_POLICY_DESC);
 
         std::vector<CynaraAdminPolicy> appPolicies;
-        CynaraAdmin::getInstance().ListPolicies(CynaraAdmin::Buckets.at(Bucket::MANIFESTS),
+        ListPolicies(CynaraAdmin::Buckets.at(Bucket::MANIFESTS),
                                                 CYNARA_ADMIN_ANY, CYNARA_ADMIN_WILDCARD,
                                                 CYNARA_ADMIN_ANY, appPolicies);
 
@@ -447,13 +441,13 @@ void CynaraAdmin::UserInit(uid_t uid, security_manager_user_type userType,
                 Buckets.at(Bucket::PRIVACY_MANAGER)));
     }
 
-    CynaraAdmin::getInstance().SetPolicies(policies);
+    SetPolicies(policies);
 }
 
 void CynaraAdmin::ListUsers(std::vector<uid_t> &listOfUsers)
 {
     std::vector<CynaraAdminPolicy> tmpListOfUsers;
-    CynaraAdmin::getInstance().ListPolicies(
+    ListPolicies(
         CynaraAdmin::Buckets.at(Bucket::MAIN),
         CYNARA_ADMIN_WILDCARD,
         CYNARA_ADMIN_ANY,
@@ -487,7 +481,7 @@ security_manager_user_type CynaraAdmin::GetUserType(uid_t uid)
 {
     std::string uidStr = std::to_string(uid);
     std::vector<CynaraAdminPolicy> tmpListOfUsers;
-    CynaraAdmin::getInstance().ListPolicies(
+    ListPolicies(
             CynaraAdmin::Buckets.at(Bucket::MAIN),
             CYNARA_ADMIN_WILDCARD,
             uidStr,

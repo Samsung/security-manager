@@ -299,6 +299,7 @@ private:
 
     Cynara m_cynara;
     PrivilegeDb m_priviligeDb;
+    CynaraAdmin m_cynaraAdmin;
 
 };
 
