@@ -1,3 +1,15 @@
+* Mon Oct 10 2016 Seongwook Chung <seong.chung@samsung.com>
+- Version 1.2.2
+- Add packagemanager.info privilege for 'User::Shell' domain
+- Limit number of sql queries during installation
+- Explicitly instantiate LogSystemSingleton
+- PrivilegeDb: Add getting packages installed for user
+- ServiceImpl: Optimize generating package process labels
+- Remove Cynara singleton
+- PermissibleSet: Remove PrivilegeDb usage
+- Remove PrivilegeDb singleton
+- Remove CynaraAdmin singleton
+
 * Wed Sep 28 2016 Rafal Krypa <r.krypa@samsung.com>
 - Version 1.2.1
 - Change the way of app process label generation
