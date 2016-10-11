@@ -1,3 +1,5 @@
+SET(FOTA_DIR "${SYSCONF_INSTALL_DIR}/opt/upgrade")
+
 FILE(GLOB USERTYPE_POLICY_FILES usertype-*.profile)
 
 CONFIGURE_FILE(security-manager-policy-reload.in security-manager-policy-reload @ONLY)
@@ -10,3 +12,6 @@ INSTALL(FILES "privilege-group.list" DESTINATION ${POLICY_DIR})
 INSTALL(PROGRAMS "update.sh" DESTINATION ${POLICY_DIR})
 INSTALL(DIRECTORY "updates" USE_SOURCE_PERMISSIONS DESTINATION ${POLICY_DIR})
 INSTALL(PROGRAMS security-manager-policy-reload DESTINATION ${BIN_INSTALL_DIR})
+
+# FOTA updater
+INSTALL(FILES 241.security-manager.policy-update.sh DESTINATION ${FOTA_DIR})

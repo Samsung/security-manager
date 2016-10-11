@@ -235,3 +235,4 @@ fi
 %config(noreplace) %{TZ_SYS_VAR}/security-manager/policy-version
 %{_datadir}/security-manager/policy
 %attr(755,root,root) %{_bindir}/security-manager-policy-reload
+%attr(755,root,root) %{_sysconfdir}/opt/upgrade/241.security-manager.policy-update.sh
