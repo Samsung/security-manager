@@ -2,4 +2,6 @@
 
 PATH=/bin:/usr/bin:/sbin:/usr/sbin
 
-exec /usr/share/security-manager/db/update.sh
+. /etc/tizen-platform.conf
+
+exec "$TZ_SYS_RO_SHARE/security-manager/db/update.sh"
