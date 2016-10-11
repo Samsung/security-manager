@@ -41,7 +41,6 @@
 *	http://tizen.org/privilege/dpm.microphone
 *	http://tizen.org/privilege/dpm.password
 *	http://tizen.org/privilege/dpm.security
-*	http://tizen.org/privilege/dpm.settings
 *	http://tizen.org/privilege/dpm.storage
 *	http://tizen.org/privilege/dpm.usb
 *	http://tizen.org/privilege/dpm.wifi
@@ -51,6 +50,7 @@
 *	http://tizen.org/privilege/email.admin
 *	http://tizen.org/privilege/externalstorage
 *	http://tizen.org/privilege/externalstorage.appdata
+*	http://tizen.org/privilege/fido.client
 *	http://tizen.org/privilege/haptic
 *	http://tizen.org/privilege/healthinfo
 *	http://tizen.org/privilege/ime
@@ -96,7 +96,6 @@
 *	http://tizen.org/privilege/use_ir
 *	http://tizen.org/privilege/volume.set
 *	http://tizen.org/privilege/vpnservice
-*	http://tizen.org/privilege/vpnservice.admin
 *	http://tizen.org/privilege/web-history.admin
 *	http://tizen.org/privilege/widget.viewer
 *	http://tizen.org/privilege/wifidirect
@@ -119,6 +118,7 @@
 *	http://tizen.org/privilege/internal/dbus
 *	http://tizen.org/privilege/internal/inputdevice.block
 *	http://tizen.org/privilege/internal/appdebugging
+*	http://tizen.org/privilege/internal/service
 *	http://tizen.org/privilege/internal/web/appmanager.certificate
 *	http://tizen.org/privilege/internal/web/datasync
 *	http://tizen.org/privilege/internal/web/fullscreen
