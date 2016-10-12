@@ -120,7 +120,7 @@ touch %{buildroot}/%{TZ_SYS_DB}/.security-manager.db
 touch %{buildroot}/%{TZ_SYS_DB}/.security-manager.db-journal
 
 install -m 0755 -d %{buildroot}%{TZ_SYS_VAR}/security-manager
-install -m 0444 /dev/null %{buildroot}%{TZ_SYS_VAR}/security-manager/apps-names
+install -m 0444 /dev/null %{buildroot}%{TZ_SYS_VAR}/security-manager/apps-labels
 install -m 0444 /dev/null %{buildroot}%{TZ_SYS_VAR}/security-manager/policy-version
 
 %clean
@@ -189,7 +189,7 @@ fi
 %attr(755,root,root) %{_bindir}/security-manager-cleanup
 %attr(755,root,root) %{_sysconfdir}/gumd/useradd.d/50_security-manager-add.post
 %attr(755,root,root) %{_sysconfdir}/gumd/userdel.d/50_security-manager-remove.pre
-%config(noreplace) %attr(444,root,root) %{TZ_SYS_VAR}/security-manager/apps-names
+%config(noreplace) %attr(444,root,root) %{TZ_SYS_VAR}/security-manager/apps-labels
 %dir %attr(711,root,root) %{TZ_SYS_VAR}/security-manager/
 %dir %attr(700,root,root) %{TZ_SYS_VAR}/security-manager/rules
 %dir %attr(700,root,root) %{TZ_SYS_VAR}/security-manager/rules-merged
