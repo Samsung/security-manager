@@ -294,21 +294,7 @@ std::string getSmackLabelFromSelf(void)
 
 std::string getSmackLabelFromPid(pid_t pid)
 {
-    // FIXME: libsmack should provide such a function
-    std::ifstream smackFileStream("/proc/" + std::to_string(pid) + "/attr/current");
-    if (!smackFileStream.is_open())
-        ThrowMsg(SmackException::FileError,
-                "/attr/current file open error for pid: " << pid);
-
-    std::string result;
-    if (!std::getline(smackFileStream, result))
-        ThrowMsg(SmackException::FileError,
-                "/attr/current file read error for pid: " << pid);
-
-    if (smack_label_length(result.c_str()) <= 0)
-        ThrowMsg(SmackException::InvalidLabel, "Error while fetching Smack label for process " << pid);
-
-    return result;
+    return getSmackLabel(&smack_new_label_from_process, pid);
 }
 
 std::string generatePathTrustedLabel(const int authorId)
