@@ -22,6 +22,7 @@
 #include <unistd.h>
 #include <sys/socket.h>
 
+#include "smack-check.h"
 #include "smack-labels.h"
 #include "credentials.h"
 
@@ -30,7 +31,7 @@ namespace SecurityManager {
 Credentials Credentials::getCredentialsFromSelf(void)
 {
     return Credentials(getpid(), geteuid(), getegid(),
-        SmackLabels::getSmackLabelFromSelf());
+        smack_check() ? SmackLabels::getSmackLabelFromSelf() : "");
 }
 
 Credentials Credentials::getCredentialsFromSocket(int sock)
