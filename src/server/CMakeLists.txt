@@ -39,6 +39,7 @@ TARGET_LINK_LIBRARIES(${TARGET_SERVER}
     ${TARGET_COMMON}
     ${CMAKE_THREAD_LIBS_INIT}
     ${SERVER_DEP_LIBRARIES}
+    "-pthread"
     "-pie"
     )
 
