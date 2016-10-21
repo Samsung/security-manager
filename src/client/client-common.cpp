@@ -22,6 +22,8 @@
  * @brief       This file is implementation of client-common functions.
  */
 
+#include <iostream>
+
 #include <fcntl.h>
 #include <poll.h>
 #include <sys/types.h>
@@ -54,12 +56,15 @@ int try_catch(const std::function<int()>& func)
 {
     try {
         return func();
-    } catch (MessageBuffer::Exception::Base &e) {
-        LogError("SecurityManager::MessageBuffer::Exception " << e.DumpToString());
-    } catch (std::exception &e) {
+    } catch (const Exception &e) {
+        LogError("SecurityManager::Exception " << e.DumpToString());
+        std::cerr << "SecurityManager::Exception " << e.DumpToString() << std::endl;
+    } catch (const std::exception &e) {
         LogError("STD exception " << e.what());
+        std::cerr << "STD exception " << e.what() << std::endl;
     } catch (...) {
-        LogError("Unknown exception occured");
+        LogError("Unknown exception occurred");
+        std::cerr << "Unknown exception occurred" << std::endl;
     }
     return SECURITY_MANAGER_ERROR_UNKNOWN;
 }
