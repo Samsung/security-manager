@@ -22,12 +22,9 @@
  * @brief       Helper class for client "off-line" mode detection
  */
 
-#include <client-offline.h>
 #include <client-common.h>
-#include <message-buffer.h>
-#include <protocols.h>
-#include <connection.h>
-#include <dpl/serialization.h>
+#include <client-offline.h>
+#include <client-request.h>
 #include <dpl/log/log.h>
 
 namespace SecurityManager {
@@ -44,14 +41,9 @@ ClientOffline::ClientOffline(bool wakeUp)
     try {
         m_serviceLock = new SecurityManager::FileLocker(SecurityManager::SERVICE_LOCK_FILE, false);
         if (wakeUp && m_serviceLock->Locked()) {
-            int retval;
-            MessageBuffer send, recv;
-
             LogInfo("Service isn't running, try to trigger it via socket activation.");
             m_serviceLock->Unlock();
-            Serialization::Serialize(send, static_cast<int>(SecurityModuleCall::NOOP));
-            retval = sendToServer(SERVICE_SOCKET, send.Pop(), recv);
-            if (retval != SECURITY_MANAGER_SUCCESS) {
+            if (ClientRequest(SecurityModuleCall::NOOP).send().failed()) {
                 LogInfo("Socket activation attempt failed.");
                 m_serviceLock->Lock();
                 m_offlineMode = m_serviceLock->Locked();
