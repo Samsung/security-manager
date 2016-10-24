@@ -504,6 +504,8 @@ security_manager_user_type CynaraAdmin::GetUserType(uid_t uid)
         return SM_USER_TYPE_GUEST;
     else if (metadata == Buckets.at(Bucket::USER_TYPE_SYSTEM))
         return SM_USER_TYPE_SYSTEM;
+    else if (metadata == Buckets.at(Bucket::USER_TYPE_SECURITY))
+        return SM_USER_TYPE_SECURITY;
     else    // improperly configured
         return SM_USER_TYPE_NONE;
 };
