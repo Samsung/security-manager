@@ -1,3 +1,21 @@
+* Mon Oct 24 2016 Jooseong Lee <jooseong.lee@samsung.com>
+- Version 1.2.3
+- Update policy set for 'security' user type
+- Cleanup Fix ListUsers parameter description
+- SM : Unify Smack rules of System access to application
+- Use smack_check() helper function instead of manually calling libsmack
+- Provide proper placeholder file for global apps-labels
+- Don't hard-code /usr/share directory in FOTA script
+- Add FOTA script for security-manager policy update
+- Use SIGSETXID for security synchronization across threads
+- [Unit tests] for FileLocker class
+- Fix retrieving of current process credentials for off-line client
+- Extend ClientOffline
+- client: extract common code for communication with service
+- Improve handling of uncaught exceptions in client library
+- server: add missing linking against pthread
+- Treat web only privilege as core privilege
+
 * Mon Oct 10 2016 Seongwook Chung <seong.chung@samsung.com>
 - Version 1.2.2
 - Add packagemanager.info privilege for 'User::Shell' domain
