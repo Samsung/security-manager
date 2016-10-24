@@ -752,7 +752,8 @@ int security_manager_prepare_app(const char *app_name)
 
         ret = security_manager_set_process_groups_from_appid(app_name);
         if (ret != SECURITY_MANAGER_SUCCESS) {
-            LogWarning("Unable to setup process groups for application. Privileges with direct access to resources will not work.");
+            LogError("Unable to setup process groups for application.");
+            return ret;
         }
 
         ret = security_manager_sync_threads_internal(app_name);
