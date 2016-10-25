@@ -1533,21 +1533,9 @@ int security_manager_shm_open(const char *name, int oflag, mode_t mode, const ch
             return -1;
 
         auto scopeClose = makeUnique(&fd, [](int *ptr) -> void { if (*ptr >= 0) close(*ptr); });
+        ClientRequest request(SecurityModuleCall::SHM_APP_NAME);
+        int retval = request.send(std::string(name), std::string(app_name)).getStatus();
 
-        MessageBuffer send, recv;
-        Serialization::Serialize(send,
-                                 (int)SecurityModuleCall::SHM_APP_NAME,
-                                 std::string(name),
-                                 std::string(app_name));
-
-        int retval = sendToServer(SERVICE_SOCKET, send.Pop(), recv);
-        if (retval != SECURITY_MANAGER_SUCCESS) {
-            // Let's propagate errno
-            LogError("Error in sendToServer. Error code: " << retval);
-            return -1;
-        }
-
-        Deserialization::Deserialize(recv, retval);
         switch(retval) {
         case SECURITY_MANAGER_SUCCESS:
             scopeClose.release();
@@ -1577,4 +1565,3 @@ int security_manager_shm_open(const char *name, int oflag, mode_t mode, const ch
         return -1;
     });
 }
-
