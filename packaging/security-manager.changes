@@ -1,3 +1,7 @@
+* Tue Nov 1 2016 Jooseong Lee <jooseong.lee@samsung.com>
+- Version 1.2.4
+- Enable security-manager support for starting without systemd
+
 * Mon Oct 24 2016 Jooseong Lee <jooseong.lee@samsung.com>
 - Version 1.2.3
 - Update policy set for 'security' user type
