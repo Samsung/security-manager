@@ -47,7 +47,7 @@ GenericSocketService::ServiceDescriptionVector Service::GetServiceDescription()
         "*",   /* smackLabel label (not used, we rely on systemd) */
         IFACE, /* InterfaceID */
         false, /* useSendMsg */
-        true}, /* systemdOnly */
+        false}, /* systemdOnly */
     };
 }
 
