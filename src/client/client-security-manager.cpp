@@ -471,9 +471,39 @@ inline static int tgkill(int tgid, int tid, int sig)
     return syscall(SYS_tgkill, tgid, tid, sig);
 }
 
+struct kernel_sigaction {
+    __sighandler_t k_sa_handler;
+    unsigned long sa_flags;
+    void (*sa_restorer) (void);
+    sigset_t sa_mask;
+};
+
 inline static int sigaction(int signum, const struct sigaction *act, struct sigaction *oldact)
 {
-    return syscall(SYS_sigaction, signum, act, oldact);
+    // reimplement libc sigaction code
+    // sigaction structure used in the kernel is not the same as in the libc
+    // sysdeps/unix/sysv/linux/kernel_sigaction.h
+    // sysdeps/unix/sysv/linux/{i386,x86_64,arm,aarch64}/sigaction.c
+    int result;
+    struct kernel_sigaction kact, koact;
+
+    if (act) {
+        kact.k_sa_handler = act->sa_handler;
+        memcpy (&kact.sa_mask, &act->sa_mask, sizeof (sigset_t));
+        kact.sa_flags = act->sa_flags;
+        kact.sa_restorer = act->sa_restorer;
+    }
+
+    result = syscall(SYS_rt_sigaction, signum, act ? &kact : NULL, oldact ? &koact : NULL, NSIG / 8);
+
+    if (oldact && result >= 0) {
+        oldact->sa_handler = koact.k_sa_handler;
+        memcpy (&oldact->sa_mask, &koact.sa_mask, sizeof (sigset_t));
+        oldact->sa_flags = koact.sa_flags;
+        oldact->sa_restorer = koact.sa_restorer;
+    }
+
+    return result;
 }
 
 } // namespace Syscall
@@ -1028,7 +1058,9 @@ int security_manager_policy_levels_get(char ***levels, size_t *levels_count)
         if (request.send().failed())
             return request.getStatus();
 
-        request.recv(*levels_count);
+        int count;
+        request.recv(count);
+        *levels_count = count;
         LogInfo("Number of policy descriptions: " << *levels_count);
 
         char **array = new char *[*levels_count];
