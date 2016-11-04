@@ -104,6 +104,7 @@ export LDFLAGS+="-Wl,--rpath=%{_libdir}"
         -DLOCAL_STATE_DIR=%{TZ_SYS_VAR} \
         -DSYSTEMD_INSTALL_DIR=%{_unitdir} \
         -DDATA_ROOT_DIR=%{_datadir} \
+        -DDB_LOGS=OFF \
         -DCMAKE_BUILD_TYPE=%{?build_type:%build_type}%{!?build_type:RELEASE} \
         -DCMAKE_VERBOSE_MAKEFILE=ON
 make %{?jobs:-j%jobs}

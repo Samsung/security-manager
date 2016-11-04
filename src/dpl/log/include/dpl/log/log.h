@@ -161,6 +161,7 @@ do                                                                         \
 /* Errors and warnings must be always logged. */
 #define  LogError(message) DPL_MACRO_FOR_LOGGING(message, Error)
 #define  LogWarning(message) DPL_MACRO_FOR_LOGGING(message, Warning)
+#define  LogDummy(message) DPL_MACRO_DUMMY_LOGGING(message, Pedantic)
 
 #ifdef BUILD_TYPE_DEBUG
     #define LogDebug(message) DPL_MACRO_FOR_LOGGING(message, Debug)
