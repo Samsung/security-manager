@@ -1,3 +1,7 @@
+* Tue Nov 8 2016 Jooseong Lee <jooseong.lee@samsung.com>
+- Version 1.2.5
+- Fix build break on 64 bits architectures
+
 * Tue Nov 1 2016 Jooseong Lee <jooseong.lee@samsung.com>
 - Version 1.2.4
 - Enable security-manager support for starting without systemd
