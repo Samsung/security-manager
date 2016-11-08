@@ -471,39 +471,63 @@ inline static int tgkill(int tgid, int tid, int sig)
     return syscall(SYS_tgkill, tgid, tid, sig);
 }
 
+// reimplement libc sigaction code
+// sigaction structure used in the kernel is not the same as in the libc
+// sysdeps/unix/sysv/linux/kernel_sigaction.h
+// sysdeps/unix/sysv/linux/{i386,x86_64,arm,aarch64}/sigaction.c
+
+#define SA_RESTORER 0x04000000
+
 struct kernel_sigaction {
     __sighandler_t k_sa_handler;
     unsigned long sa_flags;
-    void (*sa_restorer) (void);
+    void (*sa_restorer)(void);
     sigset_t sa_mask;
 };
 
+#if __x86_64__
+void restore_rt(void) __asm__ ("__restore_rt");
+
+#define RESTORE(name, syscall) RESTORE2(name, syscall)
+#define RESTORE2(name, syscall) \
+__asm__ (                                       \
+        "nop\n"                                 \
+        ".text\n"                               \
+        "__" #name ":\n"                        \
+        "        movq $" #syscall ", %rax\n"    \
+        "        syscall\n"                     \
+);
+
+RESTORE(restore_rt, __NR_rt_sigreturn)
+#endif
+
 inline static int sigaction(int signum, const struct sigaction *act, struct sigaction *oldact)
 {
-    // reimplement libc sigaction code
-    // sigaction structure used in the kernel is not the same as in the libc
-    // sysdeps/unix/sysv/linux/kernel_sigaction.h
-    // sysdeps/unix/sysv/linux/{i386,x86_64,arm,aarch64}/sigaction.c
-    int result;
-    struct kernel_sigaction kact, koact;
+    int ret;
+    struct kernel_sigaction kact, koldact;
 
     if (act) {
         kact.k_sa_handler = act->sa_handler;
-        memcpy (&kact.sa_mask, &act->sa_mask, sizeof (sigset_t));
+        memcpy(&kact.sa_mask, &act->sa_mask, sizeof(sigset_t));
+#if __x86_64__
+        kact.sa_flags = act->sa_flags | SA_RESTORER;
+        kact.sa_restorer = &restore_rt;
+#else
         kact.sa_flags = act->sa_flags;
         kact.sa_restorer = act->sa_restorer;
+#endif
     }
 
-    result = syscall(SYS_rt_sigaction, signum, act ? &kact : NULL, oldact ? &koact : NULL, NSIG / 8);
+    ret = syscall(SYS_rt_sigaction, signum, act ? &kact : NULL, oldact ? &koldact : NULL, NSIG / 8);
 
-    if (oldact && result >= 0) {
-        oldact->sa_handler = koact.k_sa_handler;
-        memcpy (&oldact->sa_mask, &koact.sa_mask, sizeof (sigset_t));
-        oldact->sa_flags = koact.sa_flags;
-        oldact->sa_restorer = koact.sa_restorer;
+    if (oldact && ret >= 0) {
+        oldact->sa_handler = koldact.k_sa_handler;
+        memcpy(&oldact->sa_mask, &koldact.sa_mask, sizeof(sigset_t));
+        oldact->sa_flags = koldact.sa_flags;
+        oldact->sa_restorer = koldact.sa_restorer;
     }
 
-    return result;
+    return ret;
 }
 
 } // namespace Syscall
