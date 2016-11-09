@@ -41,15 +41,19 @@ SET(SM_TESTS_SOURCES
     ${SM_TEST_SRC}/colour_log_formatter.cpp
     ${SM_TEST_SRC}/security-manager-tests.cpp
     ${SM_TEST_SRC}/test_file-lock.cpp
+    ${SM_TEST_SRC}/test_privilege_db.cpp
     ${DPL_PATH}/core/src/assert.cpp
     ${DPL_PATH}/core/src/colors.cpp
     ${DPL_PATH}/core/src/errno_string.cpp
     ${DPL_PATH}/core/src/exception.cpp
     ${DPL_PATH}/core/src/noncopyable.cpp
+    ${DPL_PATH}/db/src/sql_connection.cpp
+    ${DPL_PATH}/db/src/naive_synchronization_object.cpp
     ${DPL_PATH}/log/src/abstract_log_provider.cpp
     ${DPL_PATH}/log/src/log.cpp
     ${DPL_PATH}/log/src/old_style_log_provider.cpp
     ${PROJECT_SOURCE_DIR}/src/common/file-lock.cpp
+    ${PROJECT_SOURCE_DIR}/src/common/privilege_db.cpp
     ${PROJECT_SOURCE_DIR}/src/common/tzplatform-config.cpp
 )
 
@@ -74,6 +78,7 @@ INCLUDE_DIRECTORIES(
     ${PROJECT_SOURCE_DIR}/src/common/include
     ${PROJECT_SOURCE_DIR}/src/server/main/include
     ${PROJECT_SOURCE_DIR}/src/dpl/core/include
+    ${PROJECT_SOURCE_DIR}/src/dpl/db/include
     ${PROJECT_SOURCE_DIR}/src/dpl/log/include
     ${PROJECT_SOURCE_DIR}/src/dpl/log/include/dpl/log
     ${PROJECT_SOURCE_DIR}/src/dpl/log
