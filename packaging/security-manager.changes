@@ -1,3 +1,8 @@
+* Fri Nov 11 2016 Jooseong Lee <jooseong.lee@samsung.com>
+- Version 1.2.6
+- Fix sigaction() on x86_64 arch
+- Add 'l' permission to sharedRO Smack rule
+
 * Tue Nov 8 2016 Jooseong Lee <jooseong.lee@samsung.com>
 - Version 1.2.5
 - Fix build break on 64 bits architectures
