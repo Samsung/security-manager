@@ -500,8 +500,6 @@ void ServiceImpl::updatePermissibleSet(uid_t uid, int type)
 
 int ServiceImpl::appInstall(const Credentials &creds, app_inst_req &&req)
 {
-    std::vector<std::string> addedPermissions;
-    std::vector<std::string> removedPermissions;
     SmackRules::Labels pkgLabels;
     std::string cynaraUserStr;
     std::string pkgBasePath;
