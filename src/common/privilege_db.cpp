@@ -517,7 +517,7 @@ void PrivilegeDb::GetGroups(std::vector<std::string> &groups)
 void PrivilegeDb::GetGroupsRelatedPrivileges(std::vector<std::pair<std::string, std::string>> &privileges)
 {
     try_catch<void>([&] {
-        auto command = getStatement(StmtType::EGetGroups);
+        auto command = getStatement(StmtType::EGetGroupsRelatedPrivileges);
 
         while (command->Step()) {
             const auto &groupName = command->GetColumnString(0);
