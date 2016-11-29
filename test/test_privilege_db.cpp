@@ -37,7 +37,6 @@
 
 using namespace SecurityManager;
 
-
 /* Fixtures for the suite and test cases */
 
 struct PrivilegeDBFixture
@@ -1140,5 +1139,79 @@ BOOST_AUTO_TEST_CASE(T860_is_package_hybrid)
     checkIsPackageHybrid(pkgN3, hybrid);
 }
 
-BOOST_AUTO_TEST_SUITE_END()
+// Privileges
 
+BOOST_AUTO_TEST_CASE(T900_get_groups_from_empty_db)
+{
+    std::vector<std::string> groups;
+    BOOST_REQUIRE_NO_THROW(testPrivilegeDb->GetGroups(groups));
+    BOOST_REQUIRE_MESSAGE(groups.size() == 0, "GetGroups found some groups in empty database");
+}
+
+BOOST_AUTO_TEST_CASE(T910_get_groups)
+{
+    int ret = system("sqlite3 " TEST_PRIVILEGE_DB_PATH " "
+    "\"BEGIN; "
+    "INSERT INTO privilege_group (privilege_name, group_name) VALUES ('privilege30', 'group3'); "
+    "INSERT INTO privilege_group (privilege_name, group_name) VALUES ('privilege10', 'group1'); "
+    "INSERT INTO privilege_group (privilege_name, group_name) VALUES ('privilege11', 'group1'); "
+    "INSERT INTO privilege_group (privilege_name, group_name) VALUES ('privilege20', 'group2'); "
+    "INSERT INTO privilege_group (privilege_name, group_name) VALUES ('privilege31', 'group3'); "
+    "INSERT INTO privilege_group (privilege_name, group_name) VALUES ('privilege32', 'group3'); "
+    "INSERT INTO privilege_group (privilege_name, group_name) VALUES ('privilege41', 'group4'); "
+    "COMMIT;\" ");
+    BOOST_REQUIRE_MESSAGE(ret == 0, "Could not create populate the  database");
+    std::vector<std::string> groups;
+    BOOST_REQUIRE_NO_THROW(testPrivilegeDb->GetGroups(groups));
+    std::sort(groups.begin(), groups.end());
+    std::vector<std::string> expectedGroups = {"group1", "group2", "group3", "group4"};
+    BOOST_CHECK_EQUAL_COLLECTIONS(groups.begin(), groups.end(),
+        expectedGroups.begin(), expectedGroups.end());
+}
+
+BOOST_AUTO_TEST_CASE(T920_get_groups_related_privileges_from_empty_db)
+{
+    std::vector<std::pair<std::string, std::string>> privileges;
+    BOOST_REQUIRE_NO_THROW(testPrivilegeDb->GetGroupsRelatedPrivileges(privileges));
+    BOOST_REQUIRE_MESSAGE(privileges.size() == 0, "GetGroupsRelatedPrivileges found some"
+        " privileges in empty database");
+}
+
+BOOST_AUTO_TEST_CASE(T930_get_groups_related_privileges)
+{
+    int ret = system("sqlite3 " TEST_PRIVILEGE_DB_PATH " "
+    "\"BEGIN; "
+    "INSERT INTO privilege_group (privilege_name, group_name) VALUES ('privilege30', 'group3'); "
+    "INSERT INTO privilege_group (privilege_name, group_name) VALUES ('privilege10', 'group1'); "
+    "INSERT INTO privilege_group (privilege_name, group_name) VALUES ('privilege11', 'group1'); "
+    "INSERT INTO privilege_group (privilege_name, group_name) VALUES ('privilege20', 'group2'); "
+    "INSERT INTO privilege_group (privilege_name, group_name) VALUES ('privilege31', 'group3'); "
+    "INSERT INTO privilege_group (privilege_name, group_name) VALUES ('privilege32', 'group3'); "
+    "INSERT INTO privilege_group (privilege_name, group_name) VALUES ('privilege41', 'group4'); "
+    "COMMIT;\" ");
+    BOOST_REQUIRE_MESSAGE(ret == 0, "Could not create populate the  database");
+    std::vector<std::pair<std::string, std::string>> privileges;
+    BOOST_REQUIRE_NO_THROW(testPrivilegeDb->GetGroupsRelatedPrivileges(privileges));
+    std::sort(privileges.begin(), privileges.end(), [](std::pair<std::string, std::string> &a,
+                                                       std::pair<std::string, std::string> &b) {
+        if (a.first < b.first)
+            return true;
+        if (b.first < a.first)
+            return false;
+        if (a.second < b.second)
+            return true;
+        return false;
+    });
+    std::vector<std::pair<std::string, std::string>> expectedPrivileges = {{"group1", "privilege10"},
+            {"group1", "privilege11"}, {"group2", "privilege20"}, {"group3", "privilege30"},
+            {"group3", "privilege31"}, {"group3", "privilege32"}, {"group4", "privilege41"}};
+    BOOST_REQUIRE_MESSAGE(privileges.size() == expectedPrivileges.size(), "GetGroupsRelatedPrivileges \
+        returned wrong number of privileges expected: " << expectedPrivileges.size() << " got: "
+        << privileges.size());
+    for (unsigned int i = 0; i < privileges.size(); i++)
+        BOOST_REQUIRE_MESSAGE(privileges[i] == expectedPrivileges[i], "Expected: ("
+             << expectedPrivileges[i].first << "," << expectedPrivileges[i].second << " got: "
+             << privileges[i].first << " , " << privileges[i].second << ")");
+}
+
+BOOST_AUTO_TEST_SUITE_END()
