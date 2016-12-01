@@ -1,3 +1,8 @@
+* Thu Dec 1 2016 Bartlomiej Grzelewski <b.grzelewski@samsung.com>
+- Version 1.2.7
+- Fix in GetGroups implementation
+- Add security_manager_shm_open
+
 * Fri Nov 11 2016 Jooseong Lee <jooseong.lee@samsung.com>
 - Version 1.2.6
 - Fix sigaction() on x86_64 arch
