@@ -299,7 +299,7 @@ void CynaraAdmin::UpdateAppPolicy(
     const std::string &label,
     const std::string &user,
     const std::vector<std::string> &privileges,
-    std::function <bool(const std::string &)> isPrivacy)
+    std::function <bool(const std::string &, const std::string &)> isPrivacy)
 {
     auto calcPolicies = [&](
         const std::string &user,
@@ -350,7 +350,7 @@ void CynaraAdmin::UpdateAppPolicy(
 
         std::vector<std::string> privacyPrivileges;
         for (auto &p : privileges)
-            if (isPrivacy(p))
+            if (isPrivacy(label, p))
                 privacyPrivileges.push_back(p);
 
         // 2nd, performing operation on PRIVACY_MANAGER bucket for all affected users
@@ -388,7 +388,7 @@ void CynaraAdmin::GetAppPolicy(const std::string &label, const std::string &user
 }
 
 void CynaraAdmin::UserInit(uid_t uid, security_manager_user_type userType,
-        std::function <bool(const std::string &)> isPrivacy)
+        std::function <bool(const std::string &, const std::string &)> isPrivacy)
 {
     Bucket bucket;
     std::vector<CynaraAdminPolicy> policies;
@@ -433,7 +433,7 @@ void CynaraAdmin::UserInit(uid_t uid, security_manager_user_type userType,
                                                 CYNARA_ADMIN_ANY, appPolicies);
 
         for (CynaraAdminPolicy &policy : appPolicies)
-            if (isPrivacy(policy.privilege))
+            if (isPrivacy(policy.client, policy.privilege))
                 policies.push_back(CynaraAdminPolicy(policy.client,
                 userStr,
                 policy.privilege,

@@ -284,7 +284,7 @@ private:
 
     static bool isSharedRO(const pkg_paths& paths);
 
-    static bool isPrivilegePrivacy(const std::string &privilege);
+    static bool isPrivilegePrivacy(const std::string &clientLabel, const std::string &privilege);
 
     int squashDropPrivateSharing(const std::string &ownerAppName,
                                  const std::string &targetAppName,

@@ -445,10 +445,10 @@ int ServiceImpl::labelPaths(const pkg_paths &paths,
     }
 }
 
-bool ServiceImpl::isPrivilegePrivacy(const std::string &privilege)
+bool ServiceImpl::isPrivilegePrivacy(const std::string &clientLabel, const std::string &privilege)
 {
     if (Config::IS_ASKUSER_ENABLED) {
-        int ret = privilege_info_is_privacy(privilege.c_str());
+        int ret = privilege_info_is_privacy2(clientLabel.c_str(), privilege.c_str());
         if (ret == 1)
             return true;
         if (ret != 0)

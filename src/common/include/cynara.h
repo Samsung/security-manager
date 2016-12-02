@@ -134,7 +134,7 @@ public:
      */
     void UpdateAppPolicy(const std::string &label, const std::string &user,
         const std::vector<std::string> &privileges,
-        std::function <bool(const std::string &)> isPrivacy);
+        std::function <bool(const std::string &, const std::string &)> isPrivacy);
 
     /**
      * Fetch Cynara policies for the application and the user.
@@ -158,7 +158,7 @@ public:
      * @param isPrivacy a function that checks if privilege is privacy-related
      */
     void UserInit(uid_t uid, security_manager_user_type userType,
-        std::function <bool(const std::string &)> isPrivacy);
+        std::function <bool(const std::string &, const std::string &)> isPrivacy);
 
     /**
      * List all users registered in Cynara
