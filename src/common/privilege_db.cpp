@@ -565,7 +565,7 @@ bool PrivilegeDb::IsPackageHybrid(const std::string& pkgName)
         if (command->Step())
             isHybrid = command->GetColumnInteger(0);
 
-        LogDebug("Package " << pkgName << "has shared_ro set to " << isHybrid);
+        LogDebug("Package " << pkgName << "has is_hybrid set to " << isHybrid);
 
         return (isHybrid > 0);
     });
