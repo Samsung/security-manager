@@ -1,3 +1,7 @@
+* Mon Dec 5 2016 Jooseong Lee <jooseong.lee@samsung.com>
+- Version 1.2.8
+- Add new parameter of isPrivacy function - pkgName
+
 * Thu Dec 1 2016 Bartlomiej Grzelewski <b.grzelewski@samsung.com>
 - Version 1.2.7
 - Fix in GetGroups implementation
