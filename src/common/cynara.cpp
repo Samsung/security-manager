@@ -346,28 +346,32 @@ void CynaraAdmin::UpdateAppPolicy(
         policies);
 
     if (Config::IS_ASKUSER_ENABLED) {
-        int askUserPolicy = convertToPolicyType(Config::PRIVACY_POLICY_DESC);
+        try {
+            int askUserPolicy = convertToPolicyType(Config::PRIVACY_POLICY_DESC);
 
-        std::vector<std::string> privacyPrivileges;
-        for (auto &p : privileges)
-            if (isPrivacy(label, p))
-                privacyPrivileges.push_back(p);
+            std::vector<std::string> privacyPrivileges;
+            for (auto &p : privileges)
+                if (isPrivacy(label, p))
+                    privacyPrivileges.push_back(p);
 
-        // 2nd, performing operation on PRIVACY_MANAGER bucket for all affected users
-        if (user == CYNARA_ADMIN_WILDCARD) {
-            // perform bucket setting for all users in the system, app is installed for everyone
-            std::vector<uid_t> users;
-            ListUsers(users);
-            for (uid_t id : users) {
-                calcPolicies(std::to_string(id), privacyPrivileges,
-                             Buckets.at(Bucket::PRIVACY_MANAGER),
+            // 2nd, performing operation on PRIVACY_MANAGER bucket for all affected users
+            if (user == CYNARA_ADMIN_WILDCARD) {
+                // perform bucket setting for all users in the system, app is installed for everyone
+                std::vector<uid_t> users;
+                ListUsers(users);
+                for (uid_t id : users) {
+                    calcPolicies(std::to_string(id), privacyPrivileges,
+                                 Buckets.at(Bucket::PRIVACY_MANAGER),
+                                 askUserPolicy, policies);
+                }
+            } else {
+                // local single user installation, do it only for that particular user
+                calcPolicies(user, privacyPrivileges, Buckets.at(Bucket::PRIVACY_MANAGER),
                              askUserPolicy, policies);
             }
-        } else {
-            // local single user installation, do it only for that particular user
-            calcPolicies(user, privacyPrivileges, Buckets.at(Bucket::PRIVACY_MANAGER),
-                         askUserPolicy, policies);
-        }
+        } catch (const std::out_of_range&) {
+            LogDebug("Unknown policy level: " << Config::PRIVACY_POLICY_DESC);
+        };
     }
     SetPolicies(policies);
 }
@@ -423,22 +427,27 @@ void CynaraAdmin::UserInit(uid_t uid, security_manager_user_type userType,
                                             Buckets.at(Bucket::MAIN)));
 
     if (Config::IS_ASKUSER_ENABLED) {
-        // for each global app: retrieve its privacy-related privileges and set
-        // their policy in PRIVACY_MANAGER bucket to "Ask user"
-        int askUserPolicy = convertToPolicyType(Config::PRIVACY_POLICY_DESC);
+        try{
+            // for each global app: retrieve its privacy-related privileges and set
+            // their policy in PRIVACY_MANAGER bucket to "Ask user"
 
-        std::vector<CynaraAdminPolicy> appPolicies;
-        ListPolicies(CynaraAdmin::Buckets.at(Bucket::MANIFESTS),
-                                                CYNARA_ADMIN_ANY, CYNARA_ADMIN_WILDCARD,
-                                                CYNARA_ADMIN_ANY, appPolicies);
+            int askUserPolicy = convertToPolicyType(Config::PRIVACY_POLICY_DESC);
 
-        for (CynaraAdminPolicy &policy : appPolicies)
-            if (isPrivacy(policy.client, policy.privilege))
-                policies.push_back(CynaraAdminPolicy(policy.client,
-                userStr,
-                policy.privilege,
-                askUserPolicy,
-                Buckets.at(Bucket::PRIVACY_MANAGER)));
+            std::vector<CynaraAdminPolicy> appPolicies;
+            ListPolicies(CynaraAdmin::Buckets.at(Bucket::MANIFESTS),
+                                                    CYNARA_ADMIN_ANY, CYNARA_ADMIN_WILDCARD,
+                                                    CYNARA_ADMIN_ANY, appPolicies);
+
+            for (CynaraAdminPolicy &policy : appPolicies)
+                if (isPrivacy(policy.client, policy.privilege))
+                    policies.push_back(CynaraAdminPolicy(policy.client,
+                    userStr,
+                    policy.privilege,
+                    askUserPolicy,
+                    Buckets.at(Bucket::PRIVACY_MANAGER)));
+        } catch (const std::out_of_range&) {
+            LogDebug("Unknown policy level: " << Config::PRIVACY_POLICY_DESC);
+        };
     }
 
     SetPolicies(policies);
