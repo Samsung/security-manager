@@ -1,3 +1,7 @@
+* Wed Des 7 2016 Jooseong Lee <jooseong.lee@samsung.com>
+- Version 1.2.9
+- Properly handle case of unknown "Ask user" policy
+
 * Mon Dec 5 2016 Jooseong Lee <jooseong.lee@samsung.com>
 - Version 1.2.8
 - Add new parameter of isPrivacy function - pkgName
