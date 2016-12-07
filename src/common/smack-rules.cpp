@@ -235,8 +235,6 @@ void SmackRules::addFromTemplate(
 
         if (subject.empty() || object.empty())
             continue;
-        if (subject == object)
-            continue;
         add(subject, object, permissions);
     }
 }
