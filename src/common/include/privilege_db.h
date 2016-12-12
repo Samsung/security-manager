@@ -114,7 +114,7 @@ private:
         { StmtType::EGetOwnerTargetSharedCount, "SELECT COUNT(*) FROM app_private_sharing_view WHERE owner_app_name = ? AND target_app_name = ?"},
         { StmtType::EAddPrivatePathSharing, "INSERT INTO app_private_sharing_view(owner_app_name, target_app_name, path, path_label) VALUES(?, ?, ?, ?)"},
         { StmtType::ERemovePrivatePathSharing, "DELETE FROM app_private_sharing_view WHERE owner_app_name = ? AND target_app_name = ? AND path = ?"},
-        { StmtType::EGetAllSharedPaths, "SELECT owner_app_name, path FROM app_private_sharing_view ORDER BY owner_app_name"},
+        { StmtType::EGetAllSharedPaths, "SELECT DISTINCT owner_app_name, path FROM app_private_sharing_view ORDER BY owner_app_name"},
         { StmtType::EGetSharingForOwner, "SELECT target_app_name, path FROM app_private_sharing_view WHERE owner_app_name = ?"},
         { StmtType::EGetSharingForTarget, "SELECT owner_app_name, path FROM app_private_sharing_view WHERE target_app_name = ?"},
         { StmtType::ESquashSharing, "UPDATE app_private_sharing_view SET counter = 1 WHERE target_app_name = ? AND path = ?"},
