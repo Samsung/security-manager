@@ -45,7 +45,6 @@ public:
     ServiceDescriptionVector GetServiceDescription();
 
 private:
-    ServiceImpl serviceImpl;
 
     /**
      * Handle request from a client
