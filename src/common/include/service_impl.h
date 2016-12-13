@@ -307,7 +307,7 @@ private:
 
     void getPkgsProcessLabels(const std::vector<PkgInfo> &pkgsInfo, SmackRules::PkgsLabels &pkgsLabels);
 
-    int validatePolicy(policy_entry &policyEntry, std::string uidStr, bool &forAdmin, CynaraAdminPolicy &cyap);
+    int validatePolicy(const Credentials &creds, policy_entry &policyEntry, CynaraAdminPolicy &cyap);
 
     Cynara m_cynara;
     PrivilegeDb m_priviligeDb;

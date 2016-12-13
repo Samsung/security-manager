@@ -105,19 +105,20 @@ ServiceImpl::~ServiceImpl()
 {
 }
 
-int ServiceImpl::validatePolicy(policy_entry &policyEntry, std::string uidStr, bool &forAdmin, CynaraAdminPolicy &cyap)
+int ServiceImpl::validatePolicy(const Credentials &creds, policy_entry &policyEntry, CynaraAdminPolicy &cyap)
 {
-    LogDebug("Authenticating and validating policy update request for user with id: " << uidStr);
+    LogDebug("Authenticating and validating policy update request for user with id: " << creds.uid);
     LogDebug("[policy_entry] app: " << policyEntry.appName
             << " user: " << policyEntry.user
             << " privilege: " << policyEntry.privilege
             << " current: " << policyEntry.currentLevel
             << " max: " << policyEntry.maxLevel);
-    //automagically fill missing fields:
-    if (policyEntry.user.empty()) {
-        policyEntry.user = uidStr;
-    };
 
+    //automagically fill missing fields:
+    if (policyEntry.user.empty())
+        policyEntry.user = std::to_string(creds.uid);
+
+    bool forAdmin;
     int level;
 
     if (policyEntry.currentLevel.empty()) { //for admin
@@ -125,7 +126,7 @@ int ServiceImpl::validatePolicy(policy_entry &policyEntry, std::string uidStr, b
             || policyEntry.privilege.empty()) {
             LogError("Bad admin update request");
             return SECURITY_MANAGER_ERROR_BAD_REQUEST;
-        };
+        }
 
         if (!policyEntry.maxLevel.compare(SECURITY_MANAGER_DELETE)) {
             level = CYNARA_ADMIN_DELETE;
@@ -135,19 +136,18 @@ int ServiceImpl::validatePolicy(policy_entry &policyEntry, std::string uidStr, b
             } catch (const std::out_of_range& e) {
                 LogError("policy max level cannot be: " << policyEntry.maxLevel);
                 return SECURITY_MANAGER_ERROR_INPUT_PARAM;
-            };
-        };
+            }
+        }
         forAdmin = true;
 
     } else if (policyEntry.maxLevel.empty()) { //for self
-        if (policyEntry.user.compare(uidStr)
-            || !policyEntry.appName.compare(SECURITY_MANAGER_ANY)
+        if (!policyEntry.appName.compare(SECURITY_MANAGER_ANY)
             || !policyEntry.privilege.compare(SECURITY_MANAGER_ANY)
             || policyEntry.appName.empty()
             || policyEntry.privilege.empty()) {
             LogError("Bad privacy manager update request");
             return SECURITY_MANAGER_ERROR_BAD_REQUEST;
-        };
+        }
 
         if (!policyEntry.currentLevel.compare(SECURITY_MANAGER_DELETE)) {
             level = CYNARA_ADMIN_DELETE;
@@ -157,18 +157,25 @@ int ServiceImpl::validatePolicy(policy_entry &policyEntry, std::string uidStr, b
             } catch (const std::out_of_range& e) {
                 LogError("policy current level cannot be: " << policyEntry.currentLevel);
                 return SECURITY_MANAGER_ERROR_INPUT_PARAM;
-            };
-        };
+            }
+        }
         forAdmin = false;
 
     } else { //neither => bad request
         return SECURITY_MANAGER_ERROR_BAD_REQUEST;
-    };
+    }
 
     if (!policyEntry.user.compare(SECURITY_MANAGER_ANY))
         policyEntry.user = CYNARA_ADMIN_WILDCARD;
     if (!policyEntry.privilege.compare(SECURITY_MANAGER_ANY))
         policyEntry.privilege = CYNARA_ADMIN_WILDCARD;
+
+    const std::string &privilege = (forAdmin || policyEntry.user.compare(std::to_string(creds.uid))) ?
+            Config::PRIVILEGE_POLICY_ADMIN : Config::PRIVILEGE_POLICY_USER;
+    if (!authenticate(creds, privilege)) {
+        LogError("Not enough privilege to enforce user policy");
+        return SECURITY_MANAGER_ERROR_ACCESS_DENIED;
+    }
 
     std::string cynaraClient;
     if (policyEntry.appName.compare(SECURITY_MANAGER_ANY)) {
@@ -917,13 +924,7 @@ int ServiceImpl::userDelete(const Credentials &creds, uid_t uidDeleted)
 
 int ServiceImpl::policyUpdate(const Credentials &creds, const std::vector<policy_entry> &policyEntries)
 {
-    bool permAdminRequired = false;
-    bool permUserRequired = false;
-
     try {
-        std::string uidStr = std::to_string(creds.uid);
-        std::string pidStr = std::to_string(creds.pid);
-
         if (policyEntries.size() == 0) {
             LogError("Validation failed: policy update request is empty");
             return SECURITY_MANAGER_ERROR_BAD_REQUEST;
@@ -932,31 +933,13 @@ int ServiceImpl::policyUpdate(const Credentials &creds, const std::vector<policy
         std::vector<CynaraAdminPolicy> validatedPolicies;
 
         for (auto &entry : const_cast<std::vector<policy_entry>&>(policyEntries)) {
-            bool forAdmin = false;
             CynaraAdminPolicy cyap("", "", "", CYNARA_ADMIN_NONE, "");
-            int ret = validatePolicy(entry, uidStr, forAdmin, cyap);
-
+            int ret = validatePolicy(creds, entry, cyap);
             if (ret != SECURITY_MANAGER_SUCCESS)
                 return ret;
 
-            if (forAdmin)
-                permAdminRequired = true;
-            else
-                permUserRequired = true;
-
             validatedPolicies.push_back(std::move(cyap));
         };
-
-        // Check privileges
-        if (permUserRequired && !authenticate(creds, Config::PRIVILEGE_POLICY_USER)) {
-            LogError("Not enough privilege to enforce user policy");
-            return SECURITY_MANAGER_ERROR_ACCESS_DENIED;
-        }
-
-        if (permAdminRequired && !authenticate(creds, Config::PRIVILEGE_POLICY_ADMIN)) {
-            LogError("Not enough privilege to enforce admin policy");
-            return SECURITY_MANAGER_ERROR_ACCESS_DENIED;
-        }
 
         // Apply updates
         m_cynaraAdmin.SetPolicies(validatedPolicies);
