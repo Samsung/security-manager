@@ -1,3 +1,7 @@
+* Fri Dec 13 2016 Jin-gyu Kim <jin-gyu.kim@samsung.com>
+- Version 1.2.11
+- Map email privilege to priv_email
+
 * Fri Dec 9 2016 Jooseong Lee <jooseong.lee@samsung.com>
 - Version 1.2.10
 - Add transmute rule between non-hybrid app and RW path
