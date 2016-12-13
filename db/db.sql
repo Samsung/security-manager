@@ -4,7 +4,7 @@ PRAGMA auto_vacuum = NONE;
 
 BEGIN EXCLUSIVE TRANSACTION;
 
-PRAGMA user_version = 8;
+PRAGMA user_version = 9;
 
 CREATE TABLE IF NOT EXISTS pkg (
 pkg_id INTEGER PRIMARY KEY,
@@ -38,15 +38,15 @@ CREATE TABLE IF NOT EXISTS shared_path (
 path_id INTEGER PRIMARY KEY,
 path VARCHAR NOT NULL,
 path_label VARCHAR NOT NULL,
+owner_app_name TEXT NOT NULL,
 UNIQUE (path)
 );
 
 CREATE TABLE IF NOT EXISTS app_private_sharing (
-owner_app_name TEXT NOT NULL,
 target_app_name TEXT NOT NULL,
 path_id INTEGER NOT NULL,
 counter INTEGER NOT NULL,
-PRIMARY KEY (owner_app_name, target_app_name, path_id)
+PRIMARY KEY (target_app_name, path_id)
 FOREIGN KEY (path_id) REFERENCES shared_path (path_id)
 );
 
@@ -150,9 +150,20 @@ DROP TRIGGER IF EXISTS app_private_sharing_view_insert_trigger;
 CREATE TRIGGER app_private_sharing_view_insert_trigger
 INSTEAD OF INSERT ON app_private_sharing_view
 BEGIN
-    INSERT OR IGNORE INTO shared_path(path, path_label) VALUES (NEW.path, NEW.path_label);
+    SELECT RAISE(ABORT, 'Redefining owner_app_name for shared path is not allowed')
+    WHERE EXISTS (SELECT path_id
+                  FROM shared_path
+                  WHERE path = NEW.path
+                  AND owner_app_name <> NEW.owner_app_name);
+    SELECT RAISE(ABORT, 'Redefining path_label for shared path is not allowed')
+    WHERE EXISTS (SELECT path_id
+                  FROM shared_path
+                  WHERE path = NEW.path
+                  AND path_label <> NEW.path_label);
+    INSERT OR IGNORE INTO shared_path(path, path_label, owner_app_name) VALUES (
+            NEW.path, NEW.path_label, NEW.owner_app_name);
     INSERT OR REPLACE INTO app_private_sharing VALUES (
-            NEW.owner_app_name, NEW.target_app_name,
+            NEW.target_app_name,
             (SELECT path_id FROM shared_path WHERE NEW.path = path),
             COALESCE((SELECT counter FROM app_private_sharing
                       WHERE target_app_name = NEW.target_app_name
