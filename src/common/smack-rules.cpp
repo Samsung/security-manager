@@ -183,9 +183,9 @@ void SmackRules::addFromTemplateFile(
         ThrowMsg(SmackException::FileError, "Cannot open rules template file: " << templatePath);
     }
 
-    while (std::getline(templateRulesFile, line)) {
-        templateRules.push_back(line);
-    }
+    while (std::getline(templateRulesFile, line))
+        if (!line.empty())
+            templateRules.push_back(line);
 
     if (templateRulesFile.bad()) {
         LogError("Error reading template file: " << templatePath);
