@@ -182,7 +182,10 @@ int sendToServer(char const * const interface, const RawBuffer &send, MessageBuf
             LogError("Error in poll(POLLOUT)");
             return SECURITY_MANAGER_ERROR_SOCKET;
         }
-        ssize_t temp = TEMP_FAILURE_RETRY(write(sock.Get(), &send[done], send.size() - done));
+        ssize_t temp = TEMP_FAILURE_RETRY(::send(sock.Get(),
+                                                 &send[done],
+                                                 send.size() - done,
+                                                 MSG_NOSIGNAL));
         if (-1 == temp) {
             int err = errno;
             LogError("Error in write: " << GetErrnoString(err));
@@ -196,7 +199,10 @@ int sendToServer(char const * const interface, const RawBuffer &send, MessageBuf
             LogError("Error in poll(POLLIN)");
             return SECURITY_MANAGER_ERROR_SOCKET;
         }
-        ssize_t temp = TEMP_FAILURE_RETRY(read(sock.Get(), buffer, 2048));
+        ssize_t temp = TEMP_FAILURE_RETRY(::recv(sock.Get(),
+                                                 buffer,
+                                                 2048,
+                                                 0));
         if (-1 == temp) {
             int err = errno;
             LogError("Error in read: " << GetErrnoString(err));
