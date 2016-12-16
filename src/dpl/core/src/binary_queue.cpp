@@ -286,7 +286,7 @@ void BinaryQueue::VisitBuckets(BucketVisitor *visitor) const
     std::for_each(m_buckets.begin(), m_buckets.end(), BucketVisitorCall(visitor));
 }
 
-BinaryQueueAutoPtr BinaryQueue::Read(size_t size)
+BinaryQueueUniquePtr BinaryQueue::Read(size_t size)
 {
     // Simulate input stream
     size_t available = std::min(size, m_size);
@@ -298,7 +298,7 @@ BinaryQueueAutoPtr BinaryQueue::Read(size_t size)
         throw std::bad_alloc();
     }
 
-    BinaryQueueAutoPtr result(new BinaryQueue());
+    BinaryQueueUniquePtr result(new BinaryQueue());
 
     Flatten(bufferCopy.get(), available);
     result->AppendUnmanaged(

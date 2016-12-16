@@ -32,7 +32,7 @@ namespace SecurityManager {
  * Binary queue auto pointer
  */
 class BinaryQueue;
-typedef std::auto_ptr<BinaryQueue> BinaryQueueAutoPtr;
+typedef std::unique_ptr<BinaryQueue> BinaryQueueUniquePtr;
 
 /**
  * Binary stream implemented as constant size bucket list
@@ -284,7 +284,7 @@ class BinaryQueue
     /**
      * IAbstractInput interface
      */
-    virtual BinaryQueueAutoPtr Read(size_t size);
+    virtual BinaryQueueUniquePtr Read(size_t size);
 
     /**
      * IAbstractOutput interface
