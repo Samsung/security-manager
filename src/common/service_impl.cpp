@@ -642,14 +642,20 @@ int ServiceImpl::appUninstall(const Credentials &creds, app_inst_req &&req)
 
     try {
         m_priviligeDb.BeginTransaction();
-        if (req.pkgName.empty())
-            m_priviligeDb.GetAppPkgName(req.appName, req.pkgName);
-
-        if (req.pkgName.empty()) {
-            LogWarning("Application " << req.appName <<
-                " not found in database while uninstalling");
+        std::string pkgName;
+        m_priviligeDb.GetAppPkgName(req.appName, pkgName);
+        if (pkgName.empty()) {
+            LogWarning("Application " << req.appName << " not found in database "
+                       "while uninstalling");
             m_priviligeDb.RollbackTransaction();
             return SECURITY_MANAGER_SUCCESS;
+        }
+        if (req.pkgName.empty()) {
+            req.pkgName = pkgName;
+        } else if (req.pkgName != pkgName){
+            LogWarning("Application " << req.appName << " exists, but wrong package id "
+                        << req.pkgName << " is passed, should be: " << pkgName);
+            return SECURITY_MANAGER_ERROR_NO_SUCH_OBJECT;
         }
 
         isPkgHybrid = m_priviligeDb.IsPackageHybrid(req.pkgName);
