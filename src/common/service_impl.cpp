@@ -933,7 +933,7 @@ int ServiceImpl::policyUpdate(const Credentials &creds, const std::vector<policy
         std::vector<CynaraAdminPolicy> validatedPolicies;
 
         for (auto &entry : const_cast<std::vector<policy_entry>&>(policyEntries)) {
-            CynaraAdminPolicy cyap("", "", "", CYNARA_ADMIN_NONE, "");
+            CynaraAdminPolicy cyap;
             int ret = validatePolicy(creds, entry, cyap);
             if (ret != SECURITY_MANAGER_SUCCESS)
                 return ret;

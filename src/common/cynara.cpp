@@ -122,6 +122,16 @@ CynaraAdmin::BucketsMap CynaraAdmin::Buckets =
     { Bucket::MANIFESTS, std::string("MANIFESTS")},
 };
 
+CynaraAdminPolicy::CynaraAdminPolicy()
+{
+    this->client = nullptr;
+    this->user = nullptr;
+    this->privilege = nullptr;
+    this->bucket = nullptr;
+    this->result = CYNARA_ADMIN_NONE;
+    this->result_extra = nullptr;
+}
+
 CynaraAdminPolicy::CynaraAdminPolicy(const std::string &client, const std::string &user,
         const std::string &privilege, int operation,
         const std::string &bucket)
@@ -188,12 +198,18 @@ CynaraAdminPolicy::CynaraAdminPolicy(CynaraAdminPolicy &&that)
 CynaraAdminPolicy& CynaraAdminPolicy::operator=(CynaraAdminPolicy &&that)
 {
     if (this != &that) {
-        bucket = that.bucket;
-        client = that.client;
-        user = that.user;
-        privilege = that.privilege;
-        result_extra = that.result_extra;
-        result = that.result;
+        free(this->bucket);
+        free(this->client);
+        free(this->user);
+        free(this->privilege);
+        free(this->result_extra);
+
+        this->bucket = that.bucket;
+        this->client = that.client;
+        this->user = that.user;
+        this->privilege = that.privilege;
+        this->result_extra = that.result_extra;
+        this->result = that.result;
 
         that.bucket = nullptr;
         that.client = nullptr;
