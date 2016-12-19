@@ -32,6 +32,8 @@ BuildRequires: pkgconfig(security-privilege-manager)
 BuildRequires: boost-devel
 %{?systemd_requires}
 
+%global db_test_dir %{?TZ_SYS_RO_SHARE:%TZ_SYS_RO_SHARE/sm-db-test}%{!?TZ_SYS_RO_SHARE:%_datadir/sm-db-test}
+
 %description
 Tizen security manager and utilities
 
@@ -98,6 +100,7 @@ export LDFLAGS+="-Wl,--rpath=%{_libdir}"
         -DSYSTEMD_INSTALL_DIR=%{_unitdir} \
         -DDATA_ROOT_DIR=%{_datadir} \
         -DDB_LOGS=OFF \
+        -DDB_TEST_DIR=%{db_test_dir} \
         -DCMAKE_BUILD_TYPE=%{?build_type:%build_type}%{!?build_type:RELEASE} \
         -DCMAKE_VERBOSE_MAKEFILE=ON
 make %{?jobs:-j%jobs}
@@ -126,6 +129,9 @@ touch %{buildroot}/%{TZ_SYS_DB}/.security-manager.db-journal
 install -m 0755 -d %{buildroot}%{TZ_SYS_VAR}/security-manager
 install -m 0444 /dev/null %{buildroot}%{TZ_SYS_VAR}/security-manager/apps-labels
 install -m 0444 /dev/null %{buildroot}%{TZ_SYS_VAR}/security-manager/policy-version
+
+mkdir -p %{buildroot}/%{db_test_dir}
+sqlite3 %{buildroot}/%{db_test_dir}/.security-manager-test.db  <  db/db.sql
 
 %clean
 rm -rf %{buildroot}
@@ -183,6 +189,10 @@ fi
 %post policy
 %{_datadir}/security-manager/policy/update.sh
 %{_bindir}/security-manager-policy-reload
+
+%post -n security-manager-tests
+chsmack -a System %{db_test_dir}/.security-manager-test.db
+chsmack -a System %{db_test_dir}/.security-manager-test.db-journal
 
 %files -n security-manager
 %manifest security-manager.manifest
@@ -244,4 +254,6 @@ fi
 %files -n security-manager-tests
 %manifest %{name}.manifest
 %attr(755,root,root) %{_bindir}/security-manager-unit-tests
+%attr(0600,root,root) %{db_test_dir}/.security-manager-test.db
+%attr(0600,root,root) %{db_test_dir}/.security-manager-test.db-journal
 

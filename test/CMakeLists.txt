@@ -1,4 +1,4 @@
-# Copyright (c) 2016 Samsung Electronics Co., Ltd All Rights Reserved
+# Copyright (c) 2016 - 2017 Samsung Electronics Co., Ltd All Rights Reserved
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -27,6 +27,8 @@ IF(DPL_WITH_DLOG)
 ENDIF(DPL_WITH_DLOG)
 
 ADD_DEFINITIONS( "-DBOOST_TEST_DYN_LINK" )
+ADD_DEFINITIONS("-DDB_TEST_DIR=\"${DB_TEST_DIR}\"")
+
 
 ################################################################################
 
@@ -41,7 +43,13 @@ SET(SM_TESTS_SOURCES
     ${SM_TEST_SRC}/colour_log_formatter.cpp
     ${SM_TEST_SRC}/security-manager-tests.cpp
     ${SM_TEST_SRC}/test_file-lock.cpp
-    ${SM_TEST_SRC}/test_privilege_db.cpp
+    ${SM_TEST_SRC}/privilege_db_fixture.cpp
+    ${SM_TEST_SRC}/test_privilege_db_transactions.cpp
+    ${SM_TEST_SRC}/test_privilege_db_app_pkg_getters.cpp
+    ${SM_TEST_SRC}/test_privilege_db_add_app.cpp
+    ${SM_TEST_SRC}/test_privilege_db_app_remove.cpp
+    ${SM_TEST_SRC}/test_privilege_db_privilege.cpp
+    ${SM_TEST_SRC}/test_privilege_db_sharing.cpp
     ${SM_TEST_SRC}/test_smack-labels.cpp
     ${SM_TEST_SRC}/test_smack-rules.cpp
     ${DPL_PATH}/core/src/assert.cpp
