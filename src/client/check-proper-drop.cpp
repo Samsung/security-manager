@@ -54,9 +54,12 @@ void CheckProperDrop::getThreads()
             "Unable read process information for " << pid);
 
     proc_t *thread;
-    while ((thread = readtask(proctabPtr.get(), m_proc, nullptr)))
+    while ((thread = readtask(proctabPtr.get(), m_proc, nullptr))) {
         if (thread->tid != m_pid)
             m_threads.push_back(thread);
+        else
+            freeproc(thread);
+    }
 }
 
 bool CheckProperDrop::checkThreads()
