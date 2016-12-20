@@ -56,7 +56,7 @@ FileNameVector getFilesFromDirectory(const std::string &path)
 FileNameVector getDirContents(const std::string &path, const mode_t &mode)
 {
     FileNameVector result;
-    dirent tmp, *ptr;
+    dirent *ptr;
     int err;
     auto dir = makeUnique(opendir(path.c_str()), closedir);
 
@@ -66,14 +66,17 @@ FileNameVector getDirContents(const std::string &path, const mode_t &mode)
     }
 
     while (true) {
-        if (readdir_r(dir.get(), &tmp, &ptr)) {
-            err = errno;
-            ThrowMsg(FS::Exception::FileError, "Error reading directory: " << GetErrnoString(err));
-        }
+        errno = 0;
+        ptr = readdir(dir.get());
 
-        if (!ptr)
+        if (!ptr) {
+            if (errno) {
+                err = errno;
+                ThrowMsg(FS::Exception::FileError, "Error reading directory: " << GetErrnoString(err));
+            }
             break;
-
+        }
+        
         struct stat finfo;
         if (0 > fstatat(dirfd(dir.get()), ptr->d_name, &finfo, AT_SYMLINK_NOFOLLOW)) {
             ThrowMsg(FS::Exception::FileError, "Error reading: " << ptr->d_name);
