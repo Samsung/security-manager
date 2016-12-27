@@ -28,6 +28,7 @@
 #include <dpl/log/log.h>
 #include <dpl/errno_string.h>
 #include <config.h>
+#include <utils.h>
 
 namespace SecurityManager {
 
@@ -689,8 +690,14 @@ Cynara::Cynara()
     pollFds[1].fd = pollFds[0].fd;
     pollFds[1].events = 0;
 
+    cynara_async_configuration *p_conf = nullptr;
+    auto confPtr = makeUnique(p_conf, cynara_async_configuration_destroy);
+    checkCynaraError(cynara_async_configuration_create(&p_conf),
+                     "Cannot create cynara async configuration");
+    checkCynaraError(cynara_async_configuration_set_cache_size(p_conf, CACHE_SIZE),
+            "Cannot set cynara async configuration cache size");
     checkCynaraError(
-        cynara_async_initialize(&cynara, nullptr, &Cynara::statusCallback, &(pollFds[1])),
+        cynara_async_initialize(&cynara, p_conf, &Cynara::statusCallback, &(pollFds[1])),
         "Cannot connect to Cynara policy interface.");
 
     thread = std::thread(&Cynara::run, this);

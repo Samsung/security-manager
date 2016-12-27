@@ -335,6 +335,7 @@ public:
         const std::string &user, const std::string &session);
 
 private:
+    static const int CACHE_SIZE = 100;
     static void statusCallback(int oldFd, int newFd,
         cynara_async_status status, void *ptr);
 
