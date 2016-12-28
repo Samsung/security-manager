@@ -43,6 +43,7 @@ SET(SM_TESTS_SOURCES
     ${SM_TEST_SRC}/test_file-lock.cpp
     ${SM_TEST_SRC}/test_privilege_db.cpp
     ${SM_TEST_SRC}/test_smack-labels.cpp
+    ${SM_TEST_SRC}/test_smack-rules.cpp
     ${DPL_PATH}/core/src/assert.cpp
     ${DPL_PATH}/core/src/colors.cpp
     ${DPL_PATH}/core/src/errno_string.cpp
@@ -55,7 +56,10 @@ SET(SM_TESTS_SOURCES
     ${DPL_PATH}/log/src/old_style_log_provider.cpp
     ${PROJECT_SOURCE_DIR}/src/common/file-lock.cpp
     ${PROJECT_SOURCE_DIR}/src/common/privilege_db.cpp
+    ${PROJECT_SOURCE_DIR}/src/common/smack-check.cpp
     ${PROJECT_SOURCE_DIR}/src/common/smack-labels.cpp
+    ${PROJECT_SOURCE_DIR}/src/common/smack-rules.cpp
+    ${PROJECT_SOURCE_DIR}/src/common/filesystem.cpp
     ${PROJECT_SOURCE_DIR}/src/common/tzplatform-config.cpp
 )
 
