@@ -11,6 +11,9 @@ Source4:    libnss-security-manager.manifest
 Source5:    security-manager-tests.manifest
 Requires: security-manager-policy
 Requires: nether
+%if "%{build_type}" == "VALGRIND"
+Requires: valgrind
+%endif
 Requires(post): sqlite3
 Requires(post): smack
 BuildRequires: cmake
