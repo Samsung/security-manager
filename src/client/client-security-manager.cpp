@@ -748,17 +748,23 @@ int security_manager_prepare_app(const char *app_name)
 {
     return try_catch([&] {
         LogDebug("security_manager_prepare_app() called");
+
+        if (app_name == nullptr) {
+            LogError("app_name is NULL");
+            return SECURITY_MANAGER_ERROR_INPUT_PARAM;
+        }
+
         int ret;
 
         ret = security_manager_set_process_groups_from_appid(app_name);
         if (ret != SECURITY_MANAGER_SUCCESS) {
-            LogError("Unable to setup process groups for application.");
+            LogError("Unable to setup process groups for application " << app_name);
             return ret;
         }
 
         ret = security_manager_sync_threads_internal(app_name);
         if (ret != SECURITY_MANAGER_SUCCESS) {
-            LogError("Can't properly setup application threads (Smack label & capabilities)");
+            LogError("Can't properly setup application threads (Smack label & capabilities) for application " << app_name);
             return ret;
         }
 
@@ -766,11 +772,11 @@ int security_manager_prepare_app(const char *app_name)
             CheckProperDrop cpd;
             cpd.getThreads();
             if (!cpd.checkThreads()) {
-                LogError("Privileges haven't been properly dropped for the whole process");
+                LogError("Privileges haven't been properly dropped for the whole process of application " << app_name);
                 return ret;
             }
         } catch (const SecurityManager::Exception &e) {
-            LogError("Error while checking privileges of the process: " << e.DumpToString());
+            LogError("Error while checking privileges of the process for application " << app_name << ": " << e.DumpToString());
             return ret;
         }
 
