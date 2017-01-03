@@ -344,7 +344,17 @@ void SmackRules::mergeRules()
 
     for(auto const &e : files) {
         std::ifstream src(std::string(SMACK_RULES_PATH) + "/" + e, std::ios::binary);
-        dst << src.rdbuf() << '\n';
+        src.seekg(0, std::ios::end);
+        size_t size = src.tellg();
+
+        std::vector<char> buffer(size);
+        src.seekg(0);
+        src.read(buffer.data(), size);
+        dst.write(buffer.data(), size);
+
+        if (!buffer.empty() && buffer[size-1] != '\n')
+            dst << '\n';
+
         if (dst.bad()) {
             LogError("I/O Error. File " << SMACK_RULES_PATH_MERGED << " will not be updated!");
             unlink(SMACK_RULES_PATH_MERGED_T.c_str());
