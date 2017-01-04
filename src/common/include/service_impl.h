@@ -266,8 +266,6 @@ private:
 
     static void setRequestDefaultValues(uid_t& uid, int& installationType);
 
-    static void installRequestMangle(app_inst_req &req, std::string &cynaraUserStr);
-
     bool authCheck(const Credentials &creds,
                                         const uid_t &uid,
                                         int installationType);
@@ -283,8 +281,6 @@ private:
     void getPkgLabels(const std::string &pkgName, SmackRules::Labels &pkgsLabels);
 
     static bool isSharedRO(const pkg_paths& paths);
-
-    static bool isPrivilegePrivacy(const std::string &clientLabel, const std::string &privilege);
 
     int squashDropPrivateSharing(const std::string &ownerAppName,
                                  const std::string &targetAppName,

@@ -61,6 +61,7 @@ SET(COMMON_SOURCES
     ${COMMON_PATH}/smack-check.cpp
     ${COMMON_PATH}/service_impl.cpp
     ${COMMON_PATH}/tzplatform-config.cpp
+    ${COMMON_PATH}/privilege-info.cpp
     )
 
 IF(DPL_WITH_DLOG)

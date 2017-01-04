@@ -41,7 +41,6 @@
 #include <dpl/log/log.h>
 #include <dpl/errno_string.h>
 
-#include <privilege_info.h>
 #include <sys/smack.h>
 
 #include <config.h>
@@ -55,6 +54,7 @@
 #include "security-manager.h"
 #include "tzplatform-config.h"
 #include "utils.h"
+#include "privilege-info.h"
 
 #include "service_impl.h"
 
@@ -330,21 +330,6 @@ void ServiceImpl::setRequestDefaultValues(uid_t& uid, int& installationType)
         uid = globalUid;
 }
 
-void ServiceImpl::installRequestMangle(app_inst_req &req, std::string &cynaraUserStr)
-{
-    setRequestDefaultValues(req.uid, req.installationType);
-
-    if (req.installationType == SM_APP_INSTALL_GLOBAL
-        || req.installationType == SM_APP_INSTALL_PRELOADED) {
-        LogDebug("Installation type: global installation");
-        cynaraUserStr = CYNARA_ADMIN_WILDCARD;
-    } else if (req.installationType == SM_APP_INSTALL_LOCAL) {
-        LogDebug("Installation type: local installation");
-        cynaraUserStr = std::to_string(static_cast<unsigned int>(req.uid));
-    } else
-        LogError("Installation type: unknown");
-}
-
 bool ServiceImpl::authCheck(const Credentials &creds,
                             const uid_t& uid,
                             int installationType)
@@ -452,19 +437,6 @@ int ServiceImpl::labelPaths(const pkg_paths &paths,
     }
 }
 
-bool ServiceImpl::isPrivilegePrivacy(const std::string &clientLabel, const std::string &privilege)
-{
-    int ret = privilege_info_is_privacy2(clientLabel.c_str(), privilege.c_str());
-    if (ret == 1)
-        return true;
-    if (ret != 0)
-        LogError("privilege_info_is_privacy called with " << privilege << " returned error: " << ret);
-    // FIXME: we should probably disallow such installation where privilege is not known
-    // However, currently privielge-checker seems to return -1 with so many real privileges
-    // that it would make ask-user testing impossible.
-    return false;
-}
-
 bool ServiceImpl::isSharedRO(const pkg_paths& paths)
 {
     for (const auto& pkgPath : paths) {
@@ -518,7 +490,7 @@ int ServiceImpl::appInstall(const Credentials &creds, app_inst_req &&req)
     bool hasSharedRO = isSharedRO(req.pkgPaths);
 
     try {
-        installRequestMangle(req, cynaraUserStr);
+        setRequestDefaultValues(req.uid, req.installationType);
 
         LogDebug("Install parameters: appName: " << req.appName << ", pkgName: " << req.pkgName
                  << ", uid: " << req.uid << ", target Tizen API ver: "
@@ -542,7 +514,10 @@ int ServiceImpl::appInstall(const Credentials &creds, app_inst_req &&req)
         /* Get all application ids in the package to generate rules withing the package */
         getPkgLabels(req.pkgName, pkgLabels);
         m_priviligeDb.GetPkgAuthorId(req.pkgName, authorId);
-        m_cynaraAdmin.UpdateAppPolicy(appLabel, cynaraUserStr, req.privileges, isPrivilegePrivacy);
+
+        bool global = req.installationType == SM_APP_INSTALL_GLOBAL ||
+                      req.installationType == SM_APP_INSTALL_PRELOADED;
+        m_cynaraAdmin.UpdateAppPolicy(appLabel, global, req.uid, req.privileges);
 
         if (hasSharedRO)
             m_priviligeDb.SetSharedROPackage(req.pkgName);
@@ -565,6 +540,10 @@ int ServiceImpl::appInstall(const Credentials &creds, app_inst_req &&req)
         return SECURITY_MANAGER_ERROR_SERVER_ERROR;
     } catch (const CynaraException::Base &e) {
         LogError("Error while setting Cynara rules for application: " << e.DumpToString());
+        return SECURITY_MANAGER_ERROR_SERVER_ERROR;
+    } catch (const PrivilegeInfo::Exception::Base &e) {
+        m_priviligeDb.RollbackTransaction();
+        LogError("Error while getting privilege information: " << e.DumpToString());
         return SECURITY_MANAGER_ERROR_SERVER_ERROR;
     } catch (const PermissibleSet::PermissibleSetException::Base &e) {
         LogError("Error while updating permissible file: " << e.DumpToString());
@@ -625,7 +604,7 @@ int ServiceImpl::appUninstall(const Credentials &creds, app_inst_req &&req)
     bool isPkgHybrid;
     std::vector<PkgInfo> pkgsInfo;
 
-    installRequestMangle(req, cynaraUserStr);
+    setRequestDefaultValues(req.uid, req.installationType);
 
     LogDebug("Uninstall parameters: appName=" << req.appName << ", uid=" << req.uid);
 
@@ -706,9 +685,11 @@ int ServiceImpl::appUninstall(const Credentials &creds, app_inst_req &&req)
         m_priviligeDb.GetPackagesInfo(pkgsInfo);
         getPkgsProcessLabels(pkgsInfo, pkgsProcessLabels);
 
-        m_cynaraAdmin.UpdateAppPolicy(processLabel, cynaraUserStr,
-                                                   std::vector<std::string>(), isPrivilegePrivacy);
+        bool global = req.installationType == SM_APP_INSTALL_GLOBAL ||
+                      req.installationType == SM_APP_INSTALL_PRELOADED;
+        m_cynaraAdmin.UpdateAppPolicy(processLabel, global, req.uid, std::vector<std::string>());
         trans.commit();
+
         LogDebug("Application uninstallation commited to database");
         updatePermissibleSet(req.uid, req.installationType);
     } catch (const PrivilegeDb::Exception::IOError &e) {
@@ -716,6 +697,10 @@ int ServiceImpl::appUninstall(const Credentials &creds, app_inst_req &&req)
         return SECURITY_MANAGER_ERROR_SERVER_ERROR;
     } catch (const PrivilegeDb::Exception::Base &e) {
         LogError("Error while removing application info from database: " << e.DumpToString());
+        return SECURITY_MANAGER_ERROR_SERVER_ERROR;
+    } catch (const PrivilegeInfo::Exception::Base &e) {
+        m_priviligeDb.RollbackTransaction();
+        LogError("Error while getting privilege information: " << e.DumpToString());
         return SECURITY_MANAGER_ERROR_SERVER_ERROR;
     } catch (const CynaraException::Base &e) {
         LogError("Error while setting Cynara rules for application: " << e.DumpToString());
@@ -857,7 +842,7 @@ int ServiceImpl::userAdd(const Credentials &creds, uid_t uidAdded, int userType)
         return SECURITY_MANAGER_ERROR_AUTHENTICATION_FAILED;
     }
     try {
-        m_cynaraAdmin.UserInit(uidAdded, static_cast<security_manager_user_type>(userType), isPrivilegePrivacy);
+        m_cynaraAdmin.UserInit(uidAdded, static_cast<security_manager_user_type>(userType));
         PermissibleSet::initializeUserPermissibleFile(uidAdded);
     } catch (CynaraException::InvalidParam &e) {
         return SECURITY_MANAGER_ERROR_INPUT_PARAM;
@@ -867,6 +852,9 @@ int ServiceImpl::userAdd(const Credentials &creds, uid_t uidAdded, int userType)
     } catch (const SmackException::FileError &e) {
         LogError("Error while adding user: " << e.DumpToString());
         return SECURITY_MANAGER_ERROR_SETTING_FILE_LABEL_FAILED;
+    } catch (const PrivilegeInfo::Exception::Base &e) {
+        LogError("Error while getting privilege information: " << e.DumpToString());
+        return SECURITY_MANAGER_ERROR_SERVER_ERROR;
     } catch (const std::exception &e) {
         LogError("Memory allocation error while adding user: " << e.what());
         return SECURITY_MANAGER_ERROR_SERVER_ERROR;

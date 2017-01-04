@@ -32,7 +32,6 @@
 #include <mutex>
 #include <thread>
 #include <future>
-#include <functional>
 
 #include <poll.h>
 #include <sys/eventfd.h>
@@ -130,13 +129,12 @@ public:
      * Caller must have permission to access Cynara administrative socket.
      *
      * @param label application Smack label
-     * @param user user identifier
+     * @param global true if it's a global or preloaded installation
+     * @param uid user identifier
      * @param privileges currently enabled privileges
-     * @param isPrivacy a function that checks if privilege is privacy-related
      */
-    void UpdateAppPolicy(const std::string &label, const std::string &user,
-        const std::vector<std::string> &privileges,
-        std::function <bool(const std::string &, const std::string &)> isPrivacy);
+    void UpdateAppPolicy(const std::string &label, bool global, uid_t uid,
+        const std::vector<std::string> &privileges);
 
     /**
      * Fetch Cynara policies for the application and the user.
@@ -157,10 +155,8 @@ public:
      *
      * @param uid new user uid
      * @param userType type as enumerated in security-manager.h
-     * @param isPrivacy a function that checks if privilege is privacy-related
      */
-    void UserInit(uid_t uid, security_manager_user_type userType,
-        std::function <bool(const std::string &, const std::string &)> isPrivacy);
+    void UserInit(uid_t uid, security_manager_user_type userType);
 
     /**
      * List all users registered in Cynara
@@ -308,6 +304,21 @@ private:
      * @param forceRefresh true if you want to reinitialize mappings
      */
     void FetchCynaraPolicyDescriptions(bool forceRefresh = false);
+
+    /**
+     * Calculate actual Cynara policy based on appilcation data & previous policy
+     *
+     * @param label application identifier
+     * @param user user for which we are calculating the policy
+     * @param privileges new privielges for which policy is being calulated
+     * @param bucket bucket to which the policy will be set
+     * @param policyToSet policy effect to be set
+     * @param policies current policy (input/output parameter)
+     */
+    void CalculatePolicies(const std::string &label, const std::string &user,
+                           const std::vector<std::string> &privileges,
+                           const std::string &bucket, int policyToSet,
+                           std::vector<CynaraAdminPolicy> &policies);
 
     struct cynara_admin *m_CynaraAdmin;
 
