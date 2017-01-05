@@ -1,3 +1,23 @@
+* Thu Jan 5 2017 Jin-gyu Kim <jin-gyu.kim@samsung.com>
+- Version 1.2.13
+- Fix memory leak in CynaraAdminPolicy move operator
+- Fix memory leak in CheckProperDrop::getThreads()
+- Don't put empty lines in generated Smack policy
+- Set Cynara client cache size manually
+- Fix compilation scripts.
+- Replace read/write with send/recv
+- Fix memory leak from cynara_async_configuration_create
+- Fix comments in privilege_db.h regarding exceptions thrown by functions
+- Fix in logs in IsPackageHybrid function
+- Disable logs from SqlConnection
+- Change auto_ptr to unique_ptr.
+- Replace readdir_r to readdir.
+- Don't accept wrong package id on app uninstall
+- Remove ServicerImpl from derived Service class
+- Fix in GetAllPrivateSharing implementation
+- Enforce ownership of a shared path by one app.
+- Change skel directory to /opt/etc/skel
+
 * Wed Dec 14 2016 Jooseong Lee <jooseong.lee@samsung.com>
 - Version 0.2.12
 - Allow privileged caller to configure privacy manager for other users
