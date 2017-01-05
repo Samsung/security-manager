@@ -855,6 +855,9 @@ int ServiceImpl::userAdd(const Credentials &creds, uid_t uidAdded, int userType)
     } catch (const PrivilegeInfo::Exception::Base &e) {
         LogError("Error while getting privilege information: " << e.DumpToString());
         return SECURITY_MANAGER_ERROR_SERVER_ERROR;
+    } catch (const TizenPlatformConfig::Exception::Base &e) {
+        LogError("Error while adding user: " << e.DumpToString());
+        return SECURITY_MANAGER_ERROR_SERVER_ERROR;
     } catch (const std::exception &e) {
         LogError("Memory allocation error while adding user: " << e.what());
         return SECURITY_MANAGER_ERROR_SERVER_ERROR;
@@ -882,6 +885,9 @@ int ServiceImpl::userDelete(const Credentials &creds, uid_t uidDeleted)
     } catch (const PermissibleSet::PermissibleSetException::FileRemoveError &e) {
         LogError("Error while removing user: " << e.DumpToString());
         return SECURITY_MANAGER_ERROR_FILE_DELETE_FAILED;
+    } catch (const TizenPlatformConfig::Exception::Base &e) {
+        LogError("Error while adding user: " << e.DumpToString());
+        return SECURITY_MANAGER_ERROR_SERVER_ERROR;
     } catch (const std::exception &e) {
         LogError("Memory allocation error while deleting user: " << e.what());
         return SECURITY_MANAGER_ERROR_SERVER_ERROR;
