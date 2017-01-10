@@ -200,6 +200,7 @@ void generateAppPkgNameFromLabel(const std::string &label, std::string &appName,
         appName = label.substr(appStartPos, std::string::npos);
         pkgName = label.substr(pkgStartPos, pkgEndPos - pkgStartPos);
     } else {
+        appName = std::string();
         pkgName = label.substr(pkgStartPos, std::string::npos);
     }
 
