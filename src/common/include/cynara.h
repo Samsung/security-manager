@@ -365,7 +365,11 @@ private:
     struct pollfd pollFds[2];
     std::mutex mutex;
     std::thread thread;
-    std::atomic<bool> terminate{false};
+
+    const int eventFd;
+    std::atomic<int> cynaraFd;
+    std::atomic<short> cynaraFdEvents;
+    std::atomic<bool> terminate;
 };
 
 } // namespace SecurityManager

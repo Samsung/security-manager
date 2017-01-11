@@ -705,23 +705,12 @@ int CynaraAdmin::GetPrivilegeManagerMaxLevel(const std::string &label, const std
     return result;
 }
 
-Cynara::Cynara()
+Cynara::Cynara() : eventFd(eventfd(0, 0)), cynaraFd(eventFd), cynaraFdEvents(0), terminate(false)
 {
-    int ret;
-
-    ret = eventfd(0, 0);
-    if (ret == -1) {
+    if (eventFd == -1) {
         LogError("Error while creating eventfd: " << GetErrnoString(errno));
         ThrowMsg(CynaraException::UnknownError, "Error while creating eventfd");
     }
-
-    // Poll the eventfd for reading
-    pollFds[0].fd = ret;
-    pollFds[0].events = POLLIN;
-
-    // Temporary, will be replaced by cynara fd when available
-    pollFds[1].fd = pollFds[0].fd;
-    pollFds[1].events = 0;
 
     cynara_async_configuration *p_conf = nullptr;
     checkCynaraError(cynara_async_configuration_create(&p_conf),
@@ -740,7 +729,7 @@ Cynara::Cynara()
 Cynara::~Cynara()
 {
     LogDebug("Sending terminate event to Cynara thread");
-    terminate.store(true);
+    terminate = true;
     threadNotifyPut();
     thread.join();
 
@@ -751,7 +740,7 @@ Cynara::~Cynara()
 
 void Cynara::threadNotifyPut()
 {
-    int ret = eventfd_write(pollFds[0].fd, 1);
+    int ret = eventfd_write(eventFd, 1);
     if (ret == -1)
         LogError("Unexpected error while writing to eventfd: " << GetErrnoString(errno));
 }
@@ -759,7 +748,7 @@ void Cynara::threadNotifyPut()
 void Cynara::threadNotifyGet()
 {
     eventfd_t value;
-    int ret = eventfd_read(pollFds[0].fd, &value);
+    int ret = eventfd_read(eventFd, &value);
     if (ret == -1)
         LogError("Unexpected error while reading from eventfd: " << GetErrnoString(errno));
 }
@@ -770,21 +759,22 @@ void Cynara::statusCallback(int oldFd, int newFd, cynara_async_status status)
         "Status = " << status << ", oldFd = " << oldFd << ", newFd = " << newFd);
 
     if (newFd == -1) {
-        pollFds[1].events = 0;
+        cynaraFdEvents = 0;
     } else {
-        pollFds[1].fd = newFd;
 
+        cynaraFd = newFd;
         switch (status) {
         case CYNARA_STATUS_FOR_READ:
-            pollFds[1].events = POLLIN;
+            cynaraFdEvents = POLLIN;
             break;
 
         case CYNARA_STATUS_FOR_RW:
-            pollFds[1].events = POLLIN | POLLOUT;
+            cynaraFdEvents = POLLIN | POLLOUT;
             break;
         }
     }
 
+    std::atomic_thread_fence(std::memory_order_release);
     threadNotifyPut();
 }
 
@@ -834,7 +824,10 @@ void Cynara::run()
 {
     LogInfo("Cynara thread started");
     while (true) {
+        std::atomic_thread_fence(std::memory_order_acquire);
+        struct pollfd pollFds[2] = {{eventFd, POLLIN, 0}, {cynaraFd, cynaraFdEvents, 0}};
         int ret = poll(pollFds, 2, -1);
+
         if (ret == -1) {
             if (errno != EINTR)
                 LogError("Unexpected error returned by poll: " << GetErrnoString(errno));
@@ -844,23 +837,23 @@ void Cynara::run()
         // Check eventfd for termination signal
         if (pollFds[0].revents) {
             threadNotifyGet();
-            if (terminate.load()) {
+            if (terminate) {
                 LogInfo("Cynara thread terminated");
                 return;
             }
         }
 
         // Check if Cynara fd is ready for processing
-        try {
-            if (pollFds[1].revents) {
+        if (pollFds[1].revents) {
+            try {
                 // Critical section
                 std::lock_guard<std::mutex> guard(mutex);
 
                 checkCynaraError(cynara_async_process(cynara),
                     "Unexpected error returned by cynara_async_process");
+            } catch (const CynaraException::Base &e) {
+                LogError("Error while processing Cynara events: " << e.DumpToString());
             }
-        } catch (const CynaraException::Base &e) {
-            LogError("Error while processing Cynara events: " << e.DumpToString());
         }
     }
 }
