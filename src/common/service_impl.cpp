@@ -535,7 +535,7 @@ int ServiceImpl::appInstall(const Credentials &creds, app_inst_req &&req)
         LogDebug("Generated install parameters: app label: " << appLabel <<
                  ", pkg label: " << pkgLabel);
 
-        m_priviligeDb.BeginTransaction();
+        ScopedTransaction trans(m_priviligeDb);
 
         m_priviligeDb.AddApplication(req.appName, req.pkgName, req.uid,
                                                   req.tizenVersion, req.authorName, req.isHybrid);
@@ -551,33 +551,28 @@ int ServiceImpl::appInstall(const Credentials &creds, app_inst_req &&req)
         getPkgsProcessLabels(pkgsInfo, pkgsProcessLabels);
 
         // WTF? Why this commit is here? Shouldn't it be at the end of this function?
-        m_priviligeDb.CommitTransaction();
+        trans.commit();
         LogDebug("Application installation commited to database");
         updatePermissibleSet(req.uid, req.installationType);
     } catch (const PrivilegeDb::Exception::IOError &e) {
         LogError("Cannot access application database: " << e.DumpToString());
         return SECURITY_MANAGER_ERROR_SERVER_ERROR;
     } catch (const PrivilegeDb::Exception::ConstraintError &e) {
-        m_priviligeDb.RollbackTransaction();
         LogError("Application conflicts with existing one: " << e.DumpToString());
         return SECURITY_MANAGER_ERROR_INPUT_PARAM;
     } catch (const PrivilegeDb::Exception::InternalError &e) {
-        m_priviligeDb.RollbackTransaction();
         LogError("Error while saving application info to database: " << e.DumpToString());
         return SECURITY_MANAGER_ERROR_SERVER_ERROR;
     } catch (const CynaraException::Base &e) {
-        m_priviligeDb.RollbackTransaction();
         LogError("Error while setting Cynara rules for application: " << e.DumpToString());
         return SECURITY_MANAGER_ERROR_SERVER_ERROR;
     } catch (const PermissibleSet::PermissibleSetException::Base &e) {
         LogError("Error while updating permissible file: " << e.DumpToString());
         return SECURITY_MANAGER_ERROR_SERVER_ERROR;
     } catch (const SmackException::InvalidLabel &e) {
-        m_priviligeDb.RollbackTransaction();
         LogError("Error while generating Smack labels: " << e.DumpToString());
         return SECURITY_MANAGER_ERROR_SERVER_ERROR;
     } catch (const std::bad_alloc &e) {
-        m_priviligeDb.RollbackTransaction();
         LogError("Memory allocation while setting Cynara rules for application: " << e.what());
         return SECURITY_MANAGER_ERROR_MEMORY;
     }
@@ -641,13 +636,12 @@ int ServiceImpl::appUninstall(const Credentials &creds, app_inst_req &&req)
     }
 
     try {
-        m_priviligeDb.BeginTransaction();
+        ScopedTransaction trans(m_priviligeDb);
         std::string pkgName;
         m_priviligeDb.GetAppPkgName(req.appName, pkgName);
         if (pkgName.empty()) {
             LogWarning("Application " << req.appName << " not found in database "
                        "while uninstalling");
-            m_priviligeDb.RollbackTransaction();
             return SECURITY_MANAGER_SUCCESS;
         }
         if (req.pkgName.empty()) {
@@ -714,29 +708,25 @@ int ServiceImpl::appUninstall(const Credentials &creds, app_inst_req &&req)
 
         m_cynaraAdmin.UpdateAppPolicy(processLabel, cynaraUserStr,
                                                    std::vector<std::string>(), isPrivilegePrivacy);
-        m_priviligeDb.CommitTransaction();
+        trans.commit();
         LogDebug("Application uninstallation commited to database");
         updatePermissibleSet(req.uid, req.installationType);
     } catch (const PrivilegeDb::Exception::IOError &e) {
         LogError("Cannot access application database: " << e.DumpToString());
         return SECURITY_MANAGER_ERROR_SERVER_ERROR;
     } catch (const PrivilegeDb::Exception::Base &e) {
-        m_priviligeDb.RollbackTransaction();
         LogError("Error while removing application info from database: " << e.DumpToString());
         return SECURITY_MANAGER_ERROR_SERVER_ERROR;
     } catch (const CynaraException::Base &e) {
-        m_priviligeDb.RollbackTransaction();
         LogError("Error while setting Cynara rules for application: " << e.DumpToString());
         return SECURITY_MANAGER_ERROR_SERVER_ERROR;
     } catch (const PermissibleSet::PermissibleSetException::Base &e) {
         LogError("Error while updating permissible file: " << e.DumpToString());
         return SECURITY_MANAGER_ERROR_SERVER_ERROR;
     } catch (const SmackException::InvalidLabel &e) {
-        m_priviligeDb.RollbackTransaction();
         LogError("Error while generating Smack labels: " << e.DumpToString());
         return SECURITY_MANAGER_ERROR_SERVER_ERROR;
     } catch (const std::bad_alloc &e) {
-        m_priviligeDb.RollbackTransaction();
         LogError("Memory allocation while setting Cynara rules for application: " << e.what());
         return SECURITY_MANAGER_ERROR_MEMORY;
     }
@@ -1596,7 +1586,7 @@ int ServiceImpl::pathsRegister(const Credentials &creds, path_req req)
 
     try {
         if (isSharedRO(req.pkgPaths)) {
-            m_priviligeDb.BeginTransaction();
+            ScopedTransaction trans(m_priviligeDb);
 
             if (!m_priviligeDb.IsPackageSharedRO(req.pkgName)) {
 
@@ -1611,13 +1601,12 @@ int ServiceImpl::pathsRegister(const Credentials &creds, path_req req)
                 SmackRules::generateSharedRORules(pkgsLabels, pkgsInfo);
                 SmackRules::mergeRules();
             }
-            m_priviligeDb.CommitTransaction();
+            trans.commit();
         }
     } catch (const PrivilegeDb::Exception::IOError &e) {
         LogError("Cannot access application database: " << e.DumpToString());
         return SECURITY_MANAGER_ERROR_SERVER_ERROR;
     } catch (const PrivilegeDb::Exception::InternalError &e) {
-        m_priviligeDb.RollbackTransaction();
         LogError("Error while saving application info to database: " << e.DumpToString());
         return SECURITY_MANAGER_ERROR_SERVER_ERROR;
     }
