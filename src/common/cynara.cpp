@@ -698,7 +698,7 @@ Cynara::Cynara()
     checkCynaraError(cynara_async_configuration_set_cache_size(p_conf, CACHE_SIZE),
             "Cannot set cynara async configuration cache size");
     checkCynaraError(
-        cynara_async_initialize(&cynara, p_conf, &Cynara::statusCallback, &(pollFds[1])),
+        cynara_async_initialize(&cynara, p_conf, &Cynara::statusCallback, this),
         "Cannot connect to Cynara policy interface.");
 
     thread = std::thread(&Cynara::run, this);
@@ -731,29 +731,34 @@ void Cynara::threadNotifyGet()
         LogError("Unexpected error while reading from eventfd: " << GetErrnoString(errno));
 }
 
-void Cynara::statusCallback(int oldFd, int newFd, cynara_async_status status,
-    void *ptr)
+void Cynara::statusCallback(int oldFd, int newFd, cynara_async_status status)
 {
-    auto cynaraFd = static_cast<struct pollfd *>(ptr);
-
     LogDebug("Cynara status callback. " <<
         "Status = " << status << ", oldFd = " << oldFd << ", newFd = " << newFd);
 
     if (newFd == -1) {
-        cynaraFd->events = 0;
+        pollFds[1].events = 0;
     } else {
-        cynaraFd->fd = newFd;
+        pollFds[1].fd = newFd;
 
         switch (status) {
         case CYNARA_STATUS_FOR_READ:
-            cynaraFd->events = POLLIN;
+            pollFds[1].events = POLLIN;
             break;
 
         case CYNARA_STATUS_FOR_RW:
-            cynaraFd->events = POLLIN | POLLOUT;
+            pollFds[1].events = POLLIN | POLLOUT;
             break;
         }
     }
+
+    threadNotifyPut();
+}
+
+void Cynara::statusCallback(int oldFd, int newFd, cynara_async_status status,
+    void *ptr)
+{
+    static_cast<Cynara *>(ptr)->statusCallback(oldFd, newFd, status);
 }
 
 void Cynara::responseCallback(cynara_check_id checkId,
@@ -855,7 +860,6 @@ bool Cynara::check(const std::string &label, const std::string &privilege,
                 &check_id, &Cynara::responseCallback, &promise),
             "Cannot check permission with Cynara.");
 
-        threadNotifyPut();
         LogDebug("Waiting for response to Cynara query id " << check_id);
     }
 
