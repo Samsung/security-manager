@@ -320,10 +320,10 @@ private:
                            const std::string &bucket, int policyToSet,
                            std::vector<CynaraAdminPolicy> &policies);
 
-    struct cynara_admin *m_CynaraAdmin;
+    static TypeToDescriptionMap s_typeToDescription;
+    static DescriptionToTypeMap s_descriptionToType;
 
-    static TypeToDescriptionMap TypeToDescription;
-    static DescriptionToTypeMap DescriptionToType;
+    struct cynara_admin *m_cynaraAdmin;
     bool m_policyDescriptionsInitialized;
 };
 
@@ -361,15 +361,14 @@ private:
     void threadNotifyPut();
     void threadNotifyGet();
 
-    cynara_async *cynara;
-    struct pollfd pollFds[2];
-    std::mutex mutex;
-    std::thread thread;
+    cynara_async *m_cynara;
+    std::mutex m_mutex;
+    std::thread m_thread;
 
-    const int eventFd;
-    std::atomic<int> cynaraFd;
-    std::atomic<short> cynaraFdEvents;
-    std::atomic<bool> terminate;
+    const int m_eventFd;
+    std::atomic<int> m_cynaraFd;
+    std::atomic<short> m_cynaraFdEvents;
+    std::atomic<bool> m_terminate;
 };
 
 } // namespace SecurityManager
