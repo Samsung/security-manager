@@ -120,7 +120,7 @@ public:
      *
      * @param policies vector of CynaraAdminPolicy objects to send to Cynara
      */
-    void SetPolicies(const std::vector<CynaraAdminPolicy> &policies);
+    void setPolicies(const std::vector<CynaraAdminPolicy> &policies);
 
     /**
      * Update Cynara policies for the application and the user.
@@ -133,7 +133,7 @@ public:
      * @param uid user identifier
      * @param privileges currently enabled privileges
      */
-    void UpdateAppPolicy(const std::string &label, bool global, uid_t uid,
+    void updateAppPolicy(const std::string &label, bool global, uid_t uid,
         const std::vector<std::string> &privileges);
 
     /**
@@ -144,7 +144,7 @@ public:
      * @param[in] user user identifier
      * @param[out] privileges currently enabled privileges
      */
-    void GetAppPolicy(const std::string &label, const std::string &user,
+    void getAppPolicy(const std::string &label, const std::string &user,
         std::vector<std::string> &privileges);
 
     /**
@@ -156,21 +156,21 @@ public:
      * @param uid new user uid
      * @param userType type as enumerated in security-manager.h
      */
-    void UserInit(uid_t uid, security_manager_user_type userType);
+    void userInit(uid_t uid, security_manager_user_type userType);
 
     /**
      * List all users registered in Cynara
      *
      * @param listOfUsers empty vector for list of users
      */
-    void ListUsers(std::vector<uid_t> &listOfUsers);
+    void listUsers(std::vector<uid_t> &listOfUsers);
 
     /**
      * Removes all entries for a user from cynara database
      *
      * @param uid removed user uid
      */
-    void UserRemove(uid_t uid);
+    void userRemove(uid_t uid);
 
     /**
      * Returns user type of given uid
@@ -180,7 +180,7 @@ public:
      * @return security_manager_user_type for given uid or SM_USER_TYPE_NONE if user not found
      *
      */
-    security_manager_user_type GetUserType(uid_t uid);
+    security_manager_user_type getUserType(uid_t uid);
 
     /**
      * List Cynara policies that match selected criteria in given bucket.
@@ -192,7 +192,7 @@ public:
      * @param policies empty vector for results of policies filtering.
      *
      */
-    void ListPolicies(const std::string &bucketName,
+    void listPolicies(const std::string &bucketName,
         const std::string &label,
         const std::string &user,
         const std::string &privilege,
@@ -206,7 +206,7 @@ public:
      *
      * @param policiesDescriptions empty vector for policies descriptions.
      */
-    void ListPoliciesDescriptions(std::vector<std::string> &policiesDescriptions);
+    void listPoliciesDescriptions(std::vector<std::string> &policiesDescriptions);
 
     /**
      * Function translates internal Cynara policy type integer to string
@@ -250,7 +250,7 @@ public:
      * @param recursive flag to indicate if check should be done recursively in
      *        all buckets linked with bucket provided
      */
-    void Check(const std::string &label,
+    void check(const std::string &label,
         const std::string &user,
         const std::string &privilege,
         const std::string &bucket,
@@ -268,7 +268,7 @@ public:
      * @param privilege privilege identifier
      * @return current policy value
      */
-    int GetPrivilegeManagerCurrLevel(const std::string &label, const std::string &user,
+    int getPrivilegeManagerCurrLevel(const std::string &label, const std::string &user,
         const std::string &privilege);
 
     /**
@@ -282,7 +282,7 @@ public:
      * @param privilege privilege identifier
      * @return maximum policy value for PRIVACY_MANAGER bucket
      */
-    int GetPrivilegeManagerMaxLevel(const std::string &label, const std::string &user,
+    int getPrivilegeManagerMaxLevel(const std::string &label, const std::string &user,
         const std::string &privilege);
 
 private:
@@ -295,7 +295,7 @@ private:
      * @param user user name
      * @param privilege privilege name
      */
-    void EmptyBucket(const std::string &bucketName, bool recursive,
+    void emptyBucket(const std::string &bucketName, bool recursive,
         const std::string &client, const std::string &user, const std::string &privilege);
 
     /**
@@ -303,7 +303,7 @@ private:
      *
      * @param forceRefresh true if you want to reinitialize mappings
      */
-    void FetchCynaraPolicyDescriptions(bool forceRefresh = false);
+    void fetchCynaraPolicyDescriptions(bool forceRefresh = false);
 
     /**
      * Calculate actual Cynara policy based on appilcation data & previous policy
@@ -315,7 +315,7 @@ private:
      * @param policyToSet policy effect to be set
      * @param policies current policy (input/output parameter)
      */
-    void CalculatePolicies(const std::string &label, const std::string &user,
+    void calculatePolicies(const std::string &label, const std::string &user,
                            const std::vector<std::string> &privileges,
                            const std::string &bucket, int policyToSet,
                            std::vector<CynaraAdminPolicy> &policies);
