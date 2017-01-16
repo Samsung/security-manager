@@ -307,15 +307,22 @@ bool ServiceImpl::getUserPkgDir(const uid_t &uid,
     return true;
 }
 
-void ServiceImpl::getSkelPkgDir(const std::string &pkgName,
+bool ServiceImpl::getSkelPkgDir(const std::string &pkgName,
                                 std::string &skelPkgDir)
 {
     std::string app = TizenPlatformConfig::getEnv(TZ_USER_APP);
     std::string home = TizenPlatformConfig::getEnv(TZ_USER_HOME);
+    std::string real_skel_dir = std::move(realPath(Config::SKEL_DIR));
+    if (app.empty() || home.empty() || real_skel_dir.empty()) {
+        LogError("Unable to get skel pkg dir.");
+        return false;
+    }
 
     skelPkgDir.assign(app);
-    skelPkgDir.replace(0, home.length(), Config::SKEL_DIR);
+    skelPkgDir.replace(0, home.length(), real_skel_dir);
     skelPkgDir.append("/").append(pkgName);
+
+    return true;
 }
 
 void ServiceImpl::setRequestDefaultValues(uid_t& uid, int& installationType)
@@ -402,7 +409,8 @@ int ServiceImpl::labelPaths(const pkg_paths &paths,
             pathsOK = pathsCheck(paths, {pkgBasePath});
         else {
             std::string skelPkgBasePath;
-            getSkelPkgDir(pkgName, skelPkgBasePath);
+            if (!getSkelPkgDir(pkgName, skelPkgBasePath))
+                return SECURITY_MANAGER_ERROR_SERVER_ERROR;
             pathsOK = pathsCheck(paths, {pkgBasePath, skelPkgBasePath});
         }
 

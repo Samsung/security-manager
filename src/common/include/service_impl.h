@@ -261,7 +261,7 @@ private:
                               app_install_type installType,
                               std::string &userPkgDir);
 
-    static void getSkelPkgDir(const std::string &pkgName,
+    static bool getSkelPkgDir(const std::string &pkgName,
                               std::string &skelPkgDir);
 
     static void setRequestDefaultValues(uid_t& uid, int& installationType);
