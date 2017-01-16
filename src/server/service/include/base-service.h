@@ -57,6 +57,9 @@ public:
     void process(const ReadEvent &event);
     void close(const CloseEvent &event);
 
+    void Start();
+    void Stop();
+
 protected:
     ServiceImpl serviceImpl;
 

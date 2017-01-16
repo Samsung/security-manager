@@ -76,4 +76,14 @@ void BaseService::close(const CloseEvent &event)
     m_connectionInfoMap.erase(event.connectionID.counter);
 }
 
+void BaseService::Start()
+{
+    StartThread();
+}
+
+void BaseService::Stop()
+{
+    FinishThread();
+}
+
 } // namespace SecurityManager

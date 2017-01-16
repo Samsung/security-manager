@@ -184,6 +184,7 @@ SocketManager::~SocketManager() {
     // Time to destroy all services.
     for(auto it = serviceMap.begin(); it != serviceMap.end(); ++it) {
         LogDebug("delete " << (void*)(*it));
+        (*it)->Stop();
         delete *it;
     }
 

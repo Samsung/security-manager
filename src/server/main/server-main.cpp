@@ -44,7 +44,7 @@ bool registerSocketService(SecurityManager::SocketManager &manager,
     T *service = NULL;
     try {
         service = new T();
-        service->Create();
+        service->Start();
         manager.RegisterSocketService(service);
         return true;
     } catch (const SecurityManager::Exception &exception) {
@@ -57,8 +57,10 @@ bool registerSocketService(SecurityManager::SocketManager &manager,
         LogError("Error in creating service " << serviceName <<
                  ", unknown exception occured");
     }
-    if (service)
+    if (service) {
+        service->Stop();
         delete service;
+    }
     return false;
 }
 

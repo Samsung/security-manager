@@ -70,32 +70,37 @@ public:
       , m_quit(false)
     {}
 
-    void Create() {
+    void StartThread() {
         assert(m_state == State::NoThread);
         m_thread = std::thread(ThreadLoopStatic, this);
         m_state = State::Work;
     }
 
-    void Join() {
-        assert(m_state != State::NoThread);
+    void FinishThread() {
+        // finish the thread if necessary
+        if(m_state != State::NoThread)
         {
-            std::lock_guard<std::mutex> lock(m_eventQueueMutex);
-            m_quit = true;
-            m_waitCondition.notify_one();
+            {
+                std::lock_guard<std::mutex> lock(m_eventQueueMutex);
+                m_quit = true;
+                m_waitCondition.notify_one();
+            }
+            m_thread.join();
+            m_state = State::NoThread;
         }
-        m_thread.join();
-        m_state = State::NoThread;
-    }
 
-    virtual ~ServiceThread()
-    {
-        if (m_state != State::NoThread)
-            Join();
-        while (!m_eventQueue.empty()){
+        // clear the event queue
+        while (!m_eventQueue.empty()) {
             auto front = m_eventQueue.front();
             delete front.eventPtr;
             m_eventQueue.pop();
         }
+    }
+
+    virtual ~ServiceThread()
+    {
+        // FinishThread() has to be called before destructor
+        assert(m_state == State::NoThread);
     }
 
     template <class T>
