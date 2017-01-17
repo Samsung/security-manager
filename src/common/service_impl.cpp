@@ -550,7 +550,6 @@ int ServiceImpl::appInstall(const Credentials &creds, app_inst_req &&req)
         LogError("Error while setting Cynara rules for application: " << e.DumpToString());
         return SECURITY_MANAGER_ERROR_SERVER_ERROR;
     } catch (const PrivilegeInfo::Exception::Base &e) {
-        m_priviligeDb.RollbackTransaction();
         LogError("Error while getting privilege information: " << e.DumpToString());
         return SECURITY_MANAGER_ERROR_SERVER_ERROR;
     } catch (const PermissibleSet::PermissibleSetException::Base &e) {
@@ -707,7 +706,6 @@ int ServiceImpl::appUninstall(const Credentials &creds, app_inst_req &&req)
         LogError("Error while removing application info from database: " << e.DumpToString());
         return SECURITY_MANAGER_ERROR_SERVER_ERROR;
     } catch (const PrivilegeInfo::Exception::Base &e) {
-        m_priviligeDb.RollbackTransaction();
         LogError("Error while getting privilege information: " << e.DumpToString());
         return SECURITY_MANAGER_ERROR_SERVER_ERROR;
     } catch (const CynaraException::Base &e) {
