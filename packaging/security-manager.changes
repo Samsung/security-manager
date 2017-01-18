@@ -1,3 +1,8 @@
+* Wed Jan 18 2017 Jooseong Lee <jooseong.lee@samsung.com>
+- Version 1.2.15
+- Split service cleanup in two parts to prevent std::terminate
+- Use real path of skel dir
+
 * Fri Jan 13 2017 Tomasz Swierczek <t.swierczek@samsung.com>
 - Version 1.2.14
 - Add missing exception handler for TizenPlatformConfig
@@ -26,7 +31,7 @@
 - Change skel directory to /opt/etc/skel
 
 * Wed Dec 14 2016 Jooseong Lee <jooseong.lee@samsung.com>
-- Version 0.2.12
+- Version 1.2.12
 - Allow privileged caller to configure privacy manager for other users
 
 * Thu Dec 13 2016 Jin-gyu Kim <jin-gyu.kim@samsung.com>
