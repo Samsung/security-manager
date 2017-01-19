@@ -12,5 +12,4 @@ User ~PROCESS~ rwxat
 ~PROCESS~ User::App::Shared rwxat
 ~PROCESS~ ~PATH_RW~ rwxat
 ~PROCESS~ ~PATH_RO~ rxl
-~PROCESS~ ~PATH_SHARED_RO~ rwxat
 ~PROCESS~ ~PATH_TRUSTED~ rwxat
