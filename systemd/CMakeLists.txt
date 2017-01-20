@@ -3,10 +3,10 @@ CONFIGURE_FILE(security-manager-cleanup.service.in security-manager-cleanup.serv
 CONFIGURE_FILE(security-manager-rules-loader.service.in security-manager-rules-loader.service @ONLY)
 
 INSTALL(FILES
-    security-manager.service
+    ${CMAKE_CURRENT_BINARY_DIR}/security-manager.service
     security-manager.socket
-    security-manager-cleanup.service
-    security-manager-rules-loader.service
+    ${CMAKE_CURRENT_BINARY_DIR}/security-manager-cleanup.service
+    ${CMAKE_CURRENT_BINARY_DIR}/security-manager-rules-loader.service
     DESTINATION
     ${SYSTEMD_INSTALL_DIR}
 )
