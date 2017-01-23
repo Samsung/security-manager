@@ -1,3 +1,10 @@
+* Mon Jan 23 2017 Jooseong Lee <jooseong.lee@samsung.com>
+- Version 1.2.16
+- Fix in generateAppPkgNameFromLabel implementation
+- [Unit tests] Add test for src/common/include/smack-labels.h
+- [Unit tests] Add test for src/common/include/smack-rules.h
+- Remove default dependency in cleanup service
+
 * Wed Jan 18 2017 Jooseong Lee <jooseong.lee@samsung.com>
 - Version 1.2.15
 - Split service cleanup in two parts to prevent std::terminate
