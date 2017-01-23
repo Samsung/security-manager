@@ -1,5 +1,6 @@
 [Unit]
 Description=Cleanup private sharing
+DefaultDependencies=no
 After=sysinit.target
 Requires=sysinit.target
 
