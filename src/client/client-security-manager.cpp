@@ -751,7 +751,7 @@ int security_manager_prepare_app(const char *app_name)
 
         if (app_name == nullptr) {
             LogError("app_name is NULL");
-            return SECURITY_MANAGER_ERROR_INPUT_PARAM;
+            return static_cast<int>(SECURITY_MANAGER_ERROR_INPUT_PARAM);
         }
 
         int ret;
