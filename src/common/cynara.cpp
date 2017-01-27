@@ -66,6 +66,9 @@ namespace SecurityManager {
  *   user type. ALLOW rules only.
  * - ADMIN           - stores custom rules introduced by device administrator.
  *   Ignored if no matching rule found.
+ * - APPDEFINED      - stores privileges introduced by the providers application.
+ *   Ignored if no matching rule found.
+
  *
  * Below is basic layout of buckets:
  *
@@ -109,7 +112,15 @@ namespace SecurityManager {
  *        |                |       ADMIN      |                 |
  *        |--------------->|                  |<----------------|
  *                         |------------------|
- *
+ *                                  |
+ *                                  |
+ *                                  |
+ *                                  V
+ *                         |------------------|
+ *                         |     <<none>>     |
+ *                         |                  |
+ *                         |    APPDEFINED    !
+ *                         |------------------|
  */
 CynaraAdmin::BucketsMap CynaraAdmin::Buckets =
 {
@@ -122,6 +133,7 @@ CynaraAdmin::BucketsMap CynaraAdmin::Buckets =
     { Bucket::USER_TYPE_SYSTEM, std::string("USER_TYPE_SYSTEM")},
     { Bucket::ADMIN, std::string("ADMIN")},
     { Bucket::MANIFESTS, std::string("MANIFESTS")},
+    { Bucket::APPDEFINED, std::string("APPDEFINED")},
 };
 
 CynaraAdminPolicy::CynaraAdminPolicy()

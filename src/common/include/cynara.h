@@ -50,7 +50,8 @@ enum class Bucket
     USER_TYPE_GUEST,
     USER_TYPE_SYSTEM,
     ADMIN,
-    MANIFESTS
+    MANIFESTS,
+    APPDEFINED
 };
 
 class CynaraException
