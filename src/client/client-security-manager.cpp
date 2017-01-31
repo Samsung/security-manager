@@ -191,6 +191,19 @@ int security_manager_app_inst_req_add_privilege(app_inst_req *p_req, const char 
 }
 
 SECURITY_MANAGER_API
+int security_manager_app_inst_req_add_app_defined_privilege(
+        app_inst_req *p_req,
+        const char *app_defined_privilege)
+{
+    if (!p_req || !app_defined_privilege)
+        return SECURITY_MANAGER_ERROR_INPUT_PARAM;
+
+    p_req->appDefinedPrivileges.push_back(app_defined_privilege);
+
+    return SECURITY_MANAGER_SUCCESS;
+}
+
+SECURITY_MANAGER_API
 int security_manager_app_inst_req_add_path(app_inst_req *p_req, const char *path, const int path_type)
 {
     if (!p_req || !path || (path_type < 0) || (path_type >= SECURITY_MANAGER_ENUM_END))
@@ -245,6 +258,7 @@ int security_manager_app_install(const app_inst_req *p_req)
                          p_req->appName,
                          p_req->pkgName,
                          p_req->privileges,
+                         p_req->appDefinedPrivileges,
                          p_req->pkgPaths,
                          p_req->uid,
                          p_req->tizenVersion,
@@ -272,6 +286,7 @@ int security_manager_app_uninstall(const app_inst_req *p_req)
                      p_req->appName,
                      p_req->pkgName,
                      p_req->privileges,
+                     p_req->appDefinedPrivileges,
                      p_req->pkgPaths,
                      p_req->uid,
                      p_req->tizenVersion,

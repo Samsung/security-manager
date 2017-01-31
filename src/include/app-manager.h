@@ -74,10 +74,22 @@ int security_manager_app_inst_req_set_pkg_id(app_inst_req *p_req, const char *pk
  * it can be called multiple times
  *
  * \param[in] p_req      Pointer handling app_inst_req structure
- * \param[in] privilege  Application privilager
+ * \param[in] privilege  Application privilege
  * \return API return code or error code
  */
 int security_manager_app_inst_req_add_privilege(app_inst_req *p_req, const char *privilege);
+
+/**
+ * This function is used to add privilege defined by application to app_inst_req structure,
+ * it can be called multiple times
+ *
+ * \param[in] p_req                 Pointer handling app_inst_req structure
+ * \param[in] app_defined_privilege Privilege defined by application
+ * \return API return code or error code
+ */
+int security_manager_app_inst_req_add_app_defined_privilege(
+        app_inst_req *p_req,
+        const char *app_defined_privilege);
 
 /**
  * This function is used to add application path to app_inst_req structure,

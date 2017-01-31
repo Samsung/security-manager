@@ -188,6 +188,7 @@ void Service::processAppInstall(MessageBuffer &buffer, MessageBuffer &send, cons
     Deserialization::Deserialize(buffer, req.appName);
     Deserialization::Deserialize(buffer, req.pkgName);
     Deserialization::Deserialize(buffer, req.privileges);
+    Deserialization::Deserialize(buffer, req.appDefinedPrivileges);
     Deserialization::Deserialize(buffer, req.pkgPaths);
     Deserialization::Deserialize(buffer, req.uid);
     Deserialization::Deserialize(buffer, req.tizenVersion);
@@ -204,6 +205,7 @@ void Service::processAppUninstall(MessageBuffer &buffer, MessageBuffer &send, co
     Deserialization::Deserialize(buffer, req.appName);
     Deserialization::Deserialize(buffer, req.pkgName);
     Deserialization::Deserialize(buffer, req.privileges);
+    Deserialization::Deserialize(buffer, req.appDefinedPrivileges);
     Deserialization::Deserialize(buffer, req.pkgPaths);
     Deserialization::Deserialize(buffer, req.uid);
     Deserialization::Deserialize(buffer, req.tizenVersion);

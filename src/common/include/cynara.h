@@ -133,9 +133,11 @@ public:
      * @param global true if it's a global or preloaded installation
      * @param uid user identifier
      * @param privileges currently enabled privileges
+     * @param appDefinedPrivileges privileges defined by application
      */
     void UpdateAppPolicy(const std::string &label, bool global, uid_t uid,
-        const std::vector<std::string> &privileges);
+        const std::vector<std::string> &privileges,
+        const std::vector<std::string> &appDefinedPrivileges);
 
     /**
      * Fetch Cynara policies for the application and the user.

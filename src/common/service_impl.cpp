@@ -525,7 +525,8 @@ int ServiceImpl::appInstall(const Credentials &creds, app_inst_req &&req)
 
         bool global = req.installationType == SM_APP_INSTALL_GLOBAL ||
                       req.installationType == SM_APP_INSTALL_PRELOADED;
-        m_cynaraAdmin.UpdateAppPolicy(appLabel, global, req.uid, req.privileges);
+        m_cynaraAdmin.UpdateAppPolicy(appLabel, global, req.uid, req.privileges,
+            req.appDefinedPrivileges);
 
         if (hasSharedRO)
             m_priviligeDb.SetSharedROPackage(req.pkgName);
@@ -694,7 +695,8 @@ int ServiceImpl::appUninstall(const Credentials &creds, app_inst_req &&req)
 
         bool global = req.installationType == SM_APP_INSTALL_GLOBAL ||
                       req.installationType == SM_APP_INSTALL_PRELOADED;
-        m_cynaraAdmin.UpdateAppPolicy(processLabel, global, req.uid, std::vector<std::string>());
+        m_cynaraAdmin.UpdateAppPolicy(processLabel, global, req.uid, std::vector<std::string>(),
+            std::vector<std::string>());
         trans.commit();
 
         LogDebug("Application uninstallation commited to database");

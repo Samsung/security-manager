@@ -22,6 +22,7 @@
  */
 
 #include <cstring>
+#include <string>
 #include <unordered_set>
 #include "cynara.h"
 
@@ -325,11 +326,35 @@ void CynaraAdmin::SetPolicies(const std::vector<CynaraAdminPolicy> &policies)
         "Error while updating Cynara policy.");
 }
 
+enum class AppDefinedPrivilegeType
+{
+    Licensed,
+    Untrusted,
+};
+
+typedef std::map<AppDefinedPrivilegeType, const std::string > PrivilegePrefixMap;
+
+PrivilegePrefixMap privilegePrefixes =
+{
+    { AppDefinedPrivilegeType::Licensed, std::string("https://licensed")},
+    { AppDefinedPrivilegeType::Untrusted, std::string("https://untrusted")},
+};
+
+AppDefinedPrivilegeType clasify(const std::string &privilege)
+{
+    for (auto &p : privilegePrefixes) {
+       if (!p.second.compare(privilege))
+           return p.first;
+    }
+    ThrowMsg(CynaraException::InvalidParam, "Not valid app defined privilege name");
+}
+
 void CynaraAdmin::UpdateAppPolicy(
     const std::string &label,
     bool global,
     uid_t uid,
-    const std::vector<std::string> &privileges)
+    const std::vector<std::string> &privileges,
+    const std::vector<std::string> &appDefinedPrivileges)
 {
     std::vector<CynaraAdminPolicy> policies;
 
@@ -382,6 +407,38 @@ void CynaraAdmin::UpdateAppPolicy(
         CalculatePolicies(label, std::to_string(id), blacklistPrivileges,
                      Buckets.at(Bucket::ADMIN),
                      static_cast<int>(CynaraAdminPolicy::Operation::Deny), policies);
+    }
+
+    // 3rd, performing operation on APPDEFINED bucket
+    // validation and split
+    std::vector<std::string> untrustedPrivileges;
+    std::vector<std::string> licensedPrivileges;
+
+    for(auto &p : appDefinedPrivileges) {
+        switch (clasify(p)) {
+            case AppDefinedPrivilegeType::Licensed:
+                licensedPrivileges.push_back(p);
+                break;
+            case AppDefinedPrivilegeType::Untrusted:
+                untrustedPrivileges.push_back(p);
+                break;
+        }
+    }
+
+    std::string userId = global ? CYNARA_ADMIN_WILDCARD : std::to_string(uid);
+    if (!untrustedPrivileges.empty())
+    {
+        CalculatePolicies(CYNARA_ADMIN_WILDCARD, userId, untrustedPrivileges,
+                             Buckets.at(Bucket::APPDEFINED),
+                             static_cast<int>(CynaraAdminPolicy::Operation::Allow), policies);
+    }
+
+    if (!licensedPrivileges.empty())
+    {
+        //TODO: change static_cast<int>(CynaraAdminPolicy::Operation::Deny) to PLUGINLM
+        CalculatePolicies(CYNARA_ADMIN_WILDCARD, CYNARA_ADMIN_WILDCARD, licensedPrivileges,
+                             Buckets.at(Bucket::APPDEFINED),
+                             static_cast<int>(CynaraAdminPolicy::Operation::Deny), policies);
     }
 
     SetPolicies(policies);
