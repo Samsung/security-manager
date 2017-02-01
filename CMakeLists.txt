@@ -104,6 +104,7 @@ SET(SERVER_PATH  ${PROJECT_SOURCE_DIR}/src/server)
 SET(DPL_PATH     ${PROJECT_SOURCE_DIR}/src/dpl)
 SET(CMD_PATH     ${PROJECT_SOURCE_DIR}/src/cmd)
 SET(NSS_PATH     ${PROJECT_SOURCE_DIR}/src/nss)
+SET(LM_COMMON_PATH ${PROJECT_SOURCE_DIR}/src/license-manager/common)
 
 SET(TARGET_SERVER "security-manager")
 SET(TARGET_CLIENT "security-manager-client")

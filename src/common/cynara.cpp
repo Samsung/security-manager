@@ -31,6 +31,7 @@
 #include <config.h>
 #include <utils.h>
 #include <privilege-info.h>
+#include <lm-config.h>
 
 namespace SecurityManager {
 
@@ -336,14 +337,14 @@ typedef std::map<AppDefinedPrivilegeType, const std::string > PrivilegePrefixMap
 
 PrivilegePrefixMap privilegePrefixes =
 {
-    { AppDefinedPrivilegeType::Licensed, std::string("https://licensed")},
-    { AppDefinedPrivilegeType::Untrusted, std::string("https://untrusted")},
+    { AppDefinedPrivilegeType::Licensed, std::string("http://tizen.org/licensedPrivilege/")},
+    { AppDefinedPrivilegeType::Untrusted, std::string("http://tizen.org/applicationDefinedPrivilege/")},
 };
 
 AppDefinedPrivilegeType clasify(const std::string &privilege)
 {
     for (auto &p : privilegePrefixes) {
-       if (!p.second.compare(privilege))
+       if (!privilege.compare(0, p.second.size(), p.second))
            return p.first;
     }
     ThrowMsg(CynaraException::InvalidParam, "Not valid app defined privilege name");
@@ -435,10 +436,9 @@ void CynaraAdmin::UpdateAppPolicy(
 
     if (!licensedPrivileges.empty())
     {
-        //TODO: change static_cast<int>(CynaraAdminPolicy::Operation::Deny) to PLUGINLM
-        CalculatePolicies(CYNARA_ADMIN_WILDCARD, CYNARA_ADMIN_WILDCARD, licensedPrivileges,
+        CalculatePolicies(CYNARA_ADMIN_WILDCARD, userId, licensedPrivileges,
                              Buckets.at(Bucket::APPDEFINED),
-                             static_cast<int>(CynaraAdminPolicy::Operation::Deny), policies);
+                             static_cast<int>(LicenseManager::Config::LM_ASK), policies);
     }
 
     SetPolicies(policies);

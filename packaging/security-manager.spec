@@ -84,6 +84,14 @@ Requires:   boost-test
 %description -n security-manager-tests
 Internal test for security manager implementation.
 
+%package -n license-manager
+Summary:    Plugins for cynara service and client
+Group:      Security/Development
+Requires:   cynara
+
+%description -n license-manager
+Package with plugins for cynara.
+
 %prep
 %setup -q
 cp %{SOURCE1} .
@@ -178,6 +186,10 @@ fi
 
 %postun -n libnss-security-manager -p /sbin/ldconfig
 
+%post -n license-manager -p /sbin/ldconfig
+
+%postun -n license-manager -p /sbin/ldconfig
+
 %pre
 ### Workaround for invalid policy versioning mechanism
 if [ -e %{TZ_SYS_VAR}/security-manager/policy-version ] && [ x`cat %{TZ_SYS_VAR}/security-manager/policy-version` = x"1" ]
@@ -256,4 +268,8 @@ chsmack -a System %{db_test_dir}/.security-manager-test.db-journal
 %attr(755,root,root) %{_bindir}/security-manager-unit-tests
 %attr(0600,root,root) %{db_test_dir}/.security-manager-test.db
 %attr(0600,root,root) %{db_test_dir}/.security-manager-test.db-journal
+
+%files -n license-manager
+%{_libdir}/cynara/plugin/client/liblicense-manager-plugin-client.so
+%{_libdir}/cynara/plugin/service/liblicense-manager-plugin-service.so
 
