@@ -588,4 +588,67 @@ void PrivilegeDb::GetPackagesInfo(std::vector<PkgInfo> &packages)
      });
 }
 
+void PrivilegeDb::AddAppDefinedPrivilege(const std::string &appName, uid_t uid, const Privilege &privilege)
+{
+    try_catch<void>([&] {
+        auto command = getStatement(StmtType::EAddAppDefinedPrivilege);
+        command->BindString(1, appName);
+        command->BindInteger(2, uid);
+        command->BindString(3, privilege.first);
+        command->BindInteger(4, privilege.second);
+
+        if (command->Step())
+            LogDebug("Added privilege: " << privilege.first << " defined by: " << appName <<
+                     " and user: " << uid);
+     });
+}
+
+void PrivilegeDb::RemoveAppDefinedPrivileges(const std::string &appName, uid_t uid)
+{
+    try_catch<void>([&] {
+        auto command = getStatement(StmtType::ERemoveAppDefinedPrivileges);
+        command->BindString(1, appName);
+        command->BindInteger(2, uid);
+
+        if (command->Step())
+            LogDebug("Removed privileges defined by: " << appName << " and user: " << uid);
+     });
+}
+
+void PrivilegeDb::GetAppDefinedPrivileges(const std::string &appName, uid_t uid, PrivilegesVector &privileges)
+{
+    try_catch<void>([&] {
+        privileges.clear();
+
+        auto command = getStatement(StmtType::EGetAppDefinedPrivileges);
+        command->BindString(1, appName);
+        command->BindInteger(2, uid);
+        while (command->Step()) {
+            auto privilege = command->GetColumnString(0);
+            auto type = command->GetColumnInteger(1);
+            LogDebug("App: " << appName << " installed by: " << uid << " defines privilege: " << privilege);
+            privileges.push_back(std::make_pair(privilege, type));
+        }
+    });
+}
+
+void PrivilegeDb::GetAppForAppDefinedPrivilege(const Privilege &privilege, uid_t uid, std::string &appName)
+{
+    try_catch<void>([&] {
+        appName.clear();
+
+        auto command = getStatement(StmtType::EGetAppForAppDefinedPrivilege);
+        command->BindString(1, privilege.first);
+        command->BindInteger(2, uid);
+
+        if (command->Step())
+            appName = command->GetColumnString(0);
+
+        if (!appName.empty())
+            LogDebug("Privilege: " << privilege.first << " defined by " << appName);
+        else
+            LogDebug("Privilege: " << privilege.first << " not exist");
+    });
+}
+
 } //namespace SecurityManager

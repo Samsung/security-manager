@@ -41,6 +41,7 @@
 
 #include "dpl/db/sql_connection.h"
 #include "tzplatform-config.h"
+#include "security-manager-types.h"
 
 #include "pkg-info.h"
 
@@ -80,7 +81,14 @@ enum class StmtType {
     EIsPackageSharedRO,
     EIsPackageHybrid,
     EGetPackagesInfo,
+    EAddAppDefinedPrivilege,
+    ERemoveAppDefinedPrivileges,
+    EGetAppDefinedPrivileges,
+    EGetAppForAppDefinedPrivilege,
 };
+
+typedef std::pair<std::string, int> Privilege;
+typedef std::vector<Privilege> PrivilegesVector;
 
 class PrivilegeDb {
     /**
@@ -134,6 +142,10 @@ private:
         { StmtType::EIsPackageSharedRO, "SELECT shared_ro FROM pkg WHERE name=?"},
         { StmtType::EIsPackageHybrid, "SELECT is_hybrid FROM pkg WHERE name=?"},
         { StmtType::EGetPackagesInfo, "SELECT name, shared_ro, is_hybrid FROM pkg"},
+        { StmtType::EAddAppDefinedPrivilege, "INSERT INTO app_defined_privilege_view (app_name, uid, privilege, type) VALUES (?, ?, ?, ?)"},
+        { StmtType::ERemoveAppDefinedPrivileges, "DELETE FROM app_defined_privilege_view WHERE app_name = ? AND uid = ?"},
+        { StmtType::EGetAppDefinedPrivileges, "SELECT privilege, type FROM app_defined_privilege_view WHERE app_name = ? AND uid = ?"},
+        { StmtType::EGetAppForAppDefinedPrivilege, "SELECT app_name FROM app_defined_privilege_view WHERE privilege = ? AND uid = ?"},
     };
 
     /**
@@ -527,6 +539,53 @@ public:
      * @exception PrivilegeDb::Exception::ConstraintError on constraint violation
      */
     void GetPackagesInfo(std::vector<PkgInfo> &packages);
+
+    /**
+     * Add new privilege defined by application
+     *
+     * @param[in] appName - application identifier
+     * @param[in] uid - user identifier
+     * @param[in] privilege - privilege identifier
+     *
+     * @exception PrivilegeDb::Exception::InternalError on internal error
+     * @exception PrivilegeDb::Exception::ConstraintError on constraint violation
+     */
+    void AddAppDefinedPrivilege(const std::string &appName, uid_t uid, const Privilege &privilege);
+
+    /**
+     * Remove privileges defined by application
+     *
+     * @param[in] appName - application identifier
+     * @param[in] uid - user identifier
+     *
+     * @exception PrivilegeDb::Exception::InternalError on internal error
+     * @exception PrivilegeDb::Exception::ConstraintError on constraint violation
+     */
+    void RemoveAppDefinedPrivileges(const std::string &appName, uid_t uid);
+
+    /**
+     * Retrieve vector of pairs with privilege (1st value) and privilege type (2nd value)
+     *
+     * @param[in]  appName - application identifier
+     * @param[in]  uid - user identifier
+     * @param[out] privileges - list of privileges
+     *
+     * @exception PrivilegeDb::Exception::InternalError on internal error
+     * @exception PrivilegeDb::Exception::ConstraintError on constraint violation
+     */
+    void GetAppDefinedPrivileges(const std::string &appName, uid_t uid, PrivilegesVector &privileges);
+
+    /**
+     * Retrieve application which define privilege
+     *
+     * @param[in]  privilege - privilege identifier
+     * @param[in]  uid - user identifier
+     * @param[out] appName - application identifier
+     *
+     * @exception PrivilegeDb::Exception::InternalError on internal error
+     * @exception PrivilegeDb::Exception::ConstraintError on constraint violation
+     */
+    void GetAppForAppDefinedPrivilege(const Privilege &privilege, uid_t uid, std::string &appName);
 };
 
 } //namespace SecurityManager

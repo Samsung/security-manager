@@ -1,0 +1,1 @@
+-- Dummy script. We only need to trigger db upgrade so that sql gets called and new table is created

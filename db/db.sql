@@ -4,7 +4,7 @@ PRAGMA auto_vacuum = NONE;
 
 BEGIN EXCLUSIVE TRANSACTION;
 
-PRAGMA user_version = 9;
+PRAGMA user_version = 10;
 
 CREATE TABLE IF NOT EXISTS pkg (
 pkg_id INTEGER PRIMARY KEY,
@@ -60,6 +60,14 @@ CREATE TABLE IF NOT EXISTS author (
 	author_id INTEGER PRIMARY KEY,
 	name VARCHAR NOT NULL,
 	UNIQUE (name)
+);
+
+CREATE TABLE IF NOT EXISTS app_defined_privilege (
+app_id INTEGER NOT NULL,
+uid INTEGER NOT NULL,
+privilege VARCHAR NOT NULL,
+type INTEGER NOT NULL CHECK (type >= 0 AND type <= 1),
+FOREIGN KEY (app_id, uid) REFERENCES user_app (app_id, uid) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 DROP VIEW IF EXISTS user_app_pkg_view;
@@ -200,6 +208,41 @@ BEGIN
     UPDATE app_private_sharing SET counter = OLD.counter - 1
     WHERE path_id = (SELECT path_id FROM shared_path WHERE path = OLD.path)
     AND app_private_sharing.target_app_name = OLD.target_app_name;
+END;
+
+DROP VIEW IF EXISTS app_defined_privilege_view;
+CREATE VIEW app_defined_privilege_view AS
+SELECT
+    name AS app_name,
+    uid,
+    privilege,
+    type
+FROM app_defined_privilege
+LEFT JOIN app USING (app_id)
+LEFT JOIN user_app USING (uid);
+
+DROP TRIGGER IF EXISTS app_defined_privilege_view_insert_trigger;
+CREATE TRIGGER app_defined_privilege_view_insert_trigger
+INSTEAD OF INSERT ON app_defined_privilege_view
+BEGIN
+    SELECT RAISE(ABORT, 'App defined privilege already defined by different application')
+    WHERE EXISTS (SELECT 1 FROM app_defined_privilege_view
+                  WHERE privilege=NEW.privilege AND app_name!=NEW.app_name);
+
+    SELECT RAISE(ABORT, 'Application was not found')
+    WHERE NOT EXISTS (SELECT 1 FROM user_app_pkg_view
+                      WHERE uid=NEW.uid AND app_name=NEW.app_name);
+
+    INSERT OR IGNORE INTO app_defined_privilege (app_id, uid, privilege, type)
+    VALUES ((SELECT app_id FROM app WHERE name=NEW.app_name), NEW.uid, NEW.privilege, NEW.type);
+END;
+
+DROP TRIGGER IF EXISTS app_defined_privilege_view_delete_trigger;
+CREATE TRIGGER app_defined_privilege_view_delete_trigger
+INSTEAD OF DELETE ON app_defined_privilege_view
+BEGIN
+    DELETE FROM app_defined_privilege
+    WHERE app_id=(SELECT app_id FROM app WHERE name=OLD.app_name) AND uid=OLD.uid;
 END;
 
 COMMIT TRANSACTION;
