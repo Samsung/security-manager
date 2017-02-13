@@ -50,6 +50,7 @@ SET(SM_TESTS_SOURCES
     ${SM_TEST_SRC}/test_privilege_db_app_remove.cpp
     ${SM_TEST_SRC}/test_privilege_db_privilege.cpp
     ${SM_TEST_SRC}/test_privilege_db_sharing.cpp
+    ${SM_TEST_SRC}/test_privilege_db_app_defined_privileges.cpp
     ${SM_TEST_SRC}/test_smack-labels.cpp
     ${SM_TEST_SRC}/test_smack-rules.cpp
     ${DPL_PATH}/core/src/assert.cpp
