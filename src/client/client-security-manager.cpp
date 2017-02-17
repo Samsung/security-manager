@@ -193,12 +193,14 @@ int security_manager_app_inst_req_add_privilege(app_inst_req *p_req, const char 
 SECURITY_MANAGER_API
 int security_manager_app_inst_req_add_app_defined_privilege(
         app_inst_req *p_req,
-        const char *app_defined_privilege)
+        const char *app_defined_privilege,
+        const app_defined_privilege_type type)
 {
-    if (!p_req || !app_defined_privilege)
+    if (!p_req || !app_defined_privilege ||
+        type < SM_APP_DEFINED_PRIVILEGE_TYPE_UNTRUSTED || type > SM_APP_DEFINED_PRIVILEGE_TYPE_LICENSED)
         return SECURITY_MANAGER_ERROR_INPUT_PARAM;
 
-    p_req->appDefinedPrivileges.push_back(app_defined_privilege);
+    p_req->appDefinedPrivileges.push_back(std::make_pair(app_defined_privilege, static_cast<int>(type)));
 
     return SECURITY_MANAGER_SUCCESS;
 }

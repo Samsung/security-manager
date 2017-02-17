@@ -85,11 +85,13 @@ int security_manager_app_inst_req_add_privilege(app_inst_req *p_req, const char 
  *
  * \param[in] p_req                 Pointer handling app_inst_req structure
  * \param[in] app_defined_privilege Privilege defined by application
+ * \param[in] type                  Privilege type
  * \return API return code or error code
  */
 int security_manager_app_inst_req_add_app_defined_privilege(
         app_inst_req *p_req,
-        const char *app_defined_privilege);
+        const char *app_defined_privilege,
+        const app_defined_privilege_type type);
 
 /**
  * This function is used to add application path to app_inst_req structure,

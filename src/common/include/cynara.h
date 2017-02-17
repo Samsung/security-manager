@@ -137,7 +137,7 @@ public:
      */
     void UpdateAppPolicy(const std::string &label, bool global, uid_t uid,
         const std::vector<std::string> &privileges,
-        const std::vector<std::string> &appDefinedPrivileges);
+        const std::vector<std::pair<std::string, int>> &appDefinedPrivileges);
 
     /**
      * Fetch Cynara policies for the application and the user.

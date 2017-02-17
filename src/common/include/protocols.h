@@ -37,7 +37,7 @@ struct app_inst_req {
     std::string appName;
     std::string pkgName;
     std::vector<std::string> privileges;
-    std::vector<std::string> appDefinedPrivileges;
+    std::vector<std::pair<std::string, int>> appDefinedPrivileges;
     pkg_paths pkgPaths;
     uid_t uid;
     std::string tizenVersion;

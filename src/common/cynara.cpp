@@ -327,35 +327,12 @@ void CynaraAdmin::SetPolicies(const std::vector<CynaraAdminPolicy> &policies)
         "Error while updating Cynara policy.");
 }
 
-enum class AppDefinedPrivilegeType
-{
-    Licensed,
-    Untrusted,
-};
-
-typedef std::map<AppDefinedPrivilegeType, const std::string > PrivilegePrefixMap;
-
-PrivilegePrefixMap privilegePrefixes =
-{
-    { AppDefinedPrivilegeType::Licensed, std::string("http://tizen.org/licensedPrivilege/")},
-    { AppDefinedPrivilegeType::Untrusted, std::string("http://tizen.org/applicationDefinedPrivilege/")},
-};
-
-AppDefinedPrivilegeType clasify(const std::string &privilege)
-{
-    for (auto &p : privilegePrefixes) {
-       if (!privilege.compare(0, p.second.size(), p.second))
-           return p.first;
-    }
-    ThrowMsg(CynaraException::InvalidParam, "Not valid app defined privilege name");
-}
-
 void CynaraAdmin::UpdateAppPolicy(
     const std::string &label,
     bool global,
     uid_t uid,
     const std::vector<std::string> &privileges,
-    const std::vector<std::string> &appDefinedPrivileges)
+    const std::vector<std::pair<std::string, int>> &appDefinedPrivileges)
 {
     std::vector<CynaraAdminPolicy> policies;
 
@@ -411,34 +388,33 @@ void CynaraAdmin::UpdateAppPolicy(
     }
 
     // 3rd, performing operation on APPDEFINED bucket
-    // validation and split
-    std::vector<std::string> untrustedPrivileges;
-    std::vector<std::string> licensedPrivileges;
+    if (!appDefinedPrivileges.empty()) {
 
-    for(auto &p : appDefinedPrivileges) {
-        switch (clasify(p)) {
-            case AppDefinedPrivilegeType::Licensed:
-                licensedPrivileges.push_back(p);
-                break;
-            case AppDefinedPrivilegeType::Untrusted:
-                untrustedPrivileges.push_back(p);
-                break;
+        std::vector<std::string> untrustedPrivileges;
+        std::vector<std::string> licensedPrivileges;
+
+        for (const std::pair<std::string, int> &p : appDefinedPrivileges) {
+            switch (p.second) {
+                case SM_APP_DEFINED_PRIVILEGE_TYPE_UNTRUSTED:
+                    untrustedPrivileges.push_back(p.first);
+                    break;
+                case SM_APP_DEFINED_PRIVILEGE_TYPE_LICENSED:
+                    licensedPrivileges.push_back(p.first);
+                    break;
+            }
         }
-    }
 
-    std::string userId = global ? CYNARA_ADMIN_WILDCARD : std::to_string(uid);
-    if (!untrustedPrivileges.empty())
-    {
-        CalculatePolicies(CYNARA_ADMIN_WILDCARD, userId, untrustedPrivileges,
-                             Buckets.at(Bucket::APPDEFINED),
-                             static_cast<int>(CynaraAdminPolicy::Operation::Allow), policies);
-    }
+        std::string userId = global ? std::string(CYNARA_ADMIN_WILDCARD) : std::to_string(uid);
 
-    if (!licensedPrivileges.empty())
-    {
-        CalculatePolicies(CYNARA_ADMIN_WILDCARD, userId, licensedPrivileges,
-                             Buckets.at(Bucket::APPDEFINED),
-                             static_cast<int>(LicenseManager::Config::LM_ASK), policies);
+        if (!untrustedPrivileges.empty())
+            CalculatePolicies(CYNARA_ADMIN_WILDCARD, userId, untrustedPrivileges,
+                              Buckets.at(Bucket::APPDEFINED),
+                              static_cast<int>(CynaraAdminPolicy::Operation::Allow), policies);
+
+        if (!licensedPrivileges.empty())
+            CalculatePolicies(CYNARA_ADMIN_WILDCARD, userId, licensedPrivileges,
+                              Buckets.at(Bucket::APPDEFINED),
+                              static_cast<int>(LicenseManager::Config::LM_ASK), policies);
     }
 
     SetPolicies(policies);

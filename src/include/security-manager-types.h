@@ -95,6 +95,13 @@ enum security_manager_user_type {
 };
 typedef enum security_manager_user_type security_manager_user_type;
 
+/*! \brief app defined privileges types */
+enum app_defined_privilege_type {
+    SM_APP_DEFINED_PRIVILEGE_TYPE_UNTRUSTED = 0,
+    SM_APP_DEFINED_PRIVILEGE_TYPE_LICENSED,
+};
+typedef enum app_defined_privilege_type app_defined_privilege_type;
+
 /*! \brief data structure responsible for handling informations
  * required to install / uninstall application */
 struct app_inst_req;
