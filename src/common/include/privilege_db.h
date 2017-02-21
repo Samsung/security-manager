@@ -553,6 +553,18 @@ public:
     void AddAppDefinedPrivilege(const std::string &appName, uid_t uid, const Privilege &privilege);
 
     /**
+     * Add vector of privileges defined by application
+     *
+     * @param[in] appName - application identifier
+     * @param[in] uid - user identifier
+     * @param[in] privileges - list of privileges
+     *
+     * @exception PrivilegeDb::Exception::InternalError on internal error
+     * @exception PrivilegeDb::Exception::ConstraintError on constraint violation
+     */
+    void AddAppDefinedPrivileges(const std::string &appName, uid_t uid, const PrivilegesVector &privileges);
+
+    /**
      * Remove privileges defined by application
      *
      * @param[in] appName - application identifier

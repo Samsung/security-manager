@@ -133,11 +133,13 @@ public:
      * @param global true if it's a global or preloaded installation
      * @param uid user identifier
      * @param privileges currently enabled privileges
-     * @param appDefinedPrivileges privileges defined by application
+     * @param oldAppDefinedPrivileges old privileges defined by application
+     * @param newAppDefinedPrivileges new privileges defined by application
      */
     void UpdateAppPolicy(const std::string &label, bool global, uid_t uid,
         const std::vector<std::string> &privileges,
-        const std::vector<std::pair<std::string, int>> &appDefinedPrivileges);
+        const std::vector<std::pair<std::string, int>> &oldAppDefinedPrivileges,
+        const std::vector<std::pair<std::string, int>> &newAppDefinedPrivileges);
 
     /**
      * Fetch Cynara policies for the application and the user.
@@ -309,18 +311,20 @@ private:
     void FetchCynaraPolicyDescriptions(bool forceRefresh = false);
 
     /**
-     * Calculate actual Cynara policy based on appilcation data & previous policy
+     * Calculate actual Cynara policy based on application data & previous policy
      *
      * @param label application identifier
      * @param user user for which we are calculating the policy
-     * @param privileges new privielges for which policy is being calulated
+     * @param privileges new privileges for which policy is being calculated
      * @param bucket bucket to which the policy will be set
      * @param policyToSet policy effect to be set
+     * @param oldPolicies old policy (input/output parameter)
      * @param policies current policy (input/output parameter)
      */
     void CalculatePolicies(const std::string &label, const std::string &user,
                            const std::vector<std::string> &privileges,
                            const std::string &bucket, int policyToSet,
+                           std::vector<CynaraAdminPolicy> &oldPolicies,
                            std::vector<CynaraAdminPolicy> &policies);
 
     struct cynara_admin *m_CynaraAdmin;

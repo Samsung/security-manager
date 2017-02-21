@@ -332,8 +332,10 @@ void CynaraAdmin::UpdateAppPolicy(
     bool global,
     uid_t uid,
     const std::vector<std::string> &privileges,
-    const std::vector<std::pair<std::string, int>> &appDefinedPrivileges)
+    const std::vector<std::pair<std::string, int>> &oldAppDefinedPrivileges,
+    const std::vector<std::pair<std::string, int>> &newAppDefinedPrivileges)
 {
+    std::vector<CynaraAdminPolicy> oldPolicies;
     std::vector<CynaraAdminPolicy> policies;
 
     std::string cynaraUser;
@@ -343,9 +345,10 @@ void CynaraAdmin::UpdateAppPolicy(
         cynaraUser = std::to_string(static_cast<unsigned int>(uid));
 
     // 1st, performing operation on MANIFESTS bucket
+    ListPolicies(Buckets.at(Bucket::MANIFESTS), label, cynaraUser, CYNARA_ADMIN_ANY, oldPolicies);
     CalculatePolicies(label, cynaraUser, privileges, Buckets.at(Bucket::MANIFESTS),
-        static_cast<int>(CynaraAdminPolicy::Operation::Allow),
-        policies);
+        static_cast<int>(CynaraAdminPolicy::Operation::Allow), oldPolicies, policies);
+    oldPolicies.clear();
 
     bool askUserEnabled = false;
     int askUserPolicy = static_cast<int>(CynaraAdminPolicy::Operation::Allow);
@@ -379,43 +382,56 @@ void CynaraAdmin::UpdateAppPolicy(
             if (priv.hasAttribute(PrivilegeInfo::PrivilegeAttr::BLACKLIST))
                 blacklistPrivileges.push_back(p);
         }
+        ListPolicies(Buckets.at(Bucket::PRIVACY_MANAGER), label, std::to_string(id), CYNARA_ADMIN_ANY, oldPolicies);
         CalculatePolicies(label, std::to_string(id), privacyPrivileges,
                      Buckets.at(Bucket::PRIVACY_MANAGER),
-                     askUserPolicy, policies);
+                     askUserPolicy, oldPolicies, policies);
+        oldPolicies.clear();
+
+        ListPolicies(Buckets.at(Bucket::ADMIN), label, std::to_string(id), CYNARA_ADMIN_ANY, oldPolicies);
         CalculatePolicies(label, std::to_string(id), blacklistPrivileges,
                      Buckets.at(Bucket::ADMIN),
-                     static_cast<int>(CynaraAdminPolicy::Operation::Deny), policies);
+                     static_cast<int>(CynaraAdminPolicy::Operation::Deny), oldPolicies, policies);
+        oldPolicies.clear();
     }
 
     // 3rd, performing operation on APPDEFINED bucket
-    if (!appDefinedPrivileges.empty()) {
+    std::vector<std::string> untrustedPrivileges;
+    std::vector<std::string> licensedPrivileges;
+    std::vector<CynaraAdminPolicy> oldUntrustedPolicies;
+    std::vector<CynaraAdminPolicy> oldLicensedPolicies;
 
-        std::vector<std::string> untrustedPrivileges;
-        std::vector<std::string> licensedPrivileges;
-
-        for (const std::pair<std::string, int> &p : appDefinedPrivileges) {
-            switch (p.second) {
-                case SM_APP_DEFINED_PRIVILEGE_TYPE_UNTRUSTED:
-                    untrustedPrivileges.push_back(p.first);
-                    break;
-                case SM_APP_DEFINED_PRIVILEGE_TYPE_LICENSED:
-                    licensedPrivileges.push_back(p.first);
-                    break;
-            }
+    for (const std::pair<std::string, int> &p : oldAppDefinedPrivileges) {
+        switch (p.second) {
+            case SM_APP_DEFINED_PRIVILEGE_TYPE_UNTRUSTED:
+                ListPolicies(Buckets.at(Bucket::APPDEFINED), CYNARA_ADMIN_WILDCARD, cynaraUser,
+                             p.first, oldUntrustedPolicies);
+                break;
+            case SM_APP_DEFINED_PRIVILEGE_TYPE_LICENSED:
+                ListPolicies(Buckets.at(Bucket::APPDEFINED), CYNARA_ADMIN_WILDCARD, cynaraUser,
+                             p.first, oldLicensedPolicies);
+                break;
         }
-
-        std::string userId = global ? std::string(CYNARA_ADMIN_WILDCARD) : std::to_string(uid);
-
-        if (!untrustedPrivileges.empty())
-            CalculatePolicies(CYNARA_ADMIN_WILDCARD, userId, untrustedPrivileges,
-                              Buckets.at(Bucket::APPDEFINED),
-                              static_cast<int>(CynaraAdminPolicy::Operation::Allow), policies);
-
-        if (!licensedPrivileges.empty())
-            CalculatePolicies(CYNARA_ADMIN_WILDCARD, userId, licensedPrivileges,
-                              Buckets.at(Bucket::APPDEFINED),
-                              static_cast<int>(LicenseManager::Config::LM_ASK), policies);
     }
+
+    for (const std::pair<std::string, int> &p : newAppDefinedPrivileges) {
+        switch (p.second) {
+            case SM_APP_DEFINED_PRIVILEGE_TYPE_UNTRUSTED:
+                untrustedPrivileges.push_back(p.first);
+                break;
+            case SM_APP_DEFINED_PRIVILEGE_TYPE_LICENSED:
+                licensedPrivileges.push_back(p.first);
+                break;
+        }
+    }
+
+    CalculatePolicies(CYNARA_ADMIN_WILDCARD, cynaraUser, untrustedPrivileges,
+                      Buckets.at(Bucket::APPDEFINED), static_cast<int>(CynaraAdminPolicy::Operation::Allow),
+                      oldUntrustedPolicies, policies);
+
+    CalculatePolicies(CYNARA_ADMIN_WILDCARD, cynaraUser, licensedPrivileges,
+                      Buckets.at(Bucket::APPDEFINED), static_cast<int>(LicenseManager::Config::LM_ASK),
+                      oldLicensedPolicies, policies);
 
     SetPolicies(policies);
 }
@@ -658,12 +674,12 @@ void CynaraAdmin::FetchCynaraPolicyDescriptions(bool forceRefresh)
 void CynaraAdmin::CalculatePolicies(const std::string &label, const std::string &user,
                            const std::vector<std::string> &privileges,
                            const std::string &bucket, int policyToSet,
+                           std::vector<CynaraAdminPolicy> &oldPolicies,
                            std::vector<CynaraAdminPolicy> &policies)
 {
-    std::vector<CynaraAdminPolicy> oldPolicies;
     std::unordered_set<std::string> privilegesSet(privileges.begin(),
                                                   privileges.end());
-    ListPolicies(bucket, label, user, CYNARA_ADMIN_ANY, oldPolicies);
+
     // Compare previous policies with set of new requested privileges
     for (auto &policy : oldPolicies) {
         if (privilegesSet.erase(policy.privilege)) {

@@ -603,6 +603,12 @@ void PrivilegeDb::AddAppDefinedPrivilege(const std::string &appName, uid_t uid, 
      });
 }
 
+void PrivilegeDb::AddAppDefinedPrivileges(const std::string &appName, uid_t uid, const PrivilegesVector &privileges)
+{
+    for (const auto &privilege : privileges)
+        AddAppDefinedPrivilege(appName, uid, privilege);
+}
+
 void PrivilegeDb::RemoveAppDefinedPrivileges(const std::string &appName, uid_t uid)
 {
     try_catch<void>([&] {

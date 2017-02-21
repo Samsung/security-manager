@@ -518,15 +518,21 @@ int ServiceImpl::appInstall(const Credentials &creds, app_inst_req &&req)
         ScopedTransaction trans(m_privilegeDb);
 
         m_privilegeDb.AddApplication(req.appName, req.pkgName, req.uid,
-                                                  req.tizenVersion, req.authorName, req.isHybrid);
+                                     req.tizenVersion, req.authorName, req.isHybrid);
         /* Get all application ids in the package to generate rules withing the package */
         getPkgLabels(req.pkgName, pkgLabels);
         m_privilegeDb.GetPkgAuthorId(req.pkgName, authorId);
 
+        PrivilegesVector oldAppDefinedPrivileges;
+        m_privilegeDb.GetAppDefinedPrivileges(req.appName, req.uid, oldAppDefinedPrivileges);
+
         bool global = req.installationType == SM_APP_INSTALL_GLOBAL ||
                       req.installationType == SM_APP_INSTALL_PRELOADED;
         m_cynaraAdmin.UpdateAppPolicy(appLabel, global, req.uid, req.privileges,
-            req.appDefinedPrivileges);
+                                      oldAppDefinedPrivileges, req.appDefinedPrivileges);
+
+        m_privilegeDb.RemoveAppDefinedPrivileges(req.appName, req.uid);
+        m_privilegeDb.AddAppDefinedPrivileges(req.appName, req.uid, req.appDefinedPrivileges);
 
         if (hasSharedRO)
             m_privilegeDb.SetSharedROPackage(req.pkgName);
@@ -688,6 +694,9 @@ int ServiceImpl::appUninstall(const Credentials &creds, app_inst_req &&req)
                 }
         }
 
+        PrivilegesVector oldAppDefinedPrivileges;
+        m_privilegeDb.GetAppDefinedPrivileges(req.appName, req.uid, oldAppDefinedPrivileges);
+
         m_privilegeDb.RemoveApplication(req.appName, req.uid, removeApp, removePkg, removeAuthor);
 
         m_privilegeDb.GetPackagesInfo(pkgsInfo);
@@ -696,7 +705,7 @@ int ServiceImpl::appUninstall(const Credentials &creds, app_inst_req &&req)
         bool global = req.installationType == SM_APP_INSTALL_GLOBAL ||
                       req.installationType == SM_APP_INSTALL_PRELOADED;
         m_cynaraAdmin.UpdateAppPolicy(processLabel, global, req.uid, std::vector<std::string>(),
-            std::vector<std::pair<std::string, int>>());
+                                      oldAppDefinedPrivileges, std::vector<std::pair<std::string, int>>());
         trans.commit();
 
         LogDebug("Application uninstallation commited to database");
