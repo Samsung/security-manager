@@ -69,20 +69,20 @@ bool fileExists(const std::string &path) {
 
 class ScopedTransaction {
 public:
-    ScopedTransaction(PrivilegeDb &priviligeDb) : m_isCommited(false), m_priviligeDb(priviligeDb) {
-        m_priviligeDb.BeginTransaction();
+    ScopedTransaction(PrivilegeDb &privilegeDb) : m_isCommited(false), m_privilegeDb(privilegeDb) {
+        m_privilegeDb.BeginTransaction();
     }
     ScopedTransaction(const ScopedTransaction &other) = delete;
     ScopedTransaction& operation(const ScopedTransaction &other) = delete;
 
     void commit() {
-        m_priviligeDb.CommitTransaction();
+        m_privilegeDb.CommitTransaction();
         m_isCommited = true;
     }
     ~ScopedTransaction() {
         if (!m_isCommited) {
             try {
-                m_priviligeDb.RollbackTransaction();
+                m_privilegeDb.RollbackTransaction();
             } catch (const SecurityManager::Exception &e) {
                 LogError("Transaction rollback failed: " << e.GetMessage());
             } catch(...) {
@@ -92,7 +92,7 @@ public:
     }
 private:
     bool m_isCommited;
-    PrivilegeDb &m_priviligeDb;
+    PrivilegeDb &m_privilegeDb;
 };
 
 } // end of anonymous namespace
@@ -201,14 +201,14 @@ int ServiceImpl::validatePolicy(const Credentials &creds, policy_entry &policyEn
 
 std::string ServiceImpl::getAppProcessLabel(const std::string &appName, const std::string &pkgName)
 {
-    bool isPkgHybrid = m_priviligeDb.IsPackageHybrid(pkgName);
+    bool isPkgHybrid = m_privilegeDb.IsPackageHybrid(pkgName);
     return SmackLabels::generateProcessLabel(appName, pkgName, isPkgHybrid);
 }
 
 std::string ServiceImpl::getAppProcessLabel(const std::string &appName)
 {
     std::string pkgName;
-    m_priviligeDb.GetAppPkgName(appName, pkgName);
+    m_privilegeDb.GetAppPkgName(appName, pkgName);
     if (pkgName.empty()) {
         LogWarning("Cannot create label for unknown application: " << appName);
         return "";
@@ -219,7 +219,7 @@ std::string ServiceImpl::getAppProcessLabel(const std::string &appName)
 bool ServiceImpl::sharingExists(const std::string &targetAppName, const std::string &path)
 {
     int targetPathCount;
-    m_priviligeDb.GetTargetPathSharingCount(targetAppName, path, targetPathCount);
+    m_privilegeDb.GetTargetPathSharingCount(targetAppName, path, targetPathCount);
     return targetPathCount != 0;
 }
 
@@ -228,7 +228,7 @@ void ServiceImpl::getPkgsProcessLabels(const std::vector<PkgInfo> &pkgsInfo, Sma
     pkgsLabels.resize(pkgsInfo.size());
     for (size_t i = 0; i < pkgsInfo.size(); ++i) {
         pkgsLabels[i].first = pkgsInfo[i].name;
-        m_priviligeDb.GetPkgApps(pkgsLabels[i].first, pkgsLabels[i].second);
+        m_privilegeDb.GetPkgApps(pkgsLabels[i].first, pkgsLabels[i].second);
         for (auto &appName : pkgsLabels[i].second) {
             std::string label = SmackLabels::generateProcessLabel(appName, pkgsLabels[i].first,
                                                                   pkgsInfo[i].hybrid);
@@ -393,12 +393,12 @@ int ServiceImpl::labelPaths(const pkg_paths &paths,
         std::string pkgBasePath;
         int authorId;
 
-        if (!m_priviligeDb.PkgNameExists(pkgName)) {
+        if (!m_privilegeDb.PkgNameExists(pkgName)) {
             LogError("No such package: " << pkgName);
             return SECURITY_MANAGER_ERROR_INPUT_PARAM;
         }
 
-        m_priviligeDb.GetPkgAuthorId(pkgName, authorId);
+        m_privilegeDb.GetPkgAuthorId(pkgName, authorId);
 
         if (!getUserPkgDir(uid, pkgName, installationType, pkgBasePath))
             return SECURITY_MANAGER_ERROR_SERVER_ERROR;
@@ -458,10 +458,10 @@ bool ServiceImpl::isSharedRO(const pkg_paths& paths)
 
 void ServiceImpl::getPkgLabels(const std::string &pkgName, SmackRules::Labels &pkgsLabels)
 {
-    bool isPkgHybrid = m_priviligeDb.IsPackageHybrid(pkgName);
+    bool isPkgHybrid = m_privilegeDb.IsPackageHybrid(pkgName);
     if (isPkgHybrid) {
         std::vector<std::string> apps;
-        m_priviligeDb.GetPkgApps(pkgName, apps);
+        m_privilegeDb.GetPkgApps(pkgName, apps);
         for (auto &app : apps) {
             auto appLabel = SmackLabels::generateProcessLabel(app, pkgName, isPkgHybrid);
             app = appLabel;
@@ -475,7 +475,7 @@ void ServiceImpl::getPkgLabels(const std::string &pkgName, SmackRules::Labels &p
 void ServiceImpl::updatePermissibleSet(uid_t uid, int type)
 {
     std::vector<std::string> userPkgs;
-    m_priviligeDb.GetUserPkgs(uid, userPkgs);
+    m_privilegeDb.GetUserPkgs(uid, userPkgs);
     std::vector<std::string> labelsForUser;
     for (const auto &pkg : userPkgs) {
         std::vector<std::string> pkgLabels;
@@ -515,13 +515,13 @@ int ServiceImpl::appInstall(const Credentials &creds, app_inst_req &&req)
         LogDebug("Generated install parameters: app label: " << appLabel <<
                  ", pkg label: " << pkgLabel);
 
-        ScopedTransaction trans(m_priviligeDb);
+        ScopedTransaction trans(m_privilegeDb);
 
-        m_priviligeDb.AddApplication(req.appName, req.pkgName, req.uid,
+        m_privilegeDb.AddApplication(req.appName, req.pkgName, req.uid,
                                                   req.tizenVersion, req.authorName, req.isHybrid);
         /* Get all application ids in the package to generate rules withing the package */
         getPkgLabels(req.pkgName, pkgLabels);
-        m_priviligeDb.GetPkgAuthorId(req.pkgName, authorId);
+        m_privilegeDb.GetPkgAuthorId(req.pkgName, authorId);
 
         bool global = req.installationType == SM_APP_INSTALL_GLOBAL ||
                       req.installationType == SM_APP_INSTALL_PRELOADED;
@@ -529,9 +529,9 @@ int ServiceImpl::appInstall(const Credentials &creds, app_inst_req &&req)
             req.appDefinedPrivileges);
 
         if (hasSharedRO)
-            m_priviligeDb.SetSharedROPackage(req.pkgName);
+            m_privilegeDb.SetSharedROPackage(req.pkgName);
 
-        m_priviligeDb.GetPackagesInfo(pkgsInfo);
+        m_privilegeDb.GetPackagesInfo(pkgsInfo);
         getPkgsProcessLabels(pkgsInfo, pkgsProcessLabels);
 
         // WTF? Why this commit is here? Shouldn't it be at the end of this function?
@@ -623,9 +623,9 @@ int ServiceImpl::appUninstall(const Credentials &creds, app_inst_req &&req)
     }
 
     try {
-        ScopedTransaction trans(m_priviligeDb);
+        ScopedTransaction trans(m_privilegeDb);
         std::string pkgName;
-        m_priviligeDb.GetAppPkgName(req.appName, pkgName);
+        m_privilegeDb.GetAppPkgName(req.appName, pkgName);
         if (pkgName.empty()) {
             LogWarning("Application " << req.appName << " not found in database "
                        "while uninstalling");
@@ -639,7 +639,7 @@ int ServiceImpl::appUninstall(const Credentials &creds, app_inst_req &&req)
             return SECURITY_MANAGER_ERROR_NO_SUCH_OBJECT;
         }
 
-        isPkgHybrid = m_priviligeDb.IsPackageHybrid(req.pkgName);
+        isPkgHybrid = m_privilegeDb.IsPackageHybrid(req.pkgName);
         processLabel = getAppProcessLabel(req.appName, req.pkgName);
         LogDebug("Generated uninstall parameters: pkgName=" << req.pkgName
             << " Smack label=" << processLabel);
@@ -647,18 +647,18 @@ int ServiceImpl::appUninstall(const Credentials &creds, app_inst_req &&req)
         /* Before we remove the app from the database, let's fetch all apps in the package
             that this app belongs to, this will allow us to remove all rules withing the
             package that the app appears in */
-        m_priviligeDb.GetPkgAuthorId(req.pkgName, authorId);
+        m_privilegeDb.GetPkgAuthorId(req.pkgName, authorId);
         getPkgLabels(req.pkgName, pkgLabels);
-        m_priviligeDb.GetAppVersion(req.appName, req.tizenVersion);
-        m_priviligeDb.GetPrivateSharingForOwner(req.appName, asOwnerSharing);
-        m_priviligeDb.GetPrivateSharingForTarget(req.appName, asTargetSharing);
+        m_privilegeDb.GetAppVersion(req.appName, req.tizenVersion);
+        m_privilegeDb.GetPrivateSharingForOwner(req.appName, asOwnerSharing);
+        m_privilegeDb.GetPrivateSharingForTarget(req.appName, asTargetSharing);
 
         for (const auto &targetPathsInfo : asOwnerSharing) {
             const auto &targetAppName = targetPathsInfo.first;
             const auto &paths = targetPathsInfo.second;
             // Squash sharing - change counter to 1, so dropPrivatePathSharing will completely clean it
             for (const auto &path : paths) {
-                m_priviligeDb.SquashSharing(targetAppName, path);
+                m_privilegeDb.SquashSharing(targetAppName, path);
                 auto targetAppLabel = getAppProcessLabel(targetAppName);
                 int ret = dropOnePrivateSharing(req.appName, req.pkgName, pkgLabels,
                                                 targetAppName, targetAppLabel, path);
@@ -675,10 +675,10 @@ int ServiceImpl::appUninstall(const Credentials &creds, app_inst_req &&req)
             // Squash sharing - change counter to 1, so dropPrivatePathSharing will completely clean it
             std::string ownerPkgName;
             SmackRules::Labels ownerPkgLabels;
-            m_priviligeDb.GetAppPkgName(ownerAppName, ownerPkgName);
+            m_privilegeDb.GetAppPkgName(ownerAppName, ownerPkgName);
             getPkgLabels(ownerPkgName, ownerPkgLabels);
             for (const auto &path : paths) {
-                m_priviligeDb.SquashSharing(req.appName, path);
+                m_privilegeDb.SquashSharing(req.appName, path);
                     int ret = dropOnePrivateSharing(ownerAppName, ownerPkgName, ownerPkgLabels,
                                                     req.appName, processLabel, path);
                     if (ret != SECURITY_MANAGER_SUCCESS) {
@@ -688,9 +688,9 @@ int ServiceImpl::appUninstall(const Credentials &creds, app_inst_req &&req)
                 }
         }
 
-        m_priviligeDb.RemoveApplication(req.appName, req.uid, removeApp, removePkg, removeAuthor);
+        m_privilegeDb.RemoveApplication(req.appName, req.uid, removeApp, removePkg, removeAuthor);
 
-        m_priviligeDb.GetPackagesInfo(pkgsInfo);
+        m_privilegeDb.GetPackagesInfo(pkgsInfo);
         getPkgsProcessLabels(pkgsInfo, pkgsProcessLabels);
 
         bool global = req.installationType == SM_APP_INSTALL_GLOBAL ||
@@ -770,7 +770,7 @@ int ServiceImpl::getPkgName(const std::string &appName, std::string &pkgName)
     LogDebug("appName: " << appName);
 
     try {
-        m_priviligeDb.GetAppPkgName(appName, pkgName);
+        m_privilegeDb.GetAppPkgName(appName, pkgName);
         if (pkgName.empty()) {
             LogWarning("Application " << appName << " not found in database");
             return SECURITY_MANAGER_ERROR_NO_SUCH_OBJECT;
@@ -811,7 +811,7 @@ int ServiceImpl::getAppGroups(const Credentials &creds, const std::string &appNa
         std::string pidStr = std::to_string(creds.pid);
         for (const auto &privilege : privileges) {
             std::vector<std::string> privGroups;
-            m_priviligeDb.GetPrivilegeGroups(privilege, privGroups);
+            m_privilegeDb.GetPrivilegeGroups(privilege, privGroups);
             if (!privGroups.empty()) {
                 LogDebug("Considering privilege " << privilege << " with " <<
                     privGroups.size() << " groups assigned");
@@ -885,7 +885,7 @@ int ServiceImpl::userDelete(const Credentials &creds, uid_t uidDeleted)
     /*Uninstall all user apps*/
     std::vector<std::string> userApps;
     try {
-        m_priviligeDb.GetUserApps(uidDeleted, userApps);
+        m_privilegeDb.GetUserApps(uidDeleted, userApps);
         PermissibleSet::removeUserPermissibleFile(uidDeleted);
     } catch (const PrivilegeDb::Exception::Base &e) {
         LogError("Error while getting user apps from database: " << e.DumpToString());
@@ -1033,7 +1033,7 @@ int ServiceImpl::getConfiguredPolicy(const Credentials &creds, bool forAdmin,
                     if (filter.appName == SECURITY_MANAGER_ANY) {
                         // If user requested policy for all apps, we have to demangle pkgName to
                         // set of appNames in case of non-hybrid apps
-                        m_priviligeDb.GetPkgApps(pkgName, appNames);
+                        m_privilegeDb.GetPkgApps(pkgName, appNames);
                     } else {
                         // If user requested policy for specific appName, we have to copy
                         // appName from filter for non-hybrid apps
@@ -1137,7 +1137,7 @@ int ServiceImpl::getPolicy(const Credentials &creds, const policy_entry &filter,
                 LogDebug("Limitting Cynara query to app: " << filter.appName);
                 listOfApps.push_back(filter.appName);
             } else {
-                m_priviligeDb.GetUserApps(user, listOfApps);
+                m_privilegeDb.GetUserApps(user, listOfApps);
                 LogDebug("Found apps: " << listOfApps.size());
             };
 
@@ -1238,7 +1238,7 @@ int ServiceImpl::policyGetGroups(std::vector<std::string> &groups)
     int ret = SECURITY_MANAGER_SUCCESS;
 
     try {
-        m_priviligeDb.GetGroups(groups);
+        m_privilegeDb.GetGroups(groups);
     } catch (const PrivilegeDb::Exception::Base &e) {
         LogError("Error while getting groups from database: " << e.DumpToString());
         return SECURITY_MANAGER_ERROR_SERVER_ERROR;
@@ -1282,7 +1282,7 @@ int ServiceImpl::policyGroupsForUid(uid_t uid, std::vector<std::string> &groups)
         }
 
         std::vector<std::pair<std::string, std::string>> group2privVector;
-        m_priviligeDb.GetGroupsRelatedPrivileges(group2privVector);
+        m_privilegeDb.GetGroupsRelatedPrivileges(group2privVector);
 
         for (const auto &g2p : group2privVector) {
             m_cynaraAdmin.Check(CYNARA_ADMIN_ANY, uidStr, g2p.second,
@@ -1339,10 +1339,10 @@ int ServiceImpl::dropOnePrivateSharing(
     int errorRet;
     try {
         int targetPathCount, pathCount, ownerTargetCount;
-        m_priviligeDb.DropPrivateSharing(ownerAppName, targetAppName, path);
-        m_priviligeDb.GetTargetPathSharingCount(targetAppName, path, targetPathCount);
-        m_priviligeDb.GetPathSharingCount(path, pathCount);
-        m_priviligeDb.GetOwnerTargetSharingCount(ownerAppName, targetAppName, ownerTargetCount);
+        m_privilegeDb.DropPrivateSharing(ownerAppName, targetAppName, path);
+        m_privilegeDb.GetTargetPathSharingCount(targetAppName, path, targetPathCount);
+        m_privilegeDb.GetPathSharingCount(path, pathCount);
+        m_privilegeDb.GetOwnerTargetSharingCount(ownerAppName, targetAppName, ownerTargetCount);
         if (targetPathCount > 0) {
             return SECURITY_MANAGER_SUCCESS;
         }
@@ -1392,13 +1392,13 @@ int ServiceImpl::applyPrivatePathSharing(
             return SECURITY_MANAGER_ERROR_ACCESS_DENIED;
         }
 
-        m_priviligeDb.GetAppPkgName(ownerAppName, ownerPkgName);
+        m_privilegeDb.GetAppPkgName(ownerAppName, ownerPkgName);
         if (ownerPkgName.empty()) {
             LogError(ownerAppName << " is not an installed application");
             return SECURITY_MANAGER_ERROR_APP_UNKNOWN;
         }
 
-        m_priviligeDb.GetAppPkgName(targetAppName, targetPkgName);
+        m_privilegeDb.GetAppPkgName(targetAppName, targetPkgName);
         if (targetPkgName.empty()) {
             LogError(targetAppName << " is not an installed application");
             return SECURITY_MANAGER_ERROR_APP_UNKNOWN;
@@ -1427,14 +1427,14 @@ int ServiceImpl::applyPrivatePathSharing(
         targetAppLabel = getAppProcessLabel(targetAppName);
         getPkgLabels(ownerPkgName, pkgsLabels);
 
-        ScopedTransaction trans(m_priviligeDb);
+        ScopedTransaction trans(m_privilegeDb);
         for (const auto &path : paths) {
             int targetPathCount, pathCount, ownerTargetCount;
-            m_priviligeDb.GetTargetPathSharingCount(targetAppName, path, targetPathCount);
-            m_priviligeDb.GetPathSharingCount(path, pathCount);
-            m_priviligeDb.GetOwnerTargetSharingCount(ownerAppName, targetAppName, ownerTargetCount);
+            m_privilegeDb.GetTargetPathSharingCount(targetAppName, path, targetPathCount);
+            m_privilegeDb.GetPathSharingCount(path, pathCount);
+            m_privilegeDb.GetOwnerTargetSharingCount(ownerAppName, targetAppName, ownerTargetCount);
             std::string pathLabel = SmackLabels::generateSharedPrivateLabel(ownerPkgName, path);
-            m_priviligeDb.ApplyPrivateSharing(ownerAppName, targetAppName, path, pathLabel);
+            m_privilegeDb.ApplyPrivateSharing(ownerAppName, targetAppName, path, pathLabel);
             sharingAdded++;
             if (targetPathCount > 0) {
                 //Nothing to do, only counter needed incrementing
@@ -1488,14 +1488,14 @@ int ServiceImpl::dropPrivatePathSharing(
         }
 
         std::string ownerPkgName;
-        m_priviligeDb.GetAppPkgName(ownerAppName, ownerPkgName);
+        m_privilegeDb.GetAppPkgName(ownerAppName, ownerPkgName);
         if (ownerPkgName.empty()) {
             LogError(ownerAppName << " is not an installed application");
             return SECURITY_MANAGER_ERROR_APP_UNKNOWN;
         }
 
         std::string targetPkgName;
-        m_priviligeDb.GetAppPkgName(targetAppName, targetPkgName);
+        m_privilegeDb.GetAppPkgName(targetAppName, targetPkgName);
         if (targetPkgName.empty()) {
             LogError(targetAppName << " is not an installed application");
             return SECURITY_MANAGER_ERROR_APP_UNKNOWN;
@@ -1532,7 +1532,7 @@ int ServiceImpl::dropPrivatePathSharing(
         getPkgLabels(ownerPkgName, pkgLabels);
         auto targetAppLabel = getAppProcessLabel(targetAppName, targetPkgName);
 
-        ScopedTransaction trans(m_priviligeDb);
+        ScopedTransaction trans(m_privilegeDb);
         for (const auto &path : paths) {
             int ret = dropOnePrivateSharing(ownerAppName, ownerPkgName, pkgLabels,
                                             targetAppName, targetAppLabel, path);
@@ -1588,16 +1588,16 @@ int ServiceImpl::pathsRegister(const Credentials &creds, path_req req)
 
     try {
         if (isSharedRO(req.pkgPaths)) {
-            ScopedTransaction trans(m_priviligeDb);
+            ScopedTransaction trans(m_privilegeDb);
 
-            if (!m_priviligeDb.IsPackageSharedRO(req.pkgName)) {
+            if (!m_privilegeDb.IsPackageSharedRO(req.pkgName)) {
 
-                m_priviligeDb.SetSharedROPackage(req.pkgName);
+                m_privilegeDb.SetSharedROPackage(req.pkgName);
 
                 SmackRules::PkgsLabels pkgsLabels;
 
                 std::vector<PkgInfo> pkgsInfo;
-                m_priviligeDb.GetPackagesInfo(pkgsInfo);
+                m_privilegeDb.GetPackagesInfo(pkgsInfo);
                 getPkgsProcessLabels(pkgsInfo, pkgsLabels);
 
                 SmackRules::generateSharedRORules(pkgsLabels, pkgsInfo);

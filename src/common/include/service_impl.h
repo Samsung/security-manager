@@ -306,7 +306,7 @@ private:
     int validatePolicy(const Credentials &creds, policy_entry &policyEntry, CynaraAdminPolicy &cyap);
 
     Cynara m_cynara;
-    PrivilegeDb m_priviligeDb;
+    PrivilegeDb m_privilegeDb;
     CynaraAdmin m_cynaraAdmin;
 };
 
