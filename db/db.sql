@@ -219,7 +219,7 @@ SELECT
     type
 FROM app_defined_privilege
 LEFT JOIN app USING (app_id)
-LEFT JOIN user_app USING (uid);
+LEFT JOIN user_app USING (app_id, uid);
 
 DROP TRIGGER IF EXISTS app_defined_privilege_view_insert_trigger;
 CREATE TRIGGER app_defined_privilege_view_insert_trigger
