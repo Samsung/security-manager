@@ -55,10 +55,12 @@ namespace SecurityManager {
  * - PRIVACY_MANAGER - first bucket during search (which is actually default bucket
  *   with empty string as id). If user specifies his preference then required rule
  *   is created here.
- * - MAIN            - holds rules denied by manufacturer, redirects to MANIFESTS
+ * - MAIN            - holds rules denied by manufacturer, redirects to MANIFESTS_GLOBAL
  *   bucket and holds entries for each user pointing to User Type
  *   specific buckets
- * - MANIFESTS       - stores rules needed by installed apps (from package
+ * - MANIFESTS_GLOBAL   - stores rules needed by globally installed apps (from package
+ *   manifest), redirects to MANIFESTS_LOCAL bucket when app is installed locally
+ * - MANIFESTS_LOCAL    - stores rules needed by locally installed apps (from package
  *   manifest)
  * - USER_TYPE_ADMIN
  * - USER_TYPE_SYSTEM
@@ -78,22 +80,28 @@ namespace SecurityManager {
  *  |      <<allow>>         |
  *  |   PRIVACY_MANAGER      |
  *  |                        |
- *  |  * * *      Bucket:MAIN|                         |------------------|
- *  |------------------------|                         |      <<deny>>    |
- *             |                                    |->|     MANIFESTS    |
- *             -----------------                    |  |                  |
- *                             |                    |  |------------------|
- *                             V                    |
- *                     |------------------------|   |
- *                     |       <<deny>>         |---|
- *                     |         MAIN           |
- * |---------------|   |                        |     |-------------------|
- * |    <<deny>>   |<--| * * *  Bucket:MANIFESTS|---->|      <<deny>>     |
- * | USER_TYPE_SYST|   |------------------------|     |  USER_TYPE_NORMAL |
- * |               |        |       |      |          |                   |
- * |---------------|        |       |      |          |-------------------|
- *        |                 |       |      |                    |
- *        |                 V       |      V                    |
+ *  |  * * *  Bucket:MAIN    |                         |-------------------------------|
+ *  |------------------------|                         |           <<deny>>            |
+ *             |                                    |->|       MANIFESTS_GLOBAL        |
+ *             -----------------                    |  |                               |
+ *                             |                    |  | c u *  Bucket:MANIFESTS_LOCAL |
+ *                             |                    |  |-------------------------------|
+ *                             V                    |                   |
+ *             |--------------------------------|   |                   V
+ *             |            <<deny>>            |---|           |------------------|
+ *             |              MAIN              |               |     <<deny>>     |
+ *             |                                |               |  MANIFESTS_LOCAL |
+ *             | * * *  Bucket:MANIFESTS_GLOBAL |               |                  |
+ *        |----|                                |----------|    |------------------|
+ *        |    |--------------------------------|          |
+ *        V               |         |      |               V
+ * |---------------|      |         |      |          |-------------------|
+ * |    <<deny>>   |      |         |      |          |      <<deny>>     |
+ * | USER_TYPE_SYST|      |         |      |          |  USER_TYPE_NORMAL |
+ * |               |      |         |      |          |                   |
+ * |---------------|      |         |      |          |-------------------|
+ *        |               |         |      |                    |
+ *        |               V         |      V                    |
  *        |      |---------------|  |   |---------------|       |
  *        |      |    <<deny>>   |  |   |    <<deny>>   |       |
  *        |      |USER_TYPE_GUEST|  |   |USER_TYPE_ADMIN|       |
@@ -134,7 +142,8 @@ CynaraAdmin::BucketsMap CynaraAdmin::Buckets =
     { Bucket::USER_TYPE_GUEST, std::string("USER_TYPE_GUEST") },
     { Bucket::USER_TYPE_SYSTEM, std::string("USER_TYPE_SYSTEM")},
     { Bucket::ADMIN, std::string("ADMIN")},
-    { Bucket::MANIFESTS, std::string("MANIFESTS")},
+    { Bucket::MANIFESTS_GLOBAL, std::string("MANIFESTS_GLOBAL")},
+    { Bucket::MANIFESTS_LOCAL, std::string("MANIFESTS_LOCAL")},
     { Bucket::APPDEFINED, std::string("APPDEFINED")},
 };
 
@@ -333,21 +342,42 @@ void CynaraAdmin::UpdateAppPolicy(
     uid_t uid,
     const std::vector<std::string> &privileges,
     const std::vector<std::pair<std::string, int>> &oldAppDefinedPrivileges,
-    const std::vector<std::pair<std::string, int>> &newAppDefinedPrivileges)
+    const std::vector<std::pair<std::string, int>> &newAppDefinedPrivileges,
+    bool policyRemove)
 {
     std::vector<CynaraAdminPolicy> oldPolicies;
     std::vector<CynaraAdminPolicy> policies;
 
-    std::string cynaraUser;
-    if (global)
+    // 1st, performing operation on MANIFESTS_GLOBAL/MANIFESTS_LOCAL bucket
+    std::string cynaraUser, bucket;
+    if (global) {
         cynaraUser = CYNARA_ADMIN_WILDCARD;
-    else
+        bucket = Buckets.at(Bucket::MANIFESTS_GLOBAL);
+    } else {
         cynaraUser = std::to_string(static_cast<unsigned int>(uid));
+        bucket = Buckets.at(Bucket::MANIFESTS_LOCAL);
 
-    // 1st, performing operation on MANIFESTS bucket
-    ListPolicies(Buckets.at(Bucket::MANIFESTS), label, cynaraUser, CYNARA_ADMIN_ANY, oldPolicies);
-    CalculatePolicies(label, cynaraUser, privileges, Buckets.at(Bucket::MANIFESTS),
-        static_cast<int>(CynaraAdminPolicy::Operation::Allow), oldPolicies, policies);
+        // when app is installed locally add/remove redirection from MANIFESTS_GLOBAL to MANIFESTS_LOCAL
+        if (policyRemove) {
+            policies.push_back(CynaraAdminPolicy(
+                label,
+                cynaraUser,
+                "*",
+                static_cast<int>(CynaraAdminPolicy::Operation::Delete),
+                Buckets.at(Bucket::MANIFESTS_GLOBAL)));
+        } else {
+            policies.push_back(CynaraAdminPolicy(
+                label,
+                cynaraUser,
+                "*",
+                bucket,
+                Buckets.at(Bucket::MANIFESTS_GLOBAL)));
+        }
+    }
+
+    ListPolicies(bucket, label, cynaraUser, CYNARA_ADMIN_ANY, oldPolicies);
+    CalculatePolicies(label, cynaraUser, privileges, bucket,
+                      static_cast<int>(CynaraAdminPolicy::Operation::Allow), oldPolicies, policies);
     oldPolicies.clear();
 
     bool askUserEnabled = false;
@@ -440,9 +470,11 @@ void CynaraAdmin::GetAppPolicy(const std::string &label, const std::string &user
         std::vector<std::string> &privileges)
 {
     std::vector<CynaraAdminPolicy> policies;
-    ListPolicies(
-        CynaraAdmin::Buckets.at(Bucket::MANIFESTS),
-        label, user, CYNARA_ADMIN_ANY, policies);
+    std::string bucket = (user == CYNARA_ADMIN_WILDCARD) ?
+        CynaraAdmin::Buckets.at(Bucket::MANIFESTS_GLOBAL) :
+        CynaraAdmin::Buckets.at(Bucket::MANIFESTS_LOCAL);
+
+    ListPolicies(bucket, label, user, CYNARA_ADMIN_ANY, policies);
 
     for (auto &policy : policies) {
         std::string privilege = policy.privilege;
@@ -486,7 +518,7 @@ void CynaraAdmin::UserInit(uid_t uid, security_manager_user_type userType)
                                          Buckets.at(Bucket::MAIN)));
 
     std::vector<CynaraAdminPolicy> appPolicies;
-    ListPolicies(CynaraAdmin::Buckets.at(Bucket::MANIFESTS),
+    ListPolicies(CynaraAdmin::Buckets.at(Bucket::MANIFESTS_GLOBAL),
                  CYNARA_ADMIN_ANY, CYNARA_ADMIN_WILDCARD,
                  CYNARA_ADMIN_ANY, appPolicies);
 

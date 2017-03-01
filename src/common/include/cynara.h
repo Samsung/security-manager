@@ -50,7 +50,8 @@ enum class Bucket
     USER_TYPE_GUEST,
     USER_TYPE_SYSTEM,
     ADMIN,
-    MANIFESTS,
+    MANIFESTS_GLOBAL,
+    MANIFESTS_LOCAL,
     APPDEFINED
 };
 
@@ -135,11 +136,13 @@ public:
      * @param privileges currently enabled privileges
      * @param oldAppDefinedPrivileges old privileges defined by application
      * @param newAppDefinedPrivileges new privileges defined by application
+     * @param policyRemove true while application deinstallation
      */
     void UpdateAppPolicy(const std::string &label, bool global, uid_t uid,
         const std::vector<std::string> &privileges,
         const std::vector<std::pair<std::string, int>> &oldAppDefinedPrivileges,
-        const std::vector<std::pair<std::string, int>> &newAppDefinedPrivileges);
+        const std::vector<std::pair<std::string, int>> &newAppDefinedPrivileges,
+        bool policyRemove = false);
 
     /**
      * Fetch Cynara policies for the application and the user.

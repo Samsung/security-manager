@@ -17,7 +17,8 @@ PRIVACY_MANAGER DENY
 ADMIN NONE
 APPDEFINED NONE
 MAIN DENY
-MANIFESTS DENY
+MANIFESTS_GLOBAL DENY
+MANIFESTS_LOCAL DENY
 END
 
 # Link buckets together
@@ -28,7 +29,7 @@ do
     cyad --set-policy --client="*" --user="*" --privilege="*" --type=BUCKET \
         --bucket="$bucket_src" --metadata="$bucket_dst"
 done <<END
-MAIN MANIFESTS
+MAIN MANIFESTS_GLOBAL
 PRIVACY_MANAGER MAIN
 ADMIN APPDEFINED
 END
@@ -60,17 +61,17 @@ done
 # Non-application programs get access to all privileges
 for client in User System System::Privileged
 do
-    cyad --set-policy --bucket=MANIFESTS --client="$client" --user="*" --privilege="*" --type=ALLOW
+    cyad --set-policy --bucket=MANIFESTS_GLOBAL --client="$client" --user="*" --privilege="*" --type=ALLOW
 done
 
 # Root shell get access to all privileges
-cyad --set-policy --bucket=MANIFESTS --client="User::Shell" --user="0" --privilege="*" --type=ALLOW
+cyad --set-policy --bucket=MANIFESTS_GLOBAL --client="User::Shell" --user="0" --privilege="*" --type=ALLOW
 
 # Shell process get access to packagemanager.admin privilege to install applications
-cyad --set-policy --bucket=MANIFESTS --client="User::Shell" --user="*" --privilege="http://tizen.org/privilege/packagemanager.admin" --type=ALLOW
+cyad --set-policy --bucket=MANIFESTS_GLOBAL --client="User::Shell" --user="*" --privilege="http://tizen.org/privilege/packagemanager.admin" --type=ALLOW
 
 # Shell process get access to packagemanager.info privilege to debug applications
-cyad --set-policy --bucket=MANIFESTS --client="User::Shell" --user="*" --privilege="http://tizen.org/privilege/packagemanager.info" --type=ALLOW
+cyad --set-policy --bucket=MANIFESTS_GLOBAL --client="User::Shell" --user="*" --privilege="http://tizen.org/privilege/packagemanager.info" --type=ALLOW
 
 # Load privilege-group mappings
 (

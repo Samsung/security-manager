@@ -705,7 +705,7 @@ int ServiceImpl::appUninstall(const Credentials &creds, app_inst_req &&req)
         bool global = req.installationType == SM_APP_INSTALL_GLOBAL ||
                       req.installationType == SM_APP_INSTALL_PRELOADED;
         m_cynaraAdmin.UpdateAppPolicy(processLabel, global, req.uid, std::vector<std::string>(),
-                                      oldAppDefinedPrivileges, std::vector<std::pair<std::string, int>>());
+                                      oldAppDefinedPrivileges, std::vector<std::pair<std::string, int>>(), true);
         trans.commit();
 
         LogDebug("Application uninstallation commited to database");
