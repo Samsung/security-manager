@@ -125,10 +125,12 @@ mkdir -p %{buildroot}/%{_unitdir}/sockets.target.wants
 mkdir -p %{buildroot}/%{_unitdir}/sysinit.target.wants
 mkdir -p %{buildroot}/%{_unitdir}/basic.target.wants
 mkdir -p %{buildroot}/%{_unitdir}/dbus.service.wants
+mkdir -p %{buildroot}/%{_unitdir}/cynara.service.wants
 ln -s ../security-manager.socket %{buildroot}/%{_unitdir}/sockets.target.wants/security-manager.socket
 ln -s ../security-manager-cleanup.service %{buildroot}/%{_unitdir}/sysinit.target.wants/security-manager-cleanup.service
 ln -s ../security-manager-rules-loader.service %{buildroot}/%{_unitdir}/basic.target.wants/security-manager-rules-loader.service
 ln -s ../security-manager.service %{buildroot}/%{_unitdir}/dbus.service.wants/security-manager.service
+ln -s ../license-manager-agent.service %{buildroot}/%{_unitdir}/cynara.service.wants/license-manager-agent.service
 
 mkdir -p %{buildroot}/%{TZ_SYS_DB}
 touch %{buildroot}/%{TZ_SYS_DB}/.security-manager.db
@@ -272,4 +274,7 @@ chsmack -a System %{db_test_dir}/.security-manager-test.db-journal
 %files -n license-manager
 %{_libdir}/cynara/plugin/client/liblicense-manager-plugin-client.so
 %{_libdir}/cynara/plugin/service/liblicense-manager-plugin-service.so
+%{_bindir}/license-manager-agent
+%attr(-,root,root) %{_unitdir}/cynara.service.wants/license-manager-agent.service
+%attr(-,root,root) %{_unitdir}/license-manager-agent.service
 

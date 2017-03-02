@@ -28,15 +28,12 @@
 #include <log/log.h>
 #include <lm-config.h>
 
-//#include <types/PolicyDescription.h>
-//#include <types/SupportedTypes.h>
-
 using namespace Cynara;
 
 namespace LicenseManager {
 const std::vector<PolicyDescription> clientDescriptions = {
         { Config::LM_ALLOW, "Allow for session" },
-        { Config::LM_DENY, "Allow for session" }
+        { Config::LM_DENY, "Deny for session" }
 };
 
 class ClientPlugin : public ClientPluginInterface {
