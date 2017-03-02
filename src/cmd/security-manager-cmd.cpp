@@ -102,7 +102,7 @@ static po::options_description getInstallOptions()
          ("author-id,c", po::value<std::string>(),
           "unique author's identifier (required for trusted_rw paths)")
          ("install-type", po::value<std::string>(),
-          "type of installation (local, global, preloaded")
+          "type of installation (local, global, preloaded)")
          ;
     return opts;
 }
