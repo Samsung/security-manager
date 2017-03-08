@@ -263,6 +263,16 @@ bool ServiceImpl::isSubDir(const std::string &parent, const std::string &subdir)
     return (*str2 == '/' || *str1 == *str2);
 }
 
+bool ServiceImpl::containSubDir(const std::string &parent, const pkg_paths &paths)
+{
+
+    for(auto path : paths) {
+        if (isSubDir(parent, path.first))
+            return true;
+    }
+    return false;
+}
+
 std::string ServiceImpl::realPath(const std::string &path)
 {
     auto real_pathPtr = makeUnique(realpath(path.c_str(), nullptr), free);
@@ -417,7 +427,7 @@ int ServiceImpl::labelPaths(const pkg_paths &paths,
         if (!pathsOK)
             return SECURITY_MANAGER_ERROR_AUTHENTICATION_FAILED;
 
-        if (!paths.empty())
+        if (containSubDir(pkgBasePath, paths))
             SmackLabels::setupPkgBasePath(pkgBasePath);
 
         // register paths

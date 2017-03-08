@@ -256,6 +256,8 @@ private:
 
     static bool isSubDir(const std::string &parent, const std::string &subdir);
 
+    static bool containSubDir(const std::string &parent, const pkg_paths &paths);
+
     static bool getUserPkgDir(const uid_t &uid,
                               const std::string &pkgName,
                               app_install_type installType,
