@@ -247,6 +247,19 @@ public:
     int shmAppName(const Credentials &creds,
                    const std::string &shmName,
                    const std::string &appName);
+
+    /**
+     * Retrieves the app_id/pkg_id associated with given privilege and uid.
+     *
+     * @param[in]  privilege privilege name
+     * @param[in]  uid       user identifier
+     * @param[out] provider  returned pair of app_id and pkg_id
+     *
+     * @return API return code, as defined in protocols.h
+     */
+    int getPrivilegeProvider(const std::string &privilege, uid_t uid,
+                             std::pair<std::string, std::string> &provider);
+
 private:
     bool authenticate(const Credentials &creds, const std::string &privilege);
 

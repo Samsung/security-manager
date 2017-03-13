@@ -89,6 +89,7 @@ enum class SecurityModuleCall
     GROUPS_FOR_UID,
     LABEL_FOR_PROCESS,
     SHM_APP_NAME,
+    GET_PRIVILEGE_PROVIDER,
     NOOP = 0x90,
 };
 

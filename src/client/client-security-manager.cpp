@@ -1589,3 +1589,48 @@ int security_manager_shm_open(const char *name, int oflag, mode_t mode, const ch
         return -1;
     });
 }
+
+SECURITY_MANAGER_API
+int security_manager_identify_privilege_provider(const char *privilege, uid_t uid,
+                                                 char **pkg_name, char **app_name)
+{
+    using namespace SecurityManager;
+    return try_catch([&]() -> int {
+        LogDebug(__PRETTY_FUNCTION__ << " called");
+
+        if (pkg_name == NULL && app_name == NULL) {
+            LogError("Both pkg_name and app_name are NULL");
+            return SECURITY_MANAGER_ERROR_INPUT_PARAM;
+        }
+
+        ClientRequest request(SecurityModuleCall::GET_PRIVILEGE_PROVIDER);
+        if (request.send(std::string(privilege), uid).failed())
+            return request.getStatus();
+
+        std::pair<std::string, std::string> provider;
+        request.recv(provider);
+        std::string appNameString = provider.first;
+        std::string pkgNameString = provider.second;
+
+        if (appNameString.empty() || pkgNameString.empty()) {
+            LogError("Unexpected empty appName or pkgName");
+            return SECURITY_MANAGER_ERROR_UNKNOWN;
+        }
+
+        if (app_name && !(*app_name = strdup(appNameString.c_str()))) {
+            LogError("Memory allocation in strdup failed.");
+            return SECURITY_MANAGER_ERROR_MEMORY;
+        }
+
+        if (pkg_name && !(*pkg_name = strdup(pkgNameString.c_str()))) {
+            LogError("Memory allocation in strdup failed.");
+            if (app_name) {
+                free(*app_name);
+                *app_name = NULL;
+            }
+            return SECURITY_MANAGER_ERROR_MEMORY;
+        }
+
+        return SECURITY_MANAGER_SUCCESS;
+    });
+}

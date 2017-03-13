@@ -150,6 +150,10 @@ bool Service::processOne(const ConnectionID &conn, MessageBuffer &buffer,
                 case SecurityModuleCall::SHM_APP_NAME:
                     processShmAppName(buffer, send, creds);
                     break;
+                case SecurityModuleCall::GET_PRIVILEGE_PROVIDER:
+                    LogDebug("call_type: SecurityModuleCall::GET_PRIVILEGE_PROVIDER");
+                    processGetPrivilegeProvider(buffer, send);
+                    break;
                 default:
                     LogError("Invalid call: " << call_type_int);
                     Throw(ServiceException::InvalidAction);
@@ -418,6 +422,21 @@ void Service::processShmAppName(MessageBuffer &recv, MessageBuffer &send, const 
     Deserialization::Deserialize(recv, shmName, appName);
     int ret = serviceImpl.shmAppName(creds, shmName, appName);
     Serialization::Serialize(send, ret);
+}
+
+void Service::processGetPrivilegeProvider(MessageBuffer &buffer, MessageBuffer &send)
+{
+    int ret;
+    std::string privilege;
+    uid_t uid;
+    std::pair<std::string, std::string> provider;
+
+    Deserialization::Deserialize(buffer, privilege);
+    Deserialization::Deserialize(buffer, uid);
+    ret = serviceImpl.getPrivilegeProvider(privilege, uid, provider);
+    Serialization::Serialize(send, ret);
+    if (ret == SECURITY_MANAGER_SUCCESS)
+        Serialization::Serialize(send, provider);
 }
 
 } // namespace SecurityManager

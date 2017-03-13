@@ -202,6 +202,14 @@ private:
      * @param  creds  credentials of the requesting process
      */
     void processShmAppName(MessageBuffer &recv, MessageBuffer &send, const Credentials &creds);
+
+    /**
+     * Process getting provider(app_id, pkg_id) of privilege
+     *
+     * @param  buffer Raw received data buffer
+     * @param  send   Raw data buffer to be sent
+     */
+    void processGetPrivilegeProvider(MessageBuffer &buffer, MessageBuffer &send);
 };
 
 } // namespace SecurityManager

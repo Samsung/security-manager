@@ -1692,4 +1692,26 @@ int ServiceImpl::shmAppName(const Credentials &creds, const std::string &shmName
     return SECURITY_MANAGER_SUCCESS;
 }
 
+int ServiceImpl::getPrivilegeProvider(const std::string &privilege, uid_t uid,
+                                      std::pair<std::string, std::string> &provider)
+{
+    std::string appName, pkgName;
+    try {
+        m_privilegeDb.GetAppForAppDefinedPrivilege(std::make_pair(privilege, 0), uid, appName);
+        m_privilegeDb.GetAppPkgName(appName, pkgName);
+        if (appName.empty() || pkgName.empty()) {
+            LogWarning("Privilege " << privilege << " not found in database");
+            return SECURITY_MANAGER_ERROR_NO_SUCH_OBJECT;
+        } else {
+            LogDebug("Privilege: " << privilege << " provided by app: " << appName << ", pkg: " << pkgName);
+        }
+    } catch (const PrivilegeDb::Exception::Base &e) {
+        LogError("Error while getting appName or pkgName from database: " << e.DumpToString());
+        return SECURITY_MANAGER_ERROR_SERVER_ERROR;
+    }
+
+    provider = std::make_pair(appName, pkgName);
+    return SECURITY_MANAGER_SUCCESS;
+}
+
 } /* namespace SecurityManager */

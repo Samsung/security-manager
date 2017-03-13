@@ -219,6 +219,25 @@ int security_manager_app_has_privilege(const char *app_id, const char *privilege
  */
 int security_manager_shm_open(const char *name, int oflag, mode_t mode, const char *app_id);
 
+/**
+ * Get package and application id of an application which provides privilege
+ *
+ * On successful call pkg_id and app_id should be freed when caller is done with them.
+ * Both pkg_id and app_id are allocated with malloc() so they should be freed with free() function.
+ * Either app_id or pkg_id may be NULL. NULL-ed argument will be ignored.
+ * If both app_id and pkg_id are NULL then SECURITY_MANAGER_ERROR_INPUT_PARAM will be returned.
+ * When privilege/uid is incorrect or not related to any package, this function will
+ * return SECURITY_MANAGER_ERROR_NO_SUCH_OBJECT.
+ *
+ * \param[in]   privilege  Privilege name
+ * \param[in]   uid        User identifier
+ * \param[out]  pkg_id     Package id of the provider application
+ * \param[out]  app_id     Application id of the provider application
+ * \return API return code or error code
+ */
+int security_manager_identify_privilege_provider(const char *privilege, uid_t uid,
+                                                 char **pkg_id, char **app_id);
+
 #ifdef __cplusplus
 }
 #endif
