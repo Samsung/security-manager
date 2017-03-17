@@ -14,22 +14,42 @@
  *  limitations under the License
  */
 /**
- * @file        src/license-manager/agent/agent_logic.h
+ * @file        src/license-manager/agent/agent_logic.cpp
  * @author      Bartlomiej Grzelewski <b.grzelewski@samsung.com>
  * @brief       This is the place where verification should take place
  */
-#pragma once
+#include <sstream>
 #include <string>
+
+#include <alog.h>
+
+#include <agent_logic.h>
+#include <app-runtime.h>
 
 namespace LicenseManager {
 
-struct AgentLogic {
-    AgentLogic() {}
+std::string AgentLogic::process(const std::string &data) {
+    std::stringstream ss(data);
+    std::string smack, privilege;
+    int uid;
+    ss >> smack >> uid >> privilege;
+    char *pkgId = nullptr, *appId = nullptr;
 
-    std::string process(const std::string &data);
+    security_manager_identify_privilege_provider(
+            privilege.c_str(),
+            uid,
+            &pkgId,
+            &appId);
 
-    virtual ~AgentLogic(){}
-};
+    ALOGD("App: %s Uid: %d Priv: %s", smack.c_str(), uid, privilege.c_str());
+    ALOGD("Privilege: %s is Provided by: %s/%s", privilege.c_str(), appId, pkgId);
+    free(pkgId);
+    free(appId);
+
+    std::stringstream out;
+    out << 1;
+    return out.str();
+}
 
 } // namespace LicenseManager
 
