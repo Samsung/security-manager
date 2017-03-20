@@ -1698,6 +1698,11 @@ int ServiceImpl::getPrivilegeProvider(const std::string &privilege, uid_t uid,
     std::string appName, pkgName;
     try {
         m_privilegeDb.GetAppForAppDefinedPrivilege(std::make_pair(privilege, 0), uid, appName);
+
+        // check if privilege is provided by globally installed application
+        if (appName.empty())
+            m_privilegeDb.GetAppForAppDefinedPrivilege(std::make_pair(privilege, 0), getGlobalUserId(), appName);
+
         m_privilegeDb.GetAppPkgName(appName, pkgName);
         if (appName.empty() || pkgName.empty()) {
             LogWarning("Privilege " << privilege << " not found in database");
