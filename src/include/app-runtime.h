@@ -219,6 +219,23 @@ int security_manager_app_has_privilege(const char *app_id, const char *privilege
  */
 int security_manager_shm_open(const char *name, int oflag, mode_t mode, const char *app_id);
 
+/**
+ * This function takes care of determining policy for privacy related privileges
+ * prior to application launching. It check current application policy, determine
+ * whether pop-up should be displayed to the user, get user response, modify policy
+ * accordingly and return verdict whether the app should be launched or not.
+ * This function is intended to be called by the launcher prior to launching the
+ * application.
+ *
+ * \param[in] app_id  Application identifier
+ * \return API return code or error code: it would be
+ * - SECURITY_MANAGER_SUCCESS on success, if policy allows application launching
+ * - SECURITY_MANAGER_ERROR_INPUT_PARAM when app_id is invalid,
+ * - SECURITY_MANAGER_ERROR_APP_LAUNCH_PROHIBITED when application launching has been prohibited,
+ * - SECURITY_MANAGER_ERROR_UNKNOWN on other errors.
+ */
+int security_manager_prepare_app_privacy(const char *app_id);
+
 #ifdef __cplusplus
 }
 #endif

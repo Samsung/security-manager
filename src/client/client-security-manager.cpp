@@ -1572,3 +1572,18 @@ int security_manager_shm_open(const char *name, int oflag, mode_t mode, const ch
         return -1;
     });
 }
+
+SECURITY_MANAGER_API
+int security_manager_prepare_app_privacy(const char *app_name)
+{
+    using namespace SecurityManager;
+    return try_catch([&]() -> int {
+        if (app_name == nullptr) {
+            LogError("app_name is NULL");
+            return SECURITY_MANAGER_ERROR_INPUT_PARAM;
+        }
+
+        // TODO: stub implementation
+        return SECURITY_MANAGER_ERROR_UNKNOWN;
+    });
+}
