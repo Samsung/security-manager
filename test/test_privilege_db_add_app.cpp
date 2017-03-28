@@ -110,7 +110,7 @@ BOOST_AUTO_TEST_CASE(T510_add_application_to_different_packages)
 BOOST_AUTO_TEST_CASE(T520_add_application_two_tizen_versions_to_same_package)
 {
     addAppSuccess(app(1), pkg(1), uid(1), tizenVer(1), author(1), Hybrid);
-    addAppFail(app(1), pkg(1), uid(1), tizenVer(2), author(1), Hybrid);
+    addAppSuccess(app(1), pkg(1), uid(1), tizenVer(2), author(1), Hybrid);
 }
 
 BOOST_AUTO_TEST_CASE(T530_add_application_two_tizen_versions_to_two_packages)
