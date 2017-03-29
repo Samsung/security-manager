@@ -110,10 +110,6 @@ make %{?jobs:-j%jobs}
 
 %install
 rm -rf %{buildroot}
-mkdir -p %{buildroot}%{_datadir}/license
-cp LICENSE %{buildroot}%{_datadir}/license/%{name}
-cp LICENSE %{buildroot}%{_datadir}/license/libsecurity-manager-client
-cp LICENSE %{buildroot}%{_datadir}/license/libnss-security-manager
 %make_install
 
 mkdir -p %{buildroot}/%{_unitdir}/sockets.target.wants
@@ -199,6 +195,7 @@ chsmack -a System %{db_test_dir}/.security-manager-test.db-journal
 
 %files -n security-manager
 %manifest security-manager.manifest
+%license LICENSE
 %defattr(-,root,root,-)
 %attr(755,root,root) %{_bindir}/security-manager-migration
 %attr(755,root,root) %{_bindir}/security-manager
@@ -220,7 +217,6 @@ chsmack -a System %{db_test_dir}/.security-manager-test.db-journal
 %attr(-,root,root) %{_unitdir}/sysinit.target.wants/security-manager-cleanup.*
 %config(noreplace) %attr(0600,root,root) %{TZ_SYS_DB}/.security-manager.db
 %config(noreplace) %attr(0600,root,root) %{TZ_SYS_DB}/.security-manager.db-journal
-%{_datadir}/license/%{name}
 
 %{_datadir}/security-manager/db
 %attr(755,root,root) %{_datadir}/%{name}/db/update.sh
@@ -228,9 +224,9 @@ chsmack -a System %{db_test_dir}/.security-manager-test.db-journal
 
 %files -n libsecurity-manager-client
 %manifest libsecurity-manager-client.manifest
+%license LICENSE
 %defattr(-,root,root,-)
 %{_libdir}/libsecurity-manager-client.so.*
-%{_datadir}/license/libsecurity-manager-client
 
 %files -n libsecurity-manager-client-devel
 %manifest %{name}.manifest
@@ -242,13 +238,14 @@ chsmack -a System %{db_test_dir}/.security-manager-test.db-journal
 
 %files -n libnss-security-manager
 %manifest libnss-security-manager.manifest
+%license LICENSE
 %defattr(-,root,root,-)
 %%attr(-,root,root) %{_unitdir}/dbus.service.wants/security-manager.service
 %{_libdir}/libnss_securitymanager.so.*
-%{_datadir}/license/libnss-security-manager
 
 %files -n security-manager-policy
 %manifest %{name}.manifest
+%license LICENSE
 %config(noreplace) %{TZ_SYS_VAR}/security-manager/policy-version
 %{_datadir}/security-manager/policy
 %attr(755,root,root) %{_bindir}/security-manager-policy-reload
