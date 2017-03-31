@@ -234,6 +234,7 @@ public:
      * @return API return code, as defined in protocols.h
      */
     int labelForProcess(const std::string &appName, std::string &label);
+
     /*
      * Request for access to shared memory segment for
      * appName application.
@@ -247,6 +248,23 @@ public:
     int shmAppName(const Credentials &creds,
                    const std::string &shmName,
                    const std::string &appName);
+
+    /*
+     * Fetch application privileges that are set to ASK_USER_LEGACY
+     * (launch pop-up needed) or PRIVACY_DENY (disabled)
+     *
+     * @param[in] creds credentials of the requesting process
+     * @param[in] appName application identifier
+     * @param[out] privacyAsk returned vector of privileges that are set to ASK_USER_LEGACY
+     * @param[out] privacyDeny returned vector of privileges that are set to PRIVACY_DENY
+     *
+     * @return API return code, as defined in protocols.h
+     */
+    int getAppPrivacy(const Credentials &creds,
+                      const std::string &appName,
+                      std::vector<std::string> &privacyAsk,
+                      std::vector<std::string> &privacyDeny);
+
 private:
     bool authenticate(const Credentials &creds, const std::string &privilege);
 

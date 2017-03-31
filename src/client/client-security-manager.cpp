@@ -57,10 +57,13 @@
 #include <service_impl.h>
 #include <check-proper-drop.h>
 #include <utils.h>
+#include <privilege-info.h>
+#include <config.h>
 
 #include <security-manager.h>
 #include <client-offline.h>
 #include <dpl/errno_string.h>
+#include <askuser-notification/ask-user-client.h>
 
 #include "filesystem.h"
 
@@ -280,6 +283,16 @@ int security_manager_app_uninstall(const app_inst_req *p_req)
     });
 }
 
+static int getAppPkgName(std::string &pkgName, const std::string &appName)
+{
+    ClientRequest request(SecurityModuleCall::APP_GET_PKG_NAME);
+    if (request.send(appName).failed())
+        return request.getStatus();
+
+    request.recv(pkgName);
+    return SECURITY_MANAGER_SUCCESS;
+}
+
 SECURITY_MANAGER_API
 int security_manager_get_app_pkgid(char **pkg_name, const char *app_name)
 {
@@ -300,18 +313,17 @@ int security_manager_get_app_pkgid(char **pkg_name, const char *app_name)
             return SECURITY_MANAGER_ERROR_INPUT_PARAM;
         }
 
-        ClientRequest request(SecurityModuleCall::APP_GET_PKG_NAME);
-        if (request.send(std::string(app_name)).failed())
-            return request.getStatus();
+        std::string pkgName;
+        int ret = getAppPkgName(pkgName, std::string(app_name));
+        if (ret != SECURITY_MANAGER_SUCCESS)
+            return ret;
 
-        std::string pkgNameString;
-        request.recv(pkgNameString);
-        if (pkgNameString.empty()) {
+        if (pkgName.empty()) {
             LogError("Unexpected empty pkgName");
             return SECURITY_MANAGER_ERROR_UNKNOWN;
         }
 
-        *pkg_name = strdup(pkgNameString.c_str());
+        *pkg_name = strdup(pkgName.c_str());
         if (*pkg_name == NULL) {
             LogError("Failed to allocate memory for pkgName");
             return SECURITY_MANAGER_ERROR_MEMORY;
@@ -1573,17 +1585,187 @@ int security_manager_shm_open(const char *name, int oflag, mode_t mode, const ch
     });
 }
 
+static int getAppPrivacy(const std::string &appName,
+    std::vector<std::string> &privacyAsk, std::vector<std::string> &privacyDeny)
+{
+    using namespace SecurityManager;
+
+    ClientRequest request(SecurityModuleCall::APP_GET_PRIVACY);
+    if (request.send(appName).failed())
+        return request.getStatus();
+
+    request.recv(privacyAsk);
+    request.recv(privacyDeny);
+    return SECURITY_MANAGER_SUCCESS;
+}
+
+static int updateAppPrivacy(const std::string &appName,
+    const std::vector<std::string> &privacy, const std::string &policy)
+{
+    using namespace SecurityManager;
+
+    class privacyUpdateRequest {
+    public:
+        int init()
+        {
+            return security_manager_policy_update_req_new(&m_req);
+        };
+
+        int add(const std::string &appName, const std::string &privilege,
+            const std::string &policy)
+        {
+            int ret;
+            policy_entry *entry = nullptr;
+
+            ret = security_manager_policy_entry_new(&entry);
+            if (ret != SECURITY_MANAGER_SUCCESS)
+                return ret;
+            m_entries.push_back(entry);
+
+            ret = security_manager_policy_entry_set_application(entry, appName.c_str());
+            if (ret != SECURITY_MANAGER_SUCCESS)
+                return ret;
+
+            ret = security_manager_policy_entry_set_privilege(entry, privilege.c_str());
+            if (ret != SECURITY_MANAGER_SUCCESS)
+                return ret;
+
+            ret = security_manager_policy_entry_set_level(entry, policy.c_str());
+            if (ret != SECURITY_MANAGER_SUCCESS)
+                return ret;
+
+            ret = security_manager_policy_update_req_add_entry(m_req, entry);
+            if (ret != SECURITY_MANAGER_SUCCESS)
+                return ret;
+
+            return SECURITY_MANAGER_SUCCESS;
+        };
+
+        int send()
+        {
+            return security_manager_policy_update_send(m_req);
+        }
+
+        ~privacyUpdateRequest()
+        {
+            for (policy_entry *entry : m_entries)
+                security_manager_policy_entry_free(entry);
+            security_manager_policy_update_req_free(m_req);
+        };
+
+    private:
+        policy_update_req *m_req = nullptr;
+        std::vector<policy_entry *> m_entries;
+    };
+
+    int ret;
+    privacyUpdateRequest pur;
+    ret = pur.init();
+    if (ret != SECURITY_MANAGER_SUCCESS)
+        return ret;
+
+    for (const std::string &privilege : privacy) {
+        ret = pur.add(appName, privilege, policy);
+        if (ret != SECURITY_MANAGER_SUCCESS)
+            return ret;
+    }
+
+    return pur.send();
+}
+
 SECURITY_MANAGER_API
 int security_manager_prepare_app_privacy(const char *app_name)
 {
     using namespace SecurityManager;
+
     return try_catch([&]() -> int {
         if (app_name == nullptr) {
             LogError("app_name is NULL");
             return SECURITY_MANAGER_ERROR_INPUT_PARAM;
         }
 
-        // TODO: stub implementation
-        return SECURITY_MANAGER_ERROR_UNKNOWN;
+        int ret;
+        std::string pkgName;
+        ret = getAppPkgName(pkgName, std::string(app_name));
+        if (ret != SECURITY_MANAGER_SUCCESS)
+            return ret;
+
+        std::vector<std::string> privacyAsk;
+        std::vector<std::string> privacyDeny;
+        ret = getAppPrivacy(app_name, privacyAsk, privacyDeny);
+        if (ret != SECURITY_MANAGER_SUCCESS)
+            return ret;
+
+        if (privacyAsk.empty()) {
+            if (privacyDeny.empty())
+                return SECURITY_MANAGER_SUCCESS;
+
+            if (PrivilegeInfo::isAppWhiteListed(pkgName))
+                return SECURITY_MANAGER_SUCCESS;
+
+            AskUser::Protocol::toast_fail_launch(pkgName, app_name, getuid());
+            return SECURITY_MANAGER_ERROR_APP_LAUNCH_PROHIBITED;
+        }
+
+        std::sort(privacyAsk.begin(), privacyAsk.end());
+        std::sort(privacyDeny.begin(), privacyDeny.end());
+
+        std::vector<std::string> privacy;
+        std::merge(
+            privacyAsk.begin(), privacyAsk.end(),
+            privacyDeny.begin(), privacyDeny.end(),
+            std::back_inserter(privacy));
+
+        int askResult;
+        if (AskUser::Protocol::popup_launch(pkgName, app_name, getuid(), privacy, askResult) < 0) {
+            LogError("Launch pop-up failed");
+            return SECURITY_MANAGER_ERROR_UNKNOWN;
+        }
+
+        bool launchAllowed;
+        switch (askResult) {
+        case ASKUSER_DENY_ONCE:
+            LogDebug("Launch pop-up response: deny once");
+            launchAllowed = false;
+            ret = SECURITY_MANAGER_SUCCESS;
+            break;
+
+        case ASKUSER_DENY_FOREVER:
+            LogDebug("Launch pop-up response: deny forever");
+            launchAllowed = false;
+            ret = updateAppPrivacy(app_name, privacy, Config::PRIVACY_POLICY_DENY);
+            break;
+
+        case ASKUSER_ALLOW_ONCE:
+            LogDebug("Launch pop-up response: allow once");
+            launchAllowed = true;
+            ret = SECURITY_MANAGER_SUCCESS;
+            break;
+
+        case ASKUSER_ALLOW_FOREVER:
+            LogDebug("Launch pop-up response: allow forever");
+            launchAllowed = true;
+            ret = updateAppPrivacy(app_name, privacy, Config::PRIVACY_POLICY_ALLOW);
+            break;
+
+        default:
+            LogError("Launch pop-up response: UNKNOWN");
+            return SECURITY_MANAGER_ERROR_UNKNOWN;
+        }
+
+        if (ret != SECURITY_MANAGER_SUCCESS)
+            return ret;
+
+        if (launchAllowed)
+            return SECURITY_MANAGER_SUCCESS;
+
+        if (PrivilegeInfo::isAppWhiteListed(pkgName)) {
+            LogInfo("Launch pop-up denied privileges, whitelisted app - launching");
+            return SECURITY_MANAGER_SUCCESS;
+        }
+
+        LogInfo("Launch pop-up denied privileges, whitelisted app - not launching");
+        AskUser::Protocol::toast_fail_launch(pkgName, app_name, getuid());
+        return SECURITY_MANAGER_ERROR_APP_LAUNCH_PROHIBITED;
     });
 }

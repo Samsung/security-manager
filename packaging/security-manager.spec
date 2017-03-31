@@ -33,6 +33,7 @@ BuildRequires: pkgconfig(db-util)
 BuildRequires: pkgconfig(cynara-admin)
 BuildRequires: pkgconfig(cynara-client-async)
 BuildRequires: pkgconfig(security-privilege-manager)
+BuildRequires: pkgconfig(askuser-notification-ipc)
 BuildRequires: boost-devel
 %{?systemd_requires}
 

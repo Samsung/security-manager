@@ -47,6 +47,8 @@ public:
 
     bool hasAttribute(PrivilegeAttr attr);
 
+    static bool isAppWhiteListed(const std::string &pkgName);
+
 private:
     uid_t m_uid;
     std::string m_appId;

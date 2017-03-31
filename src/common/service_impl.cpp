@@ -1691,4 +1691,27 @@ int ServiceImpl::shmAppName(const Credentials &creds, const std::string &shmName
     return SECURITY_MANAGER_SUCCESS;
 }
 
+int ServiceImpl::getAppPrivacy(const Credentials &creds, const std::string &appName,
+                  std::vector<std::string> &privacyAsk,
+                  std::vector<std::string> &privacyDeny)
+{
+    try {
+        std::string uidStr = std::to_string(creds.uid);
+        std::string appProcessLabel = getAppProcessLabel(appName);
+        std::vector<std::string> privileges;
+        m_cynaraAdmin.getAppPrivacy(appProcessLabel, uidStr, privacyAsk, privacyDeny);
+    } catch (const CynaraException::Base &e) {
+        LogError("Error while reading Cynara policy: " << e.DumpToString());
+        return SECURITY_MANAGER_ERROR_SERVER_ERROR;
+    } catch (const SmackException::Base &e) {
+        LogError("Error while generating Smack label: " << e.DumpToString());
+        return SECURITY_MANAGER_ERROR_SERVER_ERROR;
+    } catch (const std::bad_alloc &e) {
+        LogError("Memory allocation failed: " << e.what());
+        return SECURITY_MANAGER_ERROR_MEMORY;
+    }
+
+    return SECURITY_MANAGER_SUCCESS;
+}
+
 } /* namespace SecurityManager */
