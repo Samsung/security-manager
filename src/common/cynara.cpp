@@ -336,11 +336,11 @@ void CynaraAdmin::updateAppPolicy(
     int askUserPolicy = static_cast<int>(CynaraAdminPolicy::Operation::Allow);
     if (Config::IS_ASKUSER_ENABLED) {
         try {
-            askUserPolicy = convertToPolicyType(Config::PRIVACY_POLICY_DESC);
+            askUserPolicy = convertToPolicyType(Config::PRIVACY_POLICY_ASK);
             askUserEnabled = true;
         } catch (const std::out_of_range&) {
             // Cynara doesn't know "Ask user"
-            LogDebug("Unknown policy level: " << Config::PRIVACY_POLICY_DESC);
+            LogDebug("Unknown policy level: " << Config::PRIVACY_POLICY_ASK);
         }
     }
 
@@ -433,11 +433,11 @@ void CynaraAdmin::userInit(uid_t uid, security_manager_user_type userType)
     bool askUserEnabled = false;
     if (Config::IS_ASKUSER_ENABLED) {
         try{
-            askUserPolicy = convertToPolicyType(Config::PRIVACY_POLICY_DESC);
+            askUserPolicy = convertToPolicyType(Config::PRIVACY_POLICY_ASK);
             askUserEnabled = true;
         } catch (const std::out_of_range&) {
             // Cynara doesn't know "Ask user"
-            LogDebug("Unknown policy level: " << Config::PRIVACY_POLICY_DESC);
+            LogDebug("Unknown policy level: " << Config::PRIVACY_POLICY_ASK);
         }
     }
 
