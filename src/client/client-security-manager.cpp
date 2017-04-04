@@ -1769,12 +1769,17 @@ int security_manager_prepare_app_privacy(const char *app_name)
         if (launchAllowed)
             return SECURITY_MANAGER_SUCCESS;
 
-        if (PrivilegeInfo::isAppWhiteListed(pkgName) && askResult != ASKUSER_NONE) {
-            LogInfo("Launch pop-up denied privileges, whitelisted app - launching");
-            return SECURITY_MANAGER_SUCCESS;
+        if (PrivilegeInfo::isAppWhiteListed(pkgName)) {
+            if (askResult == ASKUSER_NONE) {
+                LogInfo("HW key input, app launch needs to be prohibited");
+                return SECURITY_MANAGER_ERROR_APP_LAUNCH_PROHIBITED;
+            } else {
+                LogInfo("Launch pop-up denied privileges, whitelisted app - launching");
+                return SECURITY_MANAGER_SUCCESS;
+            }
         }
 
-        LogInfo("Launch pop-up denied privileges, whitelisted app - not launching");
+        LogInfo("Launch pop-up denied privileges, non-whitelisted app - not launching");
         AskUser::Protocol::toast_fail_launch(pkgName, app_name, getuid());
         return SECURITY_MANAGER_ERROR_APP_LAUNCH_PROHIBITED;
     });
