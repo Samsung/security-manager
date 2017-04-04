@@ -1748,6 +1748,16 @@ int security_manager_prepare_app_privacy(const char *app_name)
             ret = updateAppPrivacy(app_name, privacy, Config::PRIVACY_POLICY_ALLOW);
             break;
 
+        case ASKUSER_NONE:
+            LogDebug("H/W KEY Input, APP should not be launched in this case.");
+            launchAllowed = false;
+            ret = SECURITY_MANAGER_SUCCESS;
+            if (!PrivilegeInfo::isAppWhiteListed(pkgName)) {
+                LogDebug("This is non-white listed app. Update policy as PRIVACY_POLICY_DENY");
+                ret = updateAppPrivacy(app_name, privacy, Config::PRIVACY_POLICY_DENY);
+            }
+            break;
+
         default:
             LogError("Launch pop-up response: UNKNOWN");
             return SECURITY_MANAGER_ERROR_UNKNOWN;
@@ -1759,7 +1769,7 @@ int security_manager_prepare_app_privacy(const char *app_name)
         if (launchAllowed)
             return SECURITY_MANAGER_SUCCESS;
 
-        if (PrivilegeInfo::isAppWhiteListed(pkgName)) {
+        if (PrivilegeInfo::isAppWhiteListed(pkgName) && askResult != ASKUSER_NONE) {
             LogInfo("Launch pop-up denied privileges, whitelisted app - launching");
             return SECURITY_MANAGER_SUCCESS;
         }
