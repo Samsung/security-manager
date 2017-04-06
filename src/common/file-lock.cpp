@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2000 - 2014 Samsung Electronics Co., Ltd All Rights Reserved
+ *  Copyright (c) 2000 - 2017 Samsung Electronics Co., Ltd All Rights Reserved
  *
  *  Contact: Rafal Krypa <r.krypa@samsung.com>
  *
@@ -51,7 +51,11 @@ FileLocker::FileLocker(const std::string &lockFile, bool blocking)
 
 FileLocker::~FileLocker()
 {
-    Unlock();
+    try {
+        Unlock();
+    } catch (...) {
+        LogError("~FileLocker() threw an exception");
+    }
 }
 
 bool FileLocker::Locked()
@@ -89,7 +93,13 @@ void FileLocker::Lock()
 void FileLocker::Unlock()
 {
     if (m_locked) {
-        m_flock.unlock();
+        try {
+            m_flock.unlock();
+        } catch (const std::exception &e) {
+            LogError("Error while unlocking a file: " << e.what());
+            ThrowMsg(FileLocker::Exception::UnlockFailed,
+                 "Error while unlocking a file: " << e.what());
+        }
         m_locked = false;
         LogDebug("Lock released.");
     }

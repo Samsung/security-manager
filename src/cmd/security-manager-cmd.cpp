@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2000 - 2016 Samsung Electronics Co., Ltd All Rights Reserved
+ *  Copyright (c) 2000 - 2017 Samsung Electronics Co., Ltd All Rights Reserved
  *
  *  Contact: Rafal Krypa <r.krypa@samsung.com>
  *
@@ -36,6 +36,8 @@
 #include <utils.h>
 
 #include <boost/program_options.hpp>
+#include <boost/exception/diagnostic_information.hpp>
+
 namespace po = boost::program_options;
 
 static std::map <std::string, enum app_install_path_type> app_install_path_type_map = {
@@ -386,7 +388,14 @@ int main(int argc, char *argv[])
         std::cout << "Error occured: " << e.what() << std::endl;
         LogError("Error occured: " << e.what());
     }
-
+    catch (boost::exception &e) {
+        std::cout << "Internal exception occured: " << boost::diagnostic_information(e) << std::endl;
+        LogError("Internal exception occured: " << boost::diagnostic_information(e));
+    }
+    catch (...) {
+        std::cout << "Unknown exception occured" << std::endl;
+        LogError("Unknown exception occured");
+    }
 
     return EXIT_FAILURE;
 }
