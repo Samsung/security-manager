@@ -41,10 +41,7 @@ const std::string PRIVILEGE_SHM              = "http://tizen.org/privilege/inter
 const std::string APPS_LABELS_FILE = "apps-labels";
 const std::string SKEL_DIR = "/etc/skel";
 
-const std::string PRIVACY_POLICY_ALLOW = "Allow";
-const std::string PRIVACY_POLICY_DENY = "PRIVACY_DENY";
-const std::string PRIVACY_POLICY_ASK = "ASK_USER_LEGACY";
-
+const std::string PRIVACY_POLICY_DESC = "Ask user";
 #ifdef ASKUSER_ENABLED
 const bool IS_ASKUSER_ENABLED = true;
 #else

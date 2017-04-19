@@ -57,10 +57,5 @@ bool PrivilegeInfo::hasAttribute(PrivilegeAttr attr)
     }
 }
 
-bool PrivilegeInfo::isAppWhiteListed(const std::string &pkgName)
-{
-    return privilege_info_is_privacy_white_list_application(pkgName.c_str());
-}
-
 } // namespace SecurityManager
 

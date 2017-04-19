@@ -47,14 +47,8 @@ extern const std::string APPS_LABELS_FILE;
 
 extern const std::string SKEL_DIR;
 
-/* Allowed privacy policy description */
-extern const std::string PRIVACY_POLICY_ALLOW;
-
-/* Denied privacy policy description */
-extern const std::string PRIVACY_POLICY_DENY;
-
-/* Ask-user privacy policy description */
-extern const std::string PRIVACY_POLICY_ASK;
+/* Ask-user policy description */
+extern const std::string PRIVACY_POLICY_DESC;
 
 /* true if privacy-related privileges should result in UI-popup question*/
 extern const bool IS_ASKUSER_ENABLED;

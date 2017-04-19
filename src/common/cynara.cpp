@@ -336,11 +336,11 @@ void CynaraAdmin::updateAppPolicy(
     int askUserPolicy = static_cast<int>(CynaraAdminPolicy::Operation::Allow);
     if (Config::IS_ASKUSER_ENABLED) {
         try {
-            askUserPolicy = convertToPolicyType(Config::PRIVACY_POLICY_ASK);
+            askUserPolicy = convertToPolicyType(Config::PRIVACY_POLICY_DESC);
             askUserEnabled = true;
         } catch (const std::out_of_range&) {
             // Cynara doesn't know "Ask user"
-            LogDebug("Unknown policy level: " << Config::PRIVACY_POLICY_ASK);
+            LogDebug("Unknown policy level: " << Config::PRIVACY_POLICY_DESC);
         }
     }
 
@@ -390,24 +390,6 @@ void CynaraAdmin::getAppPolicy(const std::string &label, const std::string &user
     }
 }
 
-void CynaraAdmin::getAppPrivacy(const std::string &label, const std::string &user,
-        std::vector<std::string> &privacyAsk, std::vector<std::string> &privacyDeny)
-{
-    privacyAsk.clear();
-    privacyDeny.clear();
-
-    std::vector<CynaraAdminPolicy> policies;
-    listPolicies(CynaraAdmin::Buckets.at(Bucket::PRIVACY_MANAGER),
-        label, user, CYNARA_ADMIN_ANY, policies);
-
-    for (const auto &policy : policies) {
-        if (policy.result == convertToPolicyType(Config::PRIVACY_POLICY_ASK))
-            privacyAsk.push_back(std::string(policy.privilege));
-        else if (policy.result == convertToPolicyType(Config::PRIVACY_POLICY_DENY))
-            privacyDeny.push_back(std::string(policy.privilege));
-    }
-}
-
 void CynaraAdmin::userInit(uid_t uid, security_manager_user_type userType)
 {
     Bucket bucket;
@@ -451,11 +433,11 @@ void CynaraAdmin::userInit(uid_t uid, security_manager_user_type userType)
     bool askUserEnabled = false;
     if (Config::IS_ASKUSER_ENABLED) {
         try{
-            askUserPolicy = convertToPolicyType(Config::PRIVACY_POLICY_ASK);
+            askUserPolicy = convertToPolicyType(Config::PRIVACY_POLICY_DESC);
             askUserEnabled = true;
         } catch (const std::out_of_range&) {
             // Cynara doesn't know "Ask user"
-            LogDebug("Unknown policy level: " << Config::PRIVACY_POLICY_ASK);
+            LogDebug("Unknown policy level: " << Config::PRIVACY_POLICY_DESC);
         }
     }
 

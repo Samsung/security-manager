@@ -11,7 +11,6 @@ Source4:    libnss-security-manager.manifest
 Source5:    security-manager-tests.manifest
 Requires: security-manager-policy
 Requires: nether
-Requires: askuser-plugins
 %if "%{build_type}" == "VALGRIND"
 Requires: valgrind
 %endif
@@ -33,7 +32,6 @@ BuildRequires: pkgconfig(db-util)
 BuildRequires: pkgconfig(cynara-admin)
 BuildRequires: pkgconfig(cynara-client-async)
 BuildRequires: pkgconfig(security-privilege-manager)
-BuildRequires: pkgconfig(askuser-notification)
 BuildRequires: boost-devel
 %{?systemd_requires}
 
@@ -77,7 +75,6 @@ Requires(post): security-manager = %{version}-%{release}
 Requires(post): cyad
 Requires(post): sqlite
 Requires(post): tizen-platform-config-tools
-Requires(post): askuser-plugins
 
 %description policy
 Set of security rules that constitute security policy in the system

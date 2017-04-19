@@ -150,9 +150,6 @@ bool Service::processOne(const ConnectionID &conn, MessageBuffer &buffer,
                 case SecurityModuleCall::SHM_APP_NAME:
                     processShmAppName(buffer, send, creds);
                     break;
-                case SecurityModuleCall::APP_GET_PRIVACY:
-                    processGetAppPrivacy(buffer, send, creds);
-                    break;
                 default:
                     LogError("Invalid call: " << call_type_int);
                     Throw(ServiceException::InvalidAction);
@@ -420,20 +417,5 @@ void Service::processShmAppName(MessageBuffer &recv, MessageBuffer &send, const 
     int ret = serviceImpl.shmAppName(creds, shmName, appName);
     Serialization::Serialize(send, ret);
 }
-
-void Service::processGetAppPrivacy(MessageBuffer &recv, MessageBuffer &send, const Credentials &creds)
-{
-    std::string appName;
-    Deserialization::Deserialize(recv, appName);
-
-    std::vector<std::string> privacyAsk, privacyDeny;
-    int ret = serviceImpl.getAppPrivacy(creds, appName, privacyAsk, privacyDeny);
-    Serialization::Serialize(send, ret);
-    if (ret == SECURITY_MANAGER_SUCCESS) {
-        Serialization::Serialize(send, privacyAsk);
-        Serialization::Serialize(send, privacyDeny);
-    }
-}
-
 
 } // namespace SecurityManager

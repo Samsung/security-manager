@@ -4,7 +4,6 @@ PKG_CHECK_MODULES(CLIENT_DEP
     libsmack
     libcap
     libprocps
-    askuser-notification
     )
 
 SET(CLIENT_VERSION_MAJOR 2)
