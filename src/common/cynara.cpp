@@ -292,23 +292,23 @@ static bool checkCynaraError(int result, const std::string &msg)
     }
 }
 
-CynaraAdmin::TypeToDescriptionMap CynaraAdmin::TypeToDescription;
-CynaraAdmin::DescriptionToTypeMap CynaraAdmin::DescriptionToType;
+CynaraAdmin::TypeToDescriptionMap CynaraAdmin::s_typeToDescription;
+CynaraAdmin::DescriptionToTypeMap CynaraAdmin::s_descriptionToType;
 
 CynaraAdmin::CynaraAdmin()
     : m_policyDescriptionsInitialized(false)
 {
     checkCynaraError(
-        cynara_admin_initialize(&m_CynaraAdmin),
+        cynara_admin_initialize(&m_cynaraAdmin),
         "Cannot connect to Cynara administrative interface.");
 }
 
 CynaraAdmin::~CynaraAdmin()
 {
-    cynara_admin_finish(m_CynaraAdmin);
+    cynara_admin_finish(m_cynaraAdmin);
 }
 
-void CynaraAdmin::SetPolicies(const std::vector<CynaraAdminPolicy> &policies)
+void CynaraAdmin::setPolicies(const std::vector<CynaraAdminPolicy> &policies)
 {
     if (policies.empty()) {
         LogDebug("no policies to set in Cynara.");
@@ -332,11 +332,11 @@ void CynaraAdmin::SetPolicies(const std::vector<CynaraAdminPolicy> &policies)
     pp_policies[policies.size()] = nullptr;
 
     checkCynaraError(
-        cynara_admin_set_policies(m_CynaraAdmin, pp_policies.data()),
+        cynara_admin_set_policies(m_cynaraAdmin, pp_policies.data()),
         "Error while updating Cynara policy.");
 }
 
-void CynaraAdmin::UpdateAppPolicy(
+void CynaraAdmin::updateAppPolicy(
     const std::string &label,
     bool global,
     uid_t uid,
@@ -375,8 +375,8 @@ void CynaraAdmin::UpdateAppPolicy(
         }
     }
 
-    ListPolicies(bucket, label, cynaraUser, CYNARA_ADMIN_ANY, oldPolicies);
-    CalculatePolicies(label, cynaraUser, privileges, bucket,
+    listPolicies(bucket, label, cynaraUser, CYNARA_ADMIN_ANY, oldPolicies);
+    calculatePolicies(label, cynaraUser, privileges, bucket,
                       static_cast<int>(CynaraAdminPolicy::Operation::Allow), oldPolicies, policies);
     oldPolicies.clear();
 
@@ -396,7 +396,7 @@ void CynaraAdmin::UpdateAppPolicy(
     std::vector<uid_t> users;
     if (cynaraUser == CYNARA_ADMIN_WILDCARD) {
         // perform bucket setting for all users in the system, app is installed for everyone
-        ListUsers(users);
+        listUsers(users);
     } else {
         // local single user installation, do it only for that particular user
         users.push_back(uid);
@@ -412,14 +412,14 @@ void CynaraAdmin::UpdateAppPolicy(
             if (priv.hasAttribute(PrivilegeInfo::PrivilegeAttr::BLACKLIST))
                 blacklistPrivileges.push_back(p);
         }
-        ListPolicies(Buckets.at(Bucket::PRIVACY_MANAGER), label, std::to_string(id), CYNARA_ADMIN_ANY, oldPolicies);
-        CalculatePolicies(label, std::to_string(id), privacyPrivileges,
+        listPolicies(Buckets.at(Bucket::PRIVACY_MANAGER), label, std::to_string(id), CYNARA_ADMIN_ANY, oldPolicies);
+        calculatePolicies(label, std::to_string(id), privacyPrivileges,
                      Buckets.at(Bucket::PRIVACY_MANAGER),
                      askUserPolicy, oldPolicies, policies);
         oldPolicies.clear();
 
-        ListPolicies(Buckets.at(Bucket::ADMIN), label, std::to_string(id), CYNARA_ADMIN_ANY, oldPolicies);
-        CalculatePolicies(label, std::to_string(id), blacklistPrivileges,
+        listPolicies(Buckets.at(Bucket::ADMIN), label, std::to_string(id), CYNARA_ADMIN_ANY, oldPolicies);
+        calculatePolicies(label, std::to_string(id), blacklistPrivileges,
                      Buckets.at(Bucket::ADMIN),
                      static_cast<int>(CynaraAdminPolicy::Operation::Deny), oldPolicies, policies);
         oldPolicies.clear();
@@ -434,11 +434,11 @@ void CynaraAdmin::UpdateAppPolicy(
     for (const std::pair<std::string, int> &p : oldAppDefinedPrivileges) {
         switch (p.second) {
             case SM_APP_DEFINED_PRIVILEGE_TYPE_UNTRUSTED:
-                ListPolicies(Buckets.at(Bucket::APPDEFINED), CYNARA_ADMIN_WILDCARD, cynaraUser,
+                listPolicies(Buckets.at(Bucket::APPDEFINED), CYNARA_ADMIN_WILDCARD, cynaraUser,
                              p.first, oldUntrustedPolicies);
                 break;
             case SM_APP_DEFINED_PRIVILEGE_TYPE_LICENSED:
-                ListPolicies(Buckets.at(Bucket::APPDEFINED), CYNARA_ADMIN_WILDCARD, cynaraUser,
+                listPolicies(Buckets.at(Bucket::APPDEFINED), CYNARA_ADMIN_WILDCARD, cynaraUser,
                              p.first, oldLicensedPolicies);
                 break;
         }
@@ -455,26 +455,27 @@ void CynaraAdmin::UpdateAppPolicy(
         }
     }
 
-    CalculatePolicies(CYNARA_ADMIN_WILDCARD, cynaraUser, untrustedPrivileges,
+    calculatePolicies(CYNARA_ADMIN_WILDCARD, cynaraUser, untrustedPrivileges,
                       Buckets.at(Bucket::APPDEFINED), static_cast<int>(CynaraAdminPolicy::Operation::Allow),
                       oldUntrustedPolicies, policies);
 
-    CalculatePolicies(CYNARA_ADMIN_WILDCARD, cynaraUser, licensedPrivileges,
+    calculatePolicies(CYNARA_ADMIN_WILDCARD, cynaraUser, licensedPrivileges,
                       Buckets.at(Bucket::APPDEFINED), static_cast<int>(LicenseManager::Config::LM_ASK),
                       oldLicensedPolicies, policies);
 
-    SetPolicies(policies);
+    setPolicies(policies);
 }
 
-void CynaraAdmin::GetAppPolicy(const std::string &label, const std::string &user,
+void CynaraAdmin::getAppPolicy(const std::string &label, const std::string &user,
         std::vector<std::string> &privileges)
 {
     std::vector<CynaraAdminPolicy> policies;
+
     std::string bucket = (user == CYNARA_ADMIN_WILDCARD) ?
         CynaraAdmin::Buckets.at(Bucket::MANIFESTS_GLOBAL) :
         CynaraAdmin::Buckets.at(Bucket::MANIFESTS_LOCAL);
 
-    ListPolicies(bucket, label, user, CYNARA_ADMIN_ANY, policies);
+    listPolicies(bucket, label, user, CYNARA_ADMIN_ANY, policies);
 
     for (auto &policy : policies) {
         std::string privilege = policy.privilege;
@@ -483,7 +484,7 @@ void CynaraAdmin::GetAppPolicy(const std::string &label, const std::string &user
     }
 }
 
-void CynaraAdmin::UserInit(uid_t uid, security_manager_user_type userType)
+void CynaraAdmin::userInit(uid_t uid, security_manager_user_type userType)
 {
     Bucket bucket;
     std::vector<CynaraAdminPolicy> policies;
@@ -518,7 +519,7 @@ void CynaraAdmin::UserInit(uid_t uid, security_manager_user_type userType)
                                          Buckets.at(Bucket::MAIN)));
 
     std::vector<CynaraAdminPolicy> appPolicies;
-    ListPolicies(CynaraAdmin::Buckets.at(Bucket::MANIFESTS_GLOBAL),
+    listPolicies(CynaraAdmin::Buckets.at(Bucket::MANIFESTS_GLOBAL),
                  CYNARA_ADMIN_ANY, CYNARA_ADMIN_WILDCARD,
                  CYNARA_ADMIN_ANY, appPolicies);
 
@@ -560,13 +561,13 @@ void CynaraAdmin::UserInit(uid_t uid, security_manager_user_type userType)
 
     }
 
-    SetPolicies(policies);
+    setPolicies(policies);
 }
 
-void CynaraAdmin::ListUsers(std::vector<uid_t> &listOfUsers)
+void CynaraAdmin::listUsers(std::vector<uid_t> &listOfUsers)
 {
     std::vector<CynaraAdminPolicy> tmpListOfUsers;
-    ListPolicies(
+    listPolicies(
         CynaraAdmin::Buckets.at(Bucket::MAIN),
         CYNARA_ADMIN_WILDCARD,
         CYNARA_ADMIN_ANY,
@@ -587,20 +588,20 @@ void CynaraAdmin::ListUsers(std::vector<uid_t> &listOfUsers)
     LogDebug("Found users: " << listOfUsers.size());
 };
 
-void CynaraAdmin::UserRemove(uid_t uid)
+void CynaraAdmin::userRemove(uid_t uid)
 {
     std::vector<CynaraAdminPolicy> policies;
     std::string user = std::to_string(static_cast<unsigned int>(uid));
 
-    EmptyBucket(Buckets.at(Bucket::PRIVACY_MANAGER),true,
+    emptyBucket(Buckets.at(Bucket::PRIVACY_MANAGER),true,
             CYNARA_ADMIN_ANY, user, CYNARA_ADMIN_ANY);
 }
 
-security_manager_user_type CynaraAdmin::GetUserType(uid_t uid)
+security_manager_user_type CynaraAdmin::getUserType(uid_t uid)
 {
     std::string uidStr = std::to_string(uid);
     std::vector<CynaraAdminPolicy> tmpListOfUsers;
-    ListPolicies(
+    listPolicies(
             CynaraAdmin::Buckets.at(Bucket::MAIN),
             CYNARA_ADMIN_WILDCARD,
             uidStr,
@@ -629,7 +630,7 @@ security_manager_user_type CynaraAdmin::GetUserType(uid_t uid)
         return SM_USER_TYPE_NONE;
 };
 
-void CynaraAdmin::ListPolicies(
+void CynaraAdmin::listPolicies(
     const std::string &bucket,
     const std::string &label,
     const std::string &user,
@@ -639,7 +640,7 @@ void CynaraAdmin::ListPolicies(
     struct cynara_admin_policy ** pp_policies = nullptr;
 
     checkCynaraError(
-        cynara_admin_list_policies(m_CynaraAdmin, bucket.c_str(), label.c_str(),
+        cynara_admin_list_policies(m_cynaraAdmin, bucket.c_str(), label.c_str(),
             user.c_str(), privilege.c_str(), &pp_policies),
         "Error while getting list of policies for bucket: " + bucket);
 
@@ -653,17 +654,17 @@ void CynaraAdmin::ListPolicies(
 
 }
 
-void CynaraAdmin::EmptyBucket(const std::string &bucketName, bool recursive, const std::string &client,
+void CynaraAdmin::emptyBucket(const std::string &bucketName, bool recursive, const std::string &client,
     const std::string &user, const std::string &privilege)
 {
     checkCynaraError(
-        cynara_admin_erase(m_CynaraAdmin, bucketName.c_str(), static_cast<int>(recursive),
+        cynara_admin_erase(m_cynaraAdmin, bucketName.c_str(), static_cast<int>(recursive),
             client.c_str(), user.c_str(), privilege.c_str()),
         "Error while emptying bucket: " + bucketName + ", filter (C, U, P): " +
             client + ", " + user + ", " + privilege);
 }
 
-void CynaraAdmin::FetchCynaraPolicyDescriptions(bool forceRefresh)
+void CynaraAdmin::fetchCynaraPolicyDescriptions(bool forceRefresh)
 {
     struct cynara_admin_policy_descr **descriptions = nullptr;
 
@@ -672,7 +673,7 @@ void CynaraAdmin::FetchCynaraPolicyDescriptions(bool forceRefresh)
 
     // fetch
     checkCynaraError(
-        cynara_admin_list_policies_descriptions(m_CynaraAdmin, &descriptions),
+        cynara_admin_list_policies_descriptions(m_cynaraAdmin, &descriptions),
         "Error while getting list of policies descriptions from Cynara.");
 
     if (descriptions[0] == nullptr) {
@@ -683,15 +684,15 @@ void CynaraAdmin::FetchCynaraPolicyDescriptions(bool forceRefresh)
 
     // reset the state
     m_policyDescriptionsInitialized = false;
-    DescriptionToType.clear();
-    TypeToDescription.clear();
+    s_descriptionToType.clear();
+    s_typeToDescription.clear();
 
     // extract strings
     for (int i = 0; descriptions[i] != nullptr; i++) {
         std::string descriptionName(descriptions[i]->name);
 
-        DescriptionToType[descriptionName] = descriptions[i]->result;
-        TypeToDescription[descriptions[i]->result] = std::move(descriptionName);
+        s_descriptionToType[descriptionName] = descriptions[i]->result;
+        s_typeToDescription[descriptions[i]->result] = std::move(descriptionName);
 
         free(descriptions[i]->name);
         free(descriptions[i]);
@@ -703,7 +704,7 @@ void CynaraAdmin::FetchCynaraPolicyDescriptions(bool forceRefresh)
 }
 
 
-void CynaraAdmin::CalculatePolicies(const std::string &label, const std::string &user,
+void CynaraAdmin::calculatePolicies(const std::string &label, const std::string &user,
                            const std::vector<std::string> &privileges,
                            const std::string &bucket, int policyToSet,
                            std::vector<CynaraAdminPolicy> &oldPolicies,
@@ -711,7 +712,6 @@ void CynaraAdmin::CalculatePolicies(const std::string &label, const std::string 
 {
     std::unordered_set<std::string> privilegesSet(privileges.begin(),
                                                   privileges.end());
-
     // Compare previous policies with set of new requested privileges
     for (auto &policy : oldPolicies) {
         if (privilegesSet.erase(policy.privilege)) {
@@ -735,35 +735,35 @@ void CynaraAdmin::CalculatePolicies(const std::string &label, const std::string 
     }
 }
 
-void CynaraAdmin::ListPoliciesDescriptions(std::vector<std::string> &policiesDescriptions)
+void CynaraAdmin::listPoliciesDescriptions(std::vector<std::string> &policiesDescriptions)
 {
-    FetchCynaraPolicyDescriptions(false);
+    fetchCynaraPolicyDescriptions(false);
 
-    for (const auto &it : TypeToDescription)
+    for (const auto &it : s_typeToDescription)
         policiesDescriptions.push_back(it.second);
 }
 
 std::string CynaraAdmin::convertToPolicyDescription(const int policyType, bool forceRefresh)
 {
-    FetchCynaraPolicyDescriptions(forceRefresh);
+    fetchCynaraPolicyDescriptions(forceRefresh);
 
-    return TypeToDescription.at(policyType);
+    return s_typeToDescription.at(policyType);
 }
 
 int CynaraAdmin::convertToPolicyType(const std::string &policy, bool forceRefresh)
 {
-    FetchCynaraPolicyDescriptions(forceRefresh);
+    fetchCynaraPolicyDescriptions(forceRefresh);
 
-    return DescriptionToType.at(policy);
+    return s_descriptionToType.at(policy);
 }
 
-void CynaraAdmin::Check(const std::string &label, const std::string &user, const std::string &privilege,
+void CynaraAdmin::check(const std::string &label, const std::string &user, const std::string &privilege,
     const std::string &bucket, int &result, std::string &resultExtra, const bool recursive)
 {
     char *resultExtraCstr = nullptr;
 
     checkCynaraError(
-        cynara_admin_check(m_CynaraAdmin, bucket.c_str(), recursive, label.c_str(),
+        cynara_admin_check(m_cynaraAdmin, bucket.c_str(), recursive, label.c_str(),
             user.c_str(), privilege.c_str(), &result, &resultExtraCstr),
         "Error while asking cynara admin API for permission for app label: " + label + ", user: "
             + user + " privilege: " + privilege + " bucket: " + bucket);
@@ -776,31 +776,31 @@ void CynaraAdmin::Check(const std::string &label, const std::string &user, const
     }
 }
 
-int CynaraAdmin::GetPrivilegeManagerCurrLevel(const std::string &label, const std::string &user,
+int CynaraAdmin::getPrivilegeManagerCurrLevel(const std::string &label, const std::string &user,
         const std::string &privilege)
 {
     int result;
     std::string resultExtra;
 
-    Check(label, user, privilege, Buckets.at(Bucket::PRIVACY_MANAGER), result, resultExtra, true);
+    check(label, user, privilege, Buckets.at(Bucket::PRIVACY_MANAGER), result, resultExtra, true);
 
     return result;
 }
 
-int CynaraAdmin::GetPrivilegeManagerMaxLevel(const std::string &label, const std::string &user,
+int CynaraAdmin::getPrivilegeManagerMaxLevel(const std::string &label, const std::string &user,
         const std::string &privilege)
 {
     int result;
     std::string resultExtra;
 
-    Check(label, user, privilege, Buckets.at(Bucket::MAIN), result, resultExtra, true);
+    check(label, user, privilege, Buckets.at(Bucket::MAIN), result, resultExtra, true);
 
     return result;
 }
 
-Cynara::Cynara() : eventFd(eventfd(0, 0)), cynaraFd(eventFd), cynaraFdEvents(0), terminate(false)
+Cynara::Cynara() : m_eventFd(eventfd(0, 0)), m_cynaraFd(m_eventFd), m_cynaraFdEvents(0), m_terminate(false)
 {
-    if (eventFd == -1) {
+    if (m_eventFd == -1) {
         LogError("Error while creating eventfd: " << GetErrnoString(errno));
         ThrowMsg(CynaraException::UnknownError, "Error while creating eventfd");
     }
@@ -813,27 +813,27 @@ Cynara::Cynara() : eventFd(eventfd(0, 0)), cynaraFd(eventFd), cynaraFdEvents(0),
     checkCynaraError(cynara_async_configuration_set_cache_size(p_conf, CACHE_SIZE),
             "Cannot set cynara async configuration cache size");
     checkCynaraError(
-        cynara_async_initialize(&cynara, p_conf, &Cynara::statusCallback, this),
+        cynara_async_initialize(&m_cynara, p_conf, &Cynara::statusCallback, this),
         "Cannot connect to Cynara policy interface.");
 
-    thread = std::thread(&Cynara::run, this);
+    m_thread = std::thread(&Cynara::run, this);
 }
 
 Cynara::~Cynara()
 {
     LogDebug("Sending terminate event to Cynara thread");
-    terminate = true;
+    m_terminate = true;
     threadNotifyPut();
-    thread.join();
+    m_thread.join();
 
     // Critical section
-    std::lock_guard<std::mutex> guard(mutex);
-    cynara_async_finish(cynara);
+    std::lock_guard<std::mutex> guard(m_mutex);
+    cynara_async_finish(m_cynara);
 }
 
 void Cynara::threadNotifyPut()
 {
-    int ret = eventfd_write(eventFd, 1);
+    int ret = eventfd_write(m_eventFd, 1);
     if (ret == -1)
         LogError("Unexpected error while writing to eventfd: " << GetErrnoString(errno));
 }
@@ -841,7 +841,7 @@ void Cynara::threadNotifyPut()
 void Cynara::threadNotifyGet()
 {
     eventfd_t value;
-    int ret = eventfd_read(eventFd, &value);
+    int ret = eventfd_read(m_eventFd, &value);
     if (ret == -1)
         LogError("Unexpected error while reading from eventfd: " << GetErrnoString(errno));
 }
@@ -852,17 +852,15 @@ void Cynara::statusCallback(int oldFd, int newFd, cynara_async_status status)
         "Status = " << status << ", oldFd = " << oldFd << ", newFd = " << newFd);
 
     if (newFd == -1) {
-        cynaraFdEvents = 0;
+        m_cynaraFdEvents = 0;
     } else {
-
-        cynaraFd = newFd;
+        m_cynaraFd = newFd;
         switch (status) {
         case CYNARA_STATUS_FOR_READ:
-            cynaraFdEvents = POLLIN;
+            m_cynaraFdEvents = POLLIN;
             break;
-
         case CYNARA_STATUS_FOR_RW:
-            cynaraFdEvents = POLLIN | POLLOUT;
+            m_cynaraFdEvents = POLLIN | POLLOUT;
             break;
         }
     }
@@ -918,7 +916,7 @@ void Cynara::run()
     LogInfo("Cynara thread started");
     while (true) {
         std::atomic_thread_fence(std::memory_order_acquire);
-        struct pollfd pollFds[2] = {{eventFd, POLLIN, 0}, {cynaraFd, cynaraFdEvents, 0}};
+        struct pollfd pollFds[2] = {{m_eventFd, POLLIN, 0}, {m_cynaraFd, m_cynaraFdEvents, 0}};
         int ret = poll(pollFds, 2, -1);
 
         if (ret == -1) {
@@ -930,7 +928,7 @@ void Cynara::run()
         // Check eventfd for termination signal
         if (pollFds[0].revents) {
             threadNotifyGet();
-            if (terminate) {
+            if (m_terminate) {
                 LogInfo("Cynara thread terminated");
                 return;
             }
@@ -940,9 +938,9 @@ void Cynara::run()
         if (pollFds[1].revents) {
             try {
                 // Critical section
-                std::lock_guard<std::mutex> guard(mutex);
+                std::lock_guard<std::mutex> guard(m_mutex);
 
-                checkCynaraError(cynara_async_process(cynara),
+                checkCynaraError(cynara_async_process(m_cynara),
                     "Unexpected error returned by cynara_async_process");
             } catch (const CynaraException::Base &e) {
                 LogError("Error while processing Cynara events: " << e.DumpToString());
@@ -962,9 +960,9 @@ bool Cynara::check(const std::string &label, const std::string &privilege,
 
     // Critical section
     {
-        std::lock_guard<std::mutex> guard(mutex);
+        std::lock_guard<std::mutex> guard(m_mutex);
 
-        int ret = cynara_async_check_cache(cynara,
+        int ret = cynara_async_check_cache(m_cynara,
             label.c_str(), session.c_str(), user.c_str(), privilege.c_str());
 
         if (ret != CYNARA_API_CACHE_MISS)
@@ -974,7 +972,7 @@ bool Cynara::check(const std::string &label, const std::string &privilege,
 
         cynara_check_id check_id;
         checkCynaraError(
-            cynara_async_create_request(cynara,
+            cynara_async_create_request(m_cynara,
                 label.c_str(), session.c_str(), user.c_str(), privilege.c_str(),
                 &check_id, &Cynara::responseCallback, &promise),
             "Cannot check permission with Cynara.");

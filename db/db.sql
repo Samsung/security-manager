@@ -4,7 +4,7 @@ PRAGMA auto_vacuum = NONE;
 
 BEGIN EXCLUSIVE TRANSACTION;
 
-PRAGMA user_version = 10;
+PRAGMA user_version = 11;
 
 CREATE TABLE IF NOT EXISTS pkg (
 pkg_id INTEGER PRIMARY KEY,
@@ -96,11 +96,6 @@ BEGIN
                       WHERE app_name=NEW.app_name
                       AND pkg_name!=NEW.pkg_name);
 
-    SELECT RAISE(ABORT, 'Application already installed with different version')
-        WHERE EXISTS (SELECT 1 FROM user_app_pkg_view
-                      WHERE app_name=NEW.app_name
-                      AND version!=NEW.version);
-
     SELECT RAISE(ABORT, 'Another application from this package is already installed with different author')
         WHERE EXISTS (SELECT 1 FROM user_app_pkg_view
                       WHERE pkg_name=NEW.pkg_name
@@ -122,6 +117,9 @@ BEGIN
     -- If pkg have already existed with empty author do update it
     UPDATE pkg SET author_id=(SELECT author_id FROM author WHERE name=NEW.author_name)
         WHERE name=NEW.pkg_name AND author_id IS NULL;
+
+    -- If pkg have already existed with different version do update it
+    UPDATE app SET version=NEW.version WHERE app_id=NEW.app_id;
 
     INSERT OR IGNORE INTO app (pkg_id, name, version) VALUES (
         (SELECT pkg_id FROM pkg WHERE name=NEW.pkg_name),

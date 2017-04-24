@@ -33,6 +33,7 @@
 #include <dpl/singleton.h>
 #include <protocols.h>
 #include <security-manager.h>
+#include <utils.h>
 
 #include <boost/program_options.hpp>
 namespace po = boost::program_options;
@@ -102,7 +103,7 @@ static po::options_description getInstallOptions()
          ("author-id,c", po::value<std::string>(),
           "unique author's identifier (required for trusted_rw paths)")
          ("install-type", po::value<std::string>(),
-          "type of installation (local, global, preloaded")
+          "type of installation (local, global, preloaded)")
          ;
     return opts;
 }
@@ -357,6 +358,7 @@ int main(int argc, char *argv[])
             LogDebug("Install command.");
             if (security_manager_app_inst_req_new(&req) != SECURITY_MANAGER_SUCCESS)
                 return EXIT_FAILURE;
+            auto req_ptr = makeUnique(req, security_manager_app_inst_req_free);
             parseInstallOptions(argc, argv, *req, vm);
             return installApp(*req);
         } else if (vm.count("manage-users")) {
@@ -365,6 +367,8 @@ int main(int argc, char *argv[])
             LogDebug("Manage users command.");
             if (security_manager_user_req_new(&req) != SECURITY_MANAGER_SUCCESS)
                 return EXIT_FAILURE;
+            auto req_ptr = makeUnique(req, security_manager_user_req_free);
+
             parseUserOptions(argc, argv, *req, vm);
             return manageUserOperation(*req, operation);
         } else {

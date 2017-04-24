@@ -19,4 +19,4 @@
 
 CONFIGURE_FILE(security-manager.pc.in security-manager.pc @ONLY)
 
-INSTALL(FILES security-manager.pc DESTINATION ${LIB_INSTALL_DIR}/pkgconfig)
+INSTALL(FILES ${CMAKE_CURRENT_BINARY_DIR}/security-manager.pc DESTINATION ${LIB_INSTALL_DIR}/pkgconfig)

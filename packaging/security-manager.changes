@@ -1,3 +1,25 @@
+* Thu Mar 30 2017 Jin-gyu Kim <jin-gyu.kim@samsung.com>
+- Version 1.2.17
+- Use %license macro to copy license file.
+- Add "VALGRIND" build type
+- Remove the redundant SharedRO SMACK rules.
+- Unify method names in CynaraAdmin to pascal case
+- Clean up cynara classes members names
+- Free requests after processing them in cmd line tool
+- Add missing ')' in cmd line tool usage description
+- Allow version compatibility change during application upgrade
+- Remove dependency between SM and DBUS
+- Make it possible to use out-of-the-source build dir
+- [Unit tests] for PrivilegeDb class - related to private path sharing
+- Remove setting of CMAKE_C_FLAGS in the main CMakeLists.txt
+- Fix inconsistent types error
+- Log appId in case of errors in security_manager_prepare_app
+- Remove setting of -DTIZEN_DEBUG_ENABLE compilation flag
+- Remove unnecessary transaction rollback
+- Remove empty lines from rules.merged file.
+- Don't ignore errors in supplementary group setup during app launch preparation
+- Fix thread synchronization in Cynara class
+
 * Mon Jan 23 2017 Jooseong Lee <jooseong.lee@samsung.com>
 - Version 1.2.16
 - Fix in generateAppPkgNameFromLabel implementation

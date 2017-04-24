@@ -1,1 +1,5 @@
--- Dummy script. We only need to trigger db upgrade so that sql gets called and new table is created
+BEGIN EXCLUSIVE TRANSACTION;
+
+PRAGMA user_version = 10;
+
+COMMIT TRANSACTION;

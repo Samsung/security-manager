@@ -1,0 +1,15 @@
+[Unit]
+Description=Start the security manager
+Before=dbus.service
+
+[Service]
+Type=notify
+Environment="GLIBCXX_FORCE_NEW=1"
+ExecStart=@BIN_INSTALL_DIR@/valgrind -v --tool=memcheck --log-file=/tmp/security-manager.valgrind.%%p.log --num-callers=20 --leak-resolution=high --leak-check=full --show-reachable=yes --track-origins=yes @BIN_INSTALL_DIR@/security-manager
+#ExecStart=@BIN_INSTALL_DIR@/valgrind -v --tool=massif --log-file=/tmp/security-manager.valgrind.%%p.log --massif-out-file=/tmp/security-manager.massif.%%p.log @BIN_INSTALL_DIR@/security-manager
+Sockets=security-manager.socket
+Restart=always
+SmackProcessLabel=System::Privileged
+
+[Install]
+WantedBy=dbus.service
