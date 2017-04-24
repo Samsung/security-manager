@@ -19,6 +19,7 @@
  * @version    1.0
  */
 
+#include <ostream>
 #include <stdlib.h>
 #include <string>
 #include <sys/types.h>
@@ -32,29 +33,64 @@
 #include "privilege_db.h"
 #include "privilege_db_fixture.h"
 
+#if BOOST_VERSION >= 105900
+
+namespace boost {
+
+namespace test_tools {
+
+namespace tt_detail {
+
+// tell boost howto print pair of std::string and std::vector
+template<typename T, typename U>
+struct print_log_value<std::pair<T, std::vector<U>>> {
+    void operator()(std::ostream& os, std::pair<T, std::vector<U>> const& pr) {
+        os << "<" << std::get<0>(pr) << ",";
+        os << '[';
+        bool first = true;
+        for (auto &element : std::get<1>(pr)) {
+            os << (!first ? "," : "") << element;
+            first = false;
+        }
+	os << ']';
+    }
+};
+
+} //namespace tt_detail
+
+} //namespace test_tools
+
+} //namespace boost
+
+#else
+
 namespace boost
 {
-// tell boost howto print vector
-template <typename T> wrap_stringstream&
-operator<<(wrap_stringstream &wrapped, const std::vector<T> &elements)
+
+// tell Boost.Test how to print std::vector
+template <typename T>
+inline wrap_stringstream&
+operator<<(wrap_stringstream &wrapped, const std::vector<T> &item)
 {
     wrapped << '[';
     bool first = true;
-    for (auto &element : elements) {
+    for (const auto& element : item) {
         wrapped << (!first ? "," : "") << element;
         first = false;
     }
     return wrapped << ']';
 }
 
-// tell boost howto print pair
-template <typename X, typename Y> wrap_stringstream&
-operator<<(wrap_stringstream &wrapped, const std::pair<X, Y> &item)
+// teach Boost.Test how to print std::pair<K,V>
+template <typename T, typename V>
+inline wrap_stringstream &operator<<(wrap_stringstream &wrapped, const std::pair<T, V> &item)
 {
     return wrapped << '<' << item.first << ',' << item.second << '>';
 }
 
 } //namespace boost
+
+#endif
 
 typedef std::map<std::string, std::vector<std::string>> PrivateSharingMap;
 
