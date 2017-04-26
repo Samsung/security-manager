@@ -36,8 +36,8 @@ typedef std::vector<std::pair<std::string, int>> pkg_paths;
 struct app_inst_req {
     std::string appName;
     std::string pkgName;
-    std::vector<std::string> privileges;
-    std::vector<std::pair<std::string, int>> appDefinedPrivileges;
+    std::vector<std::pair<std::string, std::string>> privileges;
+    std::vector<std::tuple<std::string, int, std::string>> appDefinedPrivileges;
     pkg_paths pkgPaths;
     uid_t uid;
     std::string tizenVersion;
@@ -89,7 +89,9 @@ enum class SecurityModuleCall
     GROUPS_FOR_UID,
     LABEL_FOR_PROCESS,
     SHM_APP_NAME,
-    GET_PRIVILEGE_PROVIDER,
+    GET_APP_DEFINED_PRIVILEGE_PROVIDER,
+    GET_APP_DEFINED_PRIVILEGE_LICENSE,
+    GET_CLIENT_PRIVILEGE_LICENSE,
     NOOP = 0x90,
 };
 

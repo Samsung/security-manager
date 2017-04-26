@@ -26,6 +26,7 @@
 #include <list>
 #include <map>
 #include <memory>
+#include <tuple>
 
 namespace SecurityManager {
 // Abstract data stream buffer
@@ -184,6 +185,21 @@ struct Serialization {
     static void Serialize(IStream& stream, const std::pair<A, B>* const p)
     {
         Serialize(stream, *p);
+    }
+
+    // TODO template version without limit on tuple size
+    // std::tuple
+    template <typename A, typename B, typename C>
+    static void Serialize(IStream& stream, const std::tuple<A, B, C>& t)
+    {
+        Serialize(stream, std::get<0>(t));
+        Serialize(stream, std::get<1>(t));
+        Serialize(stream, std::get<2>(t));
+    }
+    template <typename A, typename B, typename C>
+    static void Serialize(IStream& stream, const std::tuple<A, B, C>* const t)
+    {
+        Serialize(stream, *t);
     }
 
     // std::map
@@ -377,6 +393,22 @@ struct Deserialization {
     {
         p = new std::pair<A, B>;
         Deserialize(stream, *p);
+    }
+
+    // TODO template version without limit on tuple size
+    // std::tuple
+    template <typename A, typename B, typename C>
+    static void Deserialize(IStream& stream, std::tuple<A, B, C>& t)
+    {
+        Deserialize(stream, std::get<0>(t));
+        Deserialize(stream, std::get<1>(t));
+        Deserialize(stream, std::get<2>(t));
+    }
+    template <typename A, typename B, typename C>
+    static void Deserialize(IStream& stream, std::tuple<A, B, C>*& t)
+    {
+        t = new std::tuple<A, B, C>;
+        Deserialize(stream, *t);
     }
 
     // std::map

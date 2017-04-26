@@ -82,13 +82,18 @@ enum class StmtType {
     EIsPackageHybrid,
     EGetPackagesInfo,
     EAddAppDefinedPrivilege,
+    EAddClientPrivilege,
     ERemoveAppDefinedPrivileges,
+    ERemoveClientPrivileges,
     EGetAppDefinedPrivileges,
-    EGetAppForAppDefinedPrivilege,
+    EGetAppAndLicenseForAppDefinedPrivilege,
+    EGetLicenseForClientPrivilege,
+    EIsUserAppInstalled,
 };
 
-typedef std::pair<std::string, int> Privilege;
-typedef std::vector<Privilege> PrivilegesVector;
+// privilege, app_defined_privilege_type, license
+typedef std::tuple<std::string, int, std::string> AppDefinedPrivilege;
+typedef std::vector<AppDefinedPrivilege> AppDefinedPrivilegesVector;
 
 class PrivilegeDb {
     /**
@@ -142,10 +147,14 @@ private:
         { StmtType::EIsPackageSharedRO, "SELECT shared_ro FROM pkg WHERE name=?"},
         { StmtType::EIsPackageHybrid, "SELECT is_hybrid FROM pkg WHERE name=?"},
         { StmtType::EGetPackagesInfo, "SELECT name, shared_ro, is_hybrid FROM pkg"},
-        { StmtType::EAddAppDefinedPrivilege, "INSERT INTO app_defined_privilege_view (app_name, uid, privilege, type) VALUES (?, ?, ?, ?)"},
+        { StmtType::EAddAppDefinedPrivilege, "INSERT INTO app_defined_privilege_view (app_name, uid, privilege, type, license) VALUES (?, ?, ?, ?, ?)"},
+        { StmtType::EAddClientPrivilege, "INSERT INTO client_license_view (app_name, uid, privilege, license) VALUES (?, ?, ?, ?)"},
         { StmtType::ERemoveAppDefinedPrivileges, "DELETE FROM app_defined_privilege_view WHERE app_name = ? AND uid = ?"},
-        { StmtType::EGetAppDefinedPrivileges, "SELECT privilege, type FROM app_defined_privilege_view WHERE app_name = ? AND uid = ?"},
-        { StmtType::EGetAppForAppDefinedPrivilege, "SELECT app_name FROM app_defined_privilege_view WHERE privilege = ? AND uid = ?"},
+        { StmtType::ERemoveClientPrivileges, "DELETE FROM client_license_view WHERE app_name = ? AND uid = ?"},
+        { StmtType::EGetAppDefinedPrivileges, "SELECT privilege, type, license FROM app_defined_privilege_view WHERE app_name = ? AND uid = ?"},
+        { StmtType::EGetAppAndLicenseForAppDefinedPrivilege, "SELECT app_name, license FROM app_defined_privilege_view WHERE uid = ? AND privilege = ?"},
+        { StmtType::EGetLicenseForClientPrivilege, "SELECT license FROM client_license_view WHERE app_name = ? AND uid = ? AND privilege = ? "},
+        { StmtType::EIsUserAppInstalled, "SELECT count(*) FROM user_app_pkg_view WHERE app_name = ? AND uid = ?"},
     };
 
     /**
@@ -541,7 +550,7 @@ public:
     void GetPackagesInfo(std::vector<PkgInfo> &packages);
 
     /**
-     * Add new privilege defined by application
+     * Add new privilege and license defined by application
      *
      * @param[in] appName - application identifier
      * @param[in] uid - user identifier
@@ -550,7 +559,7 @@ public:
      * @exception PrivilegeDb::Exception::InternalError on internal error
      * @exception PrivilegeDb::Exception::ConstraintError on constraint violation
      */
-    void AddAppDefinedPrivilege(const std::string &appName, uid_t uid, const Privilege &privilege);
+    void AddAppDefinedPrivilege(const std::string &appName, uid_t uid, const AppDefinedPrivilege &privilege);
 
     /**
      * Add vector of privileges defined by application
@@ -562,10 +571,24 @@ public:
      * @exception PrivilegeDb::Exception::InternalError on internal error
      * @exception PrivilegeDb::Exception::ConstraintError on constraint violation
      */
-    void AddAppDefinedPrivileges(const std::string &appName, uid_t uid, const PrivilegesVector &privileges);
+    void AddAppDefinedPrivileges(const std::string &appName, uid_t uid, const AppDefinedPrivilegesVector &privileges);
 
     /**
-     * Remove privileges defined by application
+     * Add privilege and license used by client application
+     *
+     * @param[in] appName - application identifier
+     * @param[in] uid - user identifier
+     * @param[in] privilege - privilege identifier
+     * @param[in] license - license
+     *
+     * @exception PrivilegeDb::Exception::InternalError on internal error
+     * @exception PrivilegeDb::Exception::ConstraintError on constraint violation
+     */
+    void AddClientPrivilege(const std::string &appName, uid_t uid, const std::string &privilege,
+                            const std::string &license);
+
+    /**
+     * Remove privileges/licenses defined by application
      *
      * @param[in] appName - application identifier
      * @param[in] uid - user identifier
@@ -574,6 +597,17 @@ public:
      * @exception PrivilegeDb::Exception::ConstraintError on constraint violation
      */
     void RemoveAppDefinedPrivileges(const std::string &appName, uid_t uid);
+
+    /**
+     * Remove privileges/licenses used by client application
+     *
+     * @param[in] appName - application identifier
+     * @param[in] uid - user identifier
+     *
+     * @exception PrivilegeDb::Exception::InternalError on internal error
+     * @exception PrivilegeDb::Exception::ConstraintError on constraint violation
+     */
+    void RemoveClientPrivileges(const std::string &appName, uid_t uid);
 
     /**
      * Retrieve vector of pairs with privilege (1st value) and privilege type (2nd value)
@@ -585,19 +619,43 @@ public:
      * @exception PrivilegeDb::Exception::InternalError on internal error
      * @exception PrivilegeDb::Exception::ConstraintError on constraint violation
      */
-    void GetAppDefinedPrivileges(const std::string &appName, uid_t uid, PrivilegesVector &privileges);
+    void GetAppDefinedPrivileges(const std::string &appName, uid_t uid, AppDefinedPrivilegesVector &privileges);
 
     /**
-     * Retrieve application which define privilege
+     * Retrieve application and license of application which define privilege
      *
-     * @param[in]  privilege - privilege identifier
      * @param[in]  uid - user identifier
+     * @param[in]  privilege - privilege identifier
      * @param[out] appName - application identifier
+     * @param[out] license - verification factor required by license-manager
      *
      * @exception PrivilegeDb::Exception::InternalError on internal error
      * @exception PrivilegeDb::Exception::ConstraintError on constraint violation
      */
-    void GetAppForAppDefinedPrivilege(const Privilege &privilege, uid_t uid, std::string &appName);
+    void GetAppAndLicenseForAppDefinedPrivilege(uid_t uid, const std::string &privilege,
+                                                std::string &appName, std::string &license);
+
+    /**
+     * Retrieve license of client application
+     *
+     * @param[in]  appName - application identifier
+     * @param[in]  uid - user identifier
+     * @param[in]  privilege - privilege identifier
+     * @param[out] license - verification factor required by license-manager
+     *
+     * @exception PrivilegeDb::Exception::InternalError on internal error
+     * @exception PrivilegeDb::Exception::ConstraintError on constraint violation
+     */
+    void GetLicenseForClientPrivilege(const std::string &appName, uid_t uid, const std::string &privilege,
+                                      std::string &license);
+
+    /**
+     * Check whether user has installed application
+     *
+     * @exception PrivilegeDb::Exception::InternalError on internal error
+     * @exception PrivilegeDb::Exception::ConstraintError on constraint violation
+     */
+    bool IsUserAppInstalled(const std::string& appName, uid_t uid);
 };
 
 } //namespace SecurityManager

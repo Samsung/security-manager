@@ -33,18 +33,24 @@ std::string AgentLogic::process(const std::string &data) {
     std::string smack, privilege;
     int uid;
     ss >> smack >> uid >> privilege;
-    char *pkgId = nullptr, *appId = nullptr;
+    char *pkgId = nullptr, *appId = nullptr, *licensePath = nullptr;
 
-    security_manager_identify_privilege_provider(
+    security_manager_get_app_defined_privilege_provider(
             privilege.c_str(),
             uid,
             &pkgId,
             &appId);
 
+    security_manager_get_app_defined_privilege_license(
+            privilege.c_str(),
+            uid,
+            &licensePath);
+
     ALOGD("App: %s Uid: %d Priv: %s", smack.c_str(), uid, privilege.c_str());
     ALOGD("Privilege: %s is Provided by: %s/%s", privilege.c_str(), appId, pkgId);
     free(pkgId);
     free(appId);
+    free(licensePath);
 
     std::stringstream out;
     out << 1;

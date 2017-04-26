@@ -209,7 +209,23 @@ private:
      * @param  buffer Raw received data buffer
      * @param  send   Raw data buffer to be sent
      */
-    void processGetPrivilegeProvider(MessageBuffer &buffer, MessageBuffer &send);
+    void processGetAppDefinedPrivilegeProvider(MessageBuffer &buffer, MessageBuffer &send);
+
+    /**
+     * Process getting license of privilege
+     *
+     * @param  buffer Raw received data buffer
+     * @param  send   Raw data buffer to be sent
+     */
+    void processGetAppDefinedPrivilegeLicense(MessageBuffer &buffer, MessageBuffer &send);
+
+    /**
+     * Process getting license of privilege
+     *
+     * @param  buffer Raw received data buffer
+     * @param  send   Raw data buffer to be sent
+     */
+    void processGetClientPrivilegeLicense(MessageBuffer &buffer, MessageBuffer &send);
 };
 
 } // namespace SecurityManager

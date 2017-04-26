@@ -341,8 +341,8 @@ void CynaraAdmin::updateAppPolicy(
     bool global,
     uid_t uid,
     const std::vector<std::string> &privileges,
-    const std::vector<std::pair<std::string, int>> &oldAppDefinedPrivileges,
-    const std::vector<std::pair<std::string, int>> &newAppDefinedPrivileges,
+    const AppDefinedPrivilegesVector &oldAppDefinedPrivileges,
+    const AppDefinedPrivilegesVector &newAppDefinedPrivileges,
     bool policyRemove)
 {
     std::vector<CynaraAdminPolicy> oldPolicies;
@@ -431,26 +431,26 @@ void CynaraAdmin::updateAppPolicy(
     std::vector<CynaraAdminPolicy> oldUntrustedPolicies;
     std::vector<CynaraAdminPolicy> oldLicensedPolicies;
 
-    for (const std::pair<std::string, int> &p : oldAppDefinedPrivileges) {
-        switch (p.second) {
+    for (const AppDefinedPrivilege &p : oldAppDefinedPrivileges) {
+        switch (std::get<1>(p)) {
             case SM_APP_DEFINED_PRIVILEGE_TYPE_UNTRUSTED:
                 listPolicies(Buckets.at(Bucket::APPDEFINED), CYNARA_ADMIN_WILDCARD, cynaraUser,
-                             p.first, oldUntrustedPolicies);
+                             std::get<0>(p), oldUntrustedPolicies);
                 break;
             case SM_APP_DEFINED_PRIVILEGE_TYPE_LICENSED:
                 listPolicies(Buckets.at(Bucket::APPDEFINED), CYNARA_ADMIN_WILDCARD, cynaraUser,
-                             p.first, oldLicensedPolicies);
+                             std::get<0>(p), oldLicensedPolicies);
                 break;
         }
     }
 
-    for (const std::pair<std::string, int> &p : newAppDefinedPrivileges) {
-        switch (p.second) {
+    for (const AppDefinedPrivilege &p : newAppDefinedPrivileges) {
+        switch (std::get<1>(p)) {
             case SM_APP_DEFINED_PRIVILEGE_TYPE_UNTRUSTED:
-                untrustedPrivileges.push_back(p.first);
+                untrustedPrivileges.push_back(std::get<0>(p));
                 break;
             case SM_APP_DEFINED_PRIVILEGE_TYPE_LICENSED:
-                licensedPrivileges.push_back(p.first);
+                licensedPrivileges.push_back(std::get<0>(p));
                 break;
         }
     }

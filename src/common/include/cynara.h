@@ -37,6 +37,7 @@
 #include <sys/eventfd.h>
 
 #include "security-manager.h"
+#include "privilege_db.h"
 
 namespace SecurityManager {
 
@@ -140,8 +141,8 @@ public:
      */
     void updateAppPolicy(const std::string &label, bool global, uid_t uid,
         const std::vector<std::string> &privileges,
-        const std::vector<std::pair<std::string, int>> &oldAppDefinedPrivileges,
-        const std::vector<std::pair<std::string, int>> &newAppDefinedPrivileges,
+        const AppDefinedPrivilegesVector &oldAppDefinedPrivileges,
+        const AppDefinedPrivilegesVector &newAppDefinedPrivileges,
         bool policyRemove = false);
 
     /**

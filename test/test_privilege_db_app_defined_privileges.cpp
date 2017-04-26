@@ -33,19 +33,20 @@ namespace {
 
 struct AppDefinedPrivilegeFixture : public PrivilegeDBFixture {
     void checkAppDefinedPrivileges(const std::string &app, uid_t uid,
-                                   const PrivilegesVector &expected);
+                                   const AppDefinedPrivilegesVector &expected);
 };
 
 void AppDefinedPrivilegeFixture::checkAppDefinedPrivileges(const std::string &app, uid_t uid,
-                                                           const PrivilegesVector &expected)
+                                                           const AppDefinedPrivilegesVector &expected)
 {
-    PrivilegesVector privileges;
+    AppDefinedPrivilegesVector privileges;
     testPrivDb->GetAppDefinedPrivileges(app, uid, privileges);
     BOOST_REQUIRE_MESSAGE(privileges.size() == expected.size(), "Vector sizes differ");
 
     for (unsigned int i = 0; i < privileges.size(); ++i) {
-        BOOST_REQUIRE(privileges[i].first == expected[i].first);
-        BOOST_REQUIRE(privileges[i].second ==  expected[i].second);
+        BOOST_REQUIRE(std::get<0>(privileges[i]) == std::get<0>(expected[i]));
+        BOOST_REQUIRE(std::get<1>(privileges[i]) == std::get<1>(expected[i]));
+        BOOST_REQUIRE(std::get<2>(privileges[i]) == std::get<2>(expected[i]));
     }
 }
 
@@ -56,9 +57,13 @@ BOOST_FIXTURE_TEST_SUITE(PRIVILEGE_DB_TEST_APP_DEFINED_PRIVILEGES, AppDefinedPri
 BOOST_AUTO_TEST_CASE(T1300_app_defined_privileges)
 {
     // add some privileges
-    PrivilegesVector privileges;
-    privileges.push_back(std::make_pair("org.tizen.my_app.gps", SM_APP_DEFINED_PRIVILEGE_TYPE_UNTRUSTED));
-    privileges.push_back(std::make_pair("org.tizen.my_app.sso", SM_APP_DEFINED_PRIVILEGE_TYPE_LICENSED));
+    AppDefinedPrivilegesVector privileges;
+    privileges.push_back(std::make_tuple("org.tizen.my_app.gps",
+                                         SM_APP_DEFINED_PRIVILEGE_TYPE_UNTRUSTED,
+                                         ""));
+    privileges.push_back(std::make_tuple("org.tizen.my_app.sso",
+                                         SM_APP_DEFINED_PRIVILEGE_TYPE_LICENSED,
+                                         "/opt/data/my_app/res/license"));
 
     // non-existing application
     checkAppDefinedPrivileges(app(1), uid(1), {});
@@ -77,16 +82,22 @@ BOOST_AUTO_TEST_CASE(T1300_app_defined_privileges)
     BOOST_REQUIRE_NO_THROW(testPrivDb->AddAppDefinedPrivilege(app(1), uid(1), privileges[0]));
 
     // check non-existing privilege
-    std::string appName;
-    BOOST_REQUIRE_NO_THROW(testPrivDb->GetAppForAppDefinedPrivilege(privileges[1], uid(1), appName));
+    std::string appName, license;
+    BOOST_REQUIRE_NO_THROW(
+        testPrivDb->GetAppAndLicenseForAppDefinedPrivilege(uid(1), std::get<0>(privileges[1]),
+                                                           appName, license));
     BOOST_REQUIRE(appName.empty());
+    BOOST_REQUIRE(license.empty());
 
     // first application defines second privilege
     BOOST_REQUIRE_NO_THROW(testPrivDb->AddAppDefinedPrivilege(app(1), uid(1), privileges[1]));
 
     // check existing privilege application name
-    BOOST_REQUIRE_NO_THROW(testPrivDb->GetAppForAppDefinedPrivilege(privileges[1], uid(1), appName));
+    BOOST_REQUIRE_NO_THROW(
+        testPrivDb->GetAppAndLicenseForAppDefinedPrivilege(uid(1), std::get<0>(privileges[1]),
+                                                           appName, license));
     BOOST_REQUIRE(appName == app(1));
+    BOOST_REQUIRE(license == std::get<2>(privileges[1]));
 
     // check first application privileges
     checkAppDefinedPrivileges(app(1), uid(1), privileges);

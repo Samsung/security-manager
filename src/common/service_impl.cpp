@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2014-2016 Samsung Electronics Co., Ltd All Rights Reserved
+ *  Copyright (c) 2014-2017 Samsung Electronics Co., Ltd All Rights Reserved
  *
  *  Contact: Rafal Krypa <r.krypa@samsung.com>
  *
@@ -508,6 +508,12 @@ int ServiceImpl::appInstall(const Credentials &creds, app_inst_req &&req)
     bool hasSharedRO = isSharedRO(req.pkgPaths);
 
     try {
+        std::vector<std::string> privilegeList;
+        privilegeList.reserve(req.privileges.size());
+
+        for (auto &e : req.privileges)
+            privilegeList.push_back(e.first);
+
         setRequestDefaultValues(req.uid, req.installationType);
 
         LogDebug("Install parameters: appName: " << req.appName << ", pkgName: " << req.pkgName
@@ -533,16 +539,22 @@ int ServiceImpl::appInstall(const Credentials &creds, app_inst_req &&req)
         getPkgLabels(req.pkgName, pkgLabels);
         m_privilegeDb.GetPkgAuthorId(req.pkgName, authorId);
 
-        PrivilegesVector oldAppDefinedPrivileges;
+        AppDefinedPrivilegesVector oldAppDefinedPrivileges;
         m_privilegeDb.GetAppDefinedPrivileges(req.appName, req.uid, oldAppDefinedPrivileges);
 
         bool global = req.installationType == SM_APP_INSTALL_GLOBAL ||
                       req.installationType == SM_APP_INSTALL_PRELOADED;
-        m_cynaraAdmin.updateAppPolicy(appLabel, global, req.uid, req.privileges,
+        m_cynaraAdmin.updateAppPolicy(appLabel, global, req.uid, privilegeList,
                                       oldAppDefinedPrivileges, req.appDefinedPrivileges);
 
         m_privilegeDb.RemoveAppDefinedPrivileges(req.appName, req.uid);
         m_privilegeDb.AddAppDefinedPrivileges(req.appName, req.uid, req.appDefinedPrivileges);
+
+        m_privilegeDb.RemoveClientPrivileges(req.appName, req.uid);
+        for (auto &e : req.privileges) {
+            if (!e.second.empty())
+                m_privilegeDb.AddClientPrivilege(req.appName, req.uid, e.first, e.second);
+        }
 
         if (hasSharedRO)
             m_privilegeDb.SetSharedROPackage(req.pkgName);
@@ -704,7 +716,7 @@ int ServiceImpl::appUninstall(const Credentials &creds, app_inst_req &&req)
                 }
         }
 
-        PrivilegesVector oldAppDefinedPrivileges;
+        AppDefinedPrivilegesVector oldAppDefinedPrivileges;
         m_privilegeDb.GetAppDefinedPrivileges(req.appName, req.uid, oldAppDefinedPrivileges);
 
         m_privilegeDb.RemoveApplication(req.appName, req.uid, removeApp, removePkg, removeAuthor);
@@ -715,7 +727,7 @@ int ServiceImpl::appUninstall(const Credentials &creds, app_inst_req &&req)
         bool global = req.installationType == SM_APP_INSTALL_GLOBAL ||
                       req.installationType == SM_APP_INSTALL_PRELOADED;
         m_cynaraAdmin.updateAppPolicy(processLabel, global, req.uid, std::vector<std::string>(),
-                                      oldAppDefinedPrivileges, std::vector<std::pair<std::string, int>>(), true);
+                                      oldAppDefinedPrivileges, AppDefinedPrivilegesVector(), true);
         trans.commit();
 
         LogDebug("Application uninstallation commited to database");
@@ -1702,30 +1714,73 @@ int ServiceImpl::shmAppName(const Credentials &creds, const std::string &shmName
     return SECURITY_MANAGER_SUCCESS;
 }
 
-int ServiceImpl::getPrivilegeProvider(const std::string &privilege, uid_t uid,
-                                      std::pair<std::string, std::string> &provider)
+int ServiceImpl::getAppDefinedPrivilegeProvider(uid_t uid, const std::string &privilege,
+                                                std::string &appName, std::string &pkgName)
 {
-    std::string appName, pkgName;
+    std::string appNameString, pkgNameString, licenseString;
     try {
-        m_privilegeDb.GetAppForAppDefinedPrivilege(std::make_pair(privilege, 0), uid, appName);
+        m_privilegeDb.GetAppAndLicenseForAppDefinedPrivilege(uid, privilege, appNameString, licenseString);
 
         // check if privilege is provided by globally installed application
-        if (appName.empty())
-            m_privilegeDb.GetAppForAppDefinedPrivilege(std::make_pair(privilege, 0), getGlobalUserId(), appName);
+        if (appNameString.empty())
+            m_privilegeDb.GetAppAndLicenseForAppDefinedPrivilege(getGlobalUserId(), privilege, appNameString, licenseString);
 
-        m_privilegeDb.GetAppPkgName(appName, pkgName);
-        if (appName.empty() || pkgName.empty()) {
+        m_privilegeDb.GetAppPkgName(appNameString, pkgNameString);
+        if (appNameString.empty() || pkgNameString.empty()) {
             LogWarning("Privilege " << privilege << " not found in database");
             return SECURITY_MANAGER_ERROR_NO_SUCH_OBJECT;
         } else {
-            LogDebug("Privilege: " << privilege << " provided by app: " << appName << ", pkg: " << pkgName);
+            LogDebug("Privilege: " << privilege << " provided by app: " << appNameString << ", pkg: " << pkgNameString);
         }
     } catch (const PrivilegeDb::Exception::Base &e) {
         LogError("Error while getting appName or pkgName from database: " << e.DumpToString());
         return SECURITY_MANAGER_ERROR_SERVER_ERROR;
     }
 
-    provider = std::make_pair(appName, pkgName);
+    appName = appNameString;
+    pkgName = pkgNameString;
+    return SECURITY_MANAGER_SUCCESS;
+}
+
+int ServiceImpl::getAppDefinedPrivilegeLicense(uid_t uid, const std::string &privilege,
+                                                std::string &license)
+{
+    std::string appNameString, licenseString;
+    try {
+        m_privilegeDb.GetAppAndLicenseForAppDefinedPrivilege(uid, privilege, appNameString, licenseString);
+
+        // check if privilege is provided by globally installed application
+        if (appNameString.empty())
+            m_privilegeDb.GetAppAndLicenseForAppDefinedPrivilege(getGlobalUserId(), privilege, appNameString, licenseString);
+
+        if (licenseString.empty())
+            return SECURITY_MANAGER_ERROR_NO_SUCH_OBJECT;
+    } catch (const PrivilegeDb::Exception::Base &e) {
+        LogError("Error while getting license from database: " << e.DumpToString());
+        return SECURITY_MANAGER_ERROR_SERVER_ERROR;
+    }
+
+    license = licenseString;
+    return SECURITY_MANAGER_SUCCESS;
+}
+
+int ServiceImpl::getClientPrivilegeLicense(const std::string &appName, uid_t uid, const std::string &privilege,
+                                           std::string &license)
+{
+    std::string licenseString;
+    try {
+        uid_t requestUid = m_privilegeDb.IsUserAppInstalled(appName, uid) ? uid : getGlobalUserId();
+
+        m_privilegeDb.GetLicenseForClientPrivilege(appName, requestUid, privilege, licenseString);
+
+        if (licenseString.empty())
+            return SECURITY_MANAGER_ERROR_NO_SUCH_OBJECT;
+    } catch (const PrivilegeDb::Exception::Base &e) {
+        LogError("Error while getting license for app: " << e.DumpToString());
+        return SECURITY_MANAGER_ERROR_SERVER_ERROR;
+    }
+
+    license = licenseString;
     return SECURITY_MANAGER_SUCCESS;
 }
 

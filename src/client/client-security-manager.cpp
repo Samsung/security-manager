@@ -34,6 +34,7 @@
 #include <utility>
 #include <atomic>
 #include <stdlib.h>
+#include <cxxabi.h>
 
 #include <unistd.h>
 #include <grp.h>
@@ -182,12 +183,22 @@ int security_manager_app_inst_req_set_pkg_id(app_inst_req *p_req, const char *pk
 SECURITY_MANAGER_API
 int security_manager_app_inst_req_add_privilege(app_inst_req *p_req, const char *privilege)
 {
-    if (!p_req || !privilege)
-        return SECURITY_MANAGER_ERROR_INPUT_PARAM;
+    return security_manager_app_inst_req_add_client_privilege(p_req, privilege, nullptr);
+}
 
-    p_req->privileges.push_back(privilege);
+SECURITY_MANAGER_API
+int security_manager_app_inst_req_add_client_privilege(app_inst_req *p_req, const char *privilege, const char *license)
+{
+    return try_catch([&]() -> int {
+        if (!p_req || !privilege)
+            return SECURITY_MANAGER_ERROR_INPUT_PARAM;
 
-    return SECURITY_MANAGER_SUCCESS;
+        p_req->privileges.push_back(std::make_pair(
+              std::string(privilege),
+              license ? std::string(license) : std::string()));
+
+        return SECURITY_MANAGER_SUCCESS;
+    });
 }
 
 SECURITY_MANAGER_API
@@ -195,13 +206,14 @@ int security_manager_app_inst_req_add_app_defined_privilege(
         app_inst_req *p_req,
         const char *app_defined_privilege,
         const app_defined_privilege_type type,
-        const char *)
+        const char *license)
 {
     if (!p_req || !app_defined_privilege ||
-        type < SM_APP_DEFINED_PRIVILEGE_TYPE_UNTRUSTED || type > SM_APP_DEFINED_PRIVILEGE_TYPE_LICENSED)
+        type < SM_APP_DEFINED_PRIVILEGE_TYPE_UNTRUSTED || type > SM_APP_DEFINED_PRIVILEGE_TYPE_LICENSED ||
+        (type == SM_APP_DEFINED_PRIVILEGE_TYPE_LICENSED && !license))
         return SECURITY_MANAGER_ERROR_INPUT_PARAM;
 
-    p_req->appDefinedPrivileges.push_back(std::make_pair(app_defined_privilege, static_cast<int>(type)));
+    p_req->appDefinedPrivileges.push_back(std::make_tuple(app_defined_privilege, static_cast<int>(type), license));
 
     return SECURITY_MANAGER_SUCCESS;
 }
@@ -1592,26 +1604,33 @@ int security_manager_shm_open(const char *name, int oflag, mode_t mode, const ch
 }
 
 SECURITY_MANAGER_API
-int security_manager_identify_privilege_provider(const char *privilege, uid_t uid,
-                                                 char **pkg_name, char **app_name)
+int security_manager_get_app_defined_privilege_provider(
+        const char *privilege,
+        uid_t uid,
+        char **pkg_name,
+        char **app_name)
 {
     using namespace SecurityManager;
     return try_catch([&]() -> int {
         LogDebug(__PRETTY_FUNCTION__ << " called");
+
+        if (privilege == NULL) {
+            LogError("privilege could not be NULL");
+            return SECURITY_MANAGER_ERROR_INPUT_PARAM;
+        }
 
         if (pkg_name == NULL && app_name == NULL) {
             LogError("Both pkg_name and app_name are NULL");
             return SECURITY_MANAGER_ERROR_INPUT_PARAM;
         }
 
-        ClientRequest request(SecurityModuleCall::GET_PRIVILEGE_PROVIDER);
-        if (request.send(std::string(privilege), uid).failed())
+        ClientRequest request(SecurityModuleCall::GET_APP_DEFINED_PRIVILEGE_PROVIDER);
+        if (request.send(uid, std::string(privilege)).failed())
             return request.getStatus();
 
-        std::pair<std::string, std::string> provider;
-        request.recv(provider);
-        std::string appNameString = provider.first;
-        std::string pkgNameString = provider.second;
+        std::string appNameString;
+        std::string pkgNameString;
+        request.recv(appNameString, pkgNameString);
 
         if (appNameString.empty() || pkgNameString.empty()) {
             LogError("Unexpected empty appName or pkgName");
@@ -1629,6 +1648,69 @@ int security_manager_identify_privilege_provider(const char *privilege, uid_t ui
                 free(*app_name);
                 *app_name = NULL;
             }
+            return SECURITY_MANAGER_ERROR_MEMORY;
+        }
+
+        return SECURITY_MANAGER_SUCCESS;
+    });
+}
+
+SECURITY_MANAGER_API
+int security_manager_get_app_defined_privilege_license(
+        const char *privilege,
+        uid_t uid,
+        char **license)
+{
+    using namespace SecurityManager;
+    return try_catch([&]() -> int {
+        LogDebug(__PRETTY_FUNCTION__ << " called");
+
+        if (privilege == NULL || license == NULL) {
+            LogError("privilege, license could not be NULL");
+            return SECURITY_MANAGER_ERROR_INPUT_PARAM;
+        }
+
+        ClientRequest request(SecurityModuleCall::GET_APP_DEFINED_PRIVILEGE_LICENSE);
+        if (request.send(uid, std::string(privilege)).failed())
+            return request.getStatus();
+
+        std::string licenseString;
+        request.recv(licenseString);
+
+        if (!(*license = strdup(licenseString.c_str()))) {
+            LogError("Memory allocation in strdup failed.");
+            return SECURITY_MANAGER_ERROR_MEMORY;
+        }
+
+        return SECURITY_MANAGER_SUCCESS;
+    });
+}
+
+SECURITY_MANAGER_API
+int security_manager_get_client_privilege_license(
+        const char *privilege,
+        const char *app_name,
+        uid_t uid,
+        char **license)
+{
+    return try_catch([&]() -> int {
+        using namespace SecurityManager;
+        LogDebug(__PRETTY_FUNCTION__ << " called");
+
+        if (privilege == NULL || app_name == NULL || license == NULL) {
+            LogError("privilege, app_name, license could not be NULL");
+            return SECURITY_MANAGER_ERROR_INPUT_PARAM;
+        }
+
+        ClientRequest request(SecurityModuleCall::GET_CLIENT_PRIVILEGE_LICENSE);
+        if (request.send(std::string(app_name), uid, std::string(privilege)).failed())
+            return request.getStatus();
+
+        std::string licenseString;
+        request.recv(licenseString);
+
+        if (!(*license = strdup(licenseString.c_str()))) {
+            LogError("Memory allocation in strdup failed.");
             return SECURITY_MANAGER_ERROR_MEMORY;
         }
 

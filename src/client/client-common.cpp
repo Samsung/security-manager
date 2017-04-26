@@ -23,6 +23,7 @@
  */
 
 #include <iostream>
+#include <cxxabi.h>
 
 #include <fcntl.h>
 #include <poll.h>
@@ -56,9 +57,15 @@ int try_catch(const std::function<int()>& func)
 {
     try {
         return func();
+    } catch (abi::__forced_unwind &) {
+        throw;
     } catch (const Exception &e) {
         LogError("SecurityManager::Exception " << e.DumpToString());
         std::cerr << "SecurityManager::Exception " << e.DumpToString() << std::endl;
+    } catch (const std::bad_alloc &e) {
+        LogError("Memory allocation failed: " << e.what());
+        std::cerr << "Memory allocation failed: " << e.what() << std::endl;
+        return SECURITY_MANAGER_ERROR_MEMORY;
     } catch (const std::exception &e) {
         LogError("STD exception " << e.what());
         std::cerr << "STD exception " << e.what() << std::endl;
