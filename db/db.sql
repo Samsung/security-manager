@@ -250,6 +250,10 @@ BEGIN
     WHERE NOT EXISTS (SELECT 1 FROM user_app_pkg_view
                       WHERE uid=NEW.uid AND app_name=NEW.app_name);
 
+    SELECT RAISE(ABORT, 'App defined privilege already defined')
+    WHERE EXISTS (SELECT 1 FROM app_defined_privilege_view
+                  WHERE uid=NEW.uid AND app_name=NEW.app_name AND privilege=NEW.privilege);
+
     INSERT OR IGNORE INTO app_defined_privilege (app_id, uid, privilege, type, license)
     VALUES ((SELECT app_id FROM app WHERE name=NEW.app_name), NEW.uid, NEW.privilege, NEW.type, NEW.license);
 END;
@@ -279,6 +283,10 @@ BEGIN
     SELECT RAISE(ABORT, 'Application was not found')
     WHERE NOT EXISTS (SELECT 1 FROM user_app_pkg_view
                       WHERE uid=NEW.uid AND app_name=NEW.app_name);
+
+    SELECT RAISE(ABORT, 'Client privilege license already defined')
+    WHERE EXISTS (SELECT 1 FROM client_license_view
+                  WHERE uid=NEW.uid AND app_name=NEW.app_name AND privilege=NEW.privilege);
 
     INSERT OR IGNORE INTO client_license (app_id, uid, privilege, license)
     VALUES ((SELECT app_id FROM app WHERE name=NEW.app_name), NEW.uid, NEW.privilege, NEW.license);
