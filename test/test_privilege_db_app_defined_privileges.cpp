@@ -34,6 +34,9 @@ namespace {
 struct AppDefinedPrivilegeFixture : public PrivilegeDBFixture {
     void checkAppDefinedPrivileges(const std::string &app, uid_t uid,
                                    const AppDefinedPrivilegesVector &expected);
+    void checkClientLicense(const std::string &app, uid_t uid,
+                            const std::vector<std::string> &privileges,
+                            const std::vector<std::string> &expected);
 };
 
 void AppDefinedPrivilegeFixture::checkAppDefinedPrivileges(const std::string &app, uid_t uid,
@@ -47,6 +50,19 @@ void AppDefinedPrivilegeFixture::checkAppDefinedPrivileges(const std::string &ap
         BOOST_REQUIRE(std::get<0>(privileges[i]) == std::get<0>(expected[i]));
         BOOST_REQUIRE(std::get<1>(privileges[i]) == std::get<1>(expected[i]));
         BOOST_REQUIRE(std::get<2>(privileges[i]) == std::get<2>(expected[i]));
+    }
+}
+
+void AppDefinedPrivilegeFixture::checkClientLicense(const std::string &app, uid_t uid,
+                                                    const std::vector<std::string> &privileges,
+                                                    const std::vector<std::string> &expected)
+{
+    BOOST_REQUIRE_MESSAGE(privileges.size() == expected.size(), "Vector sizes differ");
+
+    for (unsigned int i = 0; i < privileges.size(); ++i) {
+        std::string license;
+        testPrivDb->GetLicenseForClientPrivilege(app, uid, privileges[i], license);
+        BOOST_REQUIRE(license == expected[i]);
     }
 }
 
@@ -136,6 +152,89 @@ BOOST_AUTO_TEST_CASE(T1300_app_defined_privileges)
     removeAppSuccess(app(2), uid(3));
     checkAppDefinedPrivileges(app(2), uid(2), {});
     checkAppDefinedPrivileges(app(2), uid(3), {});
+}
+
+BOOST_AUTO_TEST_CASE(T1400_client_license)
+{
+    // add some privileges/licenses
+    std::vector<std::pair<std::string, std::string>> privilegesA, privilegesB;
+    privilegesA.push_back(std::make_pair("org.tizen.first_app.gps",
+                                         "/opt/data/client_appA/res/first_app_client_license"));
+    privilegesA.push_back(std::make_pair("org.tizen.second_app.sso",
+                                         "/opt/data/client_appA/res/second_app_client_license"));
+    privilegesB.push_back(std::make_pair("org.tizen.first_app.gps",
+                                         "/opt/data/client_appB/res/first_app_client_license"));
+    privilegesB.push_back(std::make_pair("org.tizen.second_app.sso",
+                                         "/opt/data/client_appB/res/second_app_client_license"));
+
+    // non-existing application
+    checkClientLicense(app(1), uid(1), {privilegesA[0].first}, {""});
+
+    // add application
+    addAppSuccess(app(1), pkg(1), uid(1), tizenVer(1), author(1), Hybrid);
+
+    // privileges/licenses not used
+    checkClientLicense(app(1), uid(1), {privilegesA[0].first}, {""});
+
+    // add privilege/license to non-existing application
+    BOOST_REQUIRE_THROW(testPrivDb->AddClientPrivilege(app(2), uid(1), privilegesA[0].first, privilegesA[0].second),
+                        PrivilegeDb::Exception::ConstraintError);
+
+    // first application use first privilege/license
+    BOOST_REQUIRE_NO_THROW(testPrivDb->AddClientPrivilege(app(1), uid(1), privilegesA[0].first, privilegesA[0].second));
+
+    // check non-existing privilege
+    std::string license;
+    BOOST_REQUIRE_NO_THROW(testPrivDb->GetLicenseForClientPrivilege(app(1), uid(1), privilegesA[1].first, license));
+    BOOST_REQUIRE(license.empty());
+
+    // first application use second privilege/license
+    BOOST_REQUIRE_NO_THROW(testPrivDb->AddClientPrivilege(app(1), uid(1), privilegesA[1].first, privilegesA[1].second));
+
+    // check existing privilege license
+    checkClientLicense(app(1), uid(1), {privilegesA[0].first, privilegesA[1].first},
+                       {privilegesA[0].second, privilegesA[1].second});
+
+    // add second application
+    addAppSuccess(app(2), pkg(2), uid(2), tizenVer(1), author(2), Hybrid);
+
+    // privileges/licenses not used
+    checkClientLicense(app(2), uid(2), {privilegesA[0].first}, {""});
+
+    // second application use first privilege/license
+    BOOST_REQUIRE_NO_THROW(testPrivDb->AddClientPrivilege(app(2), uid(2), privilegesB[0].first, privilegesB[0].second));
+
+    // check non-existing privilege
+    BOOST_REQUIRE_NO_THROW(testPrivDb->GetLicenseForClientPrivilege(app(2), uid(2), privilegesB[1].first, license));
+    BOOST_REQUIRE(license.empty());
+
+    // second application use second privilege/license
+    BOOST_REQUIRE_NO_THROW(testPrivDb->AddClientPrivilege(app(2), uid(2), privilegesB[1].first, privilegesB[1].second));
+
+    // check existing privilege/license
+    checkClientLicense(app(2), uid(2), {privilegesB[0].first, privilegesB[1].first},
+                       {privilegesB[0].second, privilegesB[1].second});
+
+    // remove first application privileges/licenses
+    BOOST_REQUIRE_NO_THROW(testPrivDb->RemoveClientPrivileges(app(1), uid(1)));
+    checkClientLicense(app(1), uid(1), {privilegesA[0].first, privilegesA[1].first},
+                       {"", ""});
+
+    // install second application for different user and add privileges
+    addAppSuccess(app(2), pkg(2), uid(3), tizenVer(1), author(2), Hybrid);
+    BOOST_REQUIRE_NO_THROW(testPrivDb->AddClientPrivilege(app(2), uid(3), privilegesB[0].first, privilegesB[0].second));
+    BOOST_REQUIRE_NO_THROW(testPrivDb->AddClientPrivilege(app(2), uid(3), privilegesB[1].first, privilegesB[1].second));
+    checkClientLicense(app(2), uid(3), {privilegesB[0].first, privilegesB[1].first},
+                       {privilegesB[0].second, privilegesB[1].second});
+
+    // uninstall second application and check privileges/licenses
+    removeAppSuccess(app(2), uid(2));
+    checkClientLicense(app(2), uid(2), {privilegesB[0].first, privilegesB[1].first},
+                       {"", ""});
+
+    removeAppSuccess(app(2), uid(3));
+    checkClientLicense(app(2), uid(3), {privilegesB[0].first, privilegesB[1].first},
+                       {"", ""});
 }
 
 BOOST_AUTO_TEST_SUITE_END()
