@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011 - 2016 Samsung Electronics Co., Ltd All Rights Reserved
+ * Copyright (c) 2011 - 2017 Samsung Electronics Co., Ltd All Rights Reserved
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -187,17 +187,22 @@ struct Serialization {
         Serialize(stream, *p);
     }
 
-    // TODO template version without limit on tuple size
     // std::tuple
-    template <typename A, typename B, typename C>
-    static void Serialize(IStream& stream, const std::tuple<A, B, C>& t)
-    {
-        Serialize(stream, std::get<0>(t));
-        Serialize(stream, std::get<1>(t));
-        Serialize(stream, std::get<2>(t));
+    template <std::size_t I = 0, typename... Tp>
+    static inline typename std::enable_if<I == sizeof...(Tp), void>::type
+    Serialize(IStream&, const std::tuple<Tp...>&)
+    {}
+
+
+    template <std::size_t I = 0, typename... Tp>
+    static inline typename std::enable_if<I < sizeof...(Tp), void>::type
+    Serialize(IStream &stream, const std::tuple<Tp...>& t) {
+        Serialize(stream, std::get<I>(t));
+        Serialize<I+1>(stream, t);
     }
-    template <typename A, typename B, typename C>
-    static void Serialize(IStream& stream, const std::tuple<A, B, C>* const t)
+
+    template <typename... Tp>
+    static void Serialize(IStream& stream, const std::tuple<Tp...>* const t)
     {
         Serialize(stream, *t);
     }
@@ -395,19 +400,24 @@ struct Deserialization {
         Deserialize(stream, *p);
     }
 
-    // TODO template version without limit on tuple size
     // std::tuple
-    template <typename A, typename B, typename C>
-    static void Deserialize(IStream& stream, std::tuple<A, B, C>& t)
+    template <std::size_t I = 0, typename... Tp>
+    static inline typename std::enable_if<I == sizeof...(Tp), void>::type
+    Deserialize(IStream&, std::tuple<Tp...>&)
+    {}
+
+    template <std::size_t I = 0, typename... Tp>
+    static inline typename std::enable_if<I < sizeof...(Tp), void>::type
+    Deserialize(IStream& stream, std::tuple<Tp...>& t)
     {
-        Deserialize(stream, std::get<0>(t));
-        Deserialize(stream, std::get<1>(t));
-        Deserialize(stream, std::get<2>(t));
+        Deserialize(stream, std::get<I>(t));
+        Deserialize<I+1>(stream, t);
     }
-    template <typename A, typename B, typename C>
-    static void Deserialize(IStream& stream, std::tuple<A, B, C>*& t)
+
+    template <typename... Tp>
+    static void Deserialize(IStream& stream, std::tuple<Tp...>*& t)
     {
-        t = new std::tuple<A, B, C>;
+        t = new std::tuple<Tp...>;
         Deserialize(stream, *t);
     }
 
