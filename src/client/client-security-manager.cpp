@@ -194,7 +194,8 @@ SECURITY_MANAGER_API
 int security_manager_app_inst_req_add_app_defined_privilege(
         app_inst_req *p_req,
         const char *app_defined_privilege,
-        const app_defined_privilege_type type)
+        const app_defined_privilege_type type,
+        const char *)
 {
     if (!p_req || !app_defined_privilege ||
         type < SM_APP_DEFINED_PRIVILEGE_TYPE_UNTRUSTED || type > SM_APP_DEFINED_PRIVILEGE_TYPE_LICENSED)
