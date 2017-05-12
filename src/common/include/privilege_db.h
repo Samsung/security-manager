@@ -631,9 +631,12 @@ public:
      *
      * @exception PrivilegeDb::Exception::InternalError on internal error
      * @exception PrivilegeDb::Exception::ConstraintError on constraint violation
+     * @return true if data were found in the database
      */
-    void GetAppAndLicenseForAppDefinedPrivilege(uid_t uid, const std::string &privilege,
-                                                std::string &appName, std::string &license);
+    bool GetAppAndLicenseForAppDefinedPrivilege(uid_t uid,
+                                                const std::string &privilege,
+                                                std::string &appName,
+                                                std::string &license);
 
     /**
      * Retrieve license of client application
@@ -645,8 +648,11 @@ public:
      *
      * @exception PrivilegeDb::Exception::InternalError on internal error
      * @exception PrivilegeDb::Exception::ConstraintError on constraint violation
+     * @return true if data were found in the database
      */
-    void GetLicenseForClientPrivilege(const std::string &appName, uid_t uid, const std::string &privilege,
+    bool GetLicenseForClientPrivilege(const std::string &appName,
+                                      uid_t uid,
+                                      const std::string &privilege,
                                       std::string &license);
 
     /**

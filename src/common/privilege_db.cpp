@@ -687,10 +687,13 @@ void PrivilegeDb::GetAppDefinedPrivileges(const std::string &appName, uid_t uid,
     });
 }
 
-void PrivilegeDb::GetAppAndLicenseForAppDefinedPrivilege(uid_t uid, const std::string &privilege,
-                                                         std::string &appName, std::string &license)
+bool PrivilegeDb::GetAppAndLicenseForAppDefinedPrivilege(
+        uid_t uid,
+        const std::string &privilege,
+        std::string &appName,
+        std::string &license)
 {
-    try_catch<void>([&] {
+    return try_catch<bool>([&] {
         appName.clear();
         license.clear();
 
@@ -701,19 +704,22 @@ void PrivilegeDb::GetAppAndLicenseForAppDefinedPrivilege(uid_t uid, const std::s
         if (command->Step()) {
             appName = command->GetColumnString(0);
             license = command->GetColumnString(1);
+            LogDebug("Privilege: " << privilege << " defined by " << appName);
+            return true;
         }
 
-        if (!appName.empty())
-            LogDebug("Privilege: " << privilege << " defined by " << appName);
-        else
-            LogDebug("Privilege: " << privilege << " not exist");
+        LogDebug("Privilege: " << privilege << " not exist");
+        return false;
     });
 }
 
-void PrivilegeDb::GetLicenseForClientPrivilege(const std::string &appName, uid_t uid,
-                                               const std::string &privilege, std::string &license)
+bool PrivilegeDb::GetLicenseForClientPrivilege(
+        const std::string &appName,
+        uid_t uid,
+        const std::string &privilege,
+        std::string &license)
 {
-    try_catch<void>([&] {
+    return try_catch<bool>([&] {
         license.clear();
 
         auto command = getStatement(StmtType::EGetLicenseForClientPrivilege);
@@ -721,13 +727,16 @@ void PrivilegeDb::GetLicenseForClientPrivilege(const std::string &appName, uid_t
         command->BindInteger(2, uid);
         command->BindString(3, privilege);
 
-        if (command->Step())
+        if (command->Step()) {
             license = command->GetColumnString(0);
+            LogDebug("License found for app: " << appName << " privilege: " <<
+                privilege << " uid: " << uid << " License: " << license);
+            return true;
+        }
 
-        if (license.empty())
-            LogDebug("License not found for app: " << appName << " privilege: " << privilege << " uid: " << uid);
-        else
-            LogDebug("License found for app: " << appName << " privilege: " << privilege << " uid: " << uid << " License: " << license);
+        LogDebug("License not found for app: " << appName << " privilege: " <<
+            privilege << " uid: " << uid);
+        return false;
     });
 }
 
