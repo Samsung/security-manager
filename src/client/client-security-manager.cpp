@@ -208,10 +208,18 @@ int security_manager_app_inst_req_add_app_defined_privilege(
         const app_defined_privilege_type type,
         const char *license)
 {
-    if (!p_req || !app_defined_privilege ||
-        type < SM_APP_DEFINED_PRIVILEGE_TYPE_UNTRUSTED || type > SM_APP_DEFINED_PRIVILEGE_TYPE_LICENSED ||
-        (type == SM_APP_DEFINED_PRIVILEGE_TYPE_LICENSED && !license))
+    if (!p_req ||
+        !app_defined_privilege ||
+        type < SM_APP_DEFINED_PRIVILEGE_TYPE_UNTRUSTED ||
+        type > SM_APP_DEFINED_PRIVILEGE_TYPE_LICENSED)
+    {
         return SECURITY_MANAGER_ERROR_INPUT_PARAM;
+    }
+
+    // do not allow put empty license in database!
+    if (type == SM_APP_DEFINED_PRIVILEGE_TYPE_LICENSED && (!license || (0 == strlen(license)))) {
+        return SECURITY_MANAGER_ERROR_INPUT_PARAM;
+    }
 
     p_req->appDefinedPrivileges.push_back(std::make_tuple(app_defined_privilege, static_cast<int>(type), license));
 

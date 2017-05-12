@@ -95,6 +95,17 @@ private:
     PrivilegeDb &m_privilegeDb;
 };
 
+bool verifyAppDefinedPrivileges(const AppDefinedPrivilegesVector &privileges) {
+    // TODO check for collision with system privileges
+
+    // check if licenses are set for license-privileges
+    for (auto &e : privileges) {
+        if ((std::get<1>(e) == SM_APP_DEFINED_PRIVILEGE_TYPE_LICENSED) && std::get<2>(e).empty())
+            return false;
+    }
+    return true;
+}
+
 } // end of anonymous namespace
 
 ServiceImpl::ServiceImpl()
@@ -510,6 +521,8 @@ int ServiceImpl::appInstall(const Credentials &creds, app_inst_req &&req)
     try {
         std::vector<std::string> privilegeList;
         privilegeList.reserve(req.privileges.size());
+        if (!verifyAppDefinedPrivileges(req.appDefinedPrivileges))
+            return SECURITY_MANAGER_ERROR_INPUT_PARAM;
 
         for (auto &e : req.privileges)
             privilegeList.push_back(e.first);
