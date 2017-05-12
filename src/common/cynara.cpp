@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2014-2016 Samsung Electronics Co., Ltd All Rights Reserved
+ *  Copyright (c) 2014-2017 Samsung Electronics Co., Ltd All Rights Reserved
  *
  *  Contact: Rafal Krypa <r.krypa@samsung.com>
  *
@@ -676,6 +676,17 @@ void CynaraAdmin::fetchCynaraPolicyDescriptions(bool forceRefresh)
         cynara_admin_list_policies_descriptions(m_cynaraAdmin, &descriptions),
         "Error while getting list of policies descriptions from Cynara.");
 
+    auto descPtr = makeUnique(descriptions,
+        [](struct cynara_admin_policy_descr **desc) {
+            if (desc == nullptr)
+                return;
+            for (int i = 0; desc[i] != nullptr; i++) {
+                free(desc[i]->name);
+                free(desc[i]);
+            }
+            free(desc);
+        });
+
     if (descriptions[0] == nullptr) {
         LogError("Fetching policies levels descriptions from Cynara returned empty list. "
                 "There should be at least 2 entries - Allow and Deny");
@@ -693,12 +704,7 @@ void CynaraAdmin::fetchCynaraPolicyDescriptions(bool forceRefresh)
 
         s_descriptionToType[descriptionName] = descriptions[i]->result;
         s_typeToDescription[descriptions[i]->result] = std::move(descriptionName);
-
-        free(descriptions[i]->name);
-        free(descriptions[i]);
     }
-
-    free(descriptions);
 
     m_policyDescriptionsInitialized = true;
 }

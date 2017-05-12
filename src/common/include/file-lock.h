@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2000 - 2014 Samsung Electronics Co., Ltd All Rights Reserved
+ *  Copyright (c) 2000 - 2017 Samsung Electronics Co., Ltd All Rights Reserved
  *
  *  Contact: Rafal Krypa <r.krypa@samsung.com>
  *
@@ -43,6 +43,7 @@ public:
     public:
         DECLARE_EXCEPTION_TYPE(SecurityManager::Exception, Base)
         DECLARE_EXCEPTION_TYPE(Base, LockFailed)
+        DECLARE_EXCEPTION_TYPE(Base, UnlockFailed)
     };
 
     FileLocker(const std::string &lockFile, bool blocking = false);

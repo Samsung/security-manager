@@ -1,5 +1,24 @@
+Release: 1.2.18
+Date:    2017.04.27
+Name:    Release 1.2.18
+Description:
+Adjust UT case T520_add_application_two_tizen_versions_to_same_package
+Adjust tests to boost 1.62
+Fix issues detected by SVACE
+Revert of changes related to privacy popups
+Do not show toast fail launch popup for white list app.
+Handle HW key input case from askuser popup.
+Adapt requirement names for askuser-notification to new naming
+Migrate existing application policy to use new ask-user policies
+Implement security_manager_prepare_app_privacy
+Add new API for handling privacy privileges during application launch
+Replace usage of Ask User plugin with Privacy Deny Plugin
+Change labelPaths logic for FOTA
+
+###############################
+
 * Thu Mar 30 2017 Jin-gyu Kim <jin-gyu.kim@samsung.com>
-- Version 1.2.17
+- Version 1.2.18
 - Use %license macro to copy license file.
 - Add "VALGRIND" build type
 - Remove the redundant SharedRO SMACK rules.

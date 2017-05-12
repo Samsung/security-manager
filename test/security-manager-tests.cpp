@@ -49,5 +49,5 @@ struct LogSetup {
     ~LogSetup() {}
 };
 
-BOOST_GLOBAL_FIXTURE(TestConfig)
-BOOST_GLOBAL_FIXTURE(LogSetup)
+BOOST_GLOBAL_FIXTURE(TestConfig);
+BOOST_GLOBAL_FIXTURE(LogSetup);

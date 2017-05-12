@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2000 - 2014 Samsung Electronics Co., Ltd All Rights Reserved
+ *  Copyright (c) 2000 - 2017 Samsung Electronics Co., Ltd All Rights Reserved
  *
  *  Contact: Rafal Krypa <r.krypa@samsung.com>
  *
@@ -92,10 +92,17 @@ int main()
         }
 
         manager.MainLoop();
-    } catch (const SecurityManager::FileLocker::Exception::Base &e) {
+    } catch (const SecurityManager::FileLocker::Exception::LockFailed &e) {
         LogError("Unable to get a file lock. Exiting.");
         return EXIT_FAILURE;
+    } catch (const SecurityManager::FileLocker::Exception::UnlockFailed &e) {
+        LogError("Unable to unlock a file. Exiting.");
+        return EXIT_FAILURE;
+    } catch (const SecurityManager::FileLocker::Exception::Base &e) {
+        LogError("Unknown FileLocker exception. Exiting.");
+        return EXIT_FAILURE;
     }
+
     UNHANDLED_EXCEPTION_HANDLER_END
     return EXIT_SUCCESS;
 }
