@@ -96,11 +96,11 @@ private:
 };
 
 bool verifyAppDefinedPrivileges(const AppDefinedPrivilegesVector &privileges) {
-    // TODO check for collision with system privileges
-
     // check if licenses are set for license-privileges
+    // check for collision with system privileges
     for (auto &e : privileges) {
-        if ((std::get<1>(e) == SM_APP_DEFINED_PRIVILEGE_TYPE_LICENSED) && std::get<2>(e).empty())
+        if (((std::get<1>(e) == SM_APP_DEFINED_PRIVILEGE_TYPE_LICENSED) && std::get<2>(e).empty()) ||
+            (std::get<0>(e).find("http://tizen.org/privilege/") != std::string::npos))
             return false;
     }
     return true;
