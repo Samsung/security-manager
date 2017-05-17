@@ -1,0 +1,10 @@
+[Unit]
+Description=Start cynara agent that provides functions for license verification
+
+[Service]
+Type=notify
+ExecStart=@BIN_INSTALL_DIR@/license-manager-agent
+SmackProcessLabel=System
+
+[Install]
+WantedBy=cynara.service

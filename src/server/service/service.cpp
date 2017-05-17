@@ -150,6 +150,18 @@ bool Service::processOne(const ConnectionID &conn, MessageBuffer &buffer,
                 case SecurityModuleCall::SHM_APP_NAME:
                     processShmAppName(buffer, send, creds);
                     break;
+                case SecurityModuleCall::GET_APP_DEFINED_PRIVILEGE_PROVIDER:
+                    LogDebug("call_type: SecurityModuleCall::GET_APP_DEFINED_PRIVILEGE_PROVIDER");
+                    processGetAppDefinedPrivilegeProvider(buffer, send);
+                    break;
+                case SecurityModuleCall::GET_APP_DEFINED_PRIVILEGE_LICENSE:
+                    LogDebug("call_type: SecurityModuleCall::GET_APP_DEFINED_PRIVILEGE_LICENSE");
+                    processGetAppDefinedPrivilegeLicense(buffer, send);
+                    break;
+                case SecurityModuleCall::GET_CLIENT_PRIVILEGE_LICENSE:
+                    LogDebug("call_type: SecurityModuleCall::GET_CLIENT_PRIVILEGE_PROVIDER");
+                    processGetClientPrivilegeLicense(buffer, send);
+                    break;
                 default:
                     LogError("Invalid call: " << call_type_int);
                     Throw(ServiceException::InvalidAction);
@@ -188,6 +200,7 @@ void Service::processAppInstall(MessageBuffer &buffer, MessageBuffer &send, cons
     Deserialization::Deserialize(buffer, req.appName);
     Deserialization::Deserialize(buffer, req.pkgName);
     Deserialization::Deserialize(buffer, req.privileges);
+    Deserialization::Deserialize(buffer, req.appDefinedPrivileges);
     Deserialization::Deserialize(buffer, req.pkgPaths);
     Deserialization::Deserialize(buffer, req.uid);
     Deserialization::Deserialize(buffer, req.tizenVersion);
@@ -204,6 +217,7 @@ void Service::processAppUninstall(MessageBuffer &buffer, MessageBuffer &send, co
     Deserialization::Deserialize(buffer, req.appName);
     Deserialization::Deserialize(buffer, req.pkgName);
     Deserialization::Deserialize(buffer, req.privileges);
+    Deserialization::Deserialize(buffer, req.appDefinedPrivileges);
     Deserialization::Deserialize(buffer, req.pkgPaths);
     Deserialization::Deserialize(buffer, req.uid);
     Deserialization::Deserialize(buffer, req.tizenVersion);
@@ -416,6 +430,45 @@ void Service::processShmAppName(MessageBuffer &recv, MessageBuffer &send, const 
     Deserialization::Deserialize(recv, shmName, appName);
     int ret = serviceImpl.shmAppName(creds, shmName, appName);
     Serialization::Serialize(send, ret);
+}
+
+void Service::processGetAppDefinedPrivilegeProvider(MessageBuffer &buffer, MessageBuffer &send)
+{
+    int ret;
+    std::string privilege, appName, pkgName;
+    uid_t uid;
+
+    Deserialization::Deserialize(buffer, uid, privilege);
+    ret = serviceImpl.getAppDefinedPrivilegeProvider(uid, privilege, appName, pkgName);
+    Serialization::Serialize(send, ret);
+    if (ret == SECURITY_MANAGER_SUCCESS)
+        Serialization::Serialize(send, appName, pkgName);
+}
+
+void Service::processGetAppDefinedPrivilegeLicense(MessageBuffer &buffer, MessageBuffer &send)
+{
+    int ret;
+    std::string privilege, license;
+    uid_t uid;
+
+    Deserialization::Deserialize(buffer, uid, privilege);
+    ret = serviceImpl.getAppDefinedPrivilegeLicense(uid, privilege, license);
+    Serialization::Serialize(send, ret);
+    if (ret == SECURITY_MANAGER_SUCCESS)
+        Serialization::Serialize(send, license);
+}
+
+void Service::processGetClientPrivilegeLicense(MessageBuffer &buffer, MessageBuffer &send)
+{
+    int ret;
+    std::string appName, privilege, license;
+    uid_t uid;
+
+    Deserialization::Deserialize(buffer, appName, uid, privilege);
+    ret = serviceImpl.getClientPrivilegeLicense(appName, uid, privilege, license);
+    Serialization::Serialize(send, ret);
+    if (ret == SECURITY_MANAGER_SUCCESS)
+        Serialization::Serialize(send, license);
 }
 
 } // namespace SecurityManager

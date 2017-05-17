@@ -233,7 +233,10 @@ static void parseInstallOptions(int argc, char *argv[],
         }
     }
     if (vm.count("privilege")) {
-        req.privileges = vm["privilege"].as<std::vector<std::string> >();
+        auto privVector = vm["privilege"].as<std::vector<std::string > >();
+        for (auto &e : privVector)
+            req.privileges.push_back(std::make_pair(e, std::string()));
+
         if (req.privileges.empty()) {
             po::error e("Error in parsing privilege arguments.");
             throw e;
@@ -241,7 +244,7 @@ static void parseInstallOptions(int argc, char *argv[],
 #ifdef BUILD_TYPE_DEBUG
         LogDebug("Passed privileges:");
         for (const auto &p : req.privileges) {
-            LogDebug("    " << p);
+            LogDebug("    " << p.first);
         }
 #endif
     }

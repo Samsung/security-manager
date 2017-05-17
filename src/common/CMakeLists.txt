@@ -26,6 +26,7 @@ INCLUDE_DIRECTORIES(SYSTEM
 INCLUDE_DIRECTORIES(
     ${INCLUDE_PATH}
     ${COMMON_PATH}/include
+    ${LM_COMMON_PATH}
     ${DPL_PATH}/core/include
     ${DPL_PATH}/log/include
     ${DPL_PATH}/db/include

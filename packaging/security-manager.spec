@@ -87,6 +87,14 @@ Requires:   boost-test
 %description -n security-manager-tests
 Internal test for security manager implementation.
 
+%package -n license-manager
+Summary:    Plugins for cynara service and client
+Group:      Security/Development
+Requires:   cynara
+
+%description -n license-manager
+Package with plugins for cynara.
+
 %prep
 %setup -q
 cp %{SOURCE1} .
@@ -116,10 +124,12 @@ mkdir -p %{buildroot}/%{_unitdir}/sockets.target.wants
 mkdir -p %{buildroot}/%{_unitdir}/sysinit.target.wants
 mkdir -p %{buildroot}/%{_unitdir}/basic.target.wants
 mkdir -p %{buildroot}/%{_unitdir}/dbus.service.wants
+mkdir -p %{buildroot}/%{_unitdir}/cynara.service.wants
 ln -s ../security-manager.socket %{buildroot}/%{_unitdir}/sockets.target.wants/security-manager.socket
 ln -s ../security-manager-cleanup.service %{buildroot}/%{_unitdir}/sysinit.target.wants/security-manager-cleanup.service
 ln -s ../security-manager-rules-loader.service %{buildroot}/%{_unitdir}/basic.target.wants/security-manager-rules-loader.service
 ln -s ../security-manager.service %{buildroot}/%{_unitdir}/dbus.service.wants/security-manager.service
+ln -s ../license-manager-agent.service %{buildroot}/%{_unitdir}/cynara.service.wants/license-manager-agent.service
 
 mkdir -p %{buildroot}/%{TZ_SYS_DB}
 touch %{buildroot}/%{TZ_SYS_DB}/.security-manager.db
@@ -176,6 +186,10 @@ fi
 %post -n libnss-security-manager -p /sbin/ldconfig
 
 %postun -n libnss-security-manager -p /sbin/ldconfig
+
+%post -n license-manager -p /sbin/ldconfig
+
+%postun -n license-manager -p /sbin/ldconfig
 
 %pre
 ### Workaround for invalid policy versioning mechanism
@@ -256,4 +270,11 @@ chsmack -a System %{db_test_dir}/.security-manager-test.db-journal
 %attr(755,root,root) %{_bindir}/security-manager-unit-tests
 %attr(0600,root,root) %{db_test_dir}/.security-manager-test.db
 %attr(0600,root,root) %{db_test_dir}/.security-manager-test.db-journal
+
+%files -n license-manager
+%{_libdir}/cynara/plugin/client/liblicense-manager-plugin-client.so
+%{_libdir}/cynara/plugin/service/liblicense-manager-plugin-service.so
+%{_bindir}/license-manager-agent
+%attr(-,root,root) %{_unitdir}/cynara.service.wants/license-manager-agent.service
+%attr(-,root,root) %{_unitdir}/license-manager-agent.service
 

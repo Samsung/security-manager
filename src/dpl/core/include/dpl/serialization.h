@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011 - 2016 Samsung Electronics Co., Ltd All Rights Reserved
+ * Copyright (c) 2011 - 2017 Samsung Electronics Co., Ltd All Rights Reserved
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@
 #include <list>
 #include <map>
 #include <memory>
+#include <tuple>
 
 namespace SecurityManager {
 // Abstract data stream buffer
@@ -184,6 +185,26 @@ struct Serialization {
     static void Serialize(IStream& stream, const std::pair<A, B>* const p)
     {
         Serialize(stream, *p);
+    }
+
+    // std::tuple
+    template <std::size_t I = 0, typename... Tp>
+    static inline typename std::enable_if<I == sizeof...(Tp), void>::type
+    Serialize(IStream&, const std::tuple<Tp...>&)
+    {}
+
+
+    template <std::size_t I = 0, typename... Tp>
+    static inline typename std::enable_if<I < sizeof...(Tp), void>::type
+    Serialize(IStream &stream, const std::tuple<Tp...>& t) {
+        Serialize(stream, std::get<I>(t));
+        Serialize<I+1>(stream, t);
+    }
+
+    template <typename... Tp>
+    static void Serialize(IStream& stream, const std::tuple<Tp...>* const t)
+    {
+        Serialize(stream, *t);
     }
 
     // std::map
@@ -377,6 +398,27 @@ struct Deserialization {
     {
         p = new std::pair<A, B>;
         Deserialize(stream, *p);
+    }
+
+    // std::tuple
+    template <std::size_t I = 0, typename... Tp>
+    static inline typename std::enable_if<I == sizeof...(Tp), void>::type
+    Deserialize(IStream&, std::tuple<Tp...>&)
+    {}
+
+    template <std::size_t I = 0, typename... Tp>
+    static inline typename std::enable_if<I < sizeof...(Tp), void>::type
+    Deserialize(IStream& stream, std::tuple<Tp...>& t)
+    {
+        Deserialize(stream, std::get<I>(t));
+        Deserialize<I+1>(stream, t);
+    }
+
+    template <typename... Tp>
+    static void Deserialize(IStream& stream, std::tuple<Tp...>*& t)
+    {
+        t = new std::tuple<Tp...>;
+        Deserialize(stream, *t);
     }
 
     // std::map

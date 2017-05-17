@@ -22,6 +22,7 @@
  */
 
 #include <cstring>
+#include <string>
 #include <unordered_set>
 #include "cynara.h"
 
@@ -30,6 +31,7 @@
 #include <config.h>
 #include <utils.h>
 #include <privilege-info.h>
+#include <lm-config.h>
 
 namespace SecurityManager {
 
@@ -53,10 +55,12 @@ namespace SecurityManager {
  * - PRIVACY_MANAGER - first bucket during search (which is actually default bucket
  *   with empty string as id). If user specifies his preference then required rule
  *   is created here.
- * - MAIN            - holds rules denied by manufacturer, redirects to MANIFESTS
+ * - MAIN            - holds rules denied by manufacturer, redirects to MANIFESTS_GLOBAL
  *   bucket and holds entries for each user pointing to User Type
  *   specific buckets
- * - MANIFESTS       - stores rules needed by installed apps (from package
+ * - MANIFESTS_GLOBAL   - stores rules needed by globally installed apps (from package
+ *   manifest), redirects to MANIFESTS_LOCAL bucket when app is installed locally
+ * - MANIFESTS_LOCAL    - stores rules needed by locally installed apps (from package
  *   manifest)
  * - USER_TYPE_ADMIN
  * - USER_TYPE_SYSTEM
@@ -66,6 +70,9 @@ namespace SecurityManager {
  *   user type. ALLOW rules only.
  * - ADMIN           - stores custom rules introduced by device administrator.
  *   Ignored if no matching rule found.
+ * - APPDEFINED      - stores privileges introduced by the providers application.
+ *   Ignored if no matching rule found.
+
  *
  * Below is basic layout of buckets:
  *
@@ -73,22 +80,28 @@ namespace SecurityManager {
  *  |      <<allow>>         |
  *  |   PRIVACY_MANAGER      |
  *  |                        |
- *  |  * * *      Bucket:MAIN|                         |------------------|
- *  |------------------------|                         |      <<deny>>    |
- *             |                                    |->|     MANIFESTS    |
- *             -----------------                    |  |                  |
- *                             |                    |  |------------------|
- *                             V                    |
- *                     |------------------------|   |
- *                     |       <<deny>>         |---|
- *                     |         MAIN           |
- * |---------------|   |                        |     |-------------------|
- * |    <<deny>>   |<--| * * *  Bucket:MANIFESTS|---->|      <<deny>>     |
- * | USER_TYPE_SYST|   |------------------------|     |  USER_TYPE_NORMAL |
- * |               |        |       |      |          |                   |
- * |---------------|        |       |      |          |-------------------|
- *        |                 |       |      |                    |
- *        |                 V       |      V                    |
+ *  |  * * *  Bucket:MAIN    |                         |-------------------------------|
+ *  |------------------------|                         |           <<deny>>            |
+ *             |                                    |->|       MANIFESTS_GLOBAL        |
+ *             -----------------                    |  |                               |
+ *                             |                    |  | c u *  Bucket:MANIFESTS_LOCAL |
+ *                             |                    |  |-------------------------------|
+ *                             V                    |                   |
+ *             |--------------------------------|   |                   V
+ *             |            <<deny>>            |---|           |------------------|
+ *             |              MAIN              |               |     <<deny>>     |
+ *             |                                |               |  MANIFESTS_LOCAL |
+ *             | * * *  Bucket:MANIFESTS_GLOBAL |               |                  |
+ *        |----|                                |----------|    |------------------|
+ *        |    |--------------------------------|          |
+ *        V               |         |      |               V
+ * |---------------|      |         |      |          |-------------------|
+ * |    <<deny>>   |      |         |      |          |      <<deny>>     |
+ * | USER_TYPE_SYST|      |         |      |          |  USER_TYPE_NORMAL |
+ * |               |      |         |      |          |                   |
+ * |---------------|      |         |      |          |-------------------|
+ *        |               |         |      |                    |
+ *        |               V         |      V                    |
  *        |      |---------------|  |   |---------------|       |
  *        |      |    <<deny>>   |  |   |    <<deny>>   |       |
  *        |      |USER_TYPE_GUEST|  |   |USER_TYPE_ADMIN|       |
@@ -109,7 +122,15 @@ namespace SecurityManager {
  *        |                |       ADMIN      |                 |
  *        |--------------->|                  |<----------------|
  *                         |------------------|
- *
+ *                                  |
+ *                                  |
+ *                                  |
+ *                                  V
+ *                         |------------------|
+ *                         |     <<none>>     |
+ *                         |                  |
+ *                         |    APPDEFINED    !
+ *                         |------------------|
  */
 CynaraAdmin::BucketsMap CynaraAdmin::Buckets =
 {
@@ -121,7 +142,9 @@ CynaraAdmin::BucketsMap CynaraAdmin::Buckets =
     { Bucket::USER_TYPE_GUEST, std::string("USER_TYPE_GUEST") },
     { Bucket::USER_TYPE_SYSTEM, std::string("USER_TYPE_SYSTEM")},
     { Bucket::ADMIN, std::string("ADMIN")},
-    { Bucket::MANIFESTS, std::string("MANIFESTS")},
+    { Bucket::MANIFESTS_GLOBAL, std::string("MANIFESTS_GLOBAL")},
+    { Bucket::MANIFESTS_LOCAL, std::string("MANIFESTS_LOCAL")},
+    { Bucket::APPDEFINED, std::string("APPDEFINED")},
 };
 
 CynaraAdminPolicy::CynaraAdminPolicy()
@@ -317,20 +340,45 @@ void CynaraAdmin::updateAppPolicy(
     const std::string &label,
     bool global,
     uid_t uid,
-    const std::vector<std::string> &privileges)
+    const std::vector<std::string> &privileges,
+    const AppDefinedPrivilegesVector &oldAppDefinedPrivileges,
+    const AppDefinedPrivilegesVector &newAppDefinedPrivileges,
+    bool policyRemove)
 {
+    std::vector<CynaraAdminPolicy> oldPolicies;
     std::vector<CynaraAdminPolicy> policies;
 
-    std::string cynaraUser;
-    if (global)
+    // 1st, performing operation on MANIFESTS_GLOBAL/MANIFESTS_LOCAL bucket
+    std::string cynaraUser, bucket;
+    if (global) {
         cynaraUser = CYNARA_ADMIN_WILDCARD;
-    else
+        bucket = Buckets.at(Bucket::MANIFESTS_GLOBAL);
+    } else {
         cynaraUser = std::to_string(static_cast<unsigned int>(uid));
+        bucket = Buckets.at(Bucket::MANIFESTS_LOCAL);
 
-    // 1st, performing operation on MANIFESTS bucket
-    calculatePolicies(label, cynaraUser, privileges, Buckets.at(Bucket::MANIFESTS),
-        static_cast<int>(CynaraAdminPolicy::Operation::Allow),
-        policies);
+        // when app is installed locally add/remove redirection from MANIFESTS_GLOBAL to MANIFESTS_LOCAL
+        if (policyRemove) {
+            policies.push_back(CynaraAdminPolicy(
+                label,
+                cynaraUser,
+                "*",
+                static_cast<int>(CynaraAdminPolicy::Operation::Delete),
+                Buckets.at(Bucket::MANIFESTS_GLOBAL)));
+        } else {
+            policies.push_back(CynaraAdminPolicy(
+                label,
+                cynaraUser,
+                "*",
+                bucket,
+                Buckets.at(Bucket::MANIFESTS_GLOBAL)));
+        }
+    }
+
+    listPolicies(bucket, label, cynaraUser, CYNARA_ADMIN_ANY, oldPolicies);
+    calculatePolicies(label, cynaraUser, privileges, bucket,
+                      static_cast<int>(CynaraAdminPolicy::Operation::Allow), oldPolicies, policies);
+    oldPolicies.clear();
 
     bool askUserEnabled = false;
     int askUserPolicy = static_cast<int>(CynaraAdminPolicy::Operation::Allow);
@@ -364,13 +412,56 @@ void CynaraAdmin::updateAppPolicy(
             if (priv.hasAttribute(PrivilegeInfo::PrivilegeAttr::BLACKLIST))
                 blacklistPrivileges.push_back(p);
         }
+        listPolicies(Buckets.at(Bucket::PRIVACY_MANAGER), label, std::to_string(id), CYNARA_ADMIN_ANY, oldPolicies);
         calculatePolicies(label, std::to_string(id), privacyPrivileges,
                      Buckets.at(Bucket::PRIVACY_MANAGER),
-                     askUserPolicy, policies);
+                     askUserPolicy, oldPolicies, policies);
+        oldPolicies.clear();
+
+        listPolicies(Buckets.at(Bucket::ADMIN), label, std::to_string(id), CYNARA_ADMIN_ANY, oldPolicies);
         calculatePolicies(label, std::to_string(id), blacklistPrivileges,
                      Buckets.at(Bucket::ADMIN),
-                     static_cast<int>(CynaraAdminPolicy::Operation::Deny), policies);
+                     static_cast<int>(CynaraAdminPolicy::Operation::Deny), oldPolicies, policies);
+        oldPolicies.clear();
     }
+
+    // 3rd, performing operation on APPDEFINED bucket
+    std::vector<std::string> untrustedPrivileges;
+    std::vector<std::string> licensedPrivileges;
+    std::vector<CynaraAdminPolicy> oldUntrustedPolicies;
+    std::vector<CynaraAdminPolicy> oldLicensedPolicies;
+
+    for (const AppDefinedPrivilege &p : oldAppDefinedPrivileges) {
+        switch (std::get<1>(p)) {
+            case SM_APP_DEFINED_PRIVILEGE_TYPE_UNTRUSTED:
+                listPolicies(Buckets.at(Bucket::APPDEFINED), CYNARA_ADMIN_WILDCARD, cynaraUser,
+                             std::get<0>(p), oldUntrustedPolicies);
+                break;
+            case SM_APP_DEFINED_PRIVILEGE_TYPE_LICENSED:
+                listPolicies(Buckets.at(Bucket::APPDEFINED), CYNARA_ADMIN_WILDCARD, cynaraUser,
+                             std::get<0>(p), oldLicensedPolicies);
+                break;
+        }
+    }
+
+    for (const AppDefinedPrivilege &p : newAppDefinedPrivileges) {
+        switch (std::get<1>(p)) {
+            case SM_APP_DEFINED_PRIVILEGE_TYPE_UNTRUSTED:
+                untrustedPrivileges.push_back(std::get<0>(p));
+                break;
+            case SM_APP_DEFINED_PRIVILEGE_TYPE_LICENSED:
+                licensedPrivileges.push_back(std::get<0>(p));
+                break;
+        }
+    }
+
+    calculatePolicies(CYNARA_ADMIN_WILDCARD, cynaraUser, untrustedPrivileges,
+                      Buckets.at(Bucket::APPDEFINED), static_cast<int>(CynaraAdminPolicy::Operation::Allow),
+                      oldUntrustedPolicies, policies);
+
+    calculatePolicies(CYNARA_ADMIN_WILDCARD, cynaraUser, licensedPrivileges,
+                      Buckets.at(Bucket::APPDEFINED), static_cast<int>(LicenseManager::Config::LM_ASK),
+                      oldLicensedPolicies, policies);
 
     setPolicies(policies);
 }
@@ -379,9 +470,12 @@ void CynaraAdmin::getAppPolicy(const std::string &label, const std::string &user
         std::vector<std::string> &privileges)
 {
     std::vector<CynaraAdminPolicy> policies;
-    listPolicies(
-        CynaraAdmin::Buckets.at(Bucket::MANIFESTS),
-        label, user, CYNARA_ADMIN_ANY, policies);
+
+    std::string bucket = (user == CYNARA_ADMIN_WILDCARD) ?
+        CynaraAdmin::Buckets.at(Bucket::MANIFESTS_GLOBAL) :
+        CynaraAdmin::Buckets.at(Bucket::MANIFESTS_LOCAL);
+
+    listPolicies(bucket, label, user, CYNARA_ADMIN_ANY, policies);
 
     for (auto &policy : policies) {
         std::string privilege = policy.privilege;
@@ -425,7 +519,7 @@ void CynaraAdmin::userInit(uid_t uid, security_manager_user_type userType)
                                          Buckets.at(Bucket::MAIN)));
 
     std::vector<CynaraAdminPolicy> appPolicies;
-    listPolicies(CynaraAdmin::Buckets.at(Bucket::MANIFESTS),
+    listPolicies(CynaraAdmin::Buckets.at(Bucket::MANIFESTS_GLOBAL),
                  CYNARA_ADMIN_ANY, CYNARA_ADMIN_WILDCARD,
                  CYNARA_ADMIN_ANY, appPolicies);
 
@@ -619,12 +713,11 @@ void CynaraAdmin::fetchCynaraPolicyDescriptions(bool forceRefresh)
 void CynaraAdmin::calculatePolicies(const std::string &label, const std::string &user,
                            const std::vector<std::string> &privileges,
                            const std::string &bucket, int policyToSet,
+                           std::vector<CynaraAdminPolicy> &oldPolicies,
                            std::vector<CynaraAdminPolicy> &policies)
 {
-    std::vector<CynaraAdminPolicy> oldPolicies;
     std::unordered_set<std::string> privilegesSet(privileges.begin(),
                                                   privileges.end());
-    listPolicies(bucket, label, user, CYNARA_ADMIN_ANY, oldPolicies);
     // Compare previous policies with set of new requested privileges
     for (auto &policy : oldPolicies) {
         if (privilegesSet.erase(policy.privilege)) {

@@ -588,4 +588,171 @@ void PrivilegeDb::GetPackagesInfo(std::vector<PkgInfo> &packages)
      });
 }
 
+void PrivilegeDb::AddAppDefinedPrivilege(const std::string &appName, uid_t uid,
+                                         const AppDefinedPrivilege &privilege)
+{
+    try_catch<void>([&] {
+        auto command = getStatement(StmtType::EAddAppDefinedPrivilege);
+        command->BindString(1, appName);
+        command->BindInteger(2, uid);
+        command->BindString(3, std::get<0>(privilege));
+        command->BindInteger(4, std::get<1>(privilege));
+        command->BindString(5, std::get<2>(privilege));
+
+        if (command->Step()) {
+            LogDebug("Unexpected SQLITE_ROW answer to query: " <<
+                     Queries.at(StmtType::EAddAppDefinedPrivilege));
+        }
+
+        LogDebug("Added privilege: " << std::get<0>(privilege) << " defined by: " << appName <<
+                 " and user: " << uid);
+     });
+}
+
+void PrivilegeDb::AddAppDefinedPrivileges(const std::string &appName, uid_t uid,
+                                          const AppDefinedPrivilegesVector &privileges)
+{
+    for (const auto &privilege : privileges)
+        AddAppDefinedPrivilege(appName, uid, privilege);
+}
+
+void PrivilegeDb::AddClientPrivilege(const std::string &appName, uid_t uid, const std::string &privilege,
+                                     const std::string &license)
+{
+    try_catch<void>([&] {
+        auto command = getStatement(StmtType::EAddClientPrivilege);
+        command->BindString(1, appName);
+        command->BindInteger(2, uid);
+        command->BindString(3, privilege);
+        command->BindString(4, license);
+
+        if (command->Step()) {
+            LogDebug("Unexpected SQLITE_ROW answer to query: " <<
+                     Queries.at(StmtType::EAddClientPrivilege));
+        }
+
+        LogDebug("Added privilege: " << privilege << " license: " << license <<
+                 "defined by: " << appName << " and user: " << uid);
+     });
+}
+
+void PrivilegeDb::RemoveAppDefinedPrivileges(const std::string &appName, uid_t uid)
+{
+    try_catch<void>([&] {
+        auto command = getStatement(StmtType::ERemoveAppDefinedPrivileges);
+        command->BindString(1, appName);
+        command->BindInteger(2, uid);
+
+        if (command->Step()) {
+            LogDebug("Unexpected SQLITE_ROW answer to query: " <<
+                     Queries.at(StmtType::ERemoveAppDefinedPrivileges));
+        };
+
+        LogDebug("Removed privileges defined by: " << appName << " and user: " << uid);
+     });
+}
+
+void PrivilegeDb::RemoveClientPrivileges(const std::string &appName, uid_t uid)
+{
+    try_catch<void>([&] {
+        auto command = getStatement(StmtType::ERemoveClientPrivileges);
+        command->BindString(1, appName);
+        command->BindInteger(2, uid);
+
+        if (command->Step()) {
+            LogDebug("Unexpected SQLITE_ROW answer to query: " <<
+                     Queries.at(StmtType::ERemoveClientPrivileges));
+        };
+
+        LogDebug("Removed privileges used by: " << appName << " and user: " << uid);
+     });
+}
+
+void PrivilegeDb::GetAppDefinedPrivileges(const std::string &appName, uid_t uid,
+                                          AppDefinedPrivilegesVector &privileges)
+{
+    try_catch<void>([&] {
+        privileges.clear();
+
+        auto command = getStatement(StmtType::EGetAppDefinedPrivileges);
+        command->BindString(1, appName);
+        command->BindInteger(2, uid);
+        while (command->Step()) {
+            auto privilege = command->GetColumnString(0);
+            auto type = command->GetColumnInteger(1);
+            auto license = command->GetColumnString(2);
+            LogDebug("App: " << appName << " installed by: " << uid << " defines privilege: " << privilege);
+            privileges.push_back(std::make_tuple<>(privilege, type, license));
+        }
+    });
+}
+
+bool PrivilegeDb::GetAppAndLicenseForAppDefinedPrivilege(
+        uid_t uid,
+        const std::string &privilege,
+        std::string &appName,
+        std::string &license)
+{
+    return try_catch<bool>([&] {
+        appName.clear();
+        license.clear();
+
+        auto command = getStatement(StmtType::EGetAppAndLicenseForAppDefinedPrivilege);
+        command->BindInteger(1, uid);
+        command->BindString(2, privilege);
+
+        if (command->Step()) {
+            appName = command->GetColumnString(0);
+            license = command->GetColumnString(1);
+            LogDebug("Privilege: " << privilege << " defined by " << appName);
+            return true;
+        }
+
+        LogDebug("Privilege: " << privilege << " not exist");
+        return false;
+    });
+}
+
+bool PrivilegeDb::GetLicenseForClientPrivilege(
+        const std::string &appName,
+        uid_t uid,
+        const std::string &privilege,
+        std::string &license)
+{
+    return try_catch<bool>([&] {
+        license.clear();
+
+        auto command = getStatement(StmtType::EGetLicenseForClientPrivilege);
+        command->BindString(1, appName);
+        command->BindInteger(2, uid);
+        command->BindString(3, privilege);
+
+        if (command->Step()) {
+            license = command->GetColumnString(0);
+            LogDebug("License found for app: " << appName << " privilege: " <<
+                privilege << " uid: " << uid << " License: " << license);
+            return true;
+        }
+
+        LogDebug("License not found for app: " << appName << " privilege: " <<
+            privilege << " uid: " << uid);
+        return false;
+    });
+}
+
+bool PrivilegeDb::IsUserAppInstalled(const std::string& appName, uid_t uid)
+{
+    return try_catch<bool>([&]() -> bool {
+        auto command = getStatement(StmtType::EIsUserAppInstalled);
+        command->BindString(1, appName);
+        command->BindInteger(2, uid);
+        int isInstalled = 0;
+
+        if (command->Step())
+            isInstalled = command->GetColumnInteger(0);
+
+        return (isInstalled > 0);
+    });
+}
+
 } //namespace SecurityManager

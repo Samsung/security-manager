@@ -4,7 +4,7 @@ PRAGMA auto_vacuum = NONE;
 
 BEGIN EXCLUSIVE TRANSACTION;
 
-PRAGMA user_version = 10;
+PRAGMA user_version = 11;
 
 CREATE TABLE IF NOT EXISTS pkg (
 pkg_id INTEGER PRIMARY KEY,
@@ -61,6 +61,33 @@ CREATE TABLE IF NOT EXISTS author (
 	name VARCHAR NOT NULL,
 	UNIQUE (name)
 );
+
+CREATE TABLE IF NOT EXISTS app_defined_privilege (
+app_id INTEGER NOT NULL,
+uid INTEGER NOT NULL,
+privilege VARCHAR NOT NULL,
+type INTEGER NOT NULL CHECK (type >= 0 AND type <= 1),
+license VARCHAR,
+FOREIGN KEY (app_id, uid) REFERENCES user_app (app_id, uid) ON UPDATE CASCADE ON DELETE CASCADE
+);
+
+-- TODO CREATE INDEX + performance tests required
+-- CREATE INDEX IF NOT EXISTS app_defined_privilege_index ON app_defined_privilege (app_id, uid);
+
+-- This table contains privilege name that is also stored in
+-- app_defined_privilege table.
+-- It's time to consider using INTEGER instead VARCHAR and store
+-- all names of privilege in new table (We will skip this in POC).
+CREATE TABLE IF NOT EXISTS client_license (
+app_id INTEGER NOT NULL,
+uid INTEGER NOT NULL,
+privilege VARCHAR NOT NULL,
+license VARCHAR NOT NULL,
+FOREIGN KEY(app_id, uid) REFERENCES user_app (app_id, uid) ON UPDATE CASCADE ON DELETE CASCADE
+);
+
+-- TODO CREATE INDEX + performance tests required
+-- CREATE INDEX IF NOT EXISTS client_license_index ON client_license (app_id, uid);
 
 DROP VIEW IF EXISTS user_app_pkg_view;
 CREATE VIEW user_app_pkg_view AS
@@ -198,6 +225,79 @@ BEGIN
     UPDATE app_private_sharing SET counter = OLD.counter - 1
     WHERE path_id = (SELECT path_id FROM shared_path WHERE path = OLD.path)
     AND app_private_sharing.target_app_name = OLD.target_app_name;
+END;
+
+DROP VIEW IF EXISTS app_defined_privilege_view;
+CREATE VIEW app_defined_privilege_view AS
+SELECT
+    name AS app_name,
+    uid,
+    privilege,
+    type,
+    license
+FROM app_defined_privilege
+LEFT JOIN app USING (app_id);
+
+DROP TRIGGER IF EXISTS app_defined_privilege_view_insert_trigger;
+CREATE TRIGGER app_defined_privilege_view_insert_trigger
+INSTEAD OF INSERT ON app_defined_privilege_view
+BEGIN
+    SELECT RAISE(ABORT, 'App defined privilege already defined by different application')
+    WHERE EXISTS (SELECT 1 FROM app_defined_privilege_view
+                  WHERE privilege=NEW.privilege AND app_name!=NEW.app_name);
+
+    SELECT RAISE(ABORT, 'Application was not found')
+    WHERE NOT EXISTS (SELECT 1 FROM user_app_pkg_view
+                      WHERE uid=NEW.uid AND app_name=NEW.app_name);
+
+    SELECT RAISE(ABORT, 'App defined privilege already defined')
+    WHERE EXISTS (SELECT 1 FROM app_defined_privilege_view
+                  WHERE uid=NEW.uid AND app_name=NEW.app_name AND privilege=NEW.privilege);
+
+    INSERT OR IGNORE INTO app_defined_privilege (app_id, uid, privilege, type, license)
+    VALUES ((SELECT app_id FROM app WHERE name=NEW.app_name), NEW.uid, NEW.privilege, NEW.type, NEW.license);
+END;
+
+DROP TRIGGER IF EXISTS app_defined_privilege_view_delete_trigger;
+CREATE TRIGGER app_defined_privilege_view_delete_trigger
+INSTEAD OF DELETE ON app_defined_privilege_view
+BEGIN
+    DELETE FROM app_defined_privilege
+    WHERE app_id=(SELECT app_id FROM app WHERE name=OLD.app_name) AND uid=OLD.uid;
+END;
+
+DROP VIEW IF EXISTS client_license_view;
+CREATE VIEW client_license_view AS
+SELECT
+    name AS app_name,
+    uid,
+    privilege,
+    license
+FROM client_license
+LEFT JOIN app USING (app_id);
+
+DROP TRIGGER IF EXISTS client_license_view_insert_trigger;
+CREATE TRIGGER client_license_view_insert_trigger
+INSTEAD OF INSERT ON client_license_view
+BEGIN
+    SELECT RAISE(ABORT, 'Application was not found')
+    WHERE NOT EXISTS (SELECT 1 FROM user_app_pkg_view
+                      WHERE uid=NEW.uid AND app_name=NEW.app_name);
+
+    SELECT RAISE(ABORT, 'Client privilege license already defined')
+    WHERE EXISTS (SELECT 1 FROM client_license_view
+                  WHERE uid=NEW.uid AND app_name=NEW.app_name AND privilege=NEW.privilege);
+
+    INSERT OR IGNORE INTO client_license (app_id, uid, privilege, license)
+    VALUES ((SELECT app_id FROM app WHERE name=NEW.app_name), NEW.uid, NEW.privilege, NEW.license);
+END;
+
+DROP TRIGGER IF EXISTS client_license_view_delete_trigger;
+CREATE TRIGGER client_license_view_delete_trigger
+INSTEAD OF DELETE ON client_license_view
+BEGIN
+    DELETE FROM client_license
+    WHERE app_id=(SELECT app_id FROM app WHERE name=OLD.app_name) AND uid=OLD.uid;
 END;
 
 COMMIT TRANSACTION;

@@ -247,6 +247,46 @@ public:
     int shmAppName(const Credentials &creds,
                    const std::string &shmName,
                    const std::string &appName);
+
+    /**
+     * Retrieves the app_id/pkg_id associated with given privilege and uid.
+     *
+     * @param[in]  uid       user identifier
+     * @param[in]  privilege privilege name
+     * @param[out] appName  returns app_id
+     * @param[out] pkgName  returns pkg_id
+     *
+     * @return API return code, as defined in protocols.h
+     */
+    int getAppDefinedPrivilegeProvider(uid_t uid, const std::string &privilege,
+                                       std::string &appName, std::string &pkgName);
+
+    /**
+     * Retrieves the license associated with given privilege and uid.
+     *
+     * @param[in]  uid       user identifier
+     * @param[in]  privilege privilege name
+     * @param[out] license   returns license information connected with privilege
+     *
+     * @return API return code, as defined in protocols.h
+     */
+    int getAppDefinedPrivilegeLicense(uid_t uid, const std::string &privilege,
+                                      std::string &license);
+
+    /**
+     * Retrieves the license associated with given privilege and uid.
+     *
+     * @param[in]  appName   application identifier
+     * @param[in]  uid       user identifier
+     * @param[in]  privilege privilege name
+     * @param[out] license   returns license information connected with privilege
+     *
+     * @return API return code, as defined in protocols.h
+     */
+    int getClientPrivilegeLicense(const std::string &appName, uid_t uid,
+                                  const std::string &privilege,
+                                  std::string &license);
+
 private:
     bool authenticate(const Credentials &creds, const std::string &privilege);
 
@@ -308,7 +348,7 @@ private:
     int validatePolicy(const Credentials &creds, policy_entry &policyEntry, CynaraAdminPolicy &cyap);
 
     Cynara m_cynara;
-    PrivilegeDb m_priviligeDb;
+    PrivilegeDb m_privilegeDb;
     CynaraAdmin m_cynaraAdmin;
 };
 

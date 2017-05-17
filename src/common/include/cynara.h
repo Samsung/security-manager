@@ -37,6 +37,7 @@
 #include <sys/eventfd.h>
 
 #include "security-manager.h"
+#include "privilege_db.h"
 
 namespace SecurityManager {
 
@@ -50,7 +51,9 @@ enum class Bucket
     USER_TYPE_GUEST,
     USER_TYPE_SYSTEM,
     ADMIN,
-    MANIFESTS
+    MANIFESTS_GLOBAL,
+    MANIFESTS_LOCAL,
+    APPDEFINED
 };
 
 class CynaraException
@@ -132,9 +135,15 @@ public:
      * @param global true if it's a global or preloaded installation
      * @param uid user identifier
      * @param privileges currently enabled privileges
+     * @param oldAppDefinedPrivileges old privileges defined by application
+     * @param newAppDefinedPrivileges new privileges defined by application
+     * @param policyRemove true while application deinstallation
      */
     void updateAppPolicy(const std::string &label, bool global, uid_t uid,
-        const std::vector<std::string> &privileges);
+        const std::vector<std::string> &privileges,
+        const AppDefinedPrivilegesVector &oldAppDefinedPrivileges,
+        const AppDefinedPrivilegesVector &newAppDefinedPrivileges,
+        bool policyRemove = false);
 
     /**
      * Fetch Cynara policies for the application and the user.
@@ -306,18 +315,20 @@ private:
     void fetchCynaraPolicyDescriptions(bool forceRefresh = false);
 
     /**
-     * Calculate actual Cynara policy based on appilcation data & previous policy
+     * Calculate actual Cynara policy based on application data & previous policy
      *
      * @param label application identifier
      * @param user user for which we are calculating the policy
-     * @param privileges new privielges for which policy is being calulated
+     * @param privileges new privileges for which policy is being calculated
      * @param bucket bucket to which the policy will be set
      * @param policyToSet policy effect to be set
+     * @param oldPolicies old policy (input/output parameter)
      * @param policies current policy (input/output parameter)
      */
     void calculatePolicies(const std::string &label, const std::string &user,
                            const std::vector<std::string> &privileges,
                            const std::string &bucket, int policyToSet,
+                           std::vector<CynaraAdminPolicy> &oldPolicies,
                            std::vector<CynaraAdminPolicy> &policies);
 
     static TypeToDescriptionMap s_typeToDescription;

@@ -73,11 +73,55 @@ int security_manager_app_inst_req_set_pkg_id(app_inst_req *p_req, const char *pk
  * This function is used to add privilege to app_inst_req structure,
  * it can be called multiple times
  *
+ * \deprecated This function is deprecated. Use
+ *             security_manager_app_inst_req_add_client_privilege() instead.
+ *
  * \param[in] p_req      Pointer handling app_inst_req structure
- * \param[in] privilege  Application privilager
+ * \param[in] privilege  Application privilege
  * \return API return code or error code
  */
-int security_manager_app_inst_req_add_privilege(app_inst_req *p_req, const char *privilege);
+int security_manager_app_inst_req_add_privilege(
+        app_inst_req *p_req,
+        const char *privilege) __attribute__((deprecated(
+            "Use security_manager_app_inst_req_add_client_privilege() instead")));
+
+/**
+ * This function is used to add privilege and license to app_inst_req structure,
+ * it can be called multiple times.
+ *
+ * \param[in] p_req      Pointer handling app_inst_req structure
+ * \param[in] privilege  Application privilege
+ * \param[in] license    Requirements for license-manager. For type
+ *                       SM_APP_DEFINED_PRIVILEGE_TYPE_UNTRUSTED this parameter
+ *                       must be NULL. For type SM_APP_DEFINED_PRIVILEGE_TYPE_LICENSE
+ *                       this parameter may contain path to public_key/certificate (or
+ *                       other document) used during varification process.
+ * \return API return code or error code
+ */
+int security_manager_app_inst_req_add_client_privilege(
+        app_inst_req *p_req,
+        const char *privilege,
+        const char *license);
+
+/**
+ * This function is used to add privilege and license defined by application to app_inst_req structure,
+ * it can be called multiple times
+ *
+ * \param[in] p_req                 Pointer handling app_inst_req structure
+ * \param[in] app_defined_privilege Privilege defined by application
+ * \param[in] type                  Privilege type
+ * \param[in] license               Requirements for license-manager. For type
+ *                                  SM_APP_DEFINED_PRIVILEGE_TYPE_UNTRUSTED this parameter
+ *                                  must be NULL. For type SM_APP_DEFINED_PRIVILEGE_TYPE_LICENSE
+ *                                  this parameter may contain path to public_key/certificate (or
+ *                                  other document) used during varification process.
+ * \return API return code or error code
+ */
+int security_manager_app_inst_req_add_app_defined_privilege(
+        app_inst_req *p_req,
+        const char *app_defined_privilege,
+        const app_defined_privilege_type type,
+        const char *license);
 
 /**
  * This function is used to add application path to app_inst_req structure,

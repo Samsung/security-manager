@@ -219,6 +219,67 @@ int security_manager_app_has_privilege(const char *app_id, const char *privilege
  */
 int security_manager_shm_open(const char *name, int oflag, mode_t mode, const char *app_id);
 
+/**
+ * Get package id and application id of an application which provides privilege.
+ *
+ * On successful call pkg_id and app_id should be freed when caller is done with them.
+ * Both pkg_id and app_id are allocated with malloc() so they should be freed with free() function.
+ * Either app_id or pkg_id may be NULL. NULL-ed argument will be ignored.
+ * If both app_id and pkg_id are NULL then SECURITY_MANAGER_ERROR_INPUT_PARAM will be returned.
+ * When privilege/uid is incorrect or not related to any package, this function will
+ * return SECURITY_MANAGER_ERROR_NO_SUCH_OBJECT.
+ *
+ * \param[in]   privilege  Privilege name
+ * \param[in]   uid        User identifier
+ * \param[out]  pkg_id     Package id of the provider application
+ * \param[out]  app_id     Application id of the provider application
+ * \return API return code or error code
+ */
+int security_manager_get_app_defined_privilege_provider(const char *privilege,
+                                                        uid_t uid,
+                                                        char **pkg_id,
+                                                        char **app_id);
+
+/**
+ * Get license of an application which provides privilege.
+ *
+ * On successful call license should be freed when caller is done with them.
+ * license is allocated with malloc() so should be freed with free() function.
+ * When privilege/uid is incorrect or not related to any license, this function will
+ * return SECURITY_MANAGER_ERROR_NO_SUCH_OBJECT.
+ *
+ * \param[in]   privilege  Privilege name
+ * \param[in]   uid        User identifier
+ * \param[out]  license    Data used to verify if client may use this privilege.
+ *                         If privilege type is SM_APP_DEFINED_PRIVILEGE_TYPE_UNTRUSTED this
+ *                         value will be set to NULL.
+ * \return API return code or error code
+ */
+int security_manager_get_app_defined_privilege_license(const char *privilege,
+                                                       uid_t uid,
+                                                       char **license);
+
+/**
+ * Extract license from application that requested access to privilege.
+ *
+ * On successful call license should be freed when caller is done with them.
+ * license parameter will be allocated with malloc so it should be freed with free() function.
+ * When privilege/app_id/uid is incorrect or not related to any license, this function will
+ * return SECURITY_MANAGER_ERROR_NO_SUCH_OBJECT.
+ *
+ * \param[in]  privilege   Privilege name
+ * \param[in]  app_id      Id of application that request access to privilege.
+ * \param[in]  uid         User identifier
+ * \param[out] license     Data that will be used to verify access to privilege. If privilege
+ *                         type is SM_APP_DEFINED_PRIVILEGE_TYPE_UNTRUSTED this value will be
+ *                         set to NULL.
+ * \return API return code or error code
+ */
+int security_manager_get_client_privilege_license(const char *privilege,
+                                                  const char *app_id,
+                                                  uid_t uid,
+                                                  char **license);
+
 #ifdef __cplusplus
 }
 #endif
