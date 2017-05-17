@@ -25,6 +25,10 @@
 #include <exception>
 
 #include <systemd/sd-daemon.h>
+#include <openssl/evp.h>
+#include <openssl/ssl.h>
+#include <openssl/conf.h>
+#include <openssl/err.h>
 
 #include <alog.h>
 #include <agent_logic.h>
@@ -51,7 +55,13 @@ int main(int, char **) {
         return EXIT_FAILURE;
     }
 
+    OpenSSL_add_all_algorithms();
+    SSL_library_init();
+    OPENSSL_config(NULL);
+    SSL_load_error_strings();
+
     try {
+
         LicenseManager::AgentLogic *logic = new LicenseManager::AgentLogic;
         LicenseManager::Agent agent;
         if (!agent.initialize(logic)) {
@@ -71,6 +81,11 @@ int main(int, char **) {
         std::string error = e.what();
         ALOGE("Exception: %s", error.c_str());
     }
+
+    CONF_modules_free();
+    EVP_cleanup();
+    ERR_free_strings();
+    CRYPTO_cleanup_all_ex_data();
 
     return 0;
 }

@@ -23,6 +23,7 @@ PKG_CHECK_MODULES(AGENT_DEP
     REQUIRED
     cynara-agent
     libsystemd
+    openssl
     )
 
 SET(AGENT_SOURCES
