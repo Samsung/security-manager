@@ -93,6 +93,7 @@
 *	http://tizen.org/privilege/shortcut
 *	http://tizen.org/privilege/systemmonitor
 *	http://tizen.org/privilege/systemsettings.admin
+*	http://tizen.org/privilege/tee.client
 *	http://tizen.org/privilege/telephony
 *	http://tizen.org/privilege/telephony.admin
 *	http://tizen.org/privilege/tethering.admin
