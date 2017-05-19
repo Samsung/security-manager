@@ -111,6 +111,8 @@
 *	http://tizen.org/privilege/widget.viewer
 *	http://tizen.org/privilege/wifidirect
 *	http://tizen.org/privilege/window.priority.set
+*	http://tizen.org/privilege/zigbee
+*	http://tizen.org/privilege/zigbee.admin
 *	http://tizen.org/privilege/internal/appdebugging
 *	http://tizen.org/privilege/internal/buxton
 *	http://tizen.org/privilege/internal/buxton/account.read
