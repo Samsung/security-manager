@@ -1,3 +1,11 @@
+Release: 1.2.19
+Date:    2017.05.19
+Name:    Release 1.2.19
+Description:
+Merge remote-tracking branch 'origin/appdefined' into tizen
+Add core privilege: tee.client
+Add core privilege: zigbee, zigbee.admin
+
 Release: 1.2.18
 Date:    2017.04.27
 Name:    Release 1.2.18
