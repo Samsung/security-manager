@@ -292,8 +292,6 @@ private:
 
     static uid_t getGlobalUserId(void);
 
-    static std::string realPath(const std::string &path);
-
     static bool isSubDir(const std::string &parent, const std::string &subdir);
 
     static bool containSubDir(const std::string &parent, const pkg_paths &paths);

@@ -67,6 +67,17 @@ bool fileExists(const std::string &path) {
     return (stat(path.c_str(), &buffer) == 0) && S_ISREG(buffer.st_mode);
 }
 
+std::string realPath(const std::string &path)
+{
+    auto real_pathPtr = makeUnique(realpath(path.c_str(), nullptr), free);
+    if (!real_pathPtr) {
+        LogError("Error in realpath(): " << GetErrnoString(errno) << " for: " << path);
+        return std::string();
+    }
+
+    return real_pathPtr.get();
+}
+
 class ScopedTransaction {
 public:
     ScopedTransaction(PrivilegeDb &privilegeDb) : m_isCommited(false), m_privilegeDb(privilegeDb) {
@@ -95,14 +106,46 @@ private:
     PrivilegeDb &m_privilegeDb;
 };
 
-bool verifyAppDefinedPrivileges(const AppDefinedPrivilegesVector &privileges) {
-    // check if licenses are set for license-privileges
-    // check for collision with system privileges
-    for (auto &e : privileges) {
-        if (((std::get<1>(e) == SM_APP_DEFINED_PRIVILEGE_TYPE_LICENSED) && std::get<2>(e).empty()) ||
-            (std::get<0>(e).find("http://tizen.org/privilege/") != std::string::npos))
+bool verifyAppDefinedPrivileges(app_inst_req &req) {
+    std::vector<std::string> licenseVector;
+
+    for (auto &e : req.appDefinedPrivileges) {
+        // check if licenses are set for license-privileges
+        if ((std::get<1>(e) == SM_APP_DEFINED_PRIVILEGE_TYPE_LICENSED)
+            && (std::get<2>(e).empty()))
+        {
+            LogError("License privilege delivered empty license!");
             return false;
+        }
+
+        // check for collision with system privileges
+        if (std::get<0>(e).find("http://tizen.org/privilege/") != std::string::npos) {
+            LogError("App defined privilege could not contain: 'http://tizen.org/privilege'");
+            return false;
+        }
+
+        if (std::get<1>(e) == SM_APP_DEFINED_PRIVILEGE_TYPE_LICENSED)
+            licenseVector.push_back(std::get<2>(e));
     }
+
+    // get license from 'client' privileges
+    for (auto &e : req.privileges) {
+        if (!e.second.empty())
+            licenseVector.push_back(e.second);
+    }
+
+    // We need to verify licenses placement in filesystem
+    // Each license must be marked as SECURITY_MANAGER_PATH_RO
+    // and the path must be inside application directory.
+    // If we put licenses in pkgPaths all of this will be done
+    // during paths verification procedure.
+    for (auto &e : licenseVector) {
+        std::string tmp = realPath(e);
+        if (tmp.empty())
+            return false;
+        req.pkgPaths.emplace_back(std::move(tmp), SECURITY_MANAGER_PATH_RO);
+    }
+
     return true;
 }
 
@@ -282,17 +325,6 @@ bool ServiceImpl::containSubDir(const std::string &parent, const pkg_paths &path
             return true;
     }
     return false;
-}
-
-std::string ServiceImpl::realPath(const std::string &path)
-{
-    auto real_pathPtr = makeUnique(realpath(path.c_str(), nullptr), free);
-    if (!real_pathPtr) {
-        LogError("Error in realpath(): " << GetErrnoString(errno) << " for: " << path);
-        return std::string();
-    }
-
-    return real_pathPtr.get();
 }
 
 bool ServiceImpl::getUserPkgDir(const uid_t &uid,
@@ -521,7 +553,8 @@ int ServiceImpl::appInstall(const Credentials &creds, app_inst_req &&req)
     try {
         std::vector<std::string> privilegeList;
         privilegeList.reserve(req.privileges.size());
-        if (!verifyAppDefinedPrivileges(req.appDefinedPrivileges))
+
+        if (!verifyAppDefinedPrivileges(req))
             return SECURITY_MANAGER_ERROR_INPUT_PARAM;
 
         for (auto &e : req.privileges)

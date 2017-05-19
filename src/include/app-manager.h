@@ -82,8 +82,7 @@ int security_manager_app_inst_req_set_pkg_id(app_inst_req *p_req, const char *pk
  */
 int security_manager_app_inst_req_add_privilege(
         app_inst_req *p_req,
-        const char *privilege) __attribute__((deprecated(
-            "Use security_manager_app_inst_req_add_client_privilege() instead")));
+        const char *privilege);
 
 /**
  * This function is used to add privilege and license to app_inst_req structure,
@@ -91,11 +90,13 @@ int security_manager_app_inst_req_add_privilege(
  *
  * \param[in] p_req      Pointer handling app_inst_req structure
  * \param[in] privilege  Application privilege
- * \param[in] license    Requirements for license-manager. For type
- *                       SM_APP_DEFINED_PRIVILEGE_TYPE_UNTRUSTED this parameter
- *                       must be NULL. For type SM_APP_DEFINED_PRIVILEGE_TYPE_LICENSE
- *                       this parameter may contain path to public_key/certificate (or
- *                       other document) used during varification process.
+ * \param[in] license    Requirements for license-manager. For privileges provided by
+ *                       Tizen system and for SM_APP_DEFINED_PRIVILEGE_TYPE_UNTRUSTED
+ *                       this parameter must be NULL. For type
+ *                       SM_APP_DEFINED_PRIVILEGE_TYPE_LICENSE this parameter may contain
+ *                       path to document with license that will be used during varification
+ *                       process. File or directory with file must be marked as
+ *                       SECURITY_MANAGER_PATH_RO.
  * \return API return code or error code
  */
 int security_manager_app_inst_req_add_client_privilege(
@@ -113,8 +114,9 @@ int security_manager_app_inst_req_add_client_privilege(
  * \param[in] license               Requirements for license-manager. For type
  *                                  SM_APP_DEFINED_PRIVILEGE_TYPE_UNTRUSTED this parameter
  *                                  must be NULL. For type SM_APP_DEFINED_PRIVILEGE_TYPE_LICENSE
- *                                  this parameter may contain path to public_key/certificate (or
- *                                  other document) used during varification process.
+ *                                  this parameter may contain path to license that will be used
+ *                                  during varification process. File or directory with file must
+ *                                  be marked as SECURITY_MANAGER_PATH_RO.
  * \return API return code or error code
  */
 int security_manager_app_inst_req_add_app_defined_privilege(
