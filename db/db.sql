@@ -71,9 +71,6 @@ license VARCHAR,
 FOREIGN KEY (app_id, uid) REFERENCES user_app (app_id, uid) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
--- TODO CREATE INDEX + performance tests required
--- CREATE INDEX IF NOT EXISTS app_defined_privilege_index ON app_defined_privilege (app_id, uid);
-
 -- This table contains privilege name that is also stored in
 -- app_defined_privilege table.
 -- It's time to consider using INTEGER instead VARCHAR and store
@@ -85,9 +82,6 @@ privilege VARCHAR NOT NULL,
 license VARCHAR NOT NULL,
 FOREIGN KEY(app_id, uid) REFERENCES user_app (app_id, uid) ON UPDATE CASCADE ON DELETE CASCADE
 );
-
--- TODO CREATE INDEX + performance tests required
--- CREATE INDEX IF NOT EXISTS client_license_index ON client_license (app_id, uid);
 
 DROP VIEW IF EXISTS user_app_pkg_view;
 CREATE VIEW user_app_pkg_view AS
