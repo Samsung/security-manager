@@ -67,15 +67,16 @@ static po::options_description getGenericOptions()
     po::options_description opts("Generic options");
     opts.add_options()
          ("help,h", "produce help message")
-         ("install,i", "install an application")
-         ("manage-users,m", po::value<std::string>(), "add or remove user, parameter is 'a' or 'add' (for add) and 'r' or 'remove' (for remove)")
+         ("install,i", "install an application (deprecated, use \"manage-apps\" instead)")
+         ("manage-apps,n", po::value<std::string>(), "add or remove app, parameter is either a/add or r/remove")
+         ("manage-users,m", po::value<std::string>(), "add or remove user, parameter is either a/add or r/remove")
          ;
     return opts;
 }
 
-static po::options_description getInstallOptions()
+static po::options_description getAppOptions()
 {
-    po::options_description opts("Install options");
+    po::options_description opts("App management options");
     opts.add_options()
          ("app,a", po::value<std::string>()->required(),
           "application name (required)")
@@ -126,7 +127,7 @@ static po::options_description getAllOptions()
 {
     po::options_description opts("Allowed options");
     opts.add(getGenericOptions());
-    opts.add(getInstallOptions());
+    opts.add(getAppOptions());
     opts.add(getUserOptions());
 
     return opts;
@@ -213,12 +214,12 @@ static bool loadPaths(const std::vector<std::string> &paths,
     return (!req.pkgPaths.empty());
 }
 
-static void parseInstallOptions(int argc, char *argv[],
+static void parseAppOptions(int argc, char *argv[],
                                 struct app_inst_req &req,
                                 po::variables_map &vm)
 {
 
-    parseCommandOptions(argc, argv, getInstallOptions(), vm);
+    parseCommandOptions(argc, argv, getAppOptions(), vm);
 
     if (vm.count("app"))
         req.appName = vm["app"].as<std::string>();
@@ -277,23 +278,36 @@ static void parseUserOptions(int argc, char *argv[],
     }
 }
 
-static int installApp(const struct app_inst_req &req)
+static int manageAppOperation(const struct app_inst_req &req, std::string operation)
 {
     int ret = EXIT_FAILURE;
 
-    ret = security_manager_app_install(&req);
-    if (SECURITY_MANAGER_SUCCESS == ret) {
-        std::cout << "Application " << req.appName <<
-                  " installed successfully." << std::endl;
-        LogDebug("Application " << req.appName <<
-                 " installed successfully.");
+    if (operation == "a" || operation == "add") {
+        ret = security_manager_app_install(&req);
+        operation = "add";
+    } else if (operation == "r" || operation == "remove") {
+        ret = security_manager_app_uninstall(&req);
+        operation = "remove";
     } else {
-        std::cout << "Failed to install " << req.appName << " application: " <<
-                  security_manager_strerror(static_cast<lib_retcode>(ret)) <<
+        std::cout << "Manage app option requires argument:"
+                "\n\ta/add (for adding app)"
+                "\n\tr/remove (for removing app)" << std::endl;
+        LogError("Manage app option wrong argument");
+        return EXIT_FAILURE;
+    }
+
+    if (SECURITY_MANAGER_SUCCESS == ret) {
+        std::cout << "Application " << req.appName << " " << operation <<
+                " operation successfuly finished."  << std::endl;
+        LogDebug("Application " << req.appName << " " << operation <<
+                " operation successfuly finished.");
+    } else {
+        std::cout << "Failed to " << operation << " " << " application " << req.appName <<
+                  ": " << security_manager_strerror(static_cast<lib_retcode>(ret)) <<
                   " (" << ret << ")." << std::endl;
-        LogError("Failed to install " << req.appName << " application: " <<
-                 security_manager_strerror(static_cast<lib_retcode>(ret)) <<
-                 " (" << ret << ")." << std::endl);
+        LogError("Failed to " << operation << " " << " application " << req.appName <<
+                  ": " << security_manager_strerror(static_cast<lib_retcode>(ret)) <<
+                  " (" << ret << ").");
     }
     return ret;
 }
@@ -310,8 +324,8 @@ static int manageUserOperation(const struct user_req &req, std::string operation
         operation = "remove";
     } else {
         std::cout << "Manage user option requires argument:"
-                "\n\t'a' or 'add' (for adding user)"
-                "\n\t'r' or 'remove' (for removing user)" << std::endl;
+                "\n\ta/add (for adding user)"
+                "\n\tr/remove (for removing user)" << std::endl;
         LogError("Manage user option wrong argument");
         return EXIT_FAILURE;
     }
@@ -358,14 +372,20 @@ int main(int argc, char *argv[])
         }
         LogDebug("Generic arguments has been parsed.");
 
-        if (vm.count("install")) {
+        if (vm.count("install") || vm.count("manage-apps")) {
+            std::string operation;
+            if (vm.count("manage-apps"))
+                operation =  vm["manage-apps"].as<std::string>();
+            else
+                operation = "add";
+
             struct app_inst_req *req = nullptr;
-            LogDebug("Install command.");
+            LogDebug("Manage apps command");
             if (security_manager_app_inst_req_new(&req) != SECURITY_MANAGER_SUCCESS)
                 return EXIT_FAILURE;
             auto req_ptr = makeUnique(req, security_manager_app_inst_req_free);
-            parseInstallOptions(argc, argv, *req, vm);
-            return installApp(*req);
+            parseAppOptions(argc, argv, *req, vm);
+            return manageAppOperation(*req, operation);
         } else if (vm.count("manage-users")) {
             std::string operation = vm["manage-users"].as<std::string>();
             struct user_req *req = nullptr;
