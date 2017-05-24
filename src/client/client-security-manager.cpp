@@ -305,16 +305,24 @@ int security_manager_app_uninstall(const app_inst_req *p_req)
         if (p_req->appName.empty())
             return SECURITY_MANAGER_ERROR_REQ_NOT_COMPLETE;
 
-        return ClientRequest(SecurityModuleCall::APP_UNINSTALL).send(
-                     p_req->appName,
-                     p_req->pkgName,
-                     p_req->privileges,
-                     p_req->appDefinedPrivileges,
-                     p_req->pkgPaths,
-                     p_req->uid,
-                     p_req->tizenVersion,
-                     p_req->authorName,
-                     p_req->installationType).getStatus();
+        int retval;
+        ClientOffline offlineMode;
+        if (offlineMode.isOffline()) {
+            Credentials creds = offlineMode.getCredentials();
+            retval = SecurityManager::ServiceImpl().appUninstall(creds, app_inst_req(*p_req));
+        } else {
+            retval = ClientRequest(SecurityModuleCall::APP_UNINSTALL).send(
+                         p_req->appName,
+                         p_req->pkgName,
+                         p_req->privileges,
+                         p_req->appDefinedPrivileges,
+                         p_req->pkgPaths,
+                         p_req->uid,
+                         p_req->tizenVersion,
+                         p_req->authorName,
+                         p_req->installationType).getStatus();
+        }
+        return retval;
     });
 }
 
