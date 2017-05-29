@@ -224,13 +224,15 @@ END;
 DROP VIEW IF EXISTS app_defined_privilege_view;
 CREATE VIEW app_defined_privilege_view AS
 SELECT
-    name AS app_name,
+    app.name AS app_name,
+    pkg.name AS pkg_name,
     uid,
     privilege,
     type,
     license
-FROM app_defined_privilege
-LEFT JOIN app USING (app_id);
+FROM app_defined_privilege, app, pkg
+WHERE app.app_id = app_defined_privilege.app_id
+AND app.pkg_id = pkg.pkg_id;
 
 DROP TRIGGER IF EXISTS app_defined_privilege_view_insert_trigger;
 CREATE TRIGGER app_defined_privilege_view_insert_trigger
@@ -263,12 +265,14 @@ END;
 DROP VIEW IF EXISTS client_license_view;
 CREATE VIEW client_license_view AS
 SELECT
-    name AS app_name,
+    app.name AS app_name,
+    pkg.name AS pkg_name,
     uid,
     privilege,
     license
-FROM client_license
-LEFT JOIN app USING (app_id);
+FROM client_license, app, pkg
+WHERE client_license.app_id = app.app_id
+AND app.pkg_id = pkg.pkg_id;
 
 DROP TRIGGER IF EXISTS client_license_view_insert_trigger;
 CREATE TRIGGER client_license_view_insert_trigger
