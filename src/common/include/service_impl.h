@@ -277,14 +277,16 @@ public:
      * Retrieves the license associated with given privilege and uid.
      *
      * @param[in]  appName   application identifier
+     * @param[in]  pkgName   package identifier
+     *
      * @param[in]  uid       user identifier
      * @param[in]  privilege privilege name
      * @param[out] license   returns license information connected with privilege
      *
      * @return API return code, as defined in protocols.h
      */
-    int getClientPrivilegeLicense(const std::string &appName, uid_t uid,
-                                  const std::string &privilege,
+    int getClientPrivilegeLicense(const std::string &appName, const std::string &pkgName,
+                                  uid_t uid, const std::string &privilege,
                                   std::string &license);
 
 private:
@@ -344,6 +346,8 @@ private:
     void getPkgsProcessLabels(const std::vector<PkgInfo> &pkgsInfo, SmackRules::PkgsLabels &pkgsLabels);
 
     int validatePolicy(const Credentials &creds, policy_entry &policyEntry, CynaraAdminPolicy &cyap);
+
+    int getAppDefinedPrivilegeDescription(uid_t uid, const std::string &privilege, std::string &appName, std::string &pkgName, std::string &license);
 
     Cynara m_cynara;
     PrivilegeDb m_privilegeDb;

@@ -101,6 +101,7 @@ int verify(const std::string &smack, int uid, const std::string &privilege) {
 
     if (SECURITY_MANAGER_SUCCESS != security_manager_get_client_privilege_license(
             privilege.c_str(),
+            clientPkgId,
             clientAppId,
             uid,
             &clientLicensePath))

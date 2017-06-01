@@ -86,9 +86,10 @@ enum class StmtType {
     ERemoveAppDefinedPrivileges,
     ERemoveClientPrivileges,
     EGetAppDefinedPrivileges,
-    EGetAppAndLicenseForAppDefinedPrivilege,
-    EGetLicenseForClientPrivilege,
-    EIsUserAppInstalled,
+    EGetAppPkgLicenseForAppDefinedPrivilege,
+    EGetLicenseForClientPrivilegeAndApp,
+    EGetLicenseForClientPrivilegeAndPkg,
+    EIsUserPkgInstalled,
 };
 
 // privilege, app_defined_privilege_type, license
@@ -152,9 +153,10 @@ private:
         { StmtType::ERemoveAppDefinedPrivileges, "DELETE FROM app_defined_privilege_view WHERE app_name = ? AND uid = ?"},
         { StmtType::ERemoveClientPrivileges, "DELETE FROM client_license_view WHERE app_name = ? AND uid = ?"},
         { StmtType::EGetAppDefinedPrivileges, "SELECT privilege, type, license FROM app_defined_privilege_view WHERE app_name = ? AND uid = ?"},
-        { StmtType::EGetAppAndLicenseForAppDefinedPrivilege, "SELECT app_name, license FROM app_defined_privilege_view WHERE uid = ? AND privilege = ?"},
-        { StmtType::EGetLicenseForClientPrivilege, "SELECT license FROM client_license_view WHERE app_name = ? AND uid = ? AND privilege = ? "},
-        { StmtType::EIsUserAppInstalled, "SELECT count(*) FROM user_app_pkg_view WHERE app_name = ? AND uid = ?"},
+        { StmtType::EGetAppPkgLicenseForAppDefinedPrivilege, "SELECT app_name, pkg_name, license FROM app_defined_privilege_view WHERE uid = ? AND privilege = ?"},
+        { StmtType::EGetLicenseForClientPrivilegeAndApp, "SELECT license FROM client_license_view WHERE app_name = ? AND uid = ? AND privilege = ? "},
+        { StmtType::EGetLicenseForClientPrivilegeAndPkg, "SELECT license FROM client_license_view WHERE pkg_name = ? AND uid = ? AND privilege = ? "},
+        { StmtType::EIsUserPkgInstalled, "SELECT count(*) FROM user_app_pkg_view WHERE pkg_name = ? AND uid = ?"},
     };
 
     /**
@@ -627,15 +629,17 @@ public:
      * @param[in]  uid - user identifier
      * @param[in]  privilege - privilege identifier
      * @param[out] appName - application identifier
+     * @param[out] pkgName - application package
      * @param[out] license - verification factor required by license-manager
      *
      * @exception PrivilegeDb::Exception::InternalError on internal error
      * @exception PrivilegeDb::Exception::ConstraintError on constraint violation
      * @return true if data were found in the database
      */
-    bool GetAppAndLicenseForAppDefinedPrivilege(uid_t uid,
+    bool GetAppPkgLicenseForAppDefinedPrivilege(uid_t uid,
                                                 const std::string &privilege,
                                                 std::string &appName,
+                                                std::string &pkgName,
                                                 std::string &license);
 
     /**
@@ -650,18 +654,35 @@ public:
      * @exception PrivilegeDb::Exception::ConstraintError on constraint violation
      * @return true if data were found in the database
      */
-    bool GetLicenseForClientPrivilege(const std::string &appName,
-                                      uid_t uid,
-                                      const std::string &privilege,
-                                      std::string &license);
+    bool GetLicenseForClientPrivilegeAndApp(const std::string &appName,
+                                            uid_t uid,
+                                            const std::string &privilege,
+                                            std::string &license);
+    /**
+     * Retrieve license of client application
+     *
+     * @param[in]  pkgName - application package
+     * @param[in]  uid - user identifier
+     * @param[in]  privilege - privilege identifier
+     * @param[out] license - verification factor required by license-manager
+     *
+     * @exception PrivilegeDb::Exception::InternalError on internal error
+     * @exception PrivilegeDb::Exception::ConstraintError on constraint violation
+     * @return true if data were found in the database
+     */
+    bool GetLicenseForClientPrivilegeAndPkg(const std::string &pkgName,
+                                            uid_t uid,
+                                            const std::string &privilege,
+                                            std::string &license);
+
 
     /**
-     * Check whether user has installed application
+     * Check whether user has installed package
      *
      * @exception PrivilegeDb::Exception::InternalError on internal error
      * @exception PrivilegeDb::Exception::ConstraintError on constraint violation
      */
-    bool IsUserAppInstalled(const std::string& appName, uid_t uid);
+    bool IsUserPkgInstalled(const std::string& pkgName, uid_t uid);
 };
 
 } //namespace SecurityManager

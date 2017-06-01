@@ -264,11 +264,13 @@ int security_manager_get_app_defined_privilege_license(const char *privilege,
  *
  * On successful call license should be freed when caller is done with them.
  * license parameter will be allocated with malloc so it should be freed with free() function.
- * When privilege/app_id/uid is incorrect or not related to any license, this function will
- * return SECURITY_MANAGER_ERROR_NO_SUCH_OBJECT.
+ * When privilege/pkg_id/app_id/uid is incorrect or not related to any license, this function
+ * will return SECURITY_MANAGER_ERROR_NO_SUCH_OBJECT.
  *
  * \param[in]  privilege   Privilege name
- * \param[in]  app_id      Id of application that request access to privilege.
+ * \param[in]  pkg_id      Package Id of application that request of license.
+ * \param[in]  app_id      Id of application that request access to privilege (null for
+ *                         non-hybrid application).
  * \param[in]  uid         User identifier
  * \param[out] license     Data that will be used to verify access to privilege. If privilege
  *                         type is SM_APP_DEFINED_PRIVILEGE_TYPE_UNTRUSTED this value will be
@@ -276,6 +278,7 @@ int security_manager_get_app_defined_privilege_license(const char *privilege,
  * \return API return code or error code
  */
 int security_manager_get_client_privilege_license(const char *privilege,
+                                                  const char *pkg_id,
                                                   const char *app_id,
                                                   uid_t uid,
                                                   char **license);

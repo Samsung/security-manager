@@ -61,7 +61,7 @@ void AppDefinedPrivilegeFixture::checkClientLicense(const std::string &app, uid_
 
     for (unsigned int i = 0; i < privileges.size(); ++i) {
         std::string license;
-        BOOST_REQUIRE(expected[i].first == testPrivDb->GetLicenseForClientPrivilege(app, uid, privileges[i], license));
+        BOOST_REQUIRE(expected[i].first == testPrivDb->GetLicenseForClientPrivilegeAndApp(app, uid, privileges[i], license));
         BOOST_REQUIRE(license == expected[i].second);
     }
 }
@@ -102,11 +102,12 @@ BOOST_AUTO_TEST_CASE(T1300_app_defined_privileges)
                         PrivilegeDb::Exception::ConstraintError);
 
     // check non-existing privilege
-    std::string appName, license;
+    std::string appName, pkgName, license;
     BOOST_REQUIRE_NO_THROW(
-        testPrivDb->GetAppAndLicenseForAppDefinedPrivilege(uid(1), std::get<0>(privileges[1]),
-                                                           appName, license));
+        testPrivDb->GetAppPkgLicenseForAppDefinedPrivilege(uid(1), std::get<0>(privileges[1]),
+                                                           appName, pkgName, license));
     BOOST_REQUIRE(appName.empty());
+    BOOST_REQUIRE(pkgName.empty());
     BOOST_REQUIRE(license.empty());
 
     // first application defines second privilege
@@ -114,9 +115,10 @@ BOOST_AUTO_TEST_CASE(T1300_app_defined_privileges)
 
     // check existing privilege application name
     BOOST_REQUIRE_NO_THROW(
-        testPrivDb->GetAppAndLicenseForAppDefinedPrivilege(uid(1), std::get<0>(privileges[1]),
-                                                           appName, license));
+        testPrivDb->GetAppPkgLicenseForAppDefinedPrivilege(uid(1), std::get<0>(privileges[1]),
+                                                           appName, pkgName, license));
     BOOST_REQUIRE(appName == app(1));
+    BOOST_REQUIRE(pkgName == pkg(1));
     BOOST_REQUIRE(license == std::get<2>(privileges[1]));
 
     // check first application privileges
@@ -193,7 +195,7 @@ BOOST_AUTO_TEST_CASE(T1400_client_license)
 
     // check non-existing privilege
     std::string license;
-    BOOST_REQUIRE_NO_THROW(testPrivDb->GetLicenseForClientPrivilege(app(1), uid(1), privilegesA[1].first, license));
+    BOOST_REQUIRE_NO_THROW(testPrivDb->GetLicenseForClientPrivilegeAndApp(app(1), uid(1), privilegesA[1].first, license));
     BOOST_REQUIRE(license.empty());
 
     // first application use second privilege/license
@@ -213,7 +215,7 @@ BOOST_AUTO_TEST_CASE(T1400_client_license)
     BOOST_REQUIRE_NO_THROW(testPrivDb->AddClientPrivilege(app(2), uid(2), privilegesB[0].first, privilegesB[0].second));
 
     // check non-existing privilege
-    BOOST_REQUIRE_NO_THROW(testPrivDb->GetLicenseForClientPrivilege(app(2), uid(2), privilegesB[1].first, license));
+    BOOST_REQUIRE_NO_THROW(testPrivDb->GetLicenseForClientPrivilegeAndApp(app(2), uid(2), privilegesB[1].first, license));
     BOOST_REQUIRE(license.empty());
 
     // second application use second privilege/license

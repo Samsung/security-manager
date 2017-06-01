@@ -1756,79 +1756,112 @@ int ServiceImpl::shmAppName(const Credentials &creds, const std::string &shmName
     return SECURITY_MANAGER_SUCCESS;
 }
 
-int ServiceImpl::getAppDefinedPrivilegeProvider(uid_t uid, const std::string &privilege,
-                                                std::string &appName, std::string &pkgName)
+int ServiceImpl::getAppDefinedPrivilegeDescription(
+        uid_t uid,
+        const std::string &privilege,
+        std::string &appName,
+        std::string &pkgName,
+        std::string &license)
 {
-    std::string appNameString, pkgNameString, licenseString;
     try {
-        // Get appName and License
-        if (!m_privilegeDb.GetAppAndLicenseForAppDefinedPrivilege(uid, privilege, appNameString, licenseString) &&
-            !m_privilegeDb.GetAppAndLicenseForAppDefinedPrivilege(getGlobalUserId(), privilege, appNameString, licenseString))
+        // Local provider have priority. Search for local provider.
+        if (m_privilegeDb.GetAppPkgLicenseForAppDefinedPrivilege(uid, privilege, appName, pkgName, license))
+        {
+            // We found local provider. We may return it.
+            return SECURITY_MANAGER_SUCCESS;
+        }
+
+        // Local provider not found. Search for global provider.
+        std::string localAppName, localPkgName, localLicense;
+        if (!m_privilegeDb.GetAppPkgLicenseForAppDefinedPrivilege(getGlobalUserId(), privilege, localAppName, localPkgName, localLicense))
         {
             LogDebug("Privilege " << privilege << " not found in database");
             return SECURITY_MANAGER_ERROR_NO_SUCH_OBJECT;
         }
 
-        // Convert appName to pkgName
-        m_privilegeDb.GetAppPkgName(appNameString, pkgNameString);
-
-        if (appNameString.empty() || pkgNameString.empty()) {
-            LogWarning("Could not translate appName to pkgName. appName: " << appName);
+        // Global provider found. Check if it's not hidden by local installation of application with same pkgName.
+        if (m_privilegeDb.IsUserPkgInstalled(localPkgName, uid))
+        {
+            // Ups. There is local installation of application with the same pkgId (it does not provide privilege).
+            // Global provider could not be used!
+            LogDebug("Local installation hiddes global one. Local installation of pkg: " << localPkgName << " does not support: " << privilege);
             return SECURITY_MANAGER_ERROR_NO_SUCH_OBJECT;
         }
 
-        LogDebug("Privilege: " << privilege << " provided by app: " << appNameString << " pkg: " << pkgNameString);
+        // Return result
+        appName = std::move(localAppName);
+        pkgName = std::move(localPkgName);
+        license = std::move(localLicense);
     } catch (const PrivilegeDb::Exception::Base &e) {
         LogError("Error while getting appName or pkgName from database: " << e.DumpToString());
         return SECURITY_MANAGER_ERROR_SERVER_ERROR;
     }
-
-    appName = appNameString;
-    pkgName = pkgNameString;
     return SECURITY_MANAGER_SUCCESS;
 }
 
-int ServiceImpl::getAppDefinedPrivilegeLicense(uid_t uid, const std::string &privilege,
-                                                std::string &license)
+int ServiceImpl::getAppDefinedPrivilegeProvider(
+        uid_t uid,
+        const std::string &privilege,
+        std::string &appName,
+        std::string &pkgName)
 {
-    std::string appNameString, licenseString;
-    try {
-        if (!m_privilegeDb.GetAppAndLicenseForAppDefinedPrivilege(uid, privilege, appNameString, licenseString) &&
-            !m_privilegeDb.GetAppAndLicenseForAppDefinedPrivilege(getGlobalUserId(), privilege, appNameString, licenseString))
-        {
-            LogDebug("Privilege " << privilege << " is not found in database");
-            return SECURITY_MANAGER_ERROR_NO_SUCH_OBJECT;
-        }
+    std::string localLicense;
+    return getAppDefinedPrivilegeDescription(uid, privilege, appName, pkgName, localLicense);
+}
 
-        if (licenseString.empty()) {
-            LogWarning("Empty license was found in database for privlege: " << privilege);
-            return SECURITY_MANAGER_ERROR_NO_SUCH_OBJECT;
-        }
-    } catch (const PrivilegeDb::Exception::Base &e) {
-        LogError("Error while getting license from database: " << e.DumpToString());
-        return SECURITY_MANAGER_ERROR_SERVER_ERROR;
+int ServiceImpl::getAppDefinedPrivilegeLicense(
+        uid_t uid,
+        const std::string &privilege,
+        std::string &license)
+{
+    std::string localAppName, localPkgName, localLicense;
+    int ret = getAppDefinedPrivilegeDescription(uid, privilege, localAppName, localPkgName, localLicense);
+
+    if (ret != SECURITY_MANAGER_SUCCESS) {
+        return ret;
     }
 
-    license = licenseString;
+    if (localLicense.empty()) {
+        return SECURITY_MANAGER_ERROR_NO_SUCH_OBJECT;
+    }
+
+    license = std::move(localLicense);
     return SECURITY_MANAGER_SUCCESS;
 }
 
-int ServiceImpl::getClientPrivilegeLicense(const std::string &appName, uid_t uid, const std::string &privilege,
-                                           std::string &license)
+int ServiceImpl::getClientPrivilegeLicense(
+        const std::string &appName,
+        const std::string &pkgName,
+        uid_t uid,
+        const std::string &privilege,
+        std::string &license)
 {
-    std::string licenseString;
     try {
-        uid_t requestUid = m_privilegeDb.IsUserAppInstalled(appName, uid) ? uid : getGlobalUserId();
+        std::string licenseString;
+        uid_t requestUid = m_privilegeDb.IsUserPkgInstalled(pkgName, uid) ? uid : getGlobalUserId();
 
-        if (!m_privilegeDb.GetLicenseForClientPrivilege(appName, requestUid, privilege, licenseString)) {
+        if (m_privilegeDb.IsPackageHybrid(pkgName)) {
+            if (appName.empty()) {
+                LogDebug("appName could not be empty if you ask about hybrid application");
+                return SECURITY_MANAGER_ERROR_INPUT_PARAM;
+            }
+
+            if (!m_privilegeDb.GetLicenseForClientPrivilegeAndApp(appName, requestUid, privilege, licenseString)) {
+                LogDebug("License was not found for privilege: " << privilege << " appId: " << appName << " and uid: " << requestUid);
+                return SECURITY_MANAGER_ERROR_NO_SUCH_OBJECT;
+            }
+        } else if (!m_privilegeDb.GetLicenseForClientPrivilegeAndPkg(pkgName, requestUid, privilege, licenseString)) {
+            LogDebug("License was not found for privilege: " << privilege << " pkgId: " << pkgName << " and uid: " << requestUid);
             return SECURITY_MANAGER_ERROR_NO_SUCH_OBJECT;
         }
+
+        license = std::move(licenseString);
+
     } catch (const PrivilegeDb::Exception::Base &e) {
         LogError("Error while getting license for app: " << e.DumpToString());
         return SECURITY_MANAGER_ERROR_SERVER_ERROR;
     }
 
-    license = licenseString;
     return SECURITY_MANAGER_SUCCESS;
 }
 

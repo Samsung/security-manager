@@ -687,24 +687,27 @@ void PrivilegeDb::GetAppDefinedPrivileges(const std::string &appName, uid_t uid,
     });
 }
 
-bool PrivilegeDb::GetAppAndLicenseForAppDefinedPrivilege(
+bool PrivilegeDb::GetAppPkgLicenseForAppDefinedPrivilege(
         uid_t uid,
         const std::string &privilege,
         std::string &appName,
+        std::string &pkgName,
         std::string &license)
 {
     return try_catch<bool>([&] {
         appName.clear();
+        pkgName.clear();
         license.clear();
 
-        auto command = getStatement(StmtType::EGetAppAndLicenseForAppDefinedPrivilege);
+        auto command = getStatement(StmtType::EGetAppPkgLicenseForAppDefinedPrivilege);
         command->BindInteger(1, uid);
         command->BindString(2, privilege);
 
         if (command->Step()) {
             appName = command->GetColumnString(0);
-            license = command->GetColumnString(1);
-            LogDebug("Privilege: " << privilege << " defined by " << appName);
+            pkgName = command->GetColumnString(1);
+            license = command->GetColumnString(2);
+            LogDebug("Privilege: " << privilege << " defined by " << appName << " " << pkgName);
             return true;
         }
 
@@ -713,7 +716,7 @@ bool PrivilegeDb::GetAppAndLicenseForAppDefinedPrivilege(
     });
 }
 
-bool PrivilegeDb::GetLicenseForClientPrivilege(
+bool PrivilegeDb::GetLicenseForClientPrivilegeAndApp(
         const std::string &appName,
         uid_t uid,
         const std::string &privilege,
@@ -722,7 +725,7 @@ bool PrivilegeDb::GetLicenseForClientPrivilege(
     return try_catch<bool>([&] {
         license.clear();
 
-        auto command = getStatement(StmtType::EGetLicenseForClientPrivilege);
+        auto command = getStatement(StmtType::EGetLicenseForClientPrivilegeAndApp);
         command->BindString(1, appName);
         command->BindInteger(2, uid);
         command->BindString(3, privilege);
@@ -740,11 +743,38 @@ bool PrivilegeDb::GetLicenseForClientPrivilege(
     });
 }
 
-bool PrivilegeDb::IsUserAppInstalled(const std::string& appName, uid_t uid)
+bool PrivilegeDb::GetLicenseForClientPrivilegeAndPkg(
+        const std::string &pkgName,
+        uid_t uid,
+        const std::string &privilege,
+        std::string &license)
+{
+    return try_catch<bool>([&] {
+        license.clear();
+
+        auto command = getStatement(StmtType::EGetLicenseForClientPrivilegeAndPkg);
+        command->BindString(1, pkgName);
+        command->BindInteger(2, uid);
+        command->BindString(3, privilege);
+
+        if (command->Step()) {
+            license = command->GetColumnString(0);
+            LogDebug("License found for pkg: " << pkgName << " privilege: " <<
+                privilege << " uid: " << uid << " License: " << license);
+            return true;
+        }
+
+        LogDebug("License not found for pkg: " << pkgName << " privilege: " <<
+            privilege << " uid: " << uid);
+        return false;
+    });
+}
+
+bool PrivilegeDb::IsUserPkgInstalled(const std::string& pkgName, uid_t uid)
 {
     return try_catch<bool>([&]() -> bool {
-        auto command = getStatement(StmtType::EIsUserAppInstalled);
-        command->BindString(1, appName);
+        auto command = getStatement(StmtType::EIsUserPkgInstalled);
+        command->BindString(1, pkgName);
         command->BindInteger(2, uid);
         int isInstalled = 0;
 

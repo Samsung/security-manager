@@ -534,7 +534,7 @@ struct kernel_sigaction {
 };
 
 #if __x86_64__
-void restore_rt(void) __asm__ ("__restore_rt");
+void restore_rt(void) __asm__("__restore_rt");
 
 #define RESTORE(name, syscall) RESTORE2(name, syscall)
 #define RESTORE2(name, syscall) \
@@ -1705,21 +1705,23 @@ int security_manager_get_app_defined_privilege_license(
 SECURITY_MANAGER_API
 int security_manager_get_client_privilege_license(
         const char *privilege,
+        const char *pkg_name,
         const char *app_name,
         uid_t uid,
         char **license)
 {
     return try_catch([&]() -> int {
         using namespace SecurityManager;
+        std::string appName(app_name ? app_name : "");
         LogDebug(__PRETTY_FUNCTION__ << " called");
 
-        if (privilege == NULL || app_name == NULL || license == NULL) {
-            LogError("privilege, app_name, license could not be NULL");
+        if (!privilege || !pkg_name || !license) {
+            LogError("privilege, pkg_name, license could not be NULL");
             return SECURITY_MANAGER_ERROR_INPUT_PARAM;
         }
 
         ClientRequest request(SecurityModuleCall::GET_CLIENT_PRIVILEGE_LICENSE);
-        if (request.send(std::string(app_name), uid, std::string(privilege)).failed())
+        if (request.send(appName, std::string(pkg_name), uid, std::string(privilege)).failed())
             return request.getStatus();
 
         std::string licenseString;

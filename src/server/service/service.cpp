@@ -460,11 +460,11 @@ void Service::processGetAppDefinedPrivilegeLicense(MessageBuffer &buffer, Messag
 void Service::processGetClientPrivilegeLicense(MessageBuffer &buffer, MessageBuffer &send)
 {
     int ret;
-    std::string appName, privilege, license;
+    std::string appName, pkgName, privilege, license;
     uid_t uid;
 
-    Deserialization::Deserialize(buffer, appName, uid, privilege);
-    ret = serviceImpl.getClientPrivilegeLicense(appName, uid, privilege, license);
+    Deserialization::Deserialize(buffer, appName, pkgName, uid, privilege);
+    ret = serviceImpl.getClientPrivilegeLicense(appName, pkgName, uid, privilege, license);
     Serialization::Serialize(send, ret);
     if (ret == SECURITY_MANAGER_SUCCESS)
         Serialization::Serialize(send, license);
