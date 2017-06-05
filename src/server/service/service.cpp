@@ -168,17 +168,16 @@ bool Service::processOne(const ConnectionID &conn, MessageBuffer &buffer,
             }
             // if we reach this point, the protocol is OK
             retval = true;
-        } Catch (MessageBuffer::Exception::Base) {
+        } Catch(MessageBuffer::Exception::Base) {
             LogError("Broken protocol.");
-        } Catch (ServiceException::Base) {
+        } Catch(ServiceException::Base) {
             LogError("Broken protocol.");
         } catch (const std::exception &e) {
             LogError("STD exception " << e.what());
         } catch (...) {
             LogError("Unknown exception");
         }
-    }
-    else {
+    } else {
         LogError("Wrong interface");
     }
 
@@ -330,7 +329,7 @@ void Service::processPolicyGetDesc(MessageBuffer &send)
     if (ret == SECURITY_MANAGER_SUCCESS) {
         Serialization::Serialize(send, static_cast<int>(descriptions.size()));
 
-        for(std::vector<std::string>::size_type i = 0; i != descriptions.size(); i++) {
+        for (std::vector<std::string>::size_type i = 0; i != descriptions.size(); i++) {
             Serialization::Serialize(send, descriptions[i]);
         }
     }

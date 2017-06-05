@@ -320,7 +320,7 @@ bool ServiceImpl::isSubDir(const std::string &parent, const std::string &subdir)
 bool ServiceImpl::containSubDir(const std::string &parent, const pkg_paths &paths)
 {
 
-    for(auto path : paths) {
+    for (auto path : paths) {
         if (isSubDir(parent, path.first))
             return true;
     }
@@ -458,9 +458,9 @@ int ServiceImpl::labelPaths(const pkg_paths &paths,
 
         // check if paths are inside
         bool pathsOK;
-        if (installationType == SM_APP_INSTALL_LOCAL)
+        if (installationType == SM_APP_INSTALL_LOCAL) {
             pathsOK = pathsCheck(paths, {pkgBasePath});
-        else {
+        } else {
             std::string skelPkgBasePath;
             if (!getSkelPkgDir(pkgName, skelPkgBasePath))
                 return SECURITY_MANAGER_ERROR_SERVER_ERROR;
@@ -898,8 +898,9 @@ int ServiceImpl::getAppGroups(const Credentials &creds, const std::string &appNa
                         std::make_move_iterator(privGroups.begin()),
                         std::make_move_iterator(privGroups.end()));
                     LogDebug("Cynara allowed, adding groups");
-                } else
+                } else {
                     LogDebug("Cynara denied, not adding groups");
+                }
             }
         }
         vectorRemoveDuplicates(groups);
@@ -1041,8 +1042,7 @@ int ServiceImpl::getConfiguredPolicy(const Credentials &creds, bool forAdmin,
                     << ", U: " << filter.user
                     << ", P: " << filter.privilege
                     << ", current: " << filter.currentLevel
-                    << ", max: " << filter.maxLevel
-                    );
+                    << ", max: " << filter.maxLevel);
 
         std::vector<CynaraAdminPolicy> listOfPolicies;
 
@@ -1066,8 +1066,7 @@ int ServiceImpl::getConfiguredPolicy(const Credentials &creds, bool forAdmin,
                 appProcessLabel,
                 user,
                 privilege,
-                listOfPolicies
-                );
+                listOfPolicies);
             LogDebug("ADMIN - number of policies matched: " << listOfPolicies.size());
         } else {
             if (!authenticate(creds, Config::PRIVILEGE_POLICY_USER)) {
@@ -1087,8 +1086,7 @@ int ServiceImpl::getConfiguredPolicy(const Credentials &creds, bool forAdmin,
                 appProcessLabel,
                 user,
                 privilege,
-                listOfPolicies
-                );
+                listOfPolicies);
             LogDebug("PRIVACY MANAGER - number of policies matched: " << listOfPolicies.size());
         };
 
@@ -1144,8 +1142,7 @@ int ServiceImpl::getConfiguredPolicy(const Credentials &creds, bool forAdmin,
                     << " user: " << pe.user
                     << " privilege: " << pe.privilege
                     << " current: " << pe.currentLevel
-                    << " max: " << pe.maxLevel
-                    );
+                    << " max: " << pe.maxLevel);
 
                 policyEntries.push_back(pe);
             }
@@ -1182,8 +1179,7 @@ int ServiceImpl::getPolicy(const Credentials &creds, const policy_entry &filter,
                     << ", U: " << filter.user
                     << ", P: " << filter.privilege
                     << ", current: " << filter.currentLevel
-                    << ", max: " << filter.maxLevel
-                    );
+                    << ", max: " << filter.maxLevel);
 
         std::vector<uid_t> listOfUsers;
 
@@ -1196,8 +1192,9 @@ int ServiceImpl::getPolicy(const Credentials &creds, const policy_entry &filter,
                 } catch (std::invalid_argument &e) {
                     LogError("Invalid UID: " << e.what());
                 };
-            } else
+            } else {
                 m_cynaraAdmin.listUsers(listOfUsers);
+            }
         } else {
             LogWarning("Not enough privilege to fetch user policy for all users by user: " << creds.uid);
             LogDebug("Fetching personal policy for user: " << creds.uid);
@@ -1262,8 +1259,7 @@ int ServiceImpl::getPolicy(const Credentials &creds, const policy_entry &filter,
                         << " user: " << pe.user
                         << " privilege: " << pe.privilege
                         << " current: " << pe.currentLevel
-                        << " max: " << pe.maxLevel
-                        );
+                        << " max: " << pe.maxLevel);
 
                     policyEntries.push_back(pe);
                 };
@@ -1481,7 +1477,7 @@ int ServiceImpl::applyPrivatePathSharing(
             return SECURITY_MANAGER_ERROR_APP_UNKNOWN;
         }
 
-        for(const auto &path : paths) {
+        for (const auto &path : paths) {
             std::string pathLabel = SmackLabels::getSmackLabelFromPath(path);
             if (pathLabel != SmackLabels::generatePathRWLabel(ownerPkgName)) {
                 std::string generatedPathLabel = SmackLabels::generateSharedPrivateLabel(ownerPkgName, path);
@@ -1578,7 +1574,7 @@ int ServiceImpl::dropPrivatePathSharing(
             return SECURITY_MANAGER_ERROR_APP_UNKNOWN;
         }
 
-        for(const auto &path : paths) {
+        for (const auto &path : paths) {
             if (!sharingExists(targetAppName, path)) {
                 LogError("Sharing doesn't exist: owner=" << ownerAppName
                          << ", target=" << targetAppName << ", path=" << path);

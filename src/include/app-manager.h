@@ -94,7 +94,7 @@ int security_manager_app_inst_req_add_privilege(
  *                       Tizen system and for SM_APP_DEFINED_PRIVILEGE_TYPE_UNTRUSTED
  *                       this parameter must be NULL. For type
  *                       SM_APP_DEFINED_PRIVILEGE_TYPE_LICENSE this parameter may contain
- *                       path to document with license that will be used during varification
+ *                       path to document with license that will be used during verification
  *                       process. File or directory with file must be marked as
  *                       SECURITY_MANAGER_PATH_RO.
  * \return API return code or error code

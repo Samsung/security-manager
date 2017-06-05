@@ -447,7 +447,7 @@ void PrivilegeDb::GetPkgApps(const std::string &pkgName,
 
         while (command->Step()) {
             std::string appName = command->GetColumnString(0);
-            LogDebug ("Got appName: " << appName << " for pkgName " << pkgName);
+            LogDebug("Got appName: " << appName << " for pkgName " << pkgName);
             appNames.push_back(appName);
         };
     });

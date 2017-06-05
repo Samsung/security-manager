@@ -642,7 +642,7 @@ static inline int security_manager_sync_threads_internal(const char *app_name)
         std::atomic_thread_fence(std::memory_order_acquire);
 
         if (g_smack_present)
-            if(label_for_self_internal() != 0)
+            if (label_for_self_internal() != 0)
                 return;
 
         if (cap_set_proc(g_cap))
@@ -1178,7 +1178,7 @@ static void loadGroups(std::vector<std::string> &vgroups) {
     char line[LINEMAX];
     std::ifstream input(POLICY_DIR "/" PRIVILEGE_GROUP_LIST_FILE);
 
-    while(input.getline(line, LINEMAX)) {
+    while (input.getline(line, LINEMAX)) {
         if (line[0] == '#')
             continue;
         char *pos = strchr(line, ' ');
@@ -1589,7 +1589,7 @@ int security_manager_shm_open(const char *name, int oflag, mode_t mode, const ch
         ClientRequest request(SecurityModuleCall::SHM_APP_NAME);
         int retval = request.send(std::string(name), std::string(app_name)).getStatus();
 
-        switch(retval) {
+        switch (retval) {
         case SECURITY_MANAGER_SUCCESS:
             scopeClose.release();
             return fd;
