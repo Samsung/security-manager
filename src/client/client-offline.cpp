@@ -47,9 +47,10 @@ ClientOffline::ClientOffline(bool wakeUp)
                 LogInfo("Socket activation attempt failed.");
                 m_serviceLock->Lock();
                 m_offlineMode = m_serviceLock->Locked();
-            } else
+            } else {
                 LogInfo("Service seems to be running now.");
-        } if (m_serviceLock->Locked()) {
+            }
+        } else if (m_serviceLock->Locked()) {
             m_offlineMode = true;
         }
     } catch (...) {
