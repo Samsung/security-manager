@@ -66,13 +66,11 @@ enum nss_status _nss_securitymanager_initgroups_dyn(const char *user, gid_t grou
         passwd pwnambuffer;
         passwd *pwnam = NULL;
 
-        do {
-            ret = TEMP_FAILURE_RETRY(getpwnam_r(user, &pwnambuffer, buffer.data(), buffer.size(), &pwnam));
-            if (ret == ERANGE && buffer.size() < MEMORY_LIMIT) {
-                buffer.resize(buffer.size() << 1);
-                continue;
-            }
-        } while (0);
+        while (ERANGE == (ret = TEMP_FAILURE_RETRY(getpwnam_r(user, &pwnambuffer, buffer.data(), buffer.size(), &pwnam)))
+               && buffer.size() < MEMORY_LIMIT)
+        {
+            buffer.resize(buffer.size() << 1);
+        }
 
         if (ret == ERANGE) {
             *errnop = ENOMEM;
@@ -113,13 +111,12 @@ enum nss_status _nss_securitymanager_initgroups_dyn(const char *user, gid_t grou
         for (size_t i = 0; i < groupsCount; ++i) {
             group *grnam = NULL;
             group groupbuff;
-            do {
-                ret = TEMP_FAILURE_RETRY(getgrnam_r(groups[i], &groupbuff, buffer.data(), buffer.size(), &grnam));
-                if (ret == ERANGE && buffer.size() < MEMORY_LIMIT) {
-                    buffer.resize(buffer.size() << 1);
-                    continue;
-                }
-            } while(0);
+
+            while (ERANGE == (ret = TEMP_FAILURE_RETRY(getgrnam_r(groups[i], &groupbuff, buffer.data(), buffer.size(), &grnam)))
+                   && buffer.size() < MEMORY_LIMIT)
+            {
+                buffer.resize(buffer.size() << 1);
+            }
 
             if (ret == ERANGE) {
                 *errnop = ENOMEM;
