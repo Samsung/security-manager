@@ -4,7 +4,7 @@ PRAGMA auto_vacuum = NONE;
 
 BEGIN EXCLUSIVE TRANSACTION;
 
-PRAGMA user_version = 11;
+PRAGMA user_version = 12;
 
 CREATE TABLE IF NOT EXISTS pkg (
 pkg_id INTEGER PRIMARY KEY,
@@ -68,6 +68,7 @@ uid INTEGER NOT NULL,
 privilege VARCHAR NOT NULL,
 type INTEGER NOT NULL CHECK (type >= 0 AND type <= 1),
 license VARCHAR,
+UNIQUE (uid, privilege),
 FOREIGN KEY (app_id, uid) REFERENCES user_app (app_id, uid) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
@@ -80,6 +81,7 @@ app_id INTEGER NOT NULL,
 uid INTEGER NOT NULL,
 privilege VARCHAR NOT NULL,
 license VARCHAR NOT NULL,
+UNIQUE (app_id, uid, privilege),
 FOREIGN KEY(app_id, uid) REFERENCES user_app (app_id, uid) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
@@ -242,15 +244,7 @@ BEGIN
     WHERE EXISTS (SELECT 1 FROM app_defined_privilege_view
                   WHERE privilege=NEW.privilege AND app_name!=NEW.app_name);
 
-    SELECT RAISE(ABORT, 'Application was not found')
-    WHERE NOT EXISTS (SELECT 1 FROM user_app_pkg_view
-                      WHERE uid=NEW.uid AND app_name=NEW.app_name);
-
-    SELECT RAISE(ABORT, 'App defined privilege already defined')
-    WHERE EXISTS (SELECT 1 FROM app_defined_privilege_view
-                  WHERE uid=NEW.uid AND app_name=NEW.app_name AND privilege=NEW.privilege);
-
-    INSERT OR IGNORE INTO app_defined_privilege (app_id, uid, privilege, type, license)
+    INSERT INTO app_defined_privilege (app_id, uid, privilege, type, license)
     VALUES ((SELECT app_id FROM app WHERE name=NEW.app_name), NEW.uid, NEW.privilege, NEW.type, NEW.license);
 END;
 
@@ -278,15 +272,7 @@ DROP TRIGGER IF EXISTS client_license_view_insert_trigger;
 CREATE TRIGGER client_license_view_insert_trigger
 INSTEAD OF INSERT ON client_license_view
 BEGIN
-    SELECT RAISE(ABORT, 'Application was not found')
-    WHERE NOT EXISTS (SELECT 1 FROM user_app_pkg_view
-                      WHERE uid=NEW.uid AND app_name=NEW.app_name);
-
-    SELECT RAISE(ABORT, 'Client privilege license already defined')
-    WHERE EXISTS (SELECT 1 FROM client_license_view
-                  WHERE uid=NEW.uid AND app_name=NEW.app_name AND privilege=NEW.privilege);
-
-    INSERT OR IGNORE INTO client_license (app_id, uid, privilege, license)
+    INSERT INTO client_license (app_id, uid, privilege, license)
     VALUES ((SELECT app_id FROM app WHERE name=NEW.app_name), NEW.uid, NEW.privilege, NEW.license);
 END;
 
