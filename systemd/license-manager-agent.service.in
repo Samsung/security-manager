@@ -3,6 +3,9 @@ Description=Start cynara agent that provides functions for license verification
 
 [Service]
 Type=notify
+User=security_fw
+Group=security_fw
+CapabilityBoundingSet=
 ExecStart=@BIN_INSTALL_DIR@/license-manager-agent
 SmackProcessLabel=System
 
