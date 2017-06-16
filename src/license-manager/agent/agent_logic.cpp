@@ -59,6 +59,44 @@ CertPtr readCertificate(const char *path) {
     return CertPtr(cert, X509_free);
 }
 
+int verifyCommonName(const CertPtr &cert, const char *pkgId) {
+    int cn_pos = -1;
+    X509_NAME_ENTRY *cn_entry = nullptr;
+    ASN1_STRING *cn_asn1 = nullptr;
+    char *cn_str = nullptr;
+
+    // Find the position of the CN field in the Subject field of the certificate
+    cn_pos = X509_NAME_get_index_by_NID(X509_get_subject_name((X509 *) cert.get()), NID_commonName, -1);
+    if (cn_pos < 0) {
+        return -1;
+    }
+
+    // Extract the CN field
+    cn_entry = X509_NAME_get_entry(X509_get_subject_name((X509 *) cert.get()), cn_pos);
+    if (!cn_entry) {
+        return -1;
+    }
+
+    // Convert the CN field to a C string
+    cn_asn1 = X509_NAME_ENTRY_get_data(cn_entry);
+    if (!cn_asn1) {
+        return -1;
+    }
+    cn_str = (char *) ASN1_STRING_data(cn_asn1);
+
+    // Make sure there isn't an embedded NULL character in the CN
+    if ((size_t)ASN1_STRING_length(cn_asn1) != strlen(cn_str)) {
+        return -1;
+    }
+
+    // Compare expected pkgId with the CN
+    if (strncmp(cn_str, pkgId, strlen(pkgId)) != 0) {
+        return -1;
+    } else {
+        return 1;
+    }
+}
+
 int verify(const std::string &smack, int uid, const std::string &privilege) {
     char *providerPkgId = nullptr, *providerAppId = nullptr;
     char *clientAppId = nullptr, *clientPkgId = nullptr;
@@ -121,6 +159,12 @@ int verify(const std::string &smack, int uid, const std::string &privilege) {
 
     if (!clientCert) {
         ALOGD("Error reading client certificates!");
+        return -1;
+    }
+
+    if (1 != verifyCommonName(providerCert, providerPkgId) ||
+        1 != verifyCommonName(clientCert, clientPkgId)) {
+        ALOGD("Certificate issued for another application package");
         return -1;
     }
 
