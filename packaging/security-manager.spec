@@ -10,7 +10,7 @@ Source3:    libsecurity-manager-client.manifest
 Source4:    libnss-security-manager.manifest
 Source5:    security-manager-tests.manifest
 Requires: security-manager-policy
-Requires: nether
+#Requires: nether
 %if "%{build_type}" == "VALGRIND"
 Requires: valgrind
 %endif
