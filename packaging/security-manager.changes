@@ -1,6 +1,28 @@
-Release: 1.2.19
+Release: 1.2.20
+Date:    2017.06.30
+Name:    Release 1.2.20
+Description:
+Remove dependency to Nether
+Add missing else keyword
+Fix memory allocation loop
+Apply -fPIE and -pie flag to license-manager
+Verify if certificate CN entry is equal to pkgId.
+Refactor error handling on app_defined_privilege/client_license table
+Change license-manager-agent uid/gid to security_fw
+Accept null as appId during license extraction
+New schema of database
+Apply coding rules
+Implement certificate verification inside agent
+Improve implementation of appdefined privilege API
+Remove outdated 'CREATE INDEX + performance tests required' TODO
+security-manager-cmd: add new option "manager-apps" for app install/uninstall
+Support security_manager_app_uninstall calling in off-line mode
+
+###############################
+
+Release: 1.2.20
 Date:    2017.05.19
-Name:    Release 1.2.19
+Name:    Release 1.2.20
 Description:
 Merge remote-tracking branch 'origin/appdefined' into tizen
 Add core privilege: tee.client
